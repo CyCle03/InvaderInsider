@@ -1,82 +1,98 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Threading;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class EnemyMove : MonoBehaviour
 {
-    public Transform[] wayPoints = new Transform[2];
-    public GameObject[] enemyPool;
-    public GameObject enemyPrefab;
-    public int stageWave = 20;
-    public float createTime = 1f;
 
-    float currentTime = 0f;
-    int enemyCount = 0;
+    Transform wayPoint;
+    NavMeshAgent agent;
 
-    public enum StageState
+    public Enemy data = new Enemy();
+
+    public Enemy CreateEnemy()
     {
-        Ready,
-        Run,
-        End,
+        Enemy newEnemy = new Enemy(this);
+        return newEnemy;
     }
-
-    public StageState s_state;
 
     // Start is called before the first frame update
     void Start()
     {
-        enemyPool = new GameObject[stageWave];
-        for (int i = 0; i < enemyPool.Length; i++)
-        {
-            GameObject enemy = Instantiate(enemyPrefab);
-            enemyPool[i] = enemy;
-            enemy.SetActive(false);
-        }
+        wayPoint = EnemyManager.Instance.wayPoints[1];
 
-        currentTime = -1f;
-        enemyCount = 0;
-
-        s_state = StageState.Ready;
+        agent = GetComponent<NavMeshAgent>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        switch (s_state)
+        if (Vector3.Distance(transform.position, wayPoint.position) > 0.2f)
         {
-            case StageState.Ready:
-                break;
-            case StageState.Run:
-                break;
-            case StageState.End:
-                break;
-        }
+            agent.isStopped = true;
+            agent.ResetPath();
 
-        currentTime += Time.deltaTime;
-
-        if (currentTime > createTime)
-        {
-            SpawnEnemy();
-        }
-    }
-
-    public void SpawnEnemy()
-    {
-        if (enemyCount < stageWave)
-        {
-            GameObject enemy = enemyPool[enemyCount];
-
-            if (enemy.activeSelf == false)
-            {
-                enemy.transform.position = wayPoints[0].position;
-                enemy.SetActive(true);
-                enemyCount++;
-                currentTime = 0f;
-            }
+            agent.stoppingDistance = 0.2f;
+            agent.destination = wayPoint.position;
         }
         else
         {
-            s_state = StageState.End;
+            agent.isStopped = true;
+            agent.ResetPath();
+
+            transform.position = wayPoint.position;
+            transform.rotation = Quaternion.identity;
+
+            gameObject.SetActive(false);
         }
     }
+
+    public void TakeDamage(int damage)
+    {
+        data.curruntHP -= damage;
+        if (data.curruntHP <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        // 적이 죽었을 때의 처리 (예: 적을 제거하고 보상 지급)
+        gameObject.SetActive(false);
+    }
+}
+
+[System.Serializable]
+public class Enemy
+{
+    public string eName;
+    public int eID = -1;
+    public float maxHP;
+    public float curruntHP;
+    public float moveSpeed;
+    public float damage;
+    public int eDataDrop;
+
+    public Enemy()
+    {
+        eName = "";
+        eID = -1;
+    }
+
+    public Enemy(EnemyMove enemy)
+    {
+        eName = enemy.name;
+        eID = enemy.data.eID;
+        maxHP = enemy.data.maxHP;
+        curruntHP = maxHP;
+        moveSpeed = enemy.data.moveSpeed;
+        damage = enemy.data.damage;
+        eDataDrop = enemy.data.eDataDrop;
+    }
+
 }
