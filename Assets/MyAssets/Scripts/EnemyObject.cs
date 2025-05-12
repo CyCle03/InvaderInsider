@@ -6,7 +6,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class EnemyMove : MonoBehaviour
+public class EnemyObject : MonoBehaviour
 {
 
     Transform wayPoint;
@@ -84,7 +84,7 @@ public class Enemy
         eID = -1;
     }
 
-    public Enemy(EnemyMove enemy)
+    public Enemy(EnemyObject enemy)
     {
         eName = enemy.name;
         eID = enemy.data.eID;

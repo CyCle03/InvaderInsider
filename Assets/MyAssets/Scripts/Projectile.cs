@@ -45,7 +45,7 @@ public class Projectile : MonoBehaviour
     {
         if (target != null)
         {
-            EnemyMove enemy = target.GetComponent<EnemyMove>();  // 적의 스크립트 가져오기
+            EnemyObject enemy = target.GetComponent<EnemyObject>();  // 적의 스크립트 가져오기
             if (enemy != null)
             {
                 enemy.TakeDamage(damage);  // 적에게 피해를 주는 함수 호출
