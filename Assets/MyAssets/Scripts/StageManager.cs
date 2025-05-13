@@ -7,6 +7,8 @@ public class EnemyManager : MonoBehaviour
     public Transform[] wayPoints = new Transform[2];
     public GameObject[] enemyPool;
     public GameObject enemyPrefab;
+    public StageList stageList;
+    public int stageNum = 0;
     public int stageWave = 20;
     public float createTime = 1f;
 
@@ -35,10 +37,11 @@ public class EnemyManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        enemyPool = new GameObject[stageWave];
+        int stageLength = stageList.stages[stageNum].Container.Length;
+        enemyPool = new GameObject[stageLength];
         for (int i = 0; i < enemyPool.Length; i++)
         {
-            GameObject enemy = Instantiate(enemyPrefab);
+            GameObject enemy = Instantiate(stageList.stages[stageNum].Container[i]);
             enemyPool[i] = enemy;
             enemy.SetActive(false);
         }

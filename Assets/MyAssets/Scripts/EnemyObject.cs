@@ -51,7 +51,7 @@ public class EnemyObject : MonoBehaviour
         }
     }
 
-    public void TakeDamage(int damage)
+    public void TakeDamage(float damage)
     {
         data.curruntHP -= damage;
         if (data.curruntHP <= 0)

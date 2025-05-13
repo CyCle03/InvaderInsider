@@ -5,7 +5,7 @@ using UnityEngine;
 public class Projectile : MonoBehaviour
 {
     public float speed = 10f;        // 발사체 속도
-    public int damage = 1;          // 발사체 피해량
+    public float damage = 1;          // 발사체 피해량
     private Transform target;        // 목표 (적)
     private bool hasHit = false;     // 이미 충돌했는지 여부
 
@@ -13,6 +13,11 @@ public class Projectile : MonoBehaviour
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
+    }
+
+    public void SetDmg(float dmg)
+    {
+        damage = dmg;
     }
 
     void Update()

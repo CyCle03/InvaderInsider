@@ -5,7 +5,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Stage Database", menuName = "Stage System/StageDatabase")]
 public class StageDBObject : ScriptableObject
 {
-    public WaveObject[] Container;
+    public int StageID = -1;
+    public GameObject[] Container;
 }
 
 [System.Serializable]
@@ -37,7 +38,7 @@ public class WaveObject
         {
             if (enemy.eID >= 0)
             {
-                return parant.Container[enemy.eID].EnemyObj;
+                return parant.Container[enemy.eID].GetComponent<EnemyObject>();
             }
             return null;
         }

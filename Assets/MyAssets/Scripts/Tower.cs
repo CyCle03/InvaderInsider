@@ -6,6 +6,7 @@ public class Tower : MonoBehaviour
 {
     public float range = 5f;
     public float fireRate = 1f;
+    public float dmg = 1f;
     private float fireCountdown = 0f;
     public GameObject projectilePrefab;
 
@@ -27,6 +28,7 @@ public class Tower : MonoBehaviour
     {
         GameObject proj = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
         proj.GetComponent<Projectile>().SetTarget(enemy.transform);
+        proj.GetComponent<Projectile>().SetDmg(dmg);
     }
 
     GameObject FindClosestEnemy()

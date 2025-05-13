@@ -806,6 +806,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   range: 5
   fireRate: 1
+  dmg: 1
   projectilePrefab: {fileID: 2265586970664229171, guid: dd54440be1886dd4f932f338a5c3efad, type: 3}
 --- !u!1 &452065845
 GameObject:
@@ -2525,8 +2526,10 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   enemyPrefab: {fileID: 5669925833025989882, guid: 47b8d595ab76aaf4d949ff7b875b91d0, type: 3}
+  stageList: {fileID: 11400000, guid: 4ad37b4786d4d83448448e7cd1ef7e38, type: 2}
+  stageNum: 0
   stageWave: 20
-  createTime: 1
+  createTime: 1.5
   s_state: 0
 --- !u!114 &1294070010
 MonoBehaviour:
