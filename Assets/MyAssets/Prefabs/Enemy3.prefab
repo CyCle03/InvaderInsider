@@ -241,7 +241,7 @@ GameObject:
   - component: {fileID: -1243140610155947256}
   - component: {fileID: 7361604924346112834}
   m_Layer: 0
-  m_Name: Enemy2
+  m_Name: Enemy3
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -291,7 +291,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e8c5452c14f3731419c1f818d0b7be46, type: 2}
+  - {fileID: 2100000, guid: 4a6fdde6ce8cdad46aa77d0238489095, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -344,8 +344,8 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 7
-  m_Acceleration: 16
+  m_Speed: 1.75
+  m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 120
   m_StoppingDistance: 0
@@ -371,12 +371,12 @@ MonoBehaviour:
   hpSlider: {fileID: 8709902853022629263}
   data:
     eName: Enemy2
-    eID: 2
-    maxHP: 1
-    curruntHP: 1
-    moveSpeed: 2
+    eID: 3
+    maxHP: 3
+    curruntHP: 3
+    moveSpeed: 0.5
     damage: 1
-    eDataDrop: 2
+    eDataDrop: 3
 --- !u!1 &6121639613020301897
 GameObject:
   m_ObjectHideFlags: 0

@@ -4,12 +4,13 @@ using UnityEngine;
 
 public class Billboard : MonoBehaviour
 {
-    public Camera _camera;
-    public GameObject _gameObj;
+    Camera _camera;
+    GameObject _gameObj;
 
     private void Start()
     {
         _camera = Camera.main;
+        _gameObj = gameObject;
     }
 
     // Start is called before the first frame update

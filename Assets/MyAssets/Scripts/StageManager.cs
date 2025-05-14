@@ -5,7 +5,6 @@ using UnityEngine;
 public class EnemyManager : MonoBehaviour
 {
     public Transform[] wayPoints = new Transform[2];
-    public GameObject[] enemyPool;
     public GameObject enemyPrefab;
     public StageList stageList;
     public int stageNum = 0;
@@ -30,6 +29,7 @@ public class EnemyManager : MonoBehaviour
         Ready,
         Run,
         End,
+        Over
     }
 
     public StageState s_state;
@@ -37,17 +37,10 @@ public class EnemyManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        int stageLength = stageList.stages[stageNum].Container.Length;
-        enemyPool = new GameObject[stageLength];
-        for (int i = 0; i < enemyPool.Length; i++)
-        {
-            GameObject enemy = Instantiate(stageList.stages[stageNum].Container[i]);
-            enemyPool[i] = enemy;
-            enemy.SetActive(false);
-        }
-
         currentTime = 0f;
         enemyCount = 0;
+        stageNum = 0;
+        stageWave = stageList.stages[stageNum].Container.Length;
 
         s_state = StageState.Ready;
     }
@@ -58,20 +51,30 @@ public class EnemyManager : MonoBehaviour
         switch (s_state)
         {
             case StageState.Ready:
-                ReadyEnemy();
+                ReadyStage();
                 break;
             case StageState.Run:
-                RunEnemy();
+                RunStage();
                 break;
             case StageState.End:
+                EndStage();
+                break;
+            case StageState.Over:
+
                 break;
         }
     }
-
-    
-    void ReadyEnemy()
+    void ReadyStage()
     {
-        StartCoroutine(StartStatge());
+        if (stageNum < stageList.stages.Length)
+        {
+            StartCoroutine(StartStatge());
+        }
+        else
+        {
+            s_state = StageState.Over;
+        }
+
     }
     IEnumerator StartStatge()
     {
@@ -79,33 +82,44 @@ public class EnemyManager : MonoBehaviour
         s_state = StageState.Run;
     }
 
-    void RunEnemy()
+    void RunStage()
     {
         currentTime += Time.deltaTime;
 
-        if (currentTime > createTime)
+        if(enemyCount < stageWave)
         {
-            SpawnEnemy();
-        }
-    }
-    public void SpawnEnemy()
-    {
-        if (enemyCount < stageWave)
-        {
-            GameObject enemy = enemyPool[enemyCount];
-
-            if (enemy.activeSelf == false)
+            if (currentTime > createTime)
             {
-                enemy.transform.position = wayPoints[0].position;
-                enemy.SetActive(true);
-                enemyCount++;
-                currentTime = 0f;
+                SpawnEnemy();
             }
         }
         else
         {
             s_state = StageState.End;
+            stageNum++;
+            currentTime = 0f;
+            enemyCount = 0;
+            stageWave = stageList.stages[stageNum].Container.Length;
         }
+        
+    }
+    public void SpawnEnemy()
+    {
+        int stageLength = stageList.stages[stageNum].Container.Length;
+        GameObject enemy = Instantiate(stageList.stages[stageNum].Container[enemyCount]);
+        enemy.transform.position = wayPoints[0].position;
+        enemyCount++;
+        currentTime = 0f;
     }
 
+    void EndStage()
+    {
+        StartCoroutine(WaitStage());
+    }
+
+    IEnumerator WaitStage()
+    {
+        yield return new WaitForSeconds(3f);
+        s_state = StageState.Ready;
+    }
 }

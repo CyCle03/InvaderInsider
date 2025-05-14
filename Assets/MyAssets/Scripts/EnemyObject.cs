@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UI;
 
 public class EnemyObject : MonoBehaviour
 {
@@ -12,6 +13,7 @@ public class EnemyObject : MonoBehaviour
     Transform wayPoint;
     NavMeshAgent agent;
 
+    public Slider hpSlider;
     public Enemy data = new Enemy();
 
     public Enemy CreateEnemy()
@@ -26,6 +28,7 @@ public class EnemyObject : MonoBehaviour
         wayPoint = EnemyManager.Instance.wayPoints[1];
 
         agent = GetComponent<NavMeshAgent>();
+        UpdateHP();
     }
 
     // Update is called once per frame
@@ -47,23 +50,29 @@ public class EnemyObject : MonoBehaviour
             transform.position = wayPoint.position;
             transform.rotation = Quaternion.identity;
 
-            gameObject.SetActive(false);
+            Destroy(gameObject);
         }
     }
 
     public void TakeDamage(float damage)
     {
         data.curruntHP -= damage;
+        UpdateHP();
         if (data.curruntHP <= 0)
         {
             Die();
         }
     }
 
+    public void UpdateHP()
+    {
+        hpSlider.value = data.curruntHP / data.maxHP;
+    }
+
     private void Die()
     {
         // 적이 죽었을 때의 처리 (예: 적을 제거하고 보상 지급)
-        gameObject.SetActive(false);
+        Destroy(gameObject);
     }
 }
 
