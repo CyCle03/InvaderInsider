@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EnemyManager : MonoBehaviour
+public class StageManager : MonoBehaviour
 {
     public Transform[] wayPoints = new Transform[2];
     public GameObject enemyPrefab;
@@ -14,13 +14,13 @@ public class EnemyManager : MonoBehaviour
     float currentTime = 0f;
     int enemyCount = 0;
 
-    public static EnemyManager Instance = null;
+    public static StageManager sm = null;
 
     private void Awake()
     {
-        if (Instance == null)
+        if (sm == null)
         {
-            Instance = this;
+            sm = this;
         }
     }
 
@@ -80,6 +80,7 @@ public class EnemyManager : MonoBehaviour
     {
         yield return new WaitForSeconds(1f);
         s_state = StageState.Run;
+        GameManager.gm.UpdateStage();
     }
 
     void RunStage()
@@ -109,6 +110,7 @@ public class EnemyManager : MonoBehaviour
         GameObject enemy = Instantiate(stageList.stages[stageNum].Container[enemyCount]);
         enemy.transform.position = wayPoints[0].position;
         enemyCount++;
+        GameManager.gm.UpdateWave(enemyCount);
         currentTime = 0f;
     }
 

@@ -25,7 +25,7 @@ public class EnemyObject : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        wayPoint = EnemyManager.Instance.wayPoints[1];
+        wayPoint = StageManager.sm.wayPoints[1];
 
         agent = GetComponent<NavMeshAgent>();
         UpdateHP();
@@ -72,6 +72,7 @@ public class EnemyObject : MonoBehaviour
     private void Die()
     {
         // 적이 죽었을 때의 처리 (예: 적을 제거하고 보상 지급)
+        GameManager.gm.UpdateEData(data.eDataDrop);
         Destroy(gameObject);
     }
 }
