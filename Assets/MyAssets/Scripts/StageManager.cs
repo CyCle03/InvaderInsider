@@ -13,6 +13,7 @@ public class StageManager : MonoBehaviour
 
     float currentTime = 0f;
     int enemyCount = 0;
+    Coroutine co = null;
 
     public static StageManager sm = null;
 
@@ -68,7 +69,10 @@ public class StageManager : MonoBehaviour
     {
         if (stageNum < stageList.stages.Length)
         {
-            StartCoroutine(StartStatge());
+            if (co == null)
+            {
+                co = StartCoroutine(StartStatge());
+            }
         }
         else
         {
@@ -81,6 +85,8 @@ public class StageManager : MonoBehaviour
         yield return new WaitForSeconds(1f);
         s_state = StageState.Run;
         GameManager.gm.UpdateStage();
+
+        co = null;
     }
 
     void RunStage()
@@ -116,12 +122,17 @@ public class StageManager : MonoBehaviour
 
     void EndStage()
     {
-        StartCoroutine(WaitStage());
+        if(co == null)
+        {
+            co = StartCoroutine(WaitStage());
+        }
     }
 
     IEnumerator WaitStage()
     {
         yield return new WaitForSeconds(3f);
         s_state = StageState.Ready;
+
+        co = null;
     }
 }
