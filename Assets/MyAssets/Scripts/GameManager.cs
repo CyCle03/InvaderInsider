@@ -35,14 +35,14 @@ public class GameManager : MonoBehaviour
 
     public void UpdateStage()
     {
-        int stn = StageManager.sm.stageNum;
-        stageText.text = "Stage " + (stn+1) + " / " + StageManager.sm.stageList.stages.Length;
+        int stn = StageManager.sgm.stageNum;
+        stageText.text = "Stage " + (stn+1) + " / " + StageManager.sgm.stageList.stages.Length;
     }
 
     public void UpdateWave(int eCnt)
     {
-        int stn = StageManager.sm.stageNum;
-        waveText.text = "Wave " + eCnt + " / " + StageManager.sm.stageList.stages[stn].Container.Length;
+        int stn = StageManager.sgm.stageNum;
+        waveText.text = "Wave " + eCnt + " / " + StageManager.sgm.stageList.stages[stn].Container.Length;
     }
 
     public void UpdateEData(float _eData)

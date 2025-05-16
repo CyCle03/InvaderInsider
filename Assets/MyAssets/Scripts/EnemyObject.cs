@@ -25,7 +25,7 @@ public class EnemyObject : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        wayPoint = StageManager.sm.wayPoints[1];
+        wayPoint = StageManager.sgm.wayPoints[1];
 
         agent = GetComponent<NavMeshAgent>();
         UpdateHP();

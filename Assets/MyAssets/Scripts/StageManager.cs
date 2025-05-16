@@ -15,13 +15,13 @@ public class StageManager : MonoBehaviour
     int enemyCount = 0;
     Coroutine co = null;
 
-    public static StageManager sm = null;
+    public static StageManager sgm = null;
 
     private void Awake()
     {
-        if (sm == null)
+        if (sgm == null)
         {
-            sm = this;
+            sgm = this;
         }
     }
 
@@ -106,7 +106,16 @@ public class StageManager : MonoBehaviour
             stageNum++;
             currentTime = 0f;
             enemyCount = 0;
-            stageWave = stageList.stages[stageNum].Container.Length;
+
+            if (stageNum < stageList.stages.Length)
+            {
+                stageWave = stageList.stages[stageNum].Container.Length;
+            }
+            else
+            {
+                stageWave = 0;
+            }
+            
         }
         
     }
