@@ -3,23 +3,34 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UIElements;
+using System;
+using InvaderInsider;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager gm = null;
+    public static GameManager gm;
+
+    [Header("Game Resources")]
+    public int enemyData = 0;
+
+    public event Action<int> OnEnemyDataChanged;
+
+    public TextMeshProUGUI stageText;
+    public TextMeshProUGUI waveText;
+    public TextMeshProUGUI eDataText;
 
     private void Awake()
     {
         if (gm == null)
         {
             gm = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
         }
     }
-    public TextMeshProUGUI stageText;
-    public TextMeshProUGUI waveText;
-    public TextMeshProUGUI eDataText;
-
-    public float eData = 0f;
 
     // Start is called before the first frame update
     void Start()
@@ -35,19 +46,38 @@ public class GameManager : MonoBehaviour
 
     public void UpdateStage()
     {
-        int stn = StageManager.sgm.stageNum;
-        stageText.text = "Stage " + (stn+1) + " / " + StageManager.sgm.stageList.stages.Length;
+        var stageManager = StageManager.Instance;
+        stageText.text = $"Stage {stageManager.stageNum + 1} / {stageManager.GetStageCount()}";
     }
 
     public void UpdateWave(int eCnt)
     {
-        int stn = StageManager.sgm.stageNum;
-        waveText.text = "Wave " + eCnt + " / " + StageManager.sgm.stageList.stages[stn].Container.Length;
+        var stageManager = StageManager.Instance;
+        waveText.text = $"Wave {eCnt} / {stageManager.GetStageWaveCount(stageManager.stageNum)}";
     }
 
-    public void UpdateEData(float _eData)
+    public void UpdateEData(int amount)
     {
-        eData += _eData;
-        eDataText.text = "eData " + eData;
+        enemyData += amount;
+        OnEnemyDataChanged?.Invoke(enemyData);
+        if (eDataText != null)
+        {
+            eDataText.text = $"eData: {enemyData}";
+        }
+    }
+
+    public bool TrySpendEData(int amount)
+    {
+        if (enemyData >= amount)
+        {
+            enemyData -= amount;
+            OnEnemyDataChanged?.Invoke(enemyData);
+            if (eDataText != null)
+            {
+                eDataText.text = $"eData: {enemyData}";
+            }
+            return true;
+        }
+        return false;
     }
 }

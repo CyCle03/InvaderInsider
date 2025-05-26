@@ -1,108 +1,221 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Threading;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
 
-public class EnemyObject : MonoBehaviour
+namespace InvaderInsider.Core
 {
-
-    Transform wayPoint;
-    NavMeshAgent agent;
-
-    public Slider hpSlider;
-    public Enemy data = new Enemy();
-
-    public Enemy CreateEnemy()
+    public enum EnemyType
     {
-        Enemy newEnemy = new Enemy(this);
-        return newEnemy;
+        Normal,
+        Fast,
+        Tank,
+        Boss
     }
 
-    // Start is called before the first frame update
-    void Start()
+    [System.Serializable]
+    public class EnemyData
     {
-        wayPoint = StageManager.sgm.wayPoints[1];
+        [Header("Basic Info")]
+        public string enemyName = "";
+        public int enemyId = -1;
+        public EnemyType enemyType = EnemyType.Normal;
 
-        agent = GetComponent<NavMeshAgent>();
-        UpdateHP();
+        [Header("Base Stats")]
+        public float baseHealth = 3f;
+        public float baseDamage = 1f;
+        public float moveSpeed = 3f;
+
+        [Header("Rewards")]
+        public int eDataAmount = 1;  // Í∏∞Î≥∏ eData Î≥¥ÏÉÅÎüâ
     }
 
-    // Update is called once per frame
-    void Update()
+    public class EnemyObject : BaseCharacter
     {
-        if (Vector3.Distance(transform.position, wayPoint.position) > 0.2f)
+        [Header("Enemy Data")]
+        [SerializeField] private EnemyData enemyData = new EnemyData();
+        
+        [Header("Navigation")]
+        [SerializeField] private float pathUpdateRate = 0.2f;
+        private Transform currentWaypoint;
+        private NavMeshAgent agent;
+        private Queue<Transform> waypoints = new Queue<Transform>();
+        
+        [Header("UI")]
+        [SerializeField] private Slider healthSlider;
+        [SerializeField] private GameObject healthBarObject;
+
+        [Header("Effects")]
+        [SerializeField] private ParticleSystem hitEffect;
+        [SerializeField] private ParticleSystem deathEffect;
+
+        // Events
+        public event Action<EnemyObject> OnWaypointReached;
+        
+        protected override void Start()
         {
-            agent.isStopped = true;
-            agent.ResetPath();
-
-            agent.stoppingDistance = 0.2f;
-            agent.destination = wayPoint.position;
+            InitializeBaseStats();
+            base.Start();
+            
+            agent = GetComponent<NavMeshAgent>();
+            InitializeEnemy();
+            
+            if (StageManager.Instance != null)
+            {
+                InitializeWaypoints();
+            }
+            
+            StartCoroutine(UpdatePathRoutine());
         }
-        else
+
+        private void InitializeBaseStats()
         {
-            agent.isStopped = true;
-            agent.ResetPath();
+            // Í∏∞Î≥∏ Ïä§ÌÉØ ÏÑ§Ï†ï
+            base.maxHealth = enemyData.baseHealth;
+            base.attackDamage = enemyData.baseDamage;
 
-            transform.position = wayPoint.position;
-            transform.rotation = Quaternion.identity;
-
-            Destroy(gameObject);
+            // ÌÉÄÏûÖÏóê Îî∞Î•∏ Ïä§ÌÉØ ÏàòÏ†ï
+            switch (enemyData.enemyType)
+            {
+                case EnemyType.Fast:
+                    enemyData.moveSpeed *= 1.5f;
+                    base.maxHealth *= 0.5f;
+                    enemyData.eDataAmount *= 2;  // Fast ÌÉÄÏûÖÏùÄ 2Î∞∞Ïùò eData
+                    break;
+                case EnemyType.Tank:
+                    enemyData.moveSpeed *= 0.7f;
+                    base.maxHealth *= 1.5f;
+                    base.attackDamage *= 0.8f;
+                    enemyData.eDataAmount *= 3;  // Tank ÌÉÄÏûÖÏùÄ 3Î∞∞Ïùò eData
+                    break;
+                case EnemyType.Boss:
+                    enemyData.moveSpeed *= 0.5f;
+                    base.maxHealth *= 3f;
+                    base.attackDamage *= 2f;
+                    enemyData.eDataAmount *= 5;  // Î≥¥Ïä§Îäî 5Î∞∞Ïùò eData
+                    break;
+            }
         }
-    }
 
-    public void TakeDamage(float damage)
-    {
-        data.curruntHP -= damage;
-        UpdateHP();
-        if (data.curruntHP <= 0)
+        private void InitializeEnemy()
         {
+            if (agent != null)
+            {
+                agent.speed = enemyData.moveSpeed;
+                agent.stoppingDistance = 0.2f;
+            }
+
+            UpdateHealthUI();
+        }
+
+        private System.Collections.IEnumerator UpdatePathRoutine()
+        {
+            while (enabled)
+            {
+                UpdatePath();
+                yield return new WaitForSeconds(pathUpdateRate);
+            }
+        }
+
+        private void UpdatePath()
+        {
+            if (currentWaypoint == null || agent == null) return;
+
+            if (Vector3.Distance(transform.position, currentWaypoint.position) <= agent.stoppingDistance)
+            {
+                OnWaypointReached?.Invoke(this);
+                MoveToNextWaypoint();
+            }
+            else if (agent.isActiveAndEnabled)
+            {
+                agent.SetDestination(currentWaypoint.position);
+            }
+        }
+
+        private void InitializeWaypoints()
+        {
+            waypoints.Clear();
+            foreach (Transform waypoint in StageManager.Instance.wayPoints)
+            {
+                waypoints.Enqueue(waypoint);
+            }
+            MoveToNextWaypoint();
+        }
+
+        private void MoveToNextWaypoint()
+        {
+            if (waypoints.Count > 0)
+            {
+                currentWaypoint = waypoints.Dequeue();
+                if (agent != null && agent.isActiveAndEnabled)
+                {
+                    agent.SetDestination(currentWaypoint.position);
+                }
+            }
+            else
+            {
+                ReachFinalDestination();
+            }
+        }
+
+        private void ReachFinalDestination()
+        {
+            var destination = currentWaypoint.GetComponent<CharacterObject>();
+            if (destination != null && destination.IsDestinationPoint)
+            {
+                Attack(destination);
+            }
             Die();
         }
+
+        public override void Attack(IDamageable target)
+        {
+            target.TakeDamage(base.attackDamage);
+        }
+
+        public override void TakeDamage(float damage)
+        {
+            base.TakeDamage(damage);
+            
+            if (hitEffect != null)
+            {
+                hitEffect.Play();
+            }
+            
+            UpdateHealthUI();
+        }
+
+        private void UpdateHealthUI()
+        {
+            if (healthSlider != null)
+            {
+                healthSlider.value = base.currentHealth / base.maxHealth;
+                healthBarObject.SetActive(base.currentHealth < base.maxHealth);
+            }
+        }
+
+        protected override void Die()
+        {
+            if (deathEffect != null)
+            {
+                var effect = Instantiate(deathEffect, transform.position, Quaternion.identity);
+                effect.Play();
+                Destroy(effect.gameObject, effect.main.duration);
+            }
+
+            // eData Î≥¥ÏÉÅ ÏßÄÍ∏â
+            GameManager.gm.UpdateEData(enemyData.eDataAmount);
+            
+            base.Die();
+        }
+
+        // Properties
+        public float CurrentHealth => base.currentHealth;
+        public float MaxHealth => base.maxHealth;
+        public float AttackDamage => base.attackDamage;
+        public float AttackRange => agent.stoppingDistance;
+        public EnemyType Type => enemyData.enemyType;
     }
-
-    public void UpdateHP()
-    {
-        hpSlider.value = data.curruntHP / data.maxHP;
-    }
-
-    private void Die()
-    {
-        // ¿˚¿Ã ¡◊æ˙¿ª ∂ß¿« √≥∏Æ (øπ: ¿˚¿ª ¡¶∞≈«œ∞Ì ∫∏ªÛ ¡ˆ±ﬁ)
-        GameManager.gm.UpdateEData(data.eDataDrop);
-        Destroy(gameObject);
-    }
-}
-
-[System.Serializable]
-public class Enemy
-{
-    public string eName;
-    public int eID = -1;
-    public float maxHP;
-    public float curruntHP;
-    public float moveSpeed;
-    public float damage;
-    public int eDataDrop;
-
-    public Enemy()
-    {
-        eName = "";
-        eID = -1;
-    }
-
-    public Enemy(EnemyObject enemy)
-    {
-        eName = enemy.name;
-        eID = enemy.data.eID;
-        maxHP = enemy.data.maxHP;
-        curruntHP = maxHP;
-        moveSpeed = enemy.data.moveSpeed;
-        damage = enemy.data.damage;
-        eDataDrop = enemy.data.eDataDrop;
-    }
-
 }

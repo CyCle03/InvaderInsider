@@ -7,7 +7,6 @@ public class SummonManager : MonoBehaviour
 
     public static SummonManager smm = null;
 
-    public CardDBObject[] cardDB;
 
     private void Awake()
     {

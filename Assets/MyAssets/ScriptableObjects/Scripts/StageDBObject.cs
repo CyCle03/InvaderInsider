@@ -2,66 +2,88 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "New Stage Database", menuName = "Stage System/StageDatabase")]
-public class StageDBObject : ScriptableObject
+namespace InvaderInsider
 {
-    public int StageID = -1;
-    public GameObject[] Container;
-}
-
-[System.Serializable]
-public class WaveList
-{
-    public WaveObject[] ListSlots = new WaveObject[20];
-    public void Clear()
+    [CreateAssetMenu(fileName = "New Stage Database", menuName = "Stage System/StageDatabase")]
+    public class StageDBObject : ScriptableObject, IStageContainer
     {
-        for (int i = 0; i < ListSlots.Length; i++)
+        [SerializeField] private int stageID = -1;
+        [SerializeField] private GameObject[] container;
+
+        public int StageID => stageID;
+        public int ObjectCount => container != null ? container.Length : 0;
+
+        public GameObject GetObject(int index)
         {
-            ListSlots[i].RemoveEnemy();
+            if (container == null || index < 0 || index >= container.Length)
+                return null;
+            
+            return container[index];
         }
     }
-}
 
-[System.Serializable]
-public class WaveObject
-{
-    [System.NonSerialized]
-    public StageDBObject parant;
-    [System.NonSerialized]
-    public int indexNum;
-
-    public Enemy enemy;
-
-    public EnemyObject EnemyObj
+    [System.Serializable]
+    public class WaveList
     {
-        get
+        public WaveObject[] ListSlots = new WaveObject[20];
+        
+        public void Clear()
         {
-            if (enemy.eID >= 0)
+            for (int i = 0; i < ListSlots.Length; i++)
             {
-                return parant.Container[enemy.eID].GetComponent<EnemyObject>();
+                ListSlots[i].RemoveEnemy();
             }
-            return null;
         }
     }
 
-    public WaveObject()
+    [System.Serializable]
+    public class WaveObject
     {
-        UpdateListSlot(new Enemy());
-    }
+        [System.NonSerialized]
+        private IStageContainer parent;
+        public int indexNum;
 
-    public WaveObject(Enemy _enemy)
-    {
-        UpdateListSlot(_enemy);
-    }
+        [SerializeField]
+        private Enemy enemyData;
 
-    public void UpdateListSlot(Enemy _enemy)
-    {
-        enemy = _enemy;
-    }
+        public IEnemy Enemy => enemyData;
 
-    public void RemoveEnemy()
-    {
-        UpdateListSlot(new Enemy());
+        public GameObject EnemyPrefab
+        {
+            get
+            {
+                if (parent != null && enemyData != null && enemyData.ID >= 0)
+                {
+                    return parent.GetObject(enemyData.ID);
+                }
+                return null;
+            }
+        }
+
+        public WaveObject()
+        {
+            enemyData = new Enemy();
+        }
+
+        public WaveObject(Enemy enemy)
+        {
+            UpdateListSlot(enemy);
+        }
+
+        public void SetParent(IStageContainer stageContainer)
+        {
+            parent = stageContainer;
+        }
+
+        public void UpdateListSlot(Enemy enemy)
+        {
+            enemyData = enemy;
+        }
+
+        public void RemoveEnemy()
+        {
+            enemyData = new Enemy();
+        }
     }
 }
 

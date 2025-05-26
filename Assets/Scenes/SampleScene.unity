@@ -2914,11 +2914,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 395d618943f497548a3f338d2fccebb5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  stageDataObject: {fileID: 11400000, guid: 2ec8899b9bb42ed42855439890ba7c63, type: 2}
   wayPoints:
   - {fileID: 1408072179}
   - {fileID: 1703004656}
   enemyPrefab: {fileID: 5669925833025989882, guid: 47b8d595ab76aaf4d949ff7b875b91d0, type: 3}
-  stageList: {fileID: 11400000, guid: 4ad37b4786d4d83448448e7cd1ef7e38, type: 2}
   stageNum: 0
   stageWave: 20
   createTime: 1.5
@@ -2935,10 +2935,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2abb48e491a0d6445809e6da23c4c837, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  currentLevel: 1
+  currentExperience: 0
+  gold: 0
+  enemyData: 0
+  baseExperienceRequired: 100
+  experienceMultiplier: 1.5
   stageText: {fileID: 1185540752}
   waveText: {fileID: 101416148}
   eDataText: {fileID: 1685603336}
-  eData: 0
 --- !u!114 &1294070011
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2951,8 +2956,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45a31f62081ac4b4bb78184ac086a57b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cardDB:
-  - {fileID: 11400000, guid: decec0ff6fc1b2843ac2acecd868a91d, type: 2}
 --- !u!1 &1377091580
 GameObject:
   m_ObjectHideFlags: 0
@@ -4635,6 +4638,14 @@ PrefabInstance:
     - target: {fileID: 1153782137935833772, guid: 9d785b35cbdbe7244a8a268328ad5b32, type: 3}
       propertyPath: m_Name
       value: Ballista
+      objectReference: {fileID: 0}
+    - target: {fileID: 1904411502266949864, guid: 9d785b35cbdbe7244a8a268328ad5b32, type: 3}
+      propertyPath: dmg
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1904411502266949864, guid: 9d785b35cbdbe7244a8a268328ad5b32, type: 3}
+      propertyPath: range
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 1966065403376136214, guid: 9d785b35cbdbe7244a8a268328ad5b32, type: 3}
       propertyPath: m_LocalPosition.x

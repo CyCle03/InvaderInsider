@@ -12,8 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4bb903cf8b11b8e4080fe24481e99cec, type: 3}
   m_Name: Stage1 Database
   m_EditorClassIdentifier: 
-  StageID: 1
-  Container:
+  stageID: -1
+  container:
+  - {fileID: 5669925833025989882, guid: 1766756ff54ff2a4d92d42a00ee7907e, type: 3}
+  - {fileID: 5669925833025989882, guid: 1766756ff54ff2a4d92d42a00ee7907e, type: 3}
+  - {fileID: 5669925833025989882, guid: 1766756ff54ff2a4d92d42a00ee7907e, type: 3}
+  - {fileID: 5669925833025989882, guid: 1766756ff54ff2a4d92d42a00ee7907e, type: 3}
+  - {fileID: 5669925833025989882, guid: 1d1f72ee0dd912d4ebb8a75cc6411d5f, type: 3}
+  - {fileID: 5669925833025989882, guid: 1766756ff54ff2a4d92d42a00ee7907e, type: 3}
+  - {fileID: 5669925833025989882, guid: 1766756ff54ff2a4d92d42a00ee7907e, type: 3}
+  - {fileID: 5669925833025989882, guid: 1766756ff54ff2a4d92d42a00ee7907e, type: 3}
+  - {fileID: 5669925833025989882, guid: 1766756ff54ff2a4d92d42a00ee7907e, type: 3}
+  - {fileID: 5669925833025989882, guid: 1d1f72ee0dd912d4ebb8a75cc6411d5f, type: 3}
   - {fileID: 5669925833025989882, guid: 1766756ff54ff2a4d92d42a00ee7907e, type: 3}
   - {fileID: 5669925833025989882, guid: 1766756ff54ff2a4d92d42a00ee7907e, type: 3}
   - {fileID: 5669925833025989882, guid: 1766756ff54ff2a4d92d42a00ee7907e, type: 3}

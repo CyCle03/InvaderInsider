@@ -5,5 +5,5 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Stage List", menuName = "Stage System/StageList")]
 public class StageList : ScriptableObject
 {
-    public StageDBObject[] stages;
+    public ScriptableObject[] stages;
 }

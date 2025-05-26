@@ -368,15 +368,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3cdc0b2df8714cd46adf02aa5815adcf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hpSlider: {fileID: 8709902853022629263}
-  data:
-    eName: Enemy2
-    eID: 2
-    maxHP: 1
-    curruntHP: 1
-    moveSpeed: 2
-    damage: 1
-    eDataDrop: 2
+  maxHealth: 1
+  currentHealth: 1
+  attackDamage: 2
+  attackRange: 5
+  attackRate: 1
+  enemyData:
+    enemyName: 
+    enemyId: -1
+    enemyType: 1
+    baseHealth: 2
+    baseDamage: 1
+    moveSpeed: 3
+    eDataAmount: 1
+  pathUpdateRate: 0.2
+  healthSlider: {fileID: 8709902853022629263}
+  healthBarObject: {fileID: 3817292159802329495}
+  hitEffect: {fileID: 0}
+  deathEffect: {fileID: 0}
 --- !u!1 &6121639613020301897
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,5 +1,24 @@
 {
   "dependencies": {
+    "com.boxqkrtm.ide.cursor": {
+      "version": "https://github.com/boxqkrtm/com.unity.ide.cursor.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.test-framework": "1.1.9"
+      },
+      "hash": "38fecf55e4fd94ccfe58a92ed8ad1a529ba1694e"
+    },
+    "com.gamelovers.mcp-unity": {
+      "version": "https://github.com/CoderGamester/mcp-unity.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1",
+        "com.unity.editorcoroutines": "1.0.0"
+      },
+      "hash": "1aaca031af45f1ad9b00e68f52b5215248cacffa"
+    },
     "com.unity.ai.navigation": {
       "version": "1.1.6",
       "depth": 0,
@@ -7,6 +26,13 @@
       "dependencies": {
         "com.unity.modules.ai": "1.0.0"
       },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.editorcoroutines": {
+      "version": "1.0.0",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.ext.nunit": {
@@ -23,6 +49,13 @@
       "dependencies": {
         "com.unity.test-framework": "1.1.9"
       },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.nuget.newtonsoft-json": {
+      "version": "3.2.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {

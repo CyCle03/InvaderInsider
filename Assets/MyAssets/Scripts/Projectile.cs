@@ -1,15 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using InvaderInsider;
 
 public class Projectile : MonoBehaviour
 {
-    public float speed = 10f;        // ¹ß»çÃ¼ ¼Óµµ
-    public float damage = 1;          // ¹ß»çÃ¼ ÇÇÇØ·®
-    private Transform target;        // ¸ñÇ¥ (Àû)
-    private bool hasHit = false;     // ÀÌ¹Ì Ãæµ¹Çß´ÂÁö ¿©ºÎ
+    public float speed = 10f;        // ë°œì‚¬ì²´ ì†ë„
+    public float damage = 1;          // ë°œì‚¬ì²´ ë°ë¯¸ì§€
+    private Transform target;        // ëª©í‘œ (ì )
+    private bool hasHit = false;     // ì´ë¯¸ ì¶©ëŒí–ˆëŠ”ì§€ ì—¬ë¶€
 
-    // ¸ñÇ¥ ¼³Á¤ (Å¸¿ö¿¡¼­ È£Ãâ)
+    // ëª©í‘œ ì„¤ì • (íƒ€ì›Œì—ì„œ í˜¸ì¶œ)
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
@@ -24,39 +25,39 @@ public class Projectile : MonoBehaviour
     {
         if (target != null)
         {
-            // ¸ñÇ¥°¡ Á¸ÀçÇÏ¸é ¸ñÇ¥¸¦ ÃßÀû
-            Vector3 direction = target.position - transform.position;  // ¸ñÇ¥ ¹æÇâ
-            float step = speed * Time.deltaTime;                         // ÀÌµ¿ °Å¸®
+            // ëª©í‘œê°€ ì¡´ì¬í•˜ë©´ ëª©í‘œë¡œ ì´ë™
+            Vector3 direction = target.position - transform.position;  // ë°©í–¥ ë²¡í„°
+            float step = speed * Time.deltaTime;                         // ì´ë™ ê±°ë¦¬
 
-            // ¸ñÇ¥°¡ À§Ä¡ÇÑ ¹æÇâÀ¸·Î ¹ß»çÃ¼ ÀÌµ¿
+            // ëª©í‘œì˜ ìœ„ì¹˜ë¡œ ë°œì‚¬ì²´ ì´ë™
             transform.position = Vector3.MoveTowards(transform.position, target.position, step);
 
-            // ¸ñÇ¥¿Í Ãæµ¹Çß´ÂÁö È®ÀÎ
+            // ëª©í‘œì™€ ì¶©ëŒí–ˆëŠ”ì§€ í™•ì¸
             if (Vector3.Distance(transform.position, target.position) < 0.1f && !hasHit)
             {
-                // Àû¿¡°Ô ÇÇÇØ¸¦ ÁÖ°í ¹ß»çÃ¼¸¦ ÆÄ±«
+                // ì ì—ê²Œ ë°ë¯¸ì§€ë¥¼ ì£¼ê³  ë°œì‚¬ì²´ë¥¼ íŒŒê´´
                 HitTarget();
             }
         }
         else
         {
-            // ¸ñÇ¥°¡ ¾øÀ¸¸é ¹ß»çÃ¼ »èÁ¦
+            // ëª©í‘œê°€ ì—†ìœ¼ë©´ ë°œì‚¬ì²´ ì œê±°
             Destroy(gameObject);
         }
     }
 
-    // Àû¿¡°Ô ÇÇÇØ¸¦ ÁÖ´Â ÇÔ¼ö
+    // ì ì—ê²Œ ë°ë¯¸ì§€ë¥¼ ì£¼ëŠ” í•¨ìˆ˜
     private void HitTarget()
     {
         if (target != null)
         {
-            EnemyObject enemy = target.GetComponent<EnemyObject>();  // ÀûÀÇ ½ºÅ©¸³Æ® °¡Á®¿À±â
-            if (enemy != null)
+            IDamageable damageable = target.GetComponent<IDamageable>();  // IDamageable ì¸í„°í˜ì´ìŠ¤ ê°€ì ¸ì˜¤ê¸°
+            if (damageable != null)
             {
-                enemy.TakeDamage(damage);  // Àû¿¡°Ô ÇÇÇØ¸¦ ÁÖ´Â ÇÔ¼ö È£Ãâ
+                damageable.TakeDamage(damage);  // ë°ë¯¸ì§€ë¥¼ ì£¼ëŠ” í•¨ìˆ˜ í˜¸ì¶œ
             }
         }
-        Destroy(gameObject);  // ¹ß»çÃ¼ »èÁ¦
+        Destroy(gameObject);  // ë°œì‚¬ì²´ ì œê±°
     }
 }
 
