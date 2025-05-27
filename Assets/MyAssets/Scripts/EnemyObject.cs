@@ -206,16 +206,16 @@ namespace InvaderInsider.Core
             }
 
             // eData 보상 지급
-            GameManager.gm.UpdateEData(enemyData.eDataAmount);
+            GameManager.Instance.UpdateEData(enemyData.eDataAmount);
             
             base.Die();
         }
 
         // Properties
-        public float CurrentHealth => base.currentHealth;
-        public float MaxHealth => base.maxHealth;
-        public float AttackDamage => base.attackDamage;
-        public float AttackRange => agent.stoppingDistance;
+        public new float CurrentHealth => base.currentHealth;
+        public new float MaxHealth => base.maxHealth;
+        public new float AttackDamage => base.attackDamage;
+        public new float AttackRange => agent.stoppingDistance;
         public EnemyType Type => enemyData.enemyType;
     }
 }

@@ -669,6 +669,7 @@ RectTransform:
   - {fileID: 101416147}
   - {fileID: 1685603335}
   - {fileID: 1377091581}
+  - {fileID: 630955383}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1439,6 +1440,41 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &630955382
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 630955383}
+  m_Layer: 5
+  m_Name: MainMenuPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &630955383
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 630955382}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 363810777}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -2922,7 +2958,7 @@ MonoBehaviour:
   stageNum: 0
   stageWave: 20
   createTime: 1.5
-  s_state: 0
+  currentState: 0
 --- !u!114 &1294070010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2935,15 +2971,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2abb48e491a0d6445809e6da23c4c837, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentLevel: 1
-  currentExperience: 0
-  gold: 0
-  enemyData: 0
-  baseExperienceRequired: 100
-  experienceMultiplier: 1.5
+  resourcePoints: 0
   stageText: {fileID: 1185540752}
   waveText: {fileID: 101416148}
-  eDataText: {fileID: 1685603336}
+  resourceText: {fileID: 0}
 --- !u!114 &1294070011
 MonoBehaviour:
   m_ObjectHideFlags: 0

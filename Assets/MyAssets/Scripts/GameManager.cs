@@ -5,26 +5,45 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System;
 using InvaderInsider;
+using InvaderInsider.UI;
+using InvaderInsider.Data;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager gm;
+    public static GameManager Instance { get; private set; }
+
+    [Header("Game State")]
+    private GameState currentGameState = GameState.MainMenu;
+    public GameState CurrentGameState
+    {
+        get => currentGameState;
+        set
+        {
+            currentGameState = value;
+            OnGameStateChanged?.Invoke(value);
+        }
+    }
+
+    public event Action<GameState> OnGameStateChanged;
 
     [Header("Game Resources")]
-    public int enemyData = 0;
+    [Tooltip("Points earned from defeating enemies")]
+    public int resourcePoints = 0;
 
-    public event Action<int> OnEnemyDataChanged;
+    private event Action<int> OnResourcePointsChanged;
 
+    [Header("UI Elements")]
     public TextMeshProUGUI stageText;
     public TextMeshProUGUI waveText;
-    public TextMeshProUGUI eDataText;
+    public TextMeshProUGUI resourceText;
 
     private void Awake()
     {
-        if (gm == null)
+        if (Instance == null)
         {
-            gm = this;
+            Instance = this;
             DontDestroyOnLoad(gameObject);
+            LoadGameData();
         }
         else
         {
@@ -32,52 +51,74 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Start is called before the first frame update
     void Start()
     {
         UpdateStage();
+        resourcePoints = SaveDataManager.Instance.CurrentSaveData.progressData.currentEData;
+        UpdateResourceDisplay();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void LoadGameData()
     {
-        
+        SaveDataManager.Instance.LoadGameData();
     }
 
     public void UpdateStage()
     {
         var stageManager = StageManager.Instance;
-        stageText.text = $"Stage {stageManager.stageNum + 1} / {stageManager.GetStageCount()}";
+        if (stageText != null)
+            stageText.text = $"Stage {stageManager.stageNum + 1} / {stageManager.GetStageCount()}";
     }
 
     public void UpdateWave(int eCnt)
     {
         var stageManager = StageManager.Instance;
-        waveText.text = $"Wave {eCnt} / {stageManager.GetStageWaveCount(stageManager.stageNum)}";
+        if (waveText != null)
+            waveText.text = $"Wave {eCnt} / {stageManager.GetStageWaveCount(stageManager.stageNum)}";
+    }
+
+    private void UpdateResourceDisplay()
+    {
+        if (resourceText != null)
+        {
+            resourceText.text = $"eData: {resourcePoints}";
+        }
     }
 
     public void UpdateEData(int amount)
     {
-        enemyData += amount;
-        OnEnemyDataChanged?.Invoke(enemyData);
-        if (eDataText != null)
-        {
-            eDataText.text = $"eData: {enemyData}";
-        }
+        resourcePoints += amount;
+        SaveDataManager.Instance.UpdateEData(amount);
+        OnResourcePointsChanged?.Invoke(resourcePoints);
+        UpdateResourceDisplay();
     }
 
     public bool TrySpendEData(int amount)
     {
-        if (enemyData >= amount)
+        if (SaveDataManager.Instance.TrySpendEData(amount))
         {
-            enemyData -= amount;
-            OnEnemyDataChanged?.Invoke(enemyData);
-            if (eDataText != null)
-            {
-                eDataText.text = $"eData: {enemyData}";
-            }
+            resourcePoints -= amount;
+            OnResourcePointsChanged?.Invoke(resourcePoints);
+            UpdateResourceDisplay();
             return true;
         }
         return false;
+    }
+
+    public void StageCleared(int stageNum, int stars)
+    {
+        SaveDataManager.Instance.UpdateStageProgress(stageNum, stars);
+    }
+
+    // 이벤트 구독 메서드
+    public void AddResourcePointsListener(Action<int> listener)
+    {
+        OnResourcePointsChanged += listener;
+    }
+
+    // 이벤트 구독 해제 메서드
+    public void RemoveResourcePointsListener(Action<int> listener)
+    {
+        OnResourcePointsChanged -= listener;
     }
 }

@@ -14,9 +14,8 @@ namespace InvaderInsider
         [SerializeField] private int level = 1;
 
         public event Action<int> OnLevelUp;
-        public event System.Action<float> OnHealthChanged;
-        public event System.Action OnDestroyed;
-
+        public new event Action<float> OnHealthChanged;
+        
         // Start is called before the first frame update
         protected override void Start()
         {
@@ -78,6 +77,7 @@ namespace InvaderInsider
             {
                 damageEffect.Play();
             }
+            OnHealthChanged?.Invoke(base.currentHealth);
         }
 
         public void LevelUp()
@@ -96,6 +96,7 @@ namespace InvaderInsider
         protected override void Die()
         {
             OnLevelUp = null;
+            OnHealthChanged = null;
             base.Die();
         }
 
@@ -107,8 +108,8 @@ namespace InvaderInsider
         }
 
         // Properties
-        public float CurrentHealth => base.currentHealth;
-        public float MaxHealth => base.maxHealth;
+        public new float CurrentHealth => base.currentHealth;
+        public new float MaxHealth => base.maxHealth;
         public bool IsDestinationPoint => isDestinationPoint;
         public int Level => level;
     }

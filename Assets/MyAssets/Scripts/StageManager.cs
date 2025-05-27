@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace InvaderInsider
@@ -26,7 +27,31 @@ namespace InvaderInsider
         [Header("Stage Data")]
         [SerializeField] private StageList stageDataObject;
         private IStageData stageData;
-        
+
+        [Header("Stage Settings")]
+        private const float STAGE_START_DELAY = 1f;
+        private const float STAGE_END_DELAY = 3f;
+        public List<Transform> wayPoints = new List<Transform>();
+        public GameObject enemyPrefab;
+        public int stageNum = 0;
+        public int stageWave = 20;
+        [Tooltip("Time between enemy spawns")]
+        public float createTime = 1f;
+
+        private float currentTime = 0f;
+        private int enemyCount = 0;
+        private Coroutine stageCoroutine = null;
+
+        public enum StageState
+        {
+            Ready,
+            Run,
+            End,
+            Over
+        }
+
+        public StageState currentState;
+
         private void Awake()
         {
             if (instance == null)
@@ -34,7 +59,6 @@ namespace InvaderInsider
                 instance = this;
                 DontDestroyOnLoad(gameObject);
                 
-                // StageList를 IStageData로 캐스팅
                 stageData = stageDataObject;
                 if (stageData == null)
                 {
@@ -47,26 +71,6 @@ namespace InvaderInsider
             }
         }
 
-        public Transform[] wayPoints = new Transform[2];
-        public GameObject enemyPrefab;
-        public int stageNum = 0;
-        public int stageWave = 20;
-        public float createTime = 1f;
-
-        float currentTime = 0f;
-        int enemyCount = 0;
-        Coroutine co = null;
-
-        public enum StageState
-        {
-            Ready,
-            Run,
-            End,
-            Over
-        }
-
-        public StageState s_state;
-
         void Start()
         {
             if (stageData == null)
@@ -75,19 +79,23 @@ namespace InvaderInsider
                 return;
             }
 
+            InitializeStage();
+        }
+
+        private void InitializeStage()
+        {
             currentTime = 0f;
             enemyCount = 0;
             stageNum = 0;
             stageWave = stageData.GetStageWaveCount(stageNum);
-
-            s_state = StageState.Ready;
+            currentState = StageState.Ready;
         }
 
         void Update()
         {
             if (stageData == null) return;
 
-            switch (s_state)
+            switch (currentState)
             {
                 case StageState.Ready:
                     ReadyStage();
@@ -107,23 +115,23 @@ namespace InvaderInsider
         {
             if (stageNum < stageData.StageCount)
             {
-                if (co == null)
+                if (stageCoroutine == null)
                 {
-                    co = StartCoroutine(StartStatge());
+                    stageCoroutine = StartCoroutine(StartStage());
                 }
             }
             else
             {
-                s_state = StageState.Over;
+                currentState = StageState.Over;
             }
         }
 
-        IEnumerator StartStatge()
+        IEnumerator StartStage()
         {
-            yield return new WaitForSeconds(1f);
-            s_state = StageState.Run;
-            GameManager.gm.UpdateStage();
-            co = null;
+            yield return new WaitForSeconds(STAGE_START_DELAY);
+            currentState = StageState.Run;
+            GameManager.Instance.UpdateStage();
+            stageCoroutine = null;
         }
 
         void RunStage()
@@ -139,7 +147,7 @@ namespace InvaderInsider
             }
             else
             {
-                s_state = StageState.End;
+                currentState = StageState.End;
                 stageNum++;
                 currentTime = 0f;
                 enemyCount = 0;
@@ -157,30 +165,36 @@ namespace InvaderInsider
 
         public void SpawnEnemy()
         {
+            if (wayPoints.Count == 0)
+            {
+                Debug.LogError("No waypoints set for enemy path!");
+                return;
+            }
+
             GameObject enemyPrefab = stageData.GetStageObject(stageNum, enemyCount);
             if (enemyPrefab != null)
             {
                 GameObject enemy = Instantiate(enemyPrefab);
                 enemy.transform.position = wayPoints[0].position;
                 enemyCount++;
-                GameManager.gm.UpdateWave(enemyCount);
+                GameManager.Instance.UpdateWave(enemyCount);
                 currentTime = 0f;
             }
         }
 
         void EndStage()
         {
-            if(co == null)
+            if(stageCoroutine == null)
             {
-                co = StartCoroutine(WaitStage());
+                stageCoroutine = StartCoroutine(WaitStage());
             }
         }
 
         IEnumerator WaitStage()
         {
-            yield return new WaitForSeconds(3f);
-            s_state = StageState.Ready;
-            co = null;
+            yield return new WaitForSeconds(STAGE_END_DELAY);
+            currentState = StageState.Ready;
+            stageCoroutine = null;
         }
 
         public int GetStageCount()
