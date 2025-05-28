@@ -116,7 +116,10 @@ namespace InvaderInsider.Cards
         // 카드 정보 조회
         public CardData GetCardById(int cardId)
         {
-            return allCards.Find(card => card.cardId == cardId);
+            // 현재는 cardId가 List의 인덱스라고 가정
+            if (cardId >= 0 && cardId < allCards.Count)
+                return allCards[cardId];
+            return null;
         }
 
         public List<CardData> GetAllCards()
@@ -124,9 +127,9 @@ namespace InvaderInsider.Cards
             return allCards;
         }
 
-        public List<CardData> GetCardsByType(CardType type)
+        public List<CardData> GetCardsByType(CardData.CardType type)
         {
-            return allCards.Where(card => card.cardType == type).ToList();
+            return allCards.Where(card => card.type == type).ToList();
         }
 
         public List<CardData> GetCardsByRarity(CardRarity rarity)

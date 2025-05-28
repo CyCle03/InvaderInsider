@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using InvaderInsider.Data;
 
-namespace InvaderInsider
+namespace InvaderInsider.Managers
 {
     public enum GameState
     {
@@ -104,4 +104,4 @@ namespace InvaderInsider
             SaveDataManager.Instance.OnEDataChanged -= listener;
         }
     }
-}
+} 

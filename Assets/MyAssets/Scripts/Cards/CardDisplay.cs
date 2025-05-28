@@ -6,67 +6,54 @@ namespace InvaderInsider.Cards
 {
     public class CardDisplay : MonoBehaviour
     {
-        [Header("Card UI Elements")]
-        [SerializeField] private Image cardImage;
+        [Header("Card Elements")]
+        [SerializeField] private Image artworkImage;
         [SerializeField] private TextMeshProUGUI nameText;
         [SerializeField] private TextMeshProUGUI descriptionText;
         [SerializeField] private TextMeshProUGUI costText;
-        [SerializeField] private Image rarityBorder;
+        [SerializeField] private TextMeshProUGUI powerText;
+        [SerializeField] private Image cardFrame;
         [SerializeField] private Image typeIcon;
+
+        [Header("Visual Settings")]
+        [SerializeField] private Color[] rarityColors;  // Common, Rare, Epic, Legendary
+        [SerializeField] private Sprite[] typeIcons;    // Unit, Spell, Trap
 
         private CardData cardData;
 
         public void SetupCard(CardData data)
         {
             cardData = data;
-            UpdateCardDisplay();
+            UpdateCardVisuals();
         }
 
-        private void UpdateCardDisplay()
+        private void UpdateCardVisuals()
         {
             if (cardData == null) return;
 
-            if (cardImage != null && cardData.cardImage != null)
-                cardImage.sprite = cardData.cardImage;
-
+            // 기본 정보 표시
+            if (artworkImage != null && cardData.artwork != null)
+                artworkImage.sprite = cardData.artwork;
+            
             if (nameText != null)
                 nameText.text = cardData.cardName;
-
+            
             if (descriptionText != null)
                 descriptionText.text = cardData.description;
-
+            
             if (costText != null)
-                costText.text = cardData.eDataCost.ToString();
+                costText.text = cardData.cost.ToString();
+            
+            if (powerText != null)
+                powerText.text = cardData.power.ToString();
 
-            // 레어도에 따른 테두리 색상 설정
-            if (rarityBorder != null)
-            {
-                Color rarityColor = GetRarityColor(cardData.rarity);
-                rarityBorder.color = rarityColor;
-            }
+            // 레어도에 따른 프레임 색상 변경
+            if (cardFrame != null && rarityColors.Length > (int)cardData.rarity)
+                cardFrame.color = rarityColors[(int)cardData.rarity];
 
-            // 카드 타입에 따른 아이콘 설정
-            if (typeIcon != null)
-            {
-                // TODO: 카드 타입별 아이콘 스프라이트 설정
-            }
-        }
-
-        private Color GetRarityColor(CardRarity rarity)
-        {
-            switch (rarity)
-            {
-                case CardRarity.Common:
-                    return Color.gray;
-                case CardRarity.Rare:
-                    return Color.blue;
-                case CardRarity.Epic:
-                    return new Color(0.5f, 0f, 0.5f); // Purple
-                case CardRarity.Legendary:
-                    return Color.yellow;
-                default:
-                    return Color.white;
-            }
+            // 카드 타입 아이콘 설정
+            if (typeIcon != null && typeIcons.Length > (int)cardData.type)
+                typeIcon.sprite = typeIcons[(int)cardData.type];
         }
 
         public CardData GetCardData()

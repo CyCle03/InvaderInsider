@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
+using InvaderInsider.Data;
 
 namespace InvaderInsider.Core
 {
@@ -206,7 +207,8 @@ namespace InvaderInsider.Core
             }
 
             // eData 보상 지급
-            GameManager.Instance.UpdateEData(enemyData.eDataAmount);
+            Debug.Log($"[EnemyObject] Enemy died: Type({enemyData.enemyType}), eData reward({enemyData.eDataAmount})");
+            SaveDataManager.Instance.UpdateEData(enemyData.eDataAmount);
             
             base.Die();
         }

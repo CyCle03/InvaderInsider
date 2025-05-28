@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace InvaderInsider.Cards
 {
-    public class CardUI : MonoBehaviour
+    public class CardDrawUI : MonoBehaviour
     {
         [Header("Draw Buttons")]
         [SerializeField] private Button singleDrawButton;

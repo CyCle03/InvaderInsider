@@ -2,13 +2,6 @@ using UnityEngine;
 
 namespace InvaderInsider.Cards
 {
-    public enum CardType
-    {
-        Unit,
-        Equipment,
-        Tower
-    }
-
     public enum CardRarity
     {
         Common = 0,
@@ -17,21 +10,29 @@ namespace InvaderInsider.Cards
         Legendary = 3
     }
 
-    [System.Serializable]
-    public class CardData
+    [CreateAssetMenu(fileName = "New Card", menuName = "InvaderInsider/Card")]
+    public class CardData : ScriptableObject
     {
         [Header("Card Info")]
+        public int cardId;  // 카드의 고유 ID
         public string cardName;
         public string description;
-        public CardType cardType;
-        public CardRarity rarity;
-        public int cardId;
-        public Sprite cardImage;
+        public Sprite artwork;
         
-        [Header("Cost")]
-        public int eDataCost;
+        [Header("Stats")]
+        public int cost;
+        public int power;
+        
+        [Header("Properties")]
+        public CardType type;
+        public CardRarity rarity;
 
-        [Header("Prefab Reference")]
-        public GameObject prefab;  // Unit, Tower, or Equipment prefab
+        // 카드 타입 열거형
+        public enum CardType
+        {
+            Unit,
+            Spell,
+            Trap
+        }
     }
 } 

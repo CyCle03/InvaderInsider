@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using InvaderInsider.Data;
+using InvaderInsider.UI;
 
 namespace InvaderInsider
 {
@@ -130,7 +132,7 @@ namespace InvaderInsider
         {
             yield return new WaitForSeconds(STAGE_START_DELAY);
             currentState = StageState.Run;
-            GameManager.Instance.UpdateStage();
+            UIManager.Instance.UpdateStage(stageNum, GetStageCount());
             stageCoroutine = null;
         }
 
@@ -177,7 +179,7 @@ namespace InvaderInsider
                 GameObject enemy = Instantiate(enemyPrefab);
                 enemy.transform.position = wayPoints[0].position;
                 enemyCount++;
-                GameManager.Instance.UpdateWave(enemyCount);
+                UIManager.Instance.UpdateWave(enemyCount, stageWave);
                 currentTime = 0f;
             }
         }
