@@ -3,27 +3,27 @@ using TMPro;
 using System;
 using System.Collections.Generic;
 using InvaderInsider.Data;
+using InvaderInsider.UI;
 
 namespace InvaderInsider.UI
 {
     public class UIManager : MonoBehaviour
     {
-        private static UIManager instance;
+        private static UIManager _instance;
         public static UIManager Instance
         {
             get
             {
-                if (instance == null)
+                if (_instance == null)
                 {
-                    instance = FindObjectOfType<UIManager>();
-                    if (instance == null)
+                    _instance = FindObjectOfType<UIManager>();
+                    if (_instance == null)
                     {
                         GameObject go = new GameObject("UIManager");
-                        instance = go.AddComponent<UIManager>();
-                        DontDestroyOnLoad(go);
+                        _instance = go.AddComponent<UIManager>();
                     }
                 }
-                return instance;
+                return _instance;
             }
         }
 
@@ -31,59 +31,136 @@ namespace InvaderInsider.UI
         [SerializeField] private TextMeshProUGUI stageText;
         [SerializeField] private TextMeshProUGUI waveText;
 
-        private Stack<BasePanel> panelStack = new Stack<BasePanel>();
         private Dictionary<string, BasePanel> panels = new Dictionary<string, BasePanel>();
+        private Stack<BasePanel> panelHistory = new Stack<BasePanel>();
+        private BasePanel currentPanel;
+
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
+            {
+                Debug.LogWarning("Multiple UIManager instances found. Destroying duplicate.");
+                Destroy(gameObject);
+                return;
+            }
+
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+            Debug.Log("UIManager Awake");
+        }
 
         private void Start()
         {
-        }
-
-        private void OnDestroy()
-        {
+            Debug.Log("UIManager Start");
         }
 
         public void RegisterPanel(string panelName, BasePanel panel)
         {
             if (!panels.ContainsKey(panelName))
             {
-                panels.Add(panelName, panel);
+                Debug.Log($"Registering panel: {panelName}");
+                panels[panelName] = panel;
+                Debug.Log($"Panel {panelName} registered successfully");
+            }
+            else
+            {
+                Debug.LogWarning($"Panel {panelName} already registered");
             }
         }
 
         public void ShowPanel(string panelName)
         {
-            if (panels.TryGetValue(panelName, out BasePanel panel))
+            Debug.Log($"Attempting to show panel: {panelName}");
+            
+            if (!panels.ContainsKey(panelName))
             {
-                if (panelStack.Count > 0)
-                {
-                    panelStack.Peek().Hide();
-                }
-                panel.Show();
-                panelStack.Push(panel);
+                Debug.LogError($"Panel {panelName} not found!");
+                return;
             }
-            else
+
+            if (currentPanel != null)
             {
-                Debug.LogWarning($"Panel {panelName} not found!");
+                currentPanel.Hide();
+                panelHistory.Push(currentPanel);
             }
+
+            BasePanel panel = panels[panelName];
+            panel.Show();
+            currentPanel = panel;
+
+            Debug.Log($"Panel {panelName} shown successfully");
         }
 
         public void GoBack()
         {
-            if (panelStack.Count > 0)
+            if (panelHistory.Count > 0)
             {
-                panelStack.Pop().Hide();
-                if (panelStack.Count > 0)
+                if (currentPanel != null)
                 {
-                    panelStack.Peek().Show();
+                    currentPanel.Hide();
                 }
+
+                currentPanel = panelHistory.Pop();
+                if (currentPanel != null)
+                {
+                    currentPanel.Show();
+                    Debug.Log($"Returned to previous panel: {currentPanel.gameObject.name}");
+                }
+            }
+            else
+            {
+                Debug.Log("No previous panel to return to");
             }
         }
 
-        public void ClearAllPanels()
+        public bool IsCurrentPanel(string panelName)
         {
-            while (panelStack.Count > 0)
+            if (currentPanel == null) return false;
+            if (!panels.ContainsKey(panelName)) return false;
+            return currentPanel == panels[panelName];
+        }
+
+        public void HideCurrentPanel()
+        {
+            if (currentPanel != null)
             {
-                panelStack.Pop().Hide();
+                currentPanel.Hide();
+                currentPanel = null;
+            }
+        }
+
+        public bool IsPanelRegistered(string panelName)
+        {
+            return panels.ContainsKey(panelName);
+        }
+
+        public void UnregisterPanel(string panelName)
+        {
+            if (panels.ContainsKey(panelName))
+            {
+                if (currentPanel == panels[panelName])
+                {
+                    currentPanel = null;
+                }
+                panels.Remove(panelName);
+            }
+        }
+
+        public void ClearPanelHistory()
+        {
+            panelHistory.Clear();
+            if (currentPanel != null)
+            {
+                currentPanel.Hide();
+                currentPanel = null;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+            {
+                _instance = null;
             }
         }
 
@@ -98,7 +175,5 @@ namespace InvaderInsider.UI
             if (waveText != null)
                 waveText.text = $"Wave {currentWave} / {totalWaves}";
         }
-
-
     }
 } 

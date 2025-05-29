@@ -12,8 +12,8 @@ namespace InvaderInsider
         Settings
     }
 
-    public class GameManager : MonoBehaviour
-    {
+public class GameManager : MonoBehaviour
+{
         private static GameManager instance;
         public static GameManager Instance
         {
@@ -33,74 +33,74 @@ namespace InvaderInsider
             }
         }
 
-        [Header("Game State")]
-        private GameState currentGameState = GameState.MainMenu;
-        public GameState CurrentGameState
+    [Header("Game State")]
+    private GameState currentGameState = GameState.MainMenu;
+    public GameState CurrentGameState
+    {
+        get => currentGameState;
+        set
         {
-            get => currentGameState;
-            set
-            {
-                currentGameState = value;
-                OnGameStateChanged?.Invoke(value);
-            }
+            currentGameState = value;
+            OnGameStateChanged?.Invoke(value);
         }
+    }
 
-        public event Action<GameState> OnGameStateChanged;
+    public event Action<GameState> OnGameStateChanged;
 
-        private void Awake()
+    private void Awake()
         {
             if (instance == null)
             {
                 instance = this;
-                DontDestroyOnLoad(gameObject);
-                LoadGameData();
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
-        }
-
-        void Start()
-        {
+            DontDestroyOnLoad(gameObject);
             LoadGameData();
         }
-
-        private void LoadGameData()
+        else
         {
-            SaveDataManager.Instance.LoadGameData();
+            Destroy(gameObject);
         }
+    }
+
+    void Start()
+    {
+            LoadGameData();
+    }
+
+    private void LoadGameData()
+    {
+        SaveDataManager.Instance.LoadGameData();
+    }
 
         public bool TrySpendEData(int amount)
         {
             var currentEData = SaveDataManager.Instance.GetCurrentEData();
             if (currentEData >= amount)
-            {
+    {
                 SaveDataManager.Instance.UpdateEData(-amount);
-                return true;
-            }
-            return false;
+            return true;
         }
+        return false;
+    }
 
         public void AddEData(int amount)
         {
             SaveDataManager.Instance.UpdateEData(amount);
         }
 
-        public void StageCleared(int stageNum, int stars)
-        {
-            SaveDataManager.Instance.UpdateStageProgress(stageNum, stars);
-        }
+    public void StageCleared(int stageNum, int stars)
+    {
+        SaveDataManager.Instance.UpdateStageProgress(stageNum, stars);
+    }
 
-        public void AddResourcePointsListener(Action<int> listener)
-        {
+    public void AddResourcePointsListener(Action<int> listener)
+    {
             SaveDataManager.Instance.OnEDataChanged += listener;
             // 현재 값으로 즉시 호출
             listener?.Invoke(SaveDataManager.Instance.GetCurrentEData());
-        }
+    }
 
-        public void RemoveResourcePointsListener(Action<int> listener)
-        {
+    public void RemoveResourcePointsListener(Action<int> listener)
+    {
             SaveDataManager.Instance.OnEDataChanged -= listener;
         }
     }
