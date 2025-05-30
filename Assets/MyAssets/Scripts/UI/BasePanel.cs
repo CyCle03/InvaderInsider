@@ -7,9 +7,8 @@ namespace InvaderInsider.UI
     {
         [SerializeField] protected CanvasGroup canvasGroup;
         [SerializeField] protected float fadeTime = 0.3f;
+        [SerializeField] public string panelName;
         private bool isInitialized = false;
-        private bool isTransitioning = false;
-        private Coroutine currentTransition = null;
         
         protected virtual void Awake()
         {
@@ -27,17 +26,10 @@ namespace InvaderInsider.UI
         public virtual void Show()
         {
             Debug.Log($"[{gameObject.name}] Show called");
-            if (isTransitioning)
-            {
-                Debug.LogWarning($"[{gameObject.name}] Show called while transitioning, stopping current transition");
-                if (currentTransition != null)
-                {
-                    StopCoroutine(currentTransition);
-                }
-            }
-
             gameObject.SetActive(true);
-            currentTransition = StartCoroutine(FadeIn());
+            canvasGroup.alpha = 1f;
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
             OnShow();
         }
 
@@ -50,17 +42,7 @@ namespace InvaderInsider.UI
                 return;
             }
 
-            if (isTransitioning)
-            {
-                Debug.LogWarning($"[{gameObject.name}] Hide called while transitioning, stopping current transition");
-                if (currentTransition != null)
-                {
-                    StopCoroutine(currentTransition);
-                }
-            }
-
-            currentTransition = StartCoroutine(FadeOut());
-            OnHide();
+            HideImmediate();
         }
 
         private void HideImmediate()
@@ -73,63 +55,8 @@ namespace InvaderInsider.UI
             OnHide();
         }
 
-        private IEnumerator FadeIn()
-        {
-            Debug.Log($"[{gameObject.name}] FadeIn started");
-            isTransitioning = true;
-            canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
-            
-            float elapsedTime = 0;
-            float startAlpha = canvasGroup.alpha;
-
-            while (elapsedTime < fadeTime)
-            {
-                elapsedTime += Time.deltaTime;
-                canvasGroup.alpha = Mathf.Lerp(startAlpha, 1f, elapsedTime / fadeTime);
-                yield return null;
-            }
-
-            canvasGroup.alpha = 1f;
-            isTransitioning = false;
-            currentTransition = null;
-            Debug.Log($"[{gameObject.name}] FadeIn completed");
-        }
-
-        private IEnumerator FadeOut()
-        {
-            Debug.Log($"[{gameObject.name}] FadeOut started");
-            isTransitioning = true;
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
-            
-            float elapsedTime = 0;
-            float startAlpha = canvasGroup.alpha;
-
-            while (elapsedTime < fadeTime)
-            {
-                elapsedTime += Time.deltaTime;
-                canvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, elapsedTime / fadeTime);
-                yield return null;
-            }
-
-            canvasGroup.alpha = 0f;
-            gameObject.SetActive(false);
-            isTransitioning = false;
-            currentTransition = null;
-            Debug.Log($"[{gameObject.name}] FadeOut completed");
-        }
-
         protected virtual void OnShow() { }
         protected virtual void OnHide() { }
         protected virtual void Initialize() { }
-
-        private void OnDestroy()
-        {
-            if (currentTransition != null)
-            {
-                StopCoroutine(currentTransition);
-            }
-        }
     }
 } 

@@ -16,7 +16,13 @@ namespace InvaderInsider.UI
         protected override void Awake()
         {
             base.Awake();
+            panelName = "Settings";
             Initialize();
+        }
+
+        protected void Start()
+        {
+            // SettingsPanel specific Start logic can go here
         }
 
         protected override void Initialize()

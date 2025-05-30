@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using InvaderInsider.Data;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.Cards
 {

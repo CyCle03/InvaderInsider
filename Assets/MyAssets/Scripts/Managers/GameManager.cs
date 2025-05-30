@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using InvaderInsider.Data;
+using InvaderInsider.UI;
 
 namespace InvaderInsider.Managers
 {

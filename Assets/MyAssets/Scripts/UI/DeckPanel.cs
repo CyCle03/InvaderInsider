@@ -20,7 +20,13 @@ namespace InvaderInsider.UI
         protected override void Awake()
         {
             base.Awake();
+            panelName = "Deck";
             Initialize();
+        }
+
+        protected void Start()
+        {
+            // DeckPanel specific Start logic can go here
         }
 
         protected override void Initialize()

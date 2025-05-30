@@ -56,16 +56,12 @@ namespace InvaderInsider.UI
 
         public void RegisterPanel(string panelName, BasePanel panel)
         {
-            if (!panels.ContainsKey(panelName))
-            {
-                Debug.Log($"Registering panel: {panelName}");
-                panels[panelName] = panel;
-                Debug.Log($"Panel {panelName} registered successfully");
-            }
-            else
+            if (panels.ContainsKey(panelName))
             {
                 Debug.LogWarning($"Panel {panelName} already registered");
+                return; // 이미 등록된 패널은 무시
             }
+            panels[panelName] = panel;
         }
 
         public void ShowPanel(string panelName)
@@ -158,6 +154,7 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
+            Debug.Log($"UIManager 오브젝트가 파괴되었습니다: {gameObject.name}");
             if (_instance == this)
             {
                 _instance = null;
@@ -174,6 +171,12 @@ namespace InvaderInsider.UI
         {
             if (waveText != null)
                 waveText.text = $"Wave {currentWave} / {totalWaves}";
+        }
+
+        private void CloseMainMenu()
+        {
+            // 메인 메뉴를 닫는 로직, 예: 메뉴 게임 오브젝트 비활성화
+            gameObject.SetActive(false);
         }
     }
 } 

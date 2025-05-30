@@ -18,13 +18,18 @@ namespace InvaderInsider.UI
 
         private void Update()
         {
-            HandleEscapeKey();
+            // Use GetKeyUp for Escape key to avoid double triggering
+            if (Input.GetKeyUp(escapeKey))
+            {
+                HandleEscapeKey();
+            }
+
             HandleMenuBindings();
         }
 
         private void HandleEscapeKey()
         {
-            if (!Input.GetKeyDown(escapeKey)) return;
+            Debug.Log($"Escape key released. Current Game State: {GameManager.Instance.CurrentGameState}");
 
             GameState currentState = GameManager.Instance.CurrentGameState;
             switch (currentState)

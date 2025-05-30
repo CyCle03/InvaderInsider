@@ -37,10 +37,16 @@ namespace InvaderInsider.UI
         protected override void Awake()
         {
             base.Awake();
+            panelName = "MainMenu";
             SetupCanvas();
             SetupLayout();
             ValidateComponents();
             Initialize();
+        }
+
+        protected void Start()
+        {
+            // MainMenuPanel specific Start logic can go here if needed
         }
 
         private void SetupCanvas()
@@ -273,16 +279,8 @@ namespace InvaderInsider.UI
         private void OnPlayButtonClicked()
         {
             Debug.Log("Play button clicked");
-            if (UIManager.Instance == null)
-            {
-                Debug.LogError("UIManager instance is null!");
-                return;
-            }
+            Hide();
 
-            if (hasAnimator)
-                menuAnimator.SetTrigger("FadeOut");
-
-            
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.CurrentGameState = GameState.Playing;
@@ -293,7 +291,18 @@ namespace InvaderInsider.UI
             }
 
             Time.timeScale = 1f;
-            UIManager.Instance.ShowPanel("StageSelect");
+            Debug.Log($"Time.timeScale set to: {Time.timeScale} in OnPlayButtonClicked");
+
+            // Initialize and start the stage
+            if (StageManager.Instance != null)
+            {
+                // Assuming InitializeStage() is now public or internal and accessible
+                StageManager.Instance.InitializeStage(); // Call the initialization method
+            }
+            else
+            {
+                Debug.LogError("StageManager not found in scene!");
+            }
         }
 
         private void OnDeckButtonClicked()
@@ -354,7 +363,6 @@ namespace InvaderInsider.UI
         protected override void OnShow()
         {
             base.OnShow();
-            Time.timeScale = 0f;
             GameManager.Instance.CurrentGameState = GameState.MainMenu;
             if (hasAnimator)
                 menuAnimator.SetTrigger("FadeIn");

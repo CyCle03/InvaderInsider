@@ -27,20 +27,17 @@ namespace InvaderInsider.UI
             var uiManager = UIManager.Instance;
             Debug.Log($"UIManager instance: {uiManager != null}");
             InitializeUI();
-
-            // Show main menu immediately after initialization
-            if (isInitialized)
-            {
-                Debug.Log("Showing main menu after initialization");
-                ShowMainMenu();
-            }
-            else
-            {
-                Debug.LogError("Failed to initialize MenuManager!");
-                StartCoroutine(RetryInitialization());
-            }
         }
 
+        private void Start()
+        {
+            if (!isInitialized)
+            {
+                Debug.LogError("MenuManager not initialized on Start!");
+            }
+            ShowMainMenu();
+        }
+        
         private IEnumerator RetryInitialization()
         {
             Debug.Log("Retrying initialization...");
@@ -125,7 +122,6 @@ namespace InvaderInsider.UI
             {
                 UIManager.Instance.ShowPanel("MainMenu");
                 Debug.Log("Main menu panel show command sent");
-                Time.timeScale = 1f;
             }
             catch (System.Exception e)
             {

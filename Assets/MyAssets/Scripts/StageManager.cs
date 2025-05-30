@@ -59,7 +59,6 @@ namespace InvaderInsider
             if (instance == null)
             {
                 instance = this;
-                DontDestroyOnLoad(gameObject);
                 
                 stageData = stageDataObject;
                 if (stageData == null)
@@ -80,89 +79,84 @@ namespace InvaderInsider
                 Debug.LogError("Stage data is not set!");
                 return;
             }
-
-            InitializeStage();
         }
 
-        private void InitializeStage()
+        public void InitializeStage()
         {
+            Debug.Log("StageManager InitializeStage called");
             currentTime = 0f;
             enemyCount = 0;
             stageNum = 0;
+            if (stageData == null)
+            {
+                 Debug.LogError("Stage data is not set in InitializeStage!");
+                 return;
+            }
             stageWave = stageData.GetStageWaveCount(stageNum);
             currentState = StageState.Ready;
+            
+            if (stageCoroutine != null)
+            {
+                StopCoroutine(stageCoroutine);
+            }
+            stageCoroutine = StartCoroutine(StageLoopCoroutine());
         }
 
-        void Update()
+        private IEnumerator StageLoopCoroutine()
         {
-            if (stageData == null) return;
-
-            switch (currentState)
+            Debug.Log("StageLoopCoroutine started");
+            while (currentState != StageState.Over)
             {
-                case StageState.Ready:
-                    ReadyStage();
-                    break;
-                case StageState.Run:
-                    RunStage();
-                    break;
-                case StageState.End:
-                    EndStage();
-                    break;
-                case StageState.Over:
-                    break;
-            }
-        }
-
-        void ReadyStage()
-        {
-            if (stageNum < stageData.StageCount)
-            {
-                if (stageCoroutine == null)
+                switch (currentState)
                 {
-                    stageCoroutine = StartCoroutine(StartStage());
+                    case StageState.Ready:
+                        Debug.Log($"Stage {stageNum + 1} Ready");
+                        UIManager.Instance.UpdateStage(stageNum, GetStageCount());
+                        yield return new WaitForSeconds(STAGE_START_DELAY);
+                        currentState = StageState.Run;
+                        break;
+
+                    case StageState.Run:
+                        currentTime += Time.deltaTime;
+                        if(enemyCount < stageWave)
+                        {
+                            if (currentTime > createTime)
+                            {
+                                SpawnEnemy();
+                                currentTime = 0f;
+                            }
+                        }
+                        else
+                        {
+                            currentState = StageState.End;
+                            Debug.Log($"Stage {stageNum + 1} Wave {stageWave} completed");
+                        }
+                        yield return null;
+                        break;
+
+                    case StageState.End:
+                        Debug.Log($"Stage {stageNum + 1} End");
+                        stageNum++;
+                        currentTime = 0f;
+                        enemyCount = 0;
+
+                        if (stageNum < stageData.StageCount)
+                        {
+                            stageWave = stageData.GetStageWaveCount(stageNum);
+                            yield return new WaitForSeconds(STAGE_END_DELAY);
+                            currentState = StageState.Ready;
+                        }
+                        else
+                        {
+                            stageWave = 0;
+                            currentState = StageState.Over;
+                            Debug.Log("All stages completed!");
+                        }
+                        yield return null;
+                        break;
                 }
             }
-            else
-            {
-                currentState = StageState.Over;
-            }
-        }
-
-        IEnumerator StartStage()
-        {
-            yield return new WaitForSeconds(STAGE_START_DELAY);
-            currentState = StageState.Run;
-            UIManager.Instance.UpdateStage(stageNum, GetStageCount());
-            stageCoroutine = null;
-        }
-
-        void RunStage()
-        {
-            currentTime += Time.deltaTime;
-
-            if(enemyCount < stageWave)
-            {
-                if (currentTime > createTime)
-                {
-                    SpawnEnemy();
-                }
-            }
-            else
-            {
-                currentState = StageState.End;
-                stageNum++;
-                currentTime = 0f;
-                enemyCount = 0;
-
-                if (stageNum < stageData.StageCount)
-                {
-                    stageWave = stageData.GetStageWaveCount(stageNum);
-                }
-                else
-                {
-                    stageWave = 0;
-                }
-            }
+             Debug.Log("StageLoopCoroutine finished");
         }
 
         public void SpawnEnemy()
@@ -182,21 +176,6 @@ namespace InvaderInsider
                 UIManager.Instance.UpdateWave(enemyCount, stageWave);
                 currentTime = 0f;
             }
-        }
-
-        void EndStage()
-        {
-            if(stageCoroutine == null)
-            {
-                stageCoroutine = StartCoroutine(WaitStage());
-            }
-        }
-
-        IEnumerator WaitStage()
-        {
-            yield return new WaitForSeconds(STAGE_END_DELAY);
-            currentState = StageState.Ready;
-            stageCoroutine = null;
         }
 
         public int GetStageCount()

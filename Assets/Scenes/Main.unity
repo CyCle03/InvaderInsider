@@ -679,6 +679,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   canvasGroup: {fileID: 157071689}
   fadeTime: 0.3
+  panelName: Settings
   bgmVolumeSlider: {fileID: 432492859}
   sfxVolumeSlider: {fileID: 882328142}
   fullscreenToggle: {fileID: 708328348}
@@ -2750,6 +2751,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   canvasGroup: {fileID: 630955385}
   fadeTime: 0.3
+  panelName: MainMenu
   playButton: {fileID: 893677793}
   deckButton: {fileID: 1520594496}
   shopButton: {fileID: 1196668121}
@@ -3536,6 +3538,52 @@ MonoBehaviour:
   m_MinRegionArea: 2
   m_NavMeshData: {fileID: 23800000, guid: a73f4ed71d2602d4d9e578f6e65e43e8, type: 2}
   m_BuildHeightMesh: 0
+--- !u!1 &742832350
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 742832352}
+  - component: {fileID: 742832351}
+  m_Layer: 0
+  m_Name: UIManger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &742832351
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 742832350}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b46630f4651f40e45bc0afeaece671b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stageText: {fileID: 1185540752}
+  waveText: {fileID: 101416148}
+--- !u!4 &742832352
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 742832350}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 960, y: 500, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &797769113
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4121,9 +4169,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   canvasGroup: {fileID: 857696274}
   fadeTime: 0.3
-  resumeButton: {fileID: 0}
-  restartButton: {fileID: 0}
-  mainMenuButton: {fileID: 0}
+  panelName: Pause
+  resumeButton: {fileID: 2064400746}
+  restartButton: {fileID: 31713360}
+  mainMenuButton: {fileID: 1582962441}
 --- !u!225 &857696274
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -5564,6 +5613,104 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &1113356307
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1113356312}
+  - component: {fileID: 1113356311}
+  - component: {fileID: 1113356310}
+  - component: {fileID: 1113356309}
+  - component: {fileID: 1113356308}
+  m_Layer: 0
+  m_Name: Managers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1113356308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113356307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a35d4acf9d912e4c85c5ae93c6d6e40, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  menuBindings: []
+  escapeKey: 27
+--- !u!114 &1113356309
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113356307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b8973fb59e9aa9458bb4c63781189e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainMenuPanel: {fileID: 630955384}
+  settingsPanel: {fileID: 157071688}
+  deckPanel: {fileID: 1542351016}
+  pausePanel: {fileID: 857696273}
+--- !u!114 &1113356310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113356307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45a31f62081ac4b4bb78184ac086a57b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1113356311
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113356307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 395d618943f497548a3f338d2fccebb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stageDataObject: {fileID: 11400000, guid: 2ec8899b9bb42ed42855439890ba7c63, type: 2}
+  wayPoints:
+  - {fileID: 1408072179}
+  - {fileID: 1703004656}
+  enemyPrefab: {fileID: 5669925833025989882, guid: 47b8d595ab76aaf4d949ff7b875b91d0, type: 3}
+  stageNum: 0
+  stageWave: 20
+  createTime: 1.5
+  currentState: 0
+--- !u!4 &1113356312
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113356307}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 960, y: 500, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1121623123
 GameObject:
   m_ObjectHideFlags: 0
@@ -6729,12 +6876,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1294070008}
-  - component: {fileID: 1294070009}
-  - component: {fileID: 1294070010}
-  - component: {fileID: 1294070011}
-  - component: {fileID: 1294070012}
-  - component: {fileID: 1294070013}
-  - component: {fileID: 1294070014}
+  - component: {fileID: 1294070015}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -6757,7 +6899,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1294070009
+--- !u!114 &1294070015
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -6766,86 +6908,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1294070007}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 395d618943f497548a3f338d2fccebb5, type: 3}
+  m_Script: {fileID: 11500000, guid: 046b78f6ba1504e45b9f63886e27843c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stageDataObject: {fileID: 11400000, guid: 2ec8899b9bb42ed42855439890ba7c63, type: 2}
-  wayPoints:
-  - {fileID: 1408072179}
-  - {fileID: 1703004656}
-  enemyPrefab: {fileID: 5669925833025989882, guid: 47b8d595ab76aaf4d949ff7b875b91d0, type: 3}
-  stageNum: 0
-  stageWave: 20
-  createTime: 1.5
-  currentState: 0
---- !u!114 &1294070010
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1294070007}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2abb48e491a0d6445809e6da23c4c837, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1294070011
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1294070007}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 45a31f62081ac4b4bb78184ac086a57b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1294070012
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1294070007}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b46630f4651f40e45bc0afeaece671b6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageText: {fileID: 1185540752}
-  waveText: {fileID: 101416148}
---- !u!114 &1294070013
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1294070007}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b8973fb59e9aa9458bb4c63781189e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mainMenuPanel: {fileID: 630955384}
-  settingsPanel: {fileID: 157071688}
-  deckPanel: {fileID: 1542351016}
-  pausePanel: {fileID: 857696273}
---- !u!114 &1294070014
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1294070007}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a35d4acf9d912e4c85c5ae93c6d6e40, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  menuBindings: []
-  escapeKey: 27
 --- !u!1 &1320405410
 GameObject:
   m_ObjectHideFlags: 0
@@ -8129,6 +8194,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   canvasGroup: {fileID: 1542351017}
   fadeTime: 0.3
+  panelName: Deck
   deckCardContainer: {fileID: 1320405411}
   ownedCardContainer: {fileID: 1803452745}
   cardPrefab: {fileID: 0}
@@ -11019,6 +11085,8 @@ SceneRoots:
   - {fileID: 1408072179}
   - {fileID: 1703004656}
   - {fileID: 1294070008}
+  - {fileID: 742832352}
+  - {fileID: 1113356312}
   - {fileID: 8897594712860917497}
   - {fileID: 1554795550}
   - {fileID: 1667510110}
