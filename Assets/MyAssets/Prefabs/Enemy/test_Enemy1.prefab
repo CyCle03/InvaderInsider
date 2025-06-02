@@ -247,8 +247,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3cdc0b2df8714cd46adf02aa5815adcf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 3
-  currentHealth: 3
+  maxHealth: 2
+  currentHealth: 2
   attackDamage: 1
   attackRange: 5
   attackRate: 1
@@ -260,6 +260,7 @@ MonoBehaviour:
     baseDamage: 1
     moveSpeed: 3
     eDataAmount: 1
+    damageOnFinalWaypoint: 10
   pathUpdateRate: 0.2
   healthSlider: {fileID: 2611185763950073947}
   healthBarObject: {fileID: 2830842496561342231}

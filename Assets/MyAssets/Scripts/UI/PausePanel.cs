@@ -60,13 +60,6 @@ namespace InvaderInsider.UI
             {
                 inputHandler.enabled = true;
             }
-
-            if (GameManager.Instance.CurrentGameState == GameState.Paused)
-            {
-                Time.timeScale = 1f;
-                Debug.Log($"Time.timeScale set to: {Time.timeScale} in PausePanel.OnHide");
-                GameManager.Instance.CurrentGameState = GameState.Playing;
-            }
         }
     }
 } 

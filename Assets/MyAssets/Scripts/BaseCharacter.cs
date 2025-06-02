@@ -1,7 +1,7 @@
 using UnityEngine;
 using System;
 
-namespace InvaderInsider.Core
+namespace InvaderInsider
 {
     public abstract class BaseCharacter : MonoBehaviour, IDamageable, IAttacker
     {

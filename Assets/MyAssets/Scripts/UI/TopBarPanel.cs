@@ -21,7 +21,7 @@ namespace InvaderInsider.UI
             if (eDataText != null)
             {
                 SaveDataManager.Instance.OnEDataChanged += UpdateEDataDisplay;
-                UpdateEDataDisplay(SaveDataManager.Instance.GetCurrentEData());
+                //UpdateEDataDisplay(SaveDataManager.Instance.GetCurrentEData());
             }
         }
 
@@ -41,6 +41,7 @@ namespace InvaderInsider.UI
                 eDataText.text = $"eData: {amount:N0}";
             }
         }
+
 
         private void OnDestroy()
         {

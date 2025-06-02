@@ -380,7 +380,8 @@ MonoBehaviour:
     baseHealth: 2
     baseDamage: 1
     moveSpeed: 3
-    eDataAmount: 1
+    eDataAmount: 2
+    damageOnFinalWaypoint: 20
   pathUpdateRate: 0.2
   healthSlider: {fileID: 8709902853022629263}
   healthBarObject: {fileID: 3817292159802329495}

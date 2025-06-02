@@ -159,6 +159,18 @@ namespace InvaderInsider.Data
             isQuitting = true;
         }
 
+        // 저장된 게임 데이터를 모두 초기화하는 함수
+        public void ResetGameData()
+        {
+            currentSaveData = new SaveData(); // 새로운 SaveData 인스턴스로 교체
+            PlayerPrefs.DeleteKey("SaveData"); // PlayerPrefs에 저장된 데이터 삭제
+            PlayerPrefs.Save(); // 변경사항 저장
+            Debug.Log("[SaveDataManager] Game data has been reset.");
+
+            // UI 등에 초기화된 데이터 반영을 위해 이벤트 발생
+            OnEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
+        }
+
         public void SaveGameData()
         {
             string jsonData = JsonUtility.ToJson(currentSaveData);
@@ -190,9 +202,10 @@ namespace InvaderInsider.Data
             {
                 currentSaveData.stageProgress.Set(stageNum, stars);
                 
-                if (stageNum > currentSaveData.progressData.highestStageCleared)
+                if (stageNum >= currentSaveData.progressData.highestStageCleared)
                 {
-                    currentSaveData.progressData.highestStageCleared = stageNum;
+                    // 클리어한 스테이지 번호가 현재 최고 기록과 같거나 높으면 다음 스테이지로 업데이트
+                    currentSaveData.progressData.highestStageCleared = stageNum + 1;
                 }
                 
                 SaveGameData();
@@ -260,11 +273,12 @@ namespace InvaderInsider.Data
 
         public void UpdateEData(int amount)
         {
-            Debug.Log($"[SaveDataManager] Updating eData: current({currentSaveData.progressData.currentEData}) + amount({amount})");
             currentSaveData.progressData.currentEData += amount;
-            SaveGameData();
-            OnEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
+            Debug.Log($"[SaveDataManager] Updating eData: current({currentSaveData.progressData.currentEData - amount}) + amount({amount})");
+            // SaveGameData(); // 적 처치 시 즉시 저장되지 않도록 주석 처리
             Debug.Log($"[SaveDataManager] Updated eData: new value({currentSaveData.progressData.currentEData})");
+
+            OnEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
         }
 
         public int GetCurrentEData()

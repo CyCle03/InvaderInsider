@@ -5,7 +5,6 @@ using UnityEngine.SceneManagement;
 using InvaderInsider.Data;
 using InvaderInsider.Cards;
 using System.Collections.Generic;
-using InvaderInsider.Core;
 using System.Collections;
 
 namespace InvaderInsider.UI

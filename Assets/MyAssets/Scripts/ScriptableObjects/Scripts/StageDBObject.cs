@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace InvaderInsider
@@ -19,4 +21,70 @@ namespace InvaderInsider
             return container[index];
         }
     }
-} 
+
+    [System.Serializable]
+    public class WaveList
+    {
+        public WaveObject[] ListSlots = new WaveObject[20];
+        
+        public void Clear()
+        {
+            for (int i = 0; i < ListSlots.Length; i++)
+            {
+                ListSlots[i].RemoveEnemy();
+            }
+        }
+    }
+
+    [System.Serializable]
+    public class WaveObject
+    {
+        [System.NonSerialized]
+        private IStageContainer parent;
+        public int indexNum;
+
+        [SerializeField]
+        private Enemy enemyData;
+
+        public IEnemy Enemy => enemyData;
+
+        public GameObject EnemyPrefab
+        {
+            get
+            {
+                if (parent != null && enemyData != null && enemyData.ID >= 0)
+                {
+                    return parent.GetObject(enemyData.ID);
+                }
+                return null;
+            }
+        }
+
+        public WaveObject()
+        {
+            enemyData = new Enemy();
+        }
+
+        public WaveObject(Enemy enemy)
+        {
+            UpdateListSlot(enemy);
+        }
+
+        public void SetParent(IStageContainer stageContainer)
+        {
+            parent = stageContainer;
+        }
+
+        public void UpdateListSlot(Enemy enemy)
+        {
+            enemyData = enemy;
+        }
+
+        public void RemoveEnemy()
+        {
+            enemyData = new Enemy();
+        }
+    }
+}
+
+
