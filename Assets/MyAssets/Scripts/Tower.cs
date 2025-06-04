@@ -1,7 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using InvaderInsider; // StageManager 사용을 위해 추가
+using InvaderInsider;
+using InvaderInsider.Managers; // StageManager 사용을 위해 추가
 
 public class Tower : MonoBehaviour
 {

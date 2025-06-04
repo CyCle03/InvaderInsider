@@ -9,9 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 90373286bef12b44ea07dc90e35333fe, type: 3}
-  m_Name: Test Card Database
+  m_Script: {fileID: 11500000, guid: 5fae93d134d9833499169dbe7269d4b2, type: 3}
+  m_Name: New Card
   m_EditorClassIdentifier: 
-  CardDeckID: 0
-  Container:
-  - {fileID: 1153782137935833772, guid: 9d785b35cbdbe7244a8a268328ad5b32, type: 3}
+  cardId: 1
+  cardName: 
+  description: 
+  artwork: {fileID: 0}
+  cost: 0
+  power: 0
+  type: 0
+  rarity: 0

@@ -5,10 +5,16 @@ using InvaderInsider.UI; // Changed from InvaderInsider.Managers
 
 public class Player : MonoBehaviour
 {
-    public int currentHealth;
-    public int maxHealth = 100; // 최대 체력 설정
+    // 체력 관련 변수
+    [SerializeField] private int maxHealth = 100;
+    private int currentHealth;
 
-    //[SerializeField] private TextMeshProUGUI healthText; // 체력을 표시할 UI TextMeshPro 요소
+    // 체력 속성 추가
+    public int CurrentHealth { get { return currentHealth; } }
+    public int MaxHealth { get { return maxHealth; } }
+
+    // 체력 UI 업데이트를 위한 TextMeshProUGUI 및 Slider 참조
+    public TextMeshProUGUI healthText;
     //[SerializeField] private Slider healthSlider; // 체력을 표시할 UI Slider 요소
 
     // Start is called before the first frame update

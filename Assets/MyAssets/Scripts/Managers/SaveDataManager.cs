@@ -19,6 +19,7 @@ namespace InvaderInsider.Data
     {
         public int currentEData = 0;
         public int highestStageCleared = 0;
+        public int summonCount = 0;
     }
 
     [Serializable]
@@ -26,6 +27,7 @@ namespace InvaderInsider.Data
     {
         public List<int> deckCardIds = new List<int>();
         public List<int> ownedCardIds = new List<int>();
+        public List<int> handCardIds = new List<int>();
     }
 
     [Serializable]
@@ -138,6 +140,12 @@ namespace InvaderInsider.Data
         // eData 변경 이벤트 추가
         public event Action<int> OnEDataChanged;
 
+        // 핸드 데이터 변경 이벤트 추가
+        public event Action<List<int>> OnHandDataChanged; // 핸드에 있는 카드 ID 목록을 전달
+
+        // 저장된 게임 데이터 로드가 완료되었음을 알리는 이벤트
+        public event Action OnGameDataLoaded;
+
         private void Awake()
         {
             if (instance == null)
@@ -145,7 +153,10 @@ namespace InvaderInsider.Data
                 Debug.Log("[SaveDataManager] Initializing instance");
                 instance = this;
                 DontDestroyOnLoad(gameObject);
-                LoadGameData();
+
+                // 게임 실행 시 저장된 데이터를 자동으로 로드하지 않음
+                // 대신 기본값으로 초기화하고, "불러오기" 선택 시 로드
+                currentSaveData = new SaveData(); 
             }
             else if (instance != this)
             {
@@ -166,9 +177,6 @@ namespace InvaderInsider.Data
             PlayerPrefs.DeleteKey("SaveData"); // PlayerPrefs에 저장된 데이터 삭제
             PlayerPrefs.Save(); // 변경사항 저장
             Debug.Log("[SaveDataManager] Game data has been reset.");
-
-            // UI 등에 초기화된 데이터 반영을 위해 이벤트 발생
-            OnEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
         }
 
         public void SaveGameData()
@@ -186,6 +194,12 @@ namespace InvaderInsider.Data
                 string jsonData = PlayerPrefs.GetString("SaveData");
                 currentSaveData = JsonUtility.FromJson<SaveData>(jsonData);
                 Debug.Log($"[SaveDataManager] Loaded game data: {jsonData}");
+
+                // 로드된 eData 값을 UI에 반영하기 위해 이벤트 발생
+                OnEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
+
+                // 저장된 게임 데이터 로드가 완료되었음을 알리는 이벤트
+                OnGameDataLoaded?.Invoke();
             }
             else
             {
@@ -208,7 +222,7 @@ namespace InvaderInsider.Data
                     currentSaveData.progressData.highestStageCleared = stageNum + 1;
                 }
                 
-                SaveGameData();
+                SaveGameData(); // 스테이지 클리어 시점에 저장
             }
         }
 
@@ -274,16 +288,57 @@ namespace InvaderInsider.Data
         public void UpdateEData(int amount)
         {
             currentSaveData.progressData.currentEData += amount;
-            Debug.Log($"[SaveDataManager] Updating eData: current({currentSaveData.progressData.currentEData - amount}) + amount({amount})");
-            // SaveGameData(); // 적 처치 시 즉시 저장되지 않도록 주석 처리
-            Debug.Log($"[SaveDataManager] Updated eData: new value({currentSaveData.progressData.currentEData})");
-
+            // eData가 0 미만이 되지 않도록 방지 (선택 사항)
+            if (currentSaveData.progressData.currentEData < 0)
+            {
+                currentSaveData.progressData.currentEData = 0;
+            }
             OnEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
         }
 
         public int GetCurrentEData()
         {
             return currentSaveData.progressData.currentEData;
+        }
+
+        // 새로운 카드를 핸드 및 소유 목록에 추가하는 함수
+        public void AddCardToHandAndOwned(int cardId)
+        {
+            // 핸드에 추가
+            if (currentSaveData.deckData.handCardIds.Count < 10) // 핸드 최대 크기 제한 (예시: 10)
+            {
+                currentSaveData.deckData.handCardIds.Add(cardId);
+                Debug.Log($"[SaveDataManager] Card {cardId} added to hand. Hand size: {currentSaveData.deckData.handCardIds.Count}");
+
+                // 소유 목록에 없으면 추가
+                if (!currentSaveData.deckData.ownedCardIds.Contains(cardId))
+                {
+                    currentSaveData.deckData.ownedCardIds.Add(cardId);
+                    Debug.Log($"[SaveDataManager] Card {cardId} added to owned list.");
+                }
+
+                SaveGameData(); // 데이터 저장
+                // 핸드 UI 업데이트 이벤트 발생
+                OnHandDataChanged?.Invoke(currentSaveData.deckData.handCardIds);
+            }
+            else
+            {
+                Debug.LogWarning($"[SaveDataManager] Hand is full. Cannot add card {cardId}.");
+                // TODO: 핸드가 가득 찼음을 알리는 UI 메시지 표시
+            }
+        }
+
+        // 핸드에서 카드를 제거하는 함수 (사용 또는 장착 시)
+        public void RemoveCardFromHand(int cardId)
+        {
+            if (currentSaveData.deckData.handCardIds.Contains(cardId))
+            {
+                currentSaveData.deckData.handCardIds.Remove(cardId);
+                SaveGameData(); // 데이터 저장
+                Debug.Log($"[SaveDataManager] Card {cardId} removed from hand. Hand size: {currentSaveData.deckData.handCardIds.Count}");
+                // 핸드 UI 업데이트 이벤트 발생
+                OnHandDataChanged?.Invoke(currentSaveData.deckData.handCardIds);
+            }
         }
     }
 } 

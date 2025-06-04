@@ -30,9 +30,9 @@ namespace InvaderInsider.Cards
         // 카드 타입 열거형
         public enum CardType
         {
-            Unit,
-            Spell,
-            Trap
+            Character,
+            Equipment,
+            Tower
         }
     }
 } 
