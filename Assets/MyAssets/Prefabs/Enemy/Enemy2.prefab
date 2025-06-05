@@ -240,6 +240,7 @@ GameObject:
   - component: {fileID: 7955535470645689303}
   - component: {fileID: -1243140610155947256}
   - component: {fileID: 7361604924346112834}
+  - component: {fileID: 577729306502451954}
   m_Layer: 0
   m_Name: Enemy2
   m_TagString: Enemy
@@ -383,10 +384,22 @@ MonoBehaviour:
     eDataAmount: 2
     damageOnFinalWaypoint: 20
   pathUpdateRate: 0.2
-  healthSlider: {fileID: 8709902853022629263}
-  healthBarObject: {fileID: 3817292159802329495}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
+--- !u!114 &577729306502451954
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5669925833025989882}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 075f76e439f3a734dbb8b4db89cfa637, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  healthSlider: {fileID: 8709902853022629263}
+  healthBarObject: {fileID: 3817292159802329495}
 --- !u!1 &6121639613020301897
 GameObject:
   m_ObjectHideFlags: 0

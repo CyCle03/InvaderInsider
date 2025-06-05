@@ -97,3 +97,5 @@ MonoBehaviour:
   fireRate: 1
   dmg: 1
   projectilePrefab: {fileID: 2265586970664229171, guid: dd54440be1886dd4f932f338a5c3efad, type: 3}
+  partToRotate: {fileID: 0}
+  turnSpeed: 10

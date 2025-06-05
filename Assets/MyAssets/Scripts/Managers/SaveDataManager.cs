@@ -50,15 +50,30 @@ namespace InvaderInsider.Data
             }
         }
 
-        public bool TryGetValue(string key, out object value)
+        public bool TryGetValue<T>(string key, out T value)
         {
             int index = keys.IndexOf(key);
             if (index != -1)
             {
-                value = values[index];
-                return true;
+                try
+                {
+                    if (typeof(T).IsEnum)
+                    {
+                        value = (T)Enum.Parse(typeof(T), values[index]);
+                    }
+                    else
+                    {
+                        value = (T)Convert.ChangeType(values[index], typeof(T));
+                    }
+                    return true;
+                }
+                catch
+                {
+                    value = default(T);
+                    return false;
+                }
             }
-            value = null;
+            value = default(T);
             return false;
         }
     }
@@ -153,10 +168,6 @@ namespace InvaderInsider.Data
                 Debug.Log("[SaveDataManager] Initializing instance");
                 instance = this;
                 DontDestroyOnLoad(gameObject);
-
-                // 게임 실행 시 저장된 데이터를 자동으로 로드하지 않음
-                // 대신 기본값으로 초기화하고, "불러오기" 선택 시 로드
-                currentSaveData = new SaveData(); 
             }
             else if (instance != this)
             {
@@ -222,22 +233,15 @@ namespace InvaderInsider.Data
                     currentSaveData.progressData.highestStageCleared = stageNum + 1;
                 }
                 
-                SaveGameData(); // 스테이지 클리어 시점에 저장
+                // SaveGameData(); // 스테이지 클리어 시점에 저장
             }
         }
 
         public T GetSetting<T>(string key, T defaultValue)
         {
-            if (currentSaveData.settings.TryGetValue(key, out object value))
+            if (currentSaveData.settings.TryGetValue<T>(key, out T value))
             {
-                try
-                {
-                    return (T)Convert.ChangeType(value, typeof(T));
-                }
-                catch
-                {
-                    return defaultValue;
-                }
+                return value;
             }
             return defaultValue;
         }
@@ -245,7 +249,7 @@ namespace InvaderInsider.Data
         public void SaveSetting<T>(string key, T value)
         {
             currentSaveData.settings.Set(key, value);
-            SaveGameData();
+            // SaveGameData();
         }
 
         public void AddCardToDeck(int cardId)

@@ -290,7 +290,7 @@ namespace InvaderInsider.UI
         {
             Debug.Log("New Game button clicked!");
             // 저장된 데이터 초기화
-            SaveDataManager.Instance.ResetGameData();
+            SaveDataManager.Instance.ResetGameData(); // SaveDataManager 인스턴스 초기화
 
             // 메인 메뉴 숨기기 및 게임 시작 처리
             Hide();

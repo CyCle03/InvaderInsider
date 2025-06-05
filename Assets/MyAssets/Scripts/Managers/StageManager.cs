@@ -35,7 +35,7 @@ namespace InvaderInsider.Managers
         private const float STAGE_START_DELAY = 1f;
         private const float STAGE_END_DELAY = 3f;
         public List<Transform> wayPoints = new List<Transform>();
-        public GameObject enemyPrefab;
+        [SerializeField] private GameObject defaultEnemyPrefab;
         public int stageNum = 0;
         public int stageWave = 20;
         [Tooltip("Time between enemy spawns")]
@@ -58,6 +58,10 @@ namespace InvaderInsider.Managers
         public StageState currentState;
         private int clearedStageIndex;
 
+        private BottomBarPanel bottomBarPanel;
+
+        private List<Tower> _activeTowers;
+
         private void Awake()
         {
             if (instance == null)
@@ -67,13 +71,20 @@ namespace InvaderInsider.Managers
                 stageData = stageDataObject;
                 if (stageData == null)
                 {
-                    Debug.LogError("Stage data is not assigned in the inspector!");
+                    Debug.LogError("Stage data is not assigned in the inspector! Please assign a StageList ScriptableObject.");
                 }
             }
             else
             {
                 Destroy(gameObject);
             }
+
+            bottomBarPanel = FindObjectOfType<BottomBarPanel>();
+            if (bottomBarPanel == null)
+            {
+                Debug.LogWarning("BottomBarPanel not found in the scene. UI updates may not work.");
+            }
+            _activeTowers = new List<Tower>(FindObjectsOfType<Tower>());
         }
 
         void Start()
@@ -124,6 +135,8 @@ namespace InvaderInsider.Managers
                 StopCoroutine(stageCoroutine);
             }
             stageCoroutine = StartCoroutine(StageLoopCoroutine());
+
+            ResetAllTowersRotation();
         }
 
         private IEnumerator StageLoopCoroutine()
@@ -176,6 +189,7 @@ namespace InvaderInsider.Managers
                         {
                             stageWave = stageData.GetStageWaveCount(stageNum);
                             yield return new WaitForSeconds(STAGE_END_DELAY);
+                            ResetAllTowersRotation();
                             currentState = StageState.Ready;
                         }
                         else
@@ -188,6 +202,7 @@ namespace InvaderInsider.Managers
                             {
                                 UIManager.Instance.ShowPanel("MainMenu");
                             }
+                            ResetAllTowersRotation();
                         }
                         yield return null;
                         break;
@@ -204,19 +219,29 @@ namespace InvaderInsider.Managers
                 return;
             }
 
-            GameObject enemyPrefab = stageData.GetStageObject(stageNum, enemyCount);
-            if (enemyPrefab != null)
+            GameObject enemyToSpawn = stageData?.GetStageObject(stageNum, enemyCount);
+            if (enemyToSpawn == null)
             {
-                GameObject enemy = Instantiate(enemyPrefab);
+                Debug.LogWarning($"StageData did not provide an enemy prefab for stage {stageNum}, enemy {enemyCount}. Using defaultEnemyPrefab.");
+                enemyToSpawn = defaultEnemyPrefab;
+            }
+
+            if (enemyToSpawn != null)
+            {
+                GameObject enemy = Instantiate(enemyToSpawn);
                 enemy.transform.position = wayPoints[0].position;
                 enemyCount++;
                 activeEnemyCount++;
                 UIManager.Instance.UpdateWave(enemyCount, stageWave);
-                if (FindObjectOfType<BottomBarPanel>() != null)
+                if (bottomBarPanel != null)
                 {
-                     FindObjectOfType<BottomBarPanel>().UpdateMonsterCountDisplay(activeEnemyCount);
+                     bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCount);
                 }
                 currentTime = 0f;
+            }
+            else
+            {
+                Debug.LogError($"Failed to spawn enemy: No prefab assigned or retrieved for stage {stageNum}, enemy {enemyCount}.");
             }
         }
 
@@ -233,17 +258,24 @@ namespace InvaderInsider.Managers
         public void DecreaseActiveEnemyCount()
         {
             activeEnemyCount--;
-            if (FindObjectOfType<BottomBarPanel>() != null)
+            Debug.Log($"Active enemies: {activeEnemyCount}");
+            if (bottomBarPanel != null)
             {
-                 FindObjectOfType<BottomBarPanel>().UpdateMonsterCountDisplay(activeEnemyCount);
+                bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCount);
             }
-             Debug.Log($"Active enemies: {activeEnemyCount}");
+        }
+
+        public void OnEnemyDied(int eDataAmount)
+        {
+            DecreaseActiveEnemyCount();
+            SaveDataManager.Instance.UpdateEData(eDataAmount);
+            Debug.Log($"Enemy Died! eData reward: {eDataAmount}");
         }
 
         public void EnemyReachedEnd()
         {
             DecreaseActiveEnemyCount();
-            Debug.Log("Enemy reached end.");
+            Debug.Log("Enemy reached end waypoint. Active enemies: " + activeEnemyCount);
         }
 
         public void InitializeStageFromLoadedData(int stageIndex)
@@ -257,18 +289,36 @@ namespace InvaderInsider.Managers
                  UIManager.Instance.UpdateStage(stageNum, GetStageCount());
             }
 
-            // Wave 및 적 수 UI 초기 업데이트 (로드 시 첫 웨이브와 초기 적 수로 표시)
             if (UIManager.Instance != null)
             {
                 UIManager.Instance.UpdateWave(1, stageWave);
             }
 
-            if (FindObjectOfType<BottomBarPanel>() != null)
+            if (bottomBarPanel != null)
             {
-                FindObjectOfType<BottomBarPanel>()?.UpdateMonsterCountDisplay(activeEnemyCount);
+                bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCount);
                 Debug.Log($"StageManager Initialized: Stage {stageNum + 1}, Total Waves: {stageWave}, Active Enemies: {activeEnemyCount}");
             }
         }
 
+        private void ResetAllTowersRotation()
+        {
+            foreach (Tower tower in _activeTowers)
+            {
+                if (tower != null)
+                {
+                    tower.ResetTowerRotation();
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                instance = null;
+                Debug.Log("StageManager instance cleared on destroy.");
+            }
+        }
     }
 } 

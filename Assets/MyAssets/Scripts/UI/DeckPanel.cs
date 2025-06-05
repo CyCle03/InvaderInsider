@@ -72,7 +72,7 @@ namespace InvaderInsider.UI
             CardUI cardUI = cardObj.GetComponent<CardUI>();
             if (cardUI != null)
             {
-                CardData cardData = CardManager.Instance.GetCardById(cardId);
+                CardDBObject cardData = CardManager.Instance.GetCardById(cardId);
                 cardUI.SetCard(cardData);
                 cardUI.OnCardClicked += () => HandleCardClick(cardId, isInDeck);
                 activeCardUIs.Add(cardUI);

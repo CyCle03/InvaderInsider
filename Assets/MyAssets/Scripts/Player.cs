@@ -2,33 +2,45 @@ using UnityEngine;
 using UnityEngine.UI; // UI 관련 기능을 사용하기 위해 추가
 using TMPro; // TextMeshPro 기능을 사용하기 위해 추가
 using InvaderInsider.UI; // Changed from InvaderInsider.Managers
+using InvaderInsider; // IDamageable 인터페이스 사용을 위해 추가
+using System; // Action 델리게이트 사용을 위해 추가
 
-public class Player : MonoBehaviour
+public class Player : MonoBehaviour, IDamageable
 {
     // 체력 관련 변수
-    [SerializeField] private int maxHealth = 100;
-    private int currentHealth;
+    [SerializeField] private float maxHealth = 100f; // float로 변경
+    private float currentHealth;
 
-    // 체력 속성 추가
-    public int CurrentHealth { get { return currentHealth; } }
-    public int MaxHealth { get { return maxHealth; } }
+    // 체력 속성 추가 (IDamageable 인터페이스 구현)
+    public float CurrentHealth { get { return currentHealth; } }
+    public float MaxHealth { get { return maxHealth; } }
+
+    // IDamageable 인터페이스 이벤트 구현
+    public event Action<float> OnHealthChanged; // 현재 체력 비율을 전달
+    public event Action OnDeath;
 
     // 체력 UI 업데이트를 위한 TextMeshProUGUI 및 Slider 참조
     public TextMeshProUGUI healthText;
     //[SerializeField] private Slider healthSlider; // 체력을 표시할 UI Slider 요소
 
+    private BottomBarPanel _bottomBarPanel; // BottomBarPanel 인스턴스 캐싱
+    private UIManager _uiManager; // UIManager 인스턴스 캐싱
+
     // Start is called before the first frame update
     void Start()
     {
-        // currentHealth = maxHealth; // 시작 시 체력을 최대로 설정
-        
-        // Slider 최대값 설정 (선택 사항, 에디터에서 설정해도 됨)
-        // if (healthSlider != null)
-        // {
-        //     healthSlider.maxValue = maxHealth;
-        // }
+        _bottomBarPanel = FindObjectOfType<BottomBarPanel>(); // BottomBarPanel 인스턴스 찾기
+        if (_bottomBarPanel == null)
+        {
+            Debug.LogError("BottomBarPanel 인스턴스를 찾을 수 없습니다.");
+        }
 
-        // UpdateHealthUI(); // 초기 체력 UI 업데이트
+        _uiManager = UIManager.Instance; // UIManager 인스턴스 찾기
+        if (_uiManager == null)
+        {
+            Debug.LogError("UIManager 인스턴스를 찾을 수 없습니다.");
+        }
+        
         ResetHealth(); // Start에서 체력 초기화 및 UI 업데이트
     }
 
@@ -42,16 +54,12 @@ public class Player : MonoBehaviour
     public void ResetHealth()
     {
         currentHealth = maxHealth;
-        // UpdateHealthUI(); // UI 업데이트 로직은 BottomBarPanel로 이동
-        if (FindObjectOfType<BottomBarPanel>() != null)
-        {
-            FindObjectOfType<BottomBarPanel>().UpdatePlayerHealthDisplay(currentHealth, maxHealth);
-        }
+        OnHealthChanged?.Invoke(currentHealth / maxHealth); // 체력 변경 이벤트 발생 (비율 전달)
         Debug.Log("Player health reset.");
     }
 
-    // 체력을 감소시키는 함수
-    public void TakeDamage(int damageAmount)
+    // 체력을 감소시키는 함수 (IDamageable 인터페이스 구현)
+    public void TakeDamage(float damageAmount)
     {
         currentHealth -= damageAmount;
         if (currentHealth <= 0)
@@ -59,34 +67,19 @@ public class Player : MonoBehaviour
             currentHealth = 0; // 체력이 0 이하로 내려가지 않도록 보정
             Die(); // 체력이 0 이하가 되면 죽음 처리
         }
-        // UpdateHealthUI(); // UI 업데이트 로직은 BottomBarPanel로 이동
-        if (FindObjectOfType<BottomBarPanel>() != null)
-        {
-            FindObjectOfType<BottomBarPanel>().UpdatePlayerHealthDisplay(currentHealth, maxHealth);
-        }
+        OnHealthChanged?.Invoke(currentHealth / maxHealth); // 체력 변경 이벤트 발생 (비율 전달)
     }
 
     // 주인공이 죽었을 때 처리하는 함수 (예정)
     void Die()
     {
         Debug.Log("Player Died!");
-        
-        // TODO: 게임 오버 처리 또는 리스폰 로직 구현
-        // 죽었을 때 UI를 업데이트하거나 비활성화할 수 있습니다.
-        // UpdateHealthUI(); // UI 업데이트 로직은 BottomBarPanel로 이동
-        if (FindObjectOfType<BottomBarPanel>() != null)
-        {
-            FindObjectOfType<BottomBarPanel>().UpdatePlayerHealthDisplay(currentHealth, maxHealth);
-        }
+        OnDeath?.Invoke(); // 사망 이벤트 발생
 
-        // 메인 메뉴 패널 활성화
-        if (UIManager.Instance != null)
+        // TODO: 게임 오버 처리 또는 리스폰 로직 구현
+        if (_uiManager != null)
         {
-            UIManager.Instance.ShowPanel("MainMenu"); // 메인 메뉴 패널 이름 사용
-        }
-        else
-        {
-            Debug.LogError("UIManager instance is null!");
+            _uiManager.ShowPanel("MainMenu"); // 메인 메뉴 패널 이름 사용
         }
 
         // 게임 일시 정지 (선택 사항)

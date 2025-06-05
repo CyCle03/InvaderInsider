@@ -1,14 +1,20 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using InvaderInsider.Data; // CardDBObject 사용을 위해 추가
 
-public class CardObject : MonoBehaviour//��ũ���ͺ�
+public class CardObject : MonoBehaviour//ũͺ
 {
-    public Card data = new Card();
+    public CardDBObject cardData; // Card 클래스 대신 CardDBObject 사용
+
     // Start is called before the first frame update
     void Start()
     {
-        
+        // cardData가 설정되어 있는지 확인하거나, 필요한 경우 초기화 로직 추가
+        if (cardData == null)
+        {
+            Debug.LogError("CardObject에 CardDBObject가 할당되지 않았습니다: " + gameObject.name);
+        }
     }
 
     // Update is called once per frame
@@ -16,32 +22,4 @@ public class CardObject : MonoBehaviour//��ũ���ͺ�
     {
         
     }
-}
-
-[System.Serializable]
-public class Card
-{
-    public string cName;
-    public int cID = -1;
-    public float range = 5f;
-    public float fireRate = 1f;
-    public float damage = 1f;
-    public int grade = 0;
-
-    public Card()
-    {
-        cName = "";
-        cID = -1;
-    }
-
-    public Card(CardObject card)
-    {
-        cName = card.name;
-        cID = card.data.cID;
-        range = card.data.range;
-        fireRate = card.data.fireRate;
-        damage = card.data.damage;
-        grade = card.data.grade;
-    }
-
 }

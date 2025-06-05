@@ -124,6 +124,7 @@ GameObject:
   - component: {fileID: 8889681821662939189}
   - component: {fileID: 5077930197147339151}
   - component: {fileID: 1100646320055560730}
+  - component: {fileID: 351113909933007307}
   m_Layer: 0
   m_Name: test_Enemy1
   m_TagString: Enemy
@@ -262,10 +263,22 @@ MonoBehaviour:
     eDataAmount: 1
     damageOnFinalWaypoint: 10
   pathUpdateRate: 0.2
-  healthSlider: {fileID: 2611185763950073947}
-  healthBarObject: {fileID: 2830842496561342231}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
+--- !u!114 &351113909933007307
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2762148938986004155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 075f76e439f3a734dbb8b4db89cfa637, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  healthSlider: {fileID: 2611185763950073947}
+  healthBarObject: {fileID: 2830842496561342231}
 --- !u!1 &2830842496561342231
 GameObject:
   m_ObjectHideFlags: 0

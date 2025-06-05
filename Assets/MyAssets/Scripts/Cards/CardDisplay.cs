@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using InvaderInsider.Data;
 
 namespace InvaderInsider.Cards
 {
@@ -19,9 +20,9 @@ namespace InvaderInsider.Cards
         [SerializeField] private Color[] rarityColors;  // Common, Rare, Epic, Legendary
         [SerializeField] private Sprite[] typeIcons;    // Unit, Spell, Trap
 
-        private CardData cardData;
+        private CardDBObject cardData;
 
-        public void SetupCard(CardData data)
+        public void SetupCard(CardDBObject data)
         {
             cardData = data;
             UpdateCardVisuals();
@@ -56,7 +57,7 @@ namespace InvaderInsider.Cards
                 typeIcon.sprite = typeIcons[(int)cardData.type];
         }
 
-        public CardData GetCardData()
+        public CardDBObject GetCardData()
         {
             return cardData;
         }

@@ -52,9 +52,9 @@ namespace InvaderInsider
         {
             get
             {
-                if (parent != null && enemyData != null && enemyData.ID >= 0)
+                if (enemyData != null)
                 {
-                    return parent.GetObject(enemyData.ID);
+                    return enemyData.Prefab;
                 }
                 return null;
             }

@@ -9,11 +9,29 @@ namespace InvaderInsider.Data
     public class CardDatabase : ScriptableObject
     {
         [Header("Card List")]
-        [SerializeField] private List<CardDBObject> allCards; // 모든 CardDBObject 에셋 목록
+        public List<CardDBObject> cards; // 모든 CardDBObject 에셋 목록
+
+        private Dictionary<int, CardDBObject> _cardDictionary; // 카드 ID로 CardDBObject를 빠르게 찾기 위한 캐시
 
         // 에디터에서 데이터 로드 시 중복 ID 체크 등의 유효성 검사 수행 (옵션)
         private void OnEnable()
         {
+            // Dictionary를 초기화하고 CardDBObject 목록을 채웁니다.
+            _cardDictionary = new Dictionary<int, CardDBObject>();
+            if (cards != null)
+            {
+                foreach (var card in cards)
+                {
+                    if (card != null && !_cardDictionary.ContainsKey(card.cardId))
+                    {
+                        _cardDictionary.Add(card.cardId, card);
+                    }
+                    else if (card != null)
+                    {
+                        Debug.LogWarning($"CardDatabase: Duplicate card ID found ({card.cardId}) for card {card.cardName}. Skipping.");
+                    }
+                }
+            }
             // TODO: 필요하다면 에디터 로드 시 유효성 검사 로직 추가
             // 예: 중복 cardId 체크 등
 #if UNITY_EDITOR
@@ -24,9 +42,9 @@ namespace InvaderInsider.Data
 #if UNITY_EDITOR
         private void CheckForDuplicateIds()
         {
-            if (allCards == null) return;
+            if (cards == null) return;
 
-            var duplicates = allCards.Where(c => c != null)
+            var duplicates = cards.Where(c => c != null)
                                   .GroupBy(c => c.cardId)
                                   .Where(g => g.Count() > 1)
                                   .ToList();
@@ -45,18 +63,27 @@ namespace InvaderInsider.Data
         // 카드 ID로 CardDBObject를 찾아 반환하는 함수
         public CardDBObject GetCardById(int cardId)
         {
-            if (allCards == null) return null;
+            if (_cardDictionary == null || _cardDictionary.Count == 0)
+            {
+                // 캐시가 비어있다면 OnEnable이 호출되지 않았거나 데이터가 없는 경우입니다.
+                // 런타임에는 이 상황이 발생하지 않아야 합니다.
+                OnEnable(); // 캐시 재구축 시도
+                if (_cardDictionary == null || _cardDictionary.Count == 0) return null;
+            }
 
-            // Linq를 사용하여 cardId가 일치하는 첫 번째 CardDBObject를 찾습니다.
-            // TODO: 성능 개선을 위해 Dictionary 등으로 캐싱 고려 가능
-            return allCards.FirstOrDefault(card => card != null && card.cardId == cardId);
+            // Dictionary를 사용하여 O(1) 시간 복잡도로 조회
+            if (_cardDictionary.TryGetValue(cardId, out CardDBObject card))
+            {
+                return card;
+            }
+            return null;
         }
 
         // 모든 카드 목록을 반환하는 함수 (소환 등에서 사용)
-        public List<CardDBObject> GetAllCards()
-        {
-            // 읽기 전용 복사본을 반환하여 외부에서 원본 목록 수정 방지
-            return allCards != null ? new List<CardDBObject>(allCards) : new List<CardDBObject>();
-        }
+        // public List<CardDBObject> GetAllCards()
+        // {
+        //     // 읽기 전용 복사본을 반환하여 외부에서 원본 목록 수정 방지
+        //     return cards != null ? new List<CardDBObject>(cards) : new List<CardDBObject>();
+        // }
     }
 } 

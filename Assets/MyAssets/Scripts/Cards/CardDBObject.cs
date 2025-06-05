@@ -1,4 +1,5 @@
 using UnityEngine;
+using InvaderInsider.Cards; // CardRarity 및 CardType 열거형 사용을 위해 추가
 
 namespace InvaderInsider.Data
 {
@@ -10,9 +11,12 @@ namespace InvaderInsider.Data
         public int cardId; // 카드를 식별할 고유 ID
         public string cardName; // 카드 이름
         [TextArea(3, 5)]
-        public string cardDescription; // 카드 설명
+        public string description; // 카드 설명
+        public Sprite artwork; // 카드 아트워크
+        public int cost; // 카드 비용
+        public int power; // 카드 능력치
         public CardRarity rarity; // 카드 등급
-        public CardType cardType; // 카드 종류 추가
+        public CardType type; // 카드 종류
 
         [Header("Summon Settings")]
         [Tooltip("이 카드가 소환될 확률 가중치 (높을수록 잘 나옴)")]
@@ -27,22 +31,5 @@ namespace InvaderInsider.Data
         // public int health; // 체력
         // public float cooldown; // 쿨다운
         // ... 등
-    }
-
-    // 카드 등급 Enum 정의
-    public enum CardRarity
-    {
-        Common,
-        Rare,
-        Epic,
-        Legendary
-    }
-
-    // 카드 종류 Enum 정의
-    public enum CardType
-    {
-        Character,
-        Equipment,
-        Tower
     }
 } 

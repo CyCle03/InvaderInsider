@@ -130,7 +130,7 @@ namespace InvaderInsider.Managers
                 Debug.Log($"소환 성공! 현재 횟수: {summonCount}, 다음 소환 비용: {currentSummonCost}");
 
                 // 소환 데이터 저장 (선택지 확정 후 저장하도록 변경할 수 있음)
-                SaveSummonData();
+                // SaveSummonData();
 
                 // 카드 데이터 로드 및 확률에 따라 3가지 선택지 생성 로직 구현
                 List<CardDBObject> selectedCards = SelectRandomCards(3); // 실제 CardDBObject 반환하도록 수정
@@ -161,7 +161,7 @@ namespace InvaderInsider.Managers
             }
 
             // CardDatabase에서 전체 카드 목록 가져오기
-            List<InvaderInsider.Data.CardDBObject> allAvailableCards = cardDatabase.GetAllCards();
+            List<InvaderInsider.Data.CardDBObject> allAvailableCards = cardDatabase.cards.ToList();
 
             if (allAvailableCards == null || allAvailableCards.Count == 0)
             {
@@ -284,6 +284,7 @@ namespace InvaderInsider.Managers
             if (SaveDataManager.Instance != null)
             {
                 SaveDataManager.Instance.AddCardToHandAndOwned(selectedCard.cardId);
+                SaveSummonData(); // 카드 선택 후 소환 데이터 저장
             }
             else
             {

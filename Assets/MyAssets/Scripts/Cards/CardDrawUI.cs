@@ -4,6 +4,7 @@ using TMPro;
 using System.Collections.Generic;
 using InvaderInsider.Data;
 using InvaderInsider.Managers;
+using UnityEngine.Events;
 
 namespace InvaderInsider.Cards
 {
@@ -20,6 +21,24 @@ namespace InvaderInsider.Cards
         [SerializeField] private Transform cardContainer;
         [SerializeField] private GameObject drawResultPanel;
 
+        private CardManager _cardManager;
+        private GameManager _gameManager;
+
+        private void Awake()
+        {
+            _cardManager = CardManager.Instance;
+            _gameManager = GameManager.Instance;
+
+            if (_cardManager == null)
+            {
+                Debug.LogError("CardManager instance not found!");
+            }
+            if (_gameManager == null)
+            {
+                Debug.LogError("GameManager instance not found!");
+            }
+        }
+
         private void Start()
         {
             InitializeUI();
@@ -32,8 +51,8 @@ namespace InvaderInsider.Cards
             UpdateCostTexts();
 
             // 버튼 이벤트 연결
-            singleDrawButton.onClick.AddListener(() => CardManager.Instance.DrawSingleCard());
-            multiDrawButton.onClick.AddListener(() => CardManager.Instance.DrawMultipleCards());
+            singleDrawButton.onClick.AddListener(() => _cardManager.DrawSingleCard());
+            multiDrawButton.onClick.AddListener(() => _cardManager.DrawMultipleCards());
 
             // 초기에는 결과 패널 숨기기
             drawResultPanel.SetActive(false);
@@ -42,33 +61,33 @@ namespace InvaderInsider.Cards
         private void SubscribeToEvents()
         {
             // 카드 매니저 이벤트 구독
-            CardManager.Instance.OnCardDrawn.AddListener(ShowSingleCardResult);
-            CardManager.Instance.OnMultipleCardsDrawn.AddListener(ShowMultipleCardResults);
+            _cardManager.OnCardDrawn.AddListener(new UnityEngine.Events.UnityAction<InvaderInsider.Data.CardDBObject>(ShowSingleCardResult));
+            _cardManager.OnMultipleCardsDrawn.AddListener(new UnityEngine.Events.UnityAction<System.Collections.Generic.List<InvaderInsider.Data.CardDBObject>>(ShowMultipleCardResults));
 
             // 리소스 변경 이벤트 구독
-            GameManager.Instance.AddResourcePointsListener(UpdateButtonStates);
+            _gameManager.AddResourcePointsListener(UpdateButtonStates);
         }
 
         private void UpdateCostTexts()
         {
-            singleDrawCostText.text = $"Draw 1 ({CardManager.Instance.GetSingleDrawCost()} eData)";
-            multiDrawCostText.text = $"Draw 5 ({CardManager.Instance.GetMultiDrawCost()} eData)";
+            singleDrawCostText.text = $"Draw 1 ({_cardManager.GetSingleDrawCost()} eData)";
+            multiDrawCostText.text = $"Draw 5 ({_cardManager.GetMultiDrawCost()} eData)";
         }
 
         private void UpdateButtonStates(int currentEData)
         {
-            singleDrawButton.interactable = currentEData >= CardManager.Instance.GetSingleDrawCost();
-            multiDrawButton.interactable = currentEData >= CardManager.Instance.GetMultiDrawCost();
+            singleDrawButton.interactable = currentEData >= _cardManager.GetSingleDrawCost();
+            multiDrawButton.interactable = currentEData >= _cardManager.GetMultiDrawCost();
         }
 
-        private void ShowSingleCardResult(CardData card)
+        private void ShowSingleCardResult(CardDBObject card)
         {
             ClearCardContainer();
             CreateCardDisplay(card);
             drawResultPanel.SetActive(true);
         }
 
-        private void ShowMultipleCardResults(List<CardData> cards)
+        private void ShowMultipleCardResults(List<CardDBObject> cards)
         {
             ClearCardContainer();
             foreach (var card in cards)
@@ -78,7 +97,7 @@ namespace InvaderInsider.Cards
             drawResultPanel.SetActive(true);
         }
 
-        private void CreateCardDisplay(CardData card)
+        private void CreateCardDisplay(CardDBObject card)
         {
             GameObject cardObj = Instantiate(cardPrefab, cardContainer);
             CardDisplay display = cardObj.GetComponent<CardDisplay>();
@@ -99,15 +118,15 @@ namespace InvaderInsider.Cards
         private void OnDestroy()
         {
             // 이벤트 구독 해제
-            if (CardManager.Instance != null)
+            if (_cardManager != null)
             {
-                CardManager.Instance.OnCardDrawn.RemoveListener(ShowSingleCardResult);
-                CardManager.Instance.OnMultipleCardsDrawn.RemoveListener(ShowMultipleCardResults);
+                _cardManager.OnCardDrawn.RemoveListener(new UnityEngine.Events.UnityAction<InvaderInsider.Data.CardDBObject>(ShowSingleCardResult));
+                _cardManager.OnMultipleCardsDrawn.RemoveListener(new UnityEngine.Events.UnityAction<System.Collections.Generic.List<InvaderInsider.Data.CardDBObject>>(ShowMultipleCardResults));
             }
 
-            if (GameManager.Instance != null)
+            if (_gameManager != null)
             {
-                GameManager.Instance.RemoveResourcePointsListener(UpdateButtonStates);
+                _gameManager.RemoveResourcePointsListener(UpdateButtonStates);
             }
         }
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.Events;
 using InvaderInsider.Managers;
+using InvaderInsider.Data;
 
 namespace InvaderInsider.Cards
 {
@@ -28,7 +29,7 @@ namespace InvaderInsider.Cards
         }
 
         [Header("Card Collections")]
-        [SerializeField] private List<CardData> allCards = new List<CardData>();
+        [SerializeField] private CardDatabase cardDatabase;
         
         [Header("Gacha Settings")]
         [SerializeField] private int singleDrawCost = 10;
@@ -36,8 +37,8 @@ namespace InvaderInsider.Cards
         [SerializeField] private float[] rarityRates = { 0.60f, 0.30f, 0.08f, 0.02f };  // Common, Rare, Epic, Legendary
 
         // Events
-        public UnityEvent<CardData> OnCardDrawn = new UnityEvent<CardData>();
-        public UnityEvent<List<CardData>> OnMultipleCardsDrawn = new UnityEvent<List<CardData>>();
+        public UnityEvent<CardDBObject> OnCardDrawn = new UnityEvent<CardDBObject>();
+        public UnityEvent<List<CardDBObject>> OnMultipleCardsDrawn = new UnityEvent<List<CardDBObject>>();
 
         private void Awake()
         {
@@ -45,6 +46,10 @@ namespace InvaderInsider.Cards
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
+                if (cardDatabase == null)
+                {
+                    Debug.LogError("Card Database Scriptable Object is not assigned in the inspector!");
+                }
             }
             else
             {
@@ -61,7 +66,7 @@ namespace InvaderInsider.Cards
                 return false;
             }
 
-            CardData drawnCard = DrawCardByRarity();
+            CardDBObject drawnCard = DrawCardByRarity();
             OnCardDrawn?.Invoke(drawnCard);
             return true;
         }
@@ -75,7 +80,7 @@ namespace InvaderInsider.Cards
                 return false;
             }
 
-            List<CardData> drawnCards = new List<CardData>();
+            List<CardDBObject> drawnCards = new List<CardDBObject>();
             for (int i = 0; i < count; i++)
             {
                 drawnCards.Add(DrawCardByRarity());
@@ -86,7 +91,7 @@ namespace InvaderInsider.Cards
         }
 
         // 레어도에 따른 카드 뽑기
-        private CardData DrawCardByRarity()
+        private CardDBObject DrawCardByRarity()
         {
             float randomValue = Random.value;
             float currentProbability = 0f;
@@ -104,46 +109,46 @@ namespace InvaderInsider.Cards
             }
 
             // 해당 레어도의 카드들 중에서 랜덤 선택
-            var cardsOfRarity = allCards.Where(card => card.rarity == selectedRarity).ToList();
+            var cardsOfRarity = cardDatabase.cards.Where(card => card.rarity == selectedRarity).ToList();
             if (cardsOfRarity.Count == 0)
             {
                 Debug.LogWarning($"No cards found for rarity: {selectedRarity}");
-                return allCards[0]; // Fallback to first card
+                return cardDatabase.cards[0]; // Fallback to first card
             }
 
             return cardsOfRarity[Random.Range(0, cardsOfRarity.Count)];
         }
 
         // 카드 정보 조회
-        public CardData GetCardById(int cardId)
+        public CardDBObject GetCardById(int cardId)
         {
             // 현재는 cardId가 List의 인덱스라고 가정
-            if (cardId >= 0 && cardId < allCards.Count)
-                return allCards[cardId];
+            if (cardId >= 0 && cardId < cardDatabase.cards.Count)
+                return cardDatabase.cards[cardId];
             return null;
         }
 
-        public List<CardData> GetAllCards()
+        public List<CardDBObject> GetAllCards()
         {
-            return allCards;
+            return cardDatabase.cards;
         }
 
-        public List<CardData> GetCardsByType(CardData.CardType type)
+        public List<CardDBObject> GetCardsByType(CardType type)
         {
-            return allCards.Where(card => card.type == type).ToList();
+            return cardDatabase.cards.Where(card => card.type == type).ToList();
         }
 
-        public List<CardData> GetCardsByRarity(CardRarity rarity)
+        public List<CardDBObject> GetCardsByRarity(CardRarity rarity)
         {
-            return allCards.Where(card => card.rarity == rarity).ToList();
+            return cardDatabase.cards.Where(card => card.rarity == rarity).ToList();
         }
 
         // 카드 추가 메서드 (에디터에서 사용)
-        public void AddCard(CardData card)
+        public void AddCard(CardDBObject card)
         {
-            if (!allCards.Any(c => c.cardId == card.cardId))
+            if (!cardDatabase.cards.Any(c => c.cardId == card.cardId))
             {
-                allCards.Add(card);
+                cardDatabase.cards.Add(card);
             }
         }
 

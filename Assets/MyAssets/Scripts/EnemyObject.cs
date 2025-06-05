@@ -48,8 +48,8 @@ namespace InvaderInsider
         private Queue<Transform> waypoints = new Queue<Transform>();
         
         [Header("UI")]
-        [SerializeField] private Slider healthSlider;
-        [SerializeField] private GameObject healthBarObject;
+        // [SerializeField] private Slider healthSlider;
+        // [SerializeField] private GameObject healthBarObject;
 
         [Header("Effects")]
         [SerializeField] private ParticleSystem hitEffect;
@@ -58,8 +58,9 @@ namespace InvaderInsider
         // Events
         public event Action<EnemyObject> OnWaypointReached;
         
-        // 주인공 참조
-        private Player player;
+        // 주인공 및 매니저 참조 캐싱
+        private Player _player;
+        private StageManager _stageManager;
 
         protected override void Start()
         {
@@ -72,16 +73,19 @@ namespace InvaderInsider
             // 적 초기화 (NavMeshAgent 속도 설정 등)
             InitializeEnemy();
             
-            // StageManager에서 WayPoint 정보 가져오기 및 초기화
-            if (StageManager.Instance != null)
+            // StageManager 인스턴스 캐싱
+            _stageManager = StageManager.Instance;
+            if (_stageManager == null)
             {
-                InitializeWaypoints();
+                Debug.LogError("StageManager 인스턴스를 찾을 수 없습니다.");
             }
 
-            // 씬에서 Player 스크립트 찾기 (최초 1회)
-            // 주: Player 스크립트가 InvaderInsider 네임스페이스에 없다면 using 처리가 필요할 수 있습니다.
-            player = FindObjectOfType<Player>();
-            if (player == null)
+            // WayPoint 정보 가져오기 및 초기화
+            InitializeWaypoints();
+            
+            // 씬에서 Player 스크립트 찾기 (최초 1회 캐싱)
+            _player = FindObjectOfType<Player>();
+            if (_player == null)
             {
                 Debug.LogError("Player script not found in the scene!");
             }
@@ -89,8 +93,8 @@ namespace InvaderInsider
             // 경로 업데이트 코루틴 시작
             StartCoroutine(UpdatePathRoutine());
 
-            // 체력 UI 초기화 및 업데이트
-            UpdateHealthUI();
+            // 체력 UI 초기화 및 업데이트는 BaseCharacter의 OnHealthChanged 이벤트로 처리
+            // UpdateHealthUI(); // 이 함수는 이제 사용하지 않습니다.
         }
 
         private void InitializeEnemy()
@@ -145,9 +149,9 @@ namespace InvaderInsider
             // Waypoints 큐 초기화
             waypoints.Clear();
             // StageManager에서 WayPoint 목록 가져와 큐에 추가
-            if (StageManager.Instance != null && StageManager.Instance.wayPoints != null)
+            if (_stageManager != null && _stageManager.wayPoints != null)
             {
-                 foreach (Transform waypoint in StageManager.Instance.wayPoints)
+                 foreach (Transform waypoint in _stageManager.wayPoints)
                 {
                     waypoints.Enqueue(waypoint);
                 }
@@ -181,9 +185,9 @@ namespace InvaderInsider
         private void ReachFinalDestination()
         {
             // 최종 목적지 (WayPoint2) 도달 시 주인공에게 데미지
-            if (player != null)
+            if (_player != null)
             {
-                player.TakeDamage(enemyData.damageOnFinalWaypoint); // 주인공 체력 감소
+                _player.TakeDamage(enemyData.damageOnFinalWaypoint); // 주인공 체력 감소
             }
             
             // 적 오브젝트 파괴 - 최종 목적지 도달 시 eData 지급 안 함
@@ -191,34 +195,28 @@ namespace InvaderInsider
             base.Die(); 
             
             // 살아있는 적 수 감소
-            if (StageManager.Instance != null)
+            if (_stageManager != null)
             {
-                StageManager.Instance.DecreaseActiveEnemyCount();
+                _stageManager.DecreaseActiveEnemyCount();
             }
         }
 
         protected override void Die()
         {
+            base.Die(); // BaseCharacter의 Die() 호출 (OnDeath 이벤트 발생 및 오브젝트 파괴)
+            
+            // TODO: 사망 효과 재생 또는 아이템 드랍 등 추가 로직
             if (deathEffect != null)
             {
-                var effect = Instantiate(deathEffect, transform.position, Quaternion.identity);
-                effect.Play();
+                ParticleSystem effect = Instantiate(deathEffect, transform.position, Quaternion.identity);
                 Destroy(effect.gameObject, effect.main.duration);
             }
 
-            // eData 보상 지급 (적 처치 시에만 호출됨)
-            Debug.Log($"[EnemyObject] Enemy died: Type({enemyData.enemyType}), eData reward({enemyData.eDataAmount})");
-            SaveDataManager.Instance.UpdateEData(enemyData.eDataAmount); // eData 값만 업데이트
-            
-            // 살아있는 적 수 감소
-            if (StageManager.Instance != null)
+            // StageManager에 적이 죽었음을 알림 (보상 지급 등)
+            if (_stageManager != null)
             {
-                StageManager.Instance.DecreaseActiveEnemyCount();
+                _stageManager.OnEnemyDied(enemyData.eDataAmount);
             }
-
-            // Attack coroutine이 있다면 여기서 중지 필요
-
-            base.Die();
         }
 
         // BaseCharacter의 Attack 추상 메서드 구현
@@ -232,50 +230,39 @@ namespace InvaderInsider
             // 예: target.TakeDamage(base.attackDamage);
         }
 
+        // 데미지를 입었을 때 처리 (BaseCharacter에서 이미 구현됨)
         public override void TakeDamage(float damage)
         {
-            base.TakeDamage(damage);
-            
+            base.TakeDamage(damage); // BaseCharacter의 TakeDamage 호출
+
             if (hitEffect != null)
             {
-                hitEffect.Play();
+                ParticleSystem effect = Instantiate(hitEffect, transform.position, Quaternion.identity);
+                Destroy(effect.gameObject, effect.main.duration);
             }
-            
-            // 체력 변경 후 UI 업데이트
-            UpdateHealthUI();
+
+            // 체력 UI 업데이트는 OnHealthChanged 이벤트를 구독하는 별도의 스크립트에서 처리
+            // UpdateHealthUI(); 
         }
 
-        // 체력 UI를 업데이트하는 함수
-        private void UpdateHealthUI()
-        {
-            // Slider UI 업데이트
-            if (healthSlider != null)
-            {
-                // BaseCharacter의 currentHealth와 maxHealth를 사용
-                healthSlider.value = currentHealth / maxHealth; 
-            }
-            
-            // 체력 바 오브젝트 활성화/비활성화 (체력이 최대 체력보다 작을 때 활성화)
-            if (healthBarObject != null)
-            {
-                healthBarObject.SetActive(currentHealth < maxHealth);
-            }
-            
-            // 필요하다면 TextMeshProUGUI 업데이트 로직도 추가 가능
-            // if (healthText != null)
-            // {
-            //     healthText.text = currentHealth.ToString();
-            // }
-        }
+        // private void UpdateHealthUI()
+        // {
+        //     if (healthSlider != null)
+        //     {
+        //         healthSlider.maxValue = MaxHealth;
+        //         healthSlider.value = CurrentHealth;
+        //         healthBarObject.SetActive(CurrentHealth < MaxHealth); // 체력이 줄어들 때만 체력바 표시
+        //     }
+        //     else
+        //     {
+        //         // Debug.LogWarning("Health Slider not assigned for " + gameObject.name);
+        //     }
+        // }
 
-        // 오브젝트 파괴 시 이벤트 구독 해지
         private void OnDestroy()
         {
-            if (StageManager.Instance != null)
-            {
-                // WaypointReached 이벤트 구독 해지 (만약 MainMenuPanel 등에서 구독했다면)
-                // StageManager.Instance.OnEnemyWaypointReached -= HandleEnemyWaypointReached; 
-            }
+            // TODO: 필요한 경우 구독 해지
+            // StageManager에서 적 리스트에서 제거하는 로직은 Die()에서 처리됨.
         }
     }
 } 

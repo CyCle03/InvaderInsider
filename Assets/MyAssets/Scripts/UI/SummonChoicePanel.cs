@@ -23,7 +23,7 @@ namespace InvaderInsider.UI
         private void Awake()
         {
             // SummonManager 인스턴스 찾기
-            summonManager = FindObjectOfType<SummonManager>();
+            summonManager = SummonManager.Instance; // FindObjectOfType 대신 Instance 사용
             if (summonManager == null)
             {
                 Debug.LogError("SummonManager 인스턴스를 찾을 수 없습니다. SummonChoicePanel이 제대로 작동하지 않습니다.");
@@ -65,16 +65,16 @@ namespace InvaderInsider.UI
                 if (i < choices.Count)
                 {
                     CardDBObject card = choices[i];
-                    // TODO: 실제 카드 이미지 로드 및 표시 로직 필요
-                    // if (cardImages != null && cardImages.Count > i && card.cardImage != null) // CardDBObject에 cardImage 필드가 있다고 가정
-                    // {
-                    //     cardImages[i].sprite = card.cardImage;
-                    // }
+                    // 실제 카드 이미지 로드 및 표시 로직
+                    if (cardImages != null && cardImages.Count > i && card.artwork != null)
+                    {
+                        cardImages[i].sprite = card.artwork;
+                    }
 
                     if (cardNames != null && cardNames.Count > i && cardNames[i] != null)
                     {
                         cardNames[i].text = card.cardName; // 카드 이름 표시
-                    } /* else if (cardNamesLegacy != null && cardNamesLegacy.Count > i && cardNamesLegacy[i] != null)
+                    } /* else if (cardNamesLegacy != null && cardNamesLegacy[i] != null)
                     {
                          cardNamesLegacy[i].text = card.cardName; // 기본 Text 사용 시
                     }*/

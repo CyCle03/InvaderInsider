@@ -45,5 +45,11 @@ namespace InvaderInsider
         public float MaxHealth => maxHealth;
         public float AttackDamage => attackDamage;
         public float AttackRange => attackRange;
+
+        // 체력 변경 이벤트를 외부에서 트리거할 수 있도록 protected 메서드 추가
+        protected void InvokeHealthChanged()
+        {
+            OnHealthChanged?.Invoke(currentHealth / maxHealth);
+        }
     }
 } 

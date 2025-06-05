@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using InvaderInsider.Cards;
+using InvaderInsider.Data;
 
 namespace InvaderInsider.UI
 {
@@ -14,7 +15,7 @@ namespace InvaderInsider.UI
         [SerializeField] private TextMeshProUGUI cardDescriptionText;
         [SerializeField] private Button cardButton;
 
-        private CardData cardData;
+        private CardDBObject cardData;
         public event Action OnCardClicked;
 
         private void Awake()
@@ -22,7 +23,7 @@ namespace InvaderInsider.UI
             cardButton?.onClick.AddListener(() => OnCardClicked?.Invoke());
         }
 
-        public void SetCard(CardData data)
+        public void SetCard(CardDBObject data)
         {
             cardData = data;
             UpdateVisuals();
@@ -40,6 +41,11 @@ namespace InvaderInsider.UI
             
             if (cardDescriptionText != null)
                 cardDescriptionText.text = cardData.description;
+        }
+
+        public CardDBObject GetCardData()
+        {
+            return cardData;
         }
 
         private void OnDestroy()
