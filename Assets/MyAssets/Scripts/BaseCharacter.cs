@@ -46,10 +46,28 @@ namespace InvaderInsider
         public float AttackDamage => attackDamage;
         public float AttackRange => attackRange;
 
-        // 체력 변경 이벤트를 외부에서 트리거할 수 있도록 protected 메서드 추가
         protected void InvokeHealthChanged()
         {
             OnHealthChanged?.Invoke(currentHealth / maxHealth);
+        }
+
+        // 장비 아이템 적용 메서드
+        public virtual void ApplyEquipment(InvaderInsider.Data.CardDBObject equipmentCard)
+        {
+            if (equipmentCard.type != InvaderInsider.Cards.CardType.Equipment)
+            {
+                Debug.LogWarning($"Tried to apply non-equipment card {equipmentCard.cardName} to {gameObject.name}.");
+                return;
+            }
+
+            attackDamage += equipmentCard.equipmentBonusAttack;
+            maxHealth += equipmentCard.equipmentBonusHealth;
+            currentHealth += equipmentCard.equipmentBonusHealth;
+
+            InvokeHealthChanged();
+
+            Debug.Log($"Equipment {equipmentCard.cardName} applied to Character {gameObject.name}. " +
+                      $"Attack: {attackDamage}, MaxHealth: {maxHealth}");
         }
     }
 } 

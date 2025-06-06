@@ -18,6 +18,13 @@ namespace InvaderInsider.Cards
         Tower
     }
 
+    public enum EquipmentTargetType // 장비 아이템 대상 타입 열거형
+    {
+        None, // 장비가 아님
+        Character, // 캐릭터에 적용 가능
+        Tower // 타워에 적용 가능
+    }
+
     [CreateAssetMenu(fileName = "New Card", menuName = "InvaderInsider/Card")]
     public class CardData : ScriptableObject
     {
@@ -28,5 +35,6 @@ namespace InvaderInsider.Cards
         [Header("Properties")]
         public CardType type;
         public CardRarity rarity;
+        public EquipmentTargetType equipmentTarget; // 장비 아이템 적용 대상
     }
 } 

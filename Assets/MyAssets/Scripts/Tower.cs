@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using InvaderInsider;
 using InvaderInsider.Managers; // StageManager 사용을 위해 추가
+using System; // Action 이벤트를 위해 추가
 
 public class Tower : MonoBehaviour
 {
+    [Header("Base Stats")] // 스탯 헤더 추가
     public float range = 5f;
     public float fireRate = 1f;
     public float dmg = 1f;
@@ -171,5 +173,21 @@ public class Tower : MonoBehaviour
             partToRotate.localRotation = _initialPartToRotateLocalRotation;
             Debug.Log($"{gameObject.name}의 포탑 회전이 초기 상태로 재설정되었습니다.");
         }
+    }
+
+    // 장비 아이템 적용 메서드
+    public void ApplyEquipment(InvaderInsider.Data.CardDBObject equipmentCard)
+    {
+        if (equipmentCard.type != InvaderInsider.Cards.CardType.Equipment)
+        {
+            Debug.LogWarning($"Tried to apply non-equipment card {equipmentCard.cardName} to {gameObject.name}.");
+            return;
+        }
+
+        dmg += equipmentCard.equipmentBonusAttack; // 공격력에만 보너스 적용
+        // maxHealth, currentHealth 증가 로직 제거
+
+        Debug.Log($"Equipment {equipmentCard.cardName} applied to Tower {gameObject.name}. " +
+                  $"Damage: {dmg}"); // 로그 메시지 수정
     }
 }

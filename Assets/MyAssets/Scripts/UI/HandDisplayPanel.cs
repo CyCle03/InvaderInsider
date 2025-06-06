@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using InvaderInsider.Data; // CardDBObject, CardDatabase 사용을 위해 추가
 using InvaderInsider.Managers; // SaveDataManager 사용을 위해 추가
 using TMPro; // TextMeshPro 사용 시 추가
+using InvaderInsider.Cards; // CardDrawUI, CardInteractionHandler 참조를 위해 추가
 
 namespace InvaderInsider.UI
 {
@@ -18,15 +19,22 @@ namespace InvaderInsider.UI
         private List<GameObject> currentHandItems = new List<GameObject>(); // 현재 UI에 표시된 핸드 카드 아이템 목록
 
         private SaveDataManager saveDataManager; // SaveDataManager 인스턴스 참조
+        private CardDrawUI cardDrawUI; // CardDrawUI 인스턴스 참조
         [Header("Data References")]
         [SerializeField] private CardDatabase cardDatabase; // 카드 데이터베이스 Scriptable Object 참조
 
         private void Awake()
         {
             saveDataManager = SaveDataManager.Instance; // SaveDataManager 인스턴스 찾기
+            cardDrawUI = CardDrawUI.Instance; // CardDrawUI 인스턴스 찾기
+
             if (saveDataManager == null)
             {
                 Debug.LogError("SaveDataManager 인스턴스를 찾을 수 없습니다. HandDisplayPanel이 제대로 작동하지 않습니다.");
+            }
+            if (cardDrawUI == null)
+            {
+                Debug.LogError("CardDrawUI 인스턴스를 찾을 수 없습니다. HandDisplayPanel이 제대로 작동하지 않습니다.");
             }
 
             // CardDatabase 참조 확인
@@ -59,6 +67,16 @@ namespace InvaderInsider.UI
                 saveDataManager.OnHandDataChanged -= UpdateHandUI;
             }
 
+            // CardInteractionHandler 이벤트 구독 해지 (currentHandItems에 남아있는 것들)
+            foreach (var item in currentHandItems)
+            {
+                CardInteractionHandler handler = item.GetComponent<CardInteractionHandler>();
+                if (handler != null)
+                {
+                    handler.OnCardPlayInteractionCompleted.RemoveListener(HandleCardPlayInteractionCompleted);
+                }
+            }
+
             // 전체 핸드 보기 버튼 이벤트 리스너 제거 (선택 사항)
             if (fullViewButton != null)
             {
@@ -71,35 +89,55 @@ namespace InvaderInsider.UI
         {
             Debug.Log($"핸드 UI 업데이트 요청됨. 현재 핸드 카드 수: {handCardIds.Count}");
 
-            // 기존 핸드 카드 아이템 모두 제거
+            // 기존 핸드 카드 아이템 모두 제거 (풀로 반환)
             foreach (var item in currentHandItems)
             {
-                Destroy(item);
+                // TODO: 이전에 CardInteractionHandler 이벤트 구독 해지
+                CardInteractionHandler handler = item.GetComponent<CardInteractionHandler>();
+                if (handler != null)
+                {
+                    handler.OnCardPlayInteractionCompleted.RemoveListener(HandleCardPlayInteractionCompleted); // 이벤트 구독 해지
+                }
+                cardDrawUI.ReturnPooledCard(item); // 풀로 반환
             }
             currentHandItems.Clear();
 
-            if (handContainer == null || handCardItemPrefab == null || cardDatabase == null) return; // 필요한 요소가 없으면 중단
+            if (handContainer == null || handCardItemPrefab == null || cardDatabase == null || cardDrawUI == null) return;
 
-            // 핸드에 있는 카드 ID 목록을 기반으로 UI 아이템 생성 및 추가
             foreach (int cardId in handCardIds)
             {
-                // CardDatabase를 사용하여 cardId로 CardDBObject 찾기
                 InvaderInsider.Data.CardDBObject cardData = cardDatabase.GetCardById(cardId);
 
                 if (cardData != null)
                 {
-                    GameObject handItemGo = Instantiate(handCardItemPrefab, handContainer);
-                    // TODO: handItemGo에 붙어있는 CardDisplayItem 스크립트 등에 카드 데이터 전달 및 UI 업데이트 요청
-                    // CardDisplayItem itemScript = handItemGo.GetComponent<CardDisplayItem>(); // 예시
-                    // if (itemScript != null) itemScript.SetCardData(cardData); // 예시
+                    GameObject handItemGo = cardDrawUI.GetPooledCard(); // 풀에서 카드 가져오기
+                    handItemGo.transform.SetParent(handContainer); // 핸드 컨테이너의 자식으로 설정
+                    handItemGo.transform.localScale = Vector3.one; // 크기 초기화
+
+                    CardDisplay display = handItemGo.GetComponent<CardDisplay>();
+                    if (display != null)
+                    {
+                        display.SetupCard(cardData);
+                    }
+
+                    // CardInteractionHandler 이벤트 구독
+                    CardInteractionHandler handler = handItemGo.GetComponent<CardInteractionHandler>();
+                    if (handler != null)
+                    {
+                        handler.OnCardPlayInteractionCompleted.AddListener(HandleCardPlayInteractionCompleted); // 이벤트 구독
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"No CardInteractionHandler found on hand card prefab for {cardData.cardName}.");
+                    }
 
                     currentHandItems.Add(handItemGo);
-                     Debug.Log($"핸드 UI에 카드 {cardData.cardName} ({cardId}) 추가됨.");
+                    Debug.Log($"핸드 UI에 카드 {cardData.cardName} ({cardId}) 추가됨.");
                 }
-                 else
-                 {
-                      Debug.LogWarning($"Card data not found for ID: {cardId}");
-                 }
+                else
+                {
+                    Debug.LogWarning($"Card data not found for ID: {cardId}");
+                }
             }
             Debug.Log($"핸드 UI 업데이트 완료. 표시된 아이템 수: {currentHandItems.Count}");
         }
@@ -111,6 +149,27 @@ namespace InvaderInsider.UI
             // TODO: FullHandViewPanel UI 활성화 및 현재 핸드 데이터 전달
             // UIManager.Instance.ShowPanel("FullHandViewPanel"); // 예시
             // FullHandViewPanel.GetComponent<FullHandViewPanel>().DisplayHand(saveDataManager.CurrentSaveData.deckData.handCardIds); // 예시
+        }
+
+        // 카드가 플레이/업그레이드 상호작용을 완료했을 때 호출될 메서드
+        private void HandleCardPlayInteractionCompleted(InvaderInsider.Cards.CardDisplay playedCardDisplay, InvaderInsider.UI.CardPlacementResult result)
+        {
+            InvaderInsider.Data.CardDBObject playedCardData = playedCardDisplay.GetCardData();
+
+            // 성공적으로 필드에 놓이거나 업그레이드된 경우에만 핸드에서 제거
+            if (result == CardPlacementResult.Success_Place || result == CardPlacementResult.Success_Upgrade)
+            {
+                Debug.Log($"Card {playedCardData.cardName} played/upgraded. Removing from hand.");
+                // SaveDataManager에서 핸드 데이터 업데이트 (실제 카드 데이터 제거)
+                saveDataManager.RemoveCardFromHand(playedCardData.cardId); 
+                // HandDisplayPanel의 currentHandItems 리스트에서 직접 제거 (UpdateHandUI가 다시 호출될 것이므로 필수 아닐 수 있으나 명시적으로)
+                // currentHandItems.Remove(playedCardDisplay.gameObject); // UpdateHandUI가 전체 갱신하므로 필요 없음
+                // 풀로 반환은 CardInteractionHandler에서 이미 비활성화했으므로 여기서는 명시적으로 호출 안 함
+            }
+             else
+             {
+                 Debug.Log($"Card {playedCardData.cardName} interaction failed or returned to hand. Result: {result}");
+             }
         }
 
         // TODO: 핸드 카드 아이템 클릭 시 개별 카드 상세 정보 표시 로직 (선택 사항)
