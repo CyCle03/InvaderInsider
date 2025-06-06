@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: 1toon_ouline
-  m_Shader: {fileID: -6465566751694194690, guid: f7d9733495272e049b23af707e740bed, type: 3}
+  m_Name: char_ouline 1
+  m_Shader: {fileID: -6465566751694194690, guid: 6aeb3efa57dc43343827ac30c51400de, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -112,7 +112,7 @@ Material:
     - _Surface: 0
     - _WorkflowMode: 1
     - _ZWrite: 1
-    - _outline_thickness: 0.001
+    - _outline_thickness: 0.012
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 0, g: 0, b: 0, a: 1}
