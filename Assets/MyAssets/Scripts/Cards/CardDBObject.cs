@@ -17,6 +17,11 @@ namespace InvaderInsider.Data
         public int power; // 카드 능력치
         public CardRarity rarity; // 카드 등급
         public CardType type; // 카드 종류
+        public EquipmentTargetType equipmentTarget; // 장비 아이템 적용 대상 추가
+
+        [Header("Equipment Properties (if type is Equipment)")]
+        public int equipmentBonusAttack; // 장비 아이템이 부여하는 추가 공격력
+        public int equipmentBonusHealth; // 장비 아이템이 부여하는 추가 체력
 
         [Header("Summon Settings")]
         [Tooltip("이 카드가 소환될 확률 가중치 (높을수록 잘 나옴)")]

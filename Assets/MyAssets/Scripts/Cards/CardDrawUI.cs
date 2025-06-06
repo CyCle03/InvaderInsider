@@ -10,6 +10,25 @@ namespace InvaderInsider.Cards
 {
     public class CardDrawUI : MonoBehaviour
     {
+        private static CardDrawUI instance; // 싱글톤 인스턴스
+        public static CardDrawUI Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = FindObjectOfType<CardDrawUI>();
+                    if (instance == null)
+                    {
+                        GameObject go = new GameObject("CardDrawUI");
+                        instance = go.AddComponent<CardDrawUI>();
+                        // DontDestroyOnLoad(go); // UI 매니저는 보통 씬에 고정되므로 DontDestroyOnLoad는 선택 사항
+                    }
+                }
+                return instance;
+            }
+        }
+
         [Header("Draw Buttons")]
         [SerializeField] private Button singleDrawButton;
         [SerializeField] private Button multiDrawButton;
@@ -21,11 +40,26 @@ namespace InvaderInsider.Cards
         [SerializeField] private Transform cardContainer;
         [SerializeField] private GameObject drawResultPanel;
 
+        [Header("Object Pooling Settings")]
+        [SerializeField] private int initialPoolSize = 10; // 초기 풀 크기
+        private Queue<GameObject> cardPool = new Queue<GameObject>();
+
         private CardManager _cardManager;
         private GameManager _gameManager;
 
         private void Awake()
         {
+            if (instance == null)
+            {
+                instance = this;
+                // DontDestroyOnLoad(gameObject); // 선택 사항
+            }
+            else if (instance != this)
+            {
+                Destroy(gameObject);
+                return; // 중복 인스턴스 파괴 후 즉시 종료
+            }
+
             _cardManager = CardManager.Instance;
             _gameManager = GameManager.Instance;
 
@@ -36,6 +70,18 @@ namespace InvaderInsider.Cards
             if (_gameManager == null)
             {
                 Debug.LogError("GameManager instance not found!");
+            }
+
+            InitializeCardPool(); // 카드 풀 초기화 추가
+        }
+
+        private void InitializeCardPool()
+        {
+            for (int i = 0; i < initialPoolSize; i++)
+            {
+                GameObject cardObj = Instantiate(cardPrefab, cardContainer);
+                cardObj.SetActive(false); // 비활성화하여 풀에 보관
+                cardPool.Enqueue(cardObj);
             }
         }
 
@@ -97,21 +143,61 @@ namespace InvaderInsider.Cards
             drawResultPanel.SetActive(true);
         }
 
-        private void CreateCardDisplay(CardDBObject card)
+        private GameObject CreateCardDisplay(CardDBObject card)
         {
-            GameObject cardObj = Instantiate(cardPrefab, cardContainer);
+            GameObject cardObj;
+            if (cardPool.Count > 0)
+            {
+                cardObj = cardPool.Dequeue();
+                cardObj.SetActive(true);
+                cardObj.transform.SetParent(cardContainer);
+                cardObj.transform.localScale = Vector3.one; // 크기 초기화 (필요시)
+            }
+            else
+            {
+                cardObj = Instantiate(cardPrefab, cardContainer);
+            }
+            
             CardDisplay display = cardObj.GetComponent<CardDisplay>();
             if (display != null)
             {
                 display.SetupCard(card);
             }
+            return cardObj; // 생성 또는 풀에서 가져온 GameObject 반환
+        }
+
+        // 외부에서 풀링된 카드를 가져갈 수 있도록 하는 메서드
+        public GameObject GetPooledCard()
+        {
+            if (cardPool.Count > 0)
+            {
+                GameObject cardObj = cardPool.Dequeue();
+                cardObj.SetActive(true); // 활성화
+                return cardObj;
+            }
+            else
+            {
+                // 풀이 비어있으면 새로 생성
+                GameObject cardObj = Instantiate(cardPrefab);
+                Debug.LogWarning("Card pool exhausted, created a new card instance.");
+                return cardObj;
+            }
+        }
+
+        // 외부에서 사용이 끝난 카드를 풀로 반환하는 메서드
+        public void ReturnPooledCard(GameObject cardObj)
+        {
+            cardObj.SetActive(false); // 비활성화
+            cardObj.transform.SetParent(cardContainer); // 다시 풀 컨테이너로 이동 (선택 사항)
+            cardPool.Enqueue(cardObj);
         }
 
         private void ClearCardContainer()
         {
             foreach (Transform child in cardContainer)
             {
-                Destroy(child.gameObject);
+                child.gameObject.SetActive(false);
+                cardPool.Enqueue(child.gameObject);
             }
         }
 
