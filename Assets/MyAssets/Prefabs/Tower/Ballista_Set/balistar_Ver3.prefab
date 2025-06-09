@@ -128,7 +128,7 @@ GameObject:
   - component: {fileID: 645857447005334333}
   - component: {fileID: 9198415564173367379}
   m_Layer: 0
-  m_Name: balistar
+  m_Name: balistar_Ver3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
