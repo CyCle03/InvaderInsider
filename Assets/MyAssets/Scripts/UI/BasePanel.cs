@@ -8,7 +8,7 @@ namespace InvaderInsider.UI
         [SerializeField] protected CanvasGroup canvasGroup;
         [SerializeField] protected float fadeTime = 0.3f;
         [SerializeField] public string panelName;
-        // private bool isInitialized = false;
+        private bool isInitialized = false;
         
         protected virtual void Awake()
         {
@@ -45,7 +45,7 @@ namespace InvaderInsider.UI
             HideImmediate();
         }
 
-        private void HideImmediate()
+        public void HideImmediate()
         {
             Debug.Log($"[{gameObject.name}] HideImmediate called");
             canvasGroup.alpha = 0f;

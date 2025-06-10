@@ -83,19 +83,22 @@ namespace InvaderInsider.UI
                 if (settingsPanel != null)
                 {
                     UIManager.Instance.RegisterPanel("Settings", settingsPanel);
-                    Debug.Log("Settings panel registered");
+                    settingsPanel.HideImmediate();
+                    Debug.Log("Settings panel registered and hidden");
                 }
 
                 if (deckPanel != null)
                 {
                     UIManager.Instance.RegisterPanel("Deck", deckPanel);
-                    Debug.Log("Deck panel registered");
+                    deckPanel.HideImmediate();
+                    Debug.Log("Deck panel registered and hidden");
                 }
 
                 if (pausePanel != null)
                 {
                     UIManager.Instance.RegisterPanel("Pause", pausePanel);
-                    Debug.Log("Pause panel registered");
+                    pausePanel.HideImmediate();
+                    Debug.Log("Pause panel registered and hidden");
                 }
 
                 isInitialized = true;

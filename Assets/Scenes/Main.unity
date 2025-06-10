@@ -796,14 +796,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6a91e5ecbd1293644b1b9f5eeb148ec1, type: 3}
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
---- !u!4 &116619610 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7039887058434185255, guid: 6a91e5ecbd1293644b1b9f5eeb148ec1, type: 3}
-  m_PrefabInstance: {fileID: 116619609}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &124660644
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -866,9 +858,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cf531628b707987488a22c5eb90ff9ba, type: 3}
   m_PrefabInstance: {fileID: 124660644}
   m_PrefabAsset: {fileID: 0}
-=======
->>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
->>>>>>> Stashed changes
 --- !u!1 &157071684
 GameObject:
   m_ObjectHideFlags: 0
@@ -3210,6 +3199,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 636028775}
   m_CullTransparentMesh: 1
+--- !u!1 &688643430
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 688643432}
+  - component: {fileID: 688643431}
+  m_Layer: 0
+  m_Name: MenuManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &688643431
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 688643430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b8973fb59e9aa9458bb4c63781189e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainMenuPanel: {fileID: 630955384}
+  settingsPanel: {fileID: 157071688}
+  deckPanel: {fileID: 1542351016}
+  pausePanel: {fileID: 857696273}
+--- !u!4 &688643432
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 688643430}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.7913016, y: 1.1625849, z: -1.6251885}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &698469947
 GameObject:
   m_ObjectHideFlags: 0
@@ -6390,7 +6427,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1113356312}
-  - component: {fileID: 1113356309}
   - component: {fileID: 1113356308}
   m_Layer: 0
   m_Name: Managers
@@ -6413,22 +6449,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   menuBindings: []
   escapeKey: 27
---- !u!114 &1113356309
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1113356307}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b8973fb59e9aa9458bb4c63781189e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mainMenuPanel: {fileID: 630955384}
-  settingsPanel: {fileID: 157071688}
-  deckPanel: {fileID: 1542351016}
-  pausePanel: {fileID: 857696273}
 --- !u!4 &1113356312
 Transform:
   m_ObjectHideFlags: 0
@@ -8975,9 +8995,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c2d67a6201633b046879ef9c8947c9f1, type: 3}
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
 --- !u!1001 &1573304805
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9081,32 +9098,10 @@ Transform:
   m_LocalScale: {x: 0.2721494, y: 0.2721494, z: 0.2721494}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 276888167}
-  - {fileID: 1925685211}
-  - {fileID: 959967714}
   - {fileID: 124660645}
-  - {fileID: 1250731751}
-  - {fileID: 577583840}
-  - {fileID: 1112507654}
-  - {fileID: 2121693993}
   - {fileID: 1573304806}
-  - {fileID: 778683751}
-  - {fileID: 912350344}
-  - {fileID: 906146368}
-  - {fileID: 1219984748}
-  - {fileID: 1424592691}
-  - {fileID: 1148752756}
-  - {fileID: 1969321296}
-  - {fileID: 907369199}
-  - {fileID: 1852820956}
-  - {fileID: 1663713361}
-  - {fileID: 1686435454}
-  - {fileID: 2112137425}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-=======
->>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
->>>>>>> Stashed changes
 --- !u!1 &1582962439
 GameObject:
   m_ObjectHideFlags: 0
@@ -12164,13 +12159,6 @@ PrefabInstance:
     - target: {fileID: 269471889640616327, guid: 24116cc6d6f785d4ea6c763de60be2e4, type: 3}
       propertyPath: m_Name
       value: balistar_Ver3
-=======
-<<<<<<< HEAD
-      value: Balistar
-=======
-      value: balistar_Ver3
->>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
->>>>>>> Stashed changes
       objectReference: {fileID: 0}
     - target: {fileID: 645857447005334333, guid: 24116cc6d6f785d4ea6c763de60be2e4, type: 3}
       propertyPath: m_LocalPosition.x
@@ -12338,21 +12326,16 @@ SceneRoots:
   - {fileID: 1091948474}
   - {fileID: 1113356312}
   - {fileID: 377803698}
+  - {fileID: 688643432}
   - {fileID: 1554795550}
   - {fileID: 1667510110}
   - {fileID: 1528028024}
   - {fileID: 1637558594}
   - {fileID: 5867529456581426889}
-<<<<<<< HEAD
   - {fileID: 1574153459}
-=======
   - {fileID: 116619609}
   - {fileID: 874568646}
   - {fileID: 2328428151077706309}
   - {fileID: 9222727103488875676}
   - {fileID: 1590320967}
   - {fileID: 555653463715977430}
-<<<<<<< Updated upstream
-=======
->>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
->>>>>>> Stashed changes
