@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using InvaderInsider; // IDamageable 인터페이스 사용을 위해 추가
 
 namespace InvaderInsider.UI
 {
