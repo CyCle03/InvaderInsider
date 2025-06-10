@@ -2,7 +2,9 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
 using InvaderInsider.Cards; // CardData, CardDBObject 참조를 위해 추가
+using InvaderInsider.Data; // CardDBObject 참조를 위해 추가
 using UnityEngine.Events; // UnityEvent를 사용하기 위해 추가
+using InvaderInsider; // BaseCharacter, Tower 참조를 위해 추가
 
 namespace InvaderInsider.UI
 {

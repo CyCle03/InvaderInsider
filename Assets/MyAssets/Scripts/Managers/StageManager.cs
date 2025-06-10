@@ -67,7 +67,6 @@ namespace InvaderInsider.Managers
             if (instance == null)
             {
                 instance = this;
-                DontDestroyOnLoad(gameObject);
                 
                 stageData = stageDataObject;
                 if (stageData == null)
@@ -75,7 +74,7 @@ namespace InvaderInsider.Managers
                     Debug.LogError("Stage data is not assigned in the inspector! Please assign a StageList ScriptableObject.");
                 }
             }
-            else if (instance != this)
+            else
             {
                 Destroy(gameObject);
             }
@@ -95,9 +94,6 @@ namespace InvaderInsider.Managers
                 Debug.LogError("Stage data is not set!");
                 return;
             }
-
-            // 씬 로드 후 새 게임을 시작하기 위해 StageManager 초기화 (자동 초기화 제거)
-            // InitializeStage();
         }
 
         public void InitializeStage()
