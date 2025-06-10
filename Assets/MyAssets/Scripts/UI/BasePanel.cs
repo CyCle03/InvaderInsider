@@ -8,7 +8,7 @@ namespace InvaderInsider.UI
         [SerializeField] protected CanvasGroup canvasGroup;
         [SerializeField] protected float fadeTime = 0.3f;
         [SerializeField] public string panelName;
-        private bool isInitialized = false;
+        // private bool isInitialized = false;
         
         protected virtual void Awake()
         {
@@ -20,7 +20,7 @@ namespace InvaderInsider.UI
             
             // Initial hide without animation
             // HideImmediate();
-            isInitialized = true;
+            // isInitialized = true;
         }
 
         public virtual void Show()

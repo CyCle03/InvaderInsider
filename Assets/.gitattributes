@@ -1,0 +1,8 @@
+# Unity YAML Merge tool setup
+*.meta merge=unityyamlmerge
+*.unity merge=unityyamlmerge
+*.asset merge=unityyamlmerge
+*.prefab merge=unityyamlmerge
+*.anim merge=unityyamlmerge
+*.controller merge=unityyamlmerge
+*.mat merge=unityyamlmerge 
