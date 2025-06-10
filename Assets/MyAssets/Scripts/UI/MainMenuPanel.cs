@@ -23,6 +23,7 @@ namespace InvaderInsider.UI
         [Header("Optional Buttons")]
         [SerializeField] private Button achievementsButton;
         [SerializeField] private Button quitButton;
+        [SerializeField] private Button backButton; // 뒤로가기 버튼 추가
 
         [Header("Layout Settings")]
         [SerializeField] private float buttonSpacing = 20f;
@@ -46,11 +47,6 @@ namespace InvaderInsider.UI
             SetupLayout();
             ValidateComponents();
             Initialize();
-        }
-
-        protected void Start()
-        {
-            // MainMenuPanel specific Start logic can go here if needed
         }
 
         private void SetupCanvas()
@@ -171,6 +167,7 @@ namespace InvaderInsider.UI
             // 선택적 버튼 컴포넌트 체크
             if (achievementsButton != null) ValidateButton(achievementsButton, "Achievements");
             if (quitButton != null) ValidateButton(quitButton, "Quit");
+            if (backButton != null) ValidateButton(backButton, "Back"); // 뒤로가기 버튼 유효성 검사
         }
 
         private void ValidateButton(Button button, string buttonName)
@@ -252,6 +249,13 @@ namespace InvaderInsider.UI
                 Debug.Log("Load Game button initialized");
             }
             
+            // 뒤로가기 버튼
+            if (backButton != null)
+            {
+                backButton.onClick.AddListener(OnBackButtonClicked);
+                Debug.Log("Back button initialized");
+            }
+
             // 필수 버튼들
             if (deckButton != null)
             {
@@ -288,98 +292,27 @@ namespace InvaderInsider.UI
         #region Button Click Handlers
         private void OnNewGameButtonClicked()
         {
-            Debug.Log("New Game button clicked!");
-            // 저장된 데이터 초기화
-            SaveDataManager.Instance.ResetGameData(); // SaveDataManager 인스턴스 초기화
+            Debug.Log("New Game button clicked");
+            SaveDataManager.Instance.ResetGameData(); // 새 게임 데이터 초기화
+            StageManager.Instance.InitializeStage(); // 스테이지 초기화
+            UIManager.Instance.ShowPanel("Gameplay"); // 게임 플레이 패널 표시
+            // Time.timeScale = 1f; // GameplayPanel.OnShow에서 처리
+            // UIManager.Instance.SetControlButtonsActive(true); // GameplayPanel.OnShow에서 처리
 
-            // 메인 메뉴 숨기기 및 게임 시작 처리
-            Hide();
-
-            // 주인공 체력 초기화
-            Player player = FindObjectOfType<Player>();
-            if (player != null)
-            {
-                player.ResetHealth();
-            }
-
-            // 현재 필드에 있는 모든 적 오브젝트 파괴
-            GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy"); // "Enemy" 태그 사용
-            foreach (GameObject enemy in enemies)
-            {
-                Destroy(enemy);
-            }
-
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.CurrentGameState = GameState.Playing;
-            }
-            else
-            {
-                Debug.LogError("GameManager not found in scene!");
-            }
-
-            Time.timeScale = 1f;
-            Debug.Log($"Time.timeScale set to: {Time.timeScale} in OnNewGameButtonClicked");
-
-            // 스테이지 초기화 및 시작
-            if (StageManager.Instance != null)
-            {
-                StageManager.Instance.InitializeStage();
-            }
-            else
-            {
-                Debug.LogError("StageManager not found in scene!");
-            }
+            // 애니메이터가 있으면 애니메이션 재생
+            if (hasAnimator) menuAnimator.SetTrigger("Hide");
         }
 
         private void OnLoadGameButtonClicked()
         {
-            Debug.Log("Load Game button clicked!");
+            Debug.Log("Load Game button clicked");
+            StageManager.Instance.InitializeStage(); // 스테이지 초기화 (저장된 데이터 기반)
+            UIManager.Instance.ShowPanel("Gameplay"); // 게임 플레이 패널 표시
+            // Time.timeScale = 1f; // GameplayPanel.OnShow에서 처리
+            // UIManager.Instance.SetControlButtonsActive(true); // GameplayPanel.OnShow에서 처리
 
-            // 저장된 데이터 로드
-            SaveDataManager.Instance.LoadGameData(); // 이미 Awake에서 로드될 수 있으나 명시적으로 호출
-
-            // 메인 메뉴 숨기기
-            Hide();
-
-            // 현재 필드 오브젝트 초기화 (NewGame과 동일)
-            // 주인공 체력 초기화
-            Player player = FindObjectOfType<Player>();
-            if (player != null)
-            {
-                player.ResetHealth();
-            }
-
-            // 현재 필드에 있는 모든 적 오브젝트 파괴
-            GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy"); // "Enemy" 태그 사용
-            foreach (GameObject enemy in enemies)
-            {
-                Destroy(enemy);
-            }
-
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.CurrentGameState = GameState.Playing; // 게임 상태 변경
-            }
-            else
-            {
-                Debug.LogError("GameManager not found in scene!");
-            }
-
-            Time.timeScale = 1f; // 게임 시간 재개
-            Debug.Log($"Time.timeScale set to: {Time.timeScale} in OnLoadGameButtonClicked");
-
-            // 저장된 최고 클리어 스테이지부터 게임 시작
-            if (StageManager.Instance != null)
-            {
-                int startStage = SaveDataManager.Instance.CurrentSaveData.progressData.highestStageCleared;
-                Debug.Log($"Loading game from stage: {startStage}");
-                StageManager.Instance.StartStageFrom(startStage);
-            }
-            else
-            {
-                Debug.LogError("StageManager not found in scene!");
-            }
+            // 애니메이터가 있으면 애니메이션 재생
+            if (hasAnimator) menuAnimator.SetTrigger("Hide");
         }
 
         private void OnDeckButtonClicked()
@@ -429,11 +362,16 @@ namespace InvaderInsider.UI
         private void OnQuitButtonClicked()
         {
             Debug.Log("Quit button clicked");
-            #if UNITY_EDITOR
-                UnityEditor.EditorApplication.isPlaying = false;
-            #else
-                Application.Quit();
-            #endif
+            Application.Quit();
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#endif
+        }
+
+        private void OnBackButtonClicked()
+        {
+            Debug.Log("Back button clicked");
+            UIManager.Instance.GoBack();
         }
         #endregion
 
@@ -446,6 +384,12 @@ namespace InvaderInsider.UI
 
             Time.timeScale = 0f; // 메인 메뉴 표시될 때 시간 정지
             Debug.Log($"Time.timeScale set to: {Time.timeScale} in MainMenuPanel.OnShow");
+
+            // 뒤로가기 버튼 가시성 설정: 이전 패널이 없으면 숨김
+            if (backButton != null)
+            {
+                backButton.gameObject.SetActive(UIManager.Instance.HasPreviousPanel());
+            }
 
             // 저장된 데이터가 있는지 확인하여 불러오기 버튼 활성화/비활성화
             if (loadGameButton != null)
@@ -474,6 +418,7 @@ namespace InvaderInsider.UI
             if (settingsButton != null) settingsButton.onClick.RemoveAllListeners();
             if (achievementsButton != null) achievementsButton.onClick.RemoveAllListeners();
             if (quitButton != null) quitButton.onClick.RemoveAllListeners();
+            if (backButton != null) backButton.onClick.RemoveAllListeners();
         }
 
         private void Update()

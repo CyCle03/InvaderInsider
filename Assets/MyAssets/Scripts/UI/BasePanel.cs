@@ -19,7 +19,7 @@ namespace InvaderInsider.UI
                 canvasGroup = gameObject.AddComponent<CanvasGroup>();
             
             // Initial hide without animation
-            HideImmediate();
+            // HideImmediate();
             isInitialized = true;
         }
 
@@ -36,16 +36,16 @@ namespace InvaderInsider.UI
         public virtual void Hide()
         {
             Debug.Log($"[{gameObject.name}] Hide called");
-            if (!isInitialized)
-            {
-                HideImmediate();
-                return;
-            }
+            // if (!isInitialized)
+            // {
+            //     HideImmediate();
+            //     return;
+            // }
 
             HideImmediate();
         }
 
-        private void HideImmediate()
+        public void HideImmediate()
         {
             Debug.Log($"[{gameObject.name}] HideImmediate called");
             canvasGroup.alpha = 0f;
