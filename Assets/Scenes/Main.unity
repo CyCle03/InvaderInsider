@@ -9571,9 +9571,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c2d67a6201633b046879ef9c8947c9f1, type: 3}
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
 --- !u!1001 &1573304805
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9700,9 +9697,6 @@ Transform:
   - {fileID: 2112137425}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-=======
->>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
->>>>>>> Stashed changes
 --- !u!1 &1582962439
 GameObject:
   m_ObjectHideFlags: 0
@@ -13315,15 +13309,9 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 269471889640616327, guid: 24116cc6d6f785d4ea6c763de60be2e4, type: 3}
       propertyPath: m_Name
-<<<<<<< Updated upstream
       value: balistar_Ver3
-=======
-<<<<<<< HEAD
       value: Balistar
-=======
       value: balistar_Ver3
->>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
->>>>>>> Stashed changes
       objectReference: {fileID: 0}
     - target: {fileID: 645857447005334333, guid: 24116cc6d6f785d4ea6c763de60be2e4, type: 3}
       propertyPath: m_LocalPosition.x
@@ -13498,16 +13486,10 @@ SceneRoots:
   - {fileID: 1528028024}
   - {fileID: 1637558594}
   - {fileID: 5867529456581426889}
-<<<<<<< HEAD
   - {fileID: 1574153459}
-=======
   - {fileID: 116619609}
   - {fileID: 874568646}
   - {fileID: 2328428151077706309}
   - {fileID: 9222727103488875676}
   - {fileID: 1590320967}
   - {fileID: 555653463715977430}
-<<<<<<< Updated upstream
-=======
->>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
->>>>>>> Stashed changes
