@@ -11,60 +11,30 @@ namespace InvaderInsider.UI
 {
     public class MenuManager : MonoBehaviour
     {
-        private static MenuManager _instance;
-        public static MenuManager Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    _instance = FindObjectOfType<MenuManager>();
-                    if (_instance == null)
-                    {
-                        GameObject go = new GameObject("MenuManager");
-                        _instance = go.AddComponent<MenuManager>();
-                    }
-                }
-                return _instance;
-            }
-        }
-
         [Header("Panels")]
-        private MainMenuPanel mainMenuPanel;
-        private SettingsPanel settingsPanel;
-        private DeckPanel deckPanel;
-        private PausePanel pausePanel;
-        private GameplayPanel gameplayPanel;
+        [SerializeField] private MainMenuPanel mainMenuPanel;
+        [SerializeField] private SettingsPanel settingsPanel;
+        [SerializeField] private DeckPanel deckPanel;
+        [SerializeField] private PausePanel pausePanel;
 
         private bool isInitialized = false;
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Debug.LogWarning("Multiple MenuManager instances found. Destroying duplicate.");
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-
             Debug.Log("MenuManager Awake");
             // Ensure UIManager is created first
             var uiManager = UIManager.Instance;
             Debug.Log($"UIManager instance: {uiManager != null}");
+            InitializeUI();
         }
 
         private void Start()
         {
-            InitializeUI();
             if (!isInitialized)
             {
-                Debug.LogError("MenuManager initialization failed in Start!");
-                return;
+                Debug.LogError("MenuManager not initialized on Start!");
             }
-            ShowMainMenu(); 
+            ShowMainMenu();
         }
         
         private IEnumerator RetryInitialization()
@@ -96,19 +66,6 @@ namespace InvaderInsider.UI
         {
             Debug.Log($"InitializeUI - MainMenuPanel: {mainMenuPanel != null}");
             
-            // 패널들을 씬에서 동적으로 찾아서 할당
-            mainMenuPanel = FindObjectOfType<MainMenuPanel>();
-            settingsPanel = FindObjectOfType<SettingsPanel>();
-            deckPanel = FindObjectOfType<DeckPanel>();
-            pausePanel = FindObjectOfType<PausePanel>();
-            gameplayPanel = FindObjectOfType<GameplayPanel>();
-
-            // 찾은 패널들을 숨깁니다. MainMenuPanel은 ShowMainMenu에서 표시됩니다.
-            if (settingsPanel != null) settingsPanel.HideImmediate();
-            if (deckPanel != null) deckPanel.HideImmediate();
-            if (pausePanel != null) pausePanel.HideImmediate();
-            if (gameplayPanel != null) gameplayPanel.HideImmediate();
-
             if (mainMenuPanel == null)
             {
                 Debug.LogError("MainMenuPanel is missing!");
@@ -117,34 +74,28 @@ namespace InvaderInsider.UI
 
             try
             {
-                if (mainMenuPanel != null && !UIManager.Instance.IsPanelRegistered("MainMenu"))
+                if (mainMenuPanel != null)
                 {
                     UIManager.Instance.RegisterPanel("MainMenu", mainMenuPanel);
                     Debug.Log("MainMenu panel registered");
                 }
 
-                if (settingsPanel != null && !UIManager.Instance.IsPanelRegistered("Settings"))
+                if (settingsPanel != null)
                 {
                     UIManager.Instance.RegisterPanel("Settings", settingsPanel);
                     Debug.Log("Settings panel registered");
                 }
 
-                if (deckPanel != null && !UIManager.Instance.IsPanelRegistered("Deck"))
+                if (deckPanel != null)
                 {
                     UIManager.Instance.RegisterPanel("Deck", deckPanel);
                     Debug.Log("Deck panel registered");
                 }
 
-                if (pausePanel != null && !UIManager.Instance.IsPanelRegistered("Pause"))
+                if (pausePanel != null)
                 {
                     UIManager.Instance.RegisterPanel("Pause", pausePanel);
                     Debug.Log("Pause panel registered");
-                }
-
-                if (gameplayPanel != null && !UIManager.Instance.IsPanelRegistered("Gameplay"))
-                {
-                    UIManager.Instance.RegisterPanel("Gameplay", gameplayPanel);
-                    Debug.Log("Gameplay panel registered");
                 }
 
                 isInitialized = true;
@@ -227,14 +178,6 @@ namespace InvaderInsider.UI
                 {
                     ShowPause();
                 }
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (_instance == this)
-            {
-                _instance = null;
             }
         }
     }

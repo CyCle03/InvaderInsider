@@ -120,8 +120,6 @@ namespace InvaderInsider.Managers
             // eData 확인
             if (SaveDataManager.Instance.CurrentSaveData.progressData.currentEData >= currentSummonCost)
             {
-                // 게임 일시 정지 (선택 패널이 나타나는 동안)
-                Time.timeScale = 0f;
                 // eData 차감 (선택지 확정 후 차감하도록 변경할 수 있음)
                 SaveDataManager.Instance.UpdateEData(-currentSummonCost); // 음수 값을 전달하여 차감
                 Debug.Log($"eData 차감: {currentSummonCost}, 남은 eData: {SaveDataManager.Instance.CurrentSaveData.progressData.currentEData}");
@@ -140,11 +138,14 @@ namespace InvaderInsider.Managers
                 // 3가지 선택지를 UI로 보여주는 로직 구현
                 DisplaySummonChoices(selectedCards);
 
+                // UI 업데이트 (eData는 SaveDataManager에서 이미 업데이트 이벤트 발생)
+                // UIManager.Instance.UpdateSummonUI(summonCount, currentSummonCost); // 예시
             }
             else
             {
                 // eData 부족
                 Debug.Log($"eData 부족! 현재 eData: {SaveDataManager.Instance.CurrentSaveData.progressData.currentEData}, 필요 비용: {currentSummonCost}");
+                // UIManager.Instance.ShowMessagePanel("eData가 부족합니다!"); // 예시
             }
         }
 
@@ -271,9 +272,6 @@ namespace InvaderInsider.Managers
         // 플레이어가 소환 결과 중 하나의 카드를 선택했을 때 호출될 함수
         public void OnCardChoiceSelected(CardDBObject selectedCard)
         {
-            // 게임 재개
-            Time.timeScale = 1f;
-
             if (selectedCard == null)
             {
                 Debug.LogError("Selected card is null!");
@@ -308,6 +306,14 @@ namespace InvaderInsider.Managers
         // 메인 메뉴에서 '새 게임' 또는 '불러오기' 시 SummonManager.Instance.LoadSummonData() 호출 필요
 
     }
+
+    // TODO: SummonChoicePanel 스크립트 정의 (UI 패널에 붙여서 사용할 스크립트) - 이미 생성됨!
+    // 이 스크립트는 선택지 카드 정보를 받아와 UI 요소를 업데이트하고
+    // 플레이어의 선택을 SummonManager.OnCardChoiceSelected로 전달하는 역할을 합니다.
+
+    // TODO: HandDisplayPanel 스크립트 정의 (핸드 UI를 관리할 스크립트) - 이미 생성됨!
+    // 이 스크립트는 SaveDataManager의 핸드 데이터 변경 이벤트를 구독하여
+    // 핸드에 있는 카드들을 작은 이미지로 표시하고, 클릭 시 전체 카드 UI를 보여주는 로직을 구현합니다.
 
     // TODO: FullHandViewPanel 스크립트 정의 (전체 카드 UI를 관리할 스크립트)
     // 이 스크립트는 선택된 카드의 상세 정보를 받아와 크게 표시하는 역할을 합니다.

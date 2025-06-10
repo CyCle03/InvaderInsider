@@ -36,13 +36,9 @@ namespace InvaderInsider.UI
 
         private void RestartGame()
         {
-            Debug.Log("[PausePanel] RestartGame called!");
-            // Time.timeScale = 1f; // GameplayPanel.OnShow에서 처리
+            Time.timeScale = 1f;
             Debug.Log($"Time.timeScale set to: {Time.timeScale} in RestartGame");
-            StageManager.Instance.InitializeStage(); // 스테이지 초기화
-            UIManager.Instance.ShowPanel("Gameplay"); // 게임 플레이 패널 표시
-            // UIManager.Instance.SetControlButtonsActive(true); // GameplayPanel.OnShow에서 처리
-            // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
         protected override void OnShow()
