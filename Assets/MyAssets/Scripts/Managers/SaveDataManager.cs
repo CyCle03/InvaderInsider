@@ -198,7 +198,7 @@ namespace InvaderInsider.Data
             Debug.Log($"[SaveDataManager] Saved game data: {jsonData}");
         }
 
-        public void LoadGameData()
+        public bool LoadGameData()
         {
             if (PlayerPrefs.HasKey("SaveData"))
             {
@@ -211,11 +211,13 @@ namespace InvaderInsider.Data
 
                 // 저장된 게임 데이터 로드가 완료되었음을 알리는 이벤트
                 OnGameDataLoaded?.Invoke();
+                return true;
             }
             else
             {
                 Debug.Log("[SaveDataManager] No saved data found, using default values");
                 currentSaveData = new SaveData();
+                return false;
             }
         }
 
