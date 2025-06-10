@@ -15,6 +15,10 @@ namespace InvaderInsider.UI
         [SerializeField] private List<TextMeshProUGUI> cardNames; // 각 버튼에 표시할 카드 이름 (TextMeshPro 사용 시)
         // [SerializeField] private List<Text> cardNamesLegacy; // 각 버튼에 표시할 카드 이름 (기본 Text 사용 시)
 
+        [Header("Field View Settings")]
+        [SerializeField] private Button viewFieldButton; // 필드 보기 버튼
+        [SerializeField] private GameObject gameplayFieldRoot; // 게임 필드의 루트 GameObject (활성/비활성화 대상)
+
         private List<CardDBObject> currentChoices; // 현재 표시 중인 카드 선택지
 
         // SummonManager 인스턴스 참조 (Awake에서 찾도록 하거나 다른 방식으로 주입 가능)
@@ -34,6 +38,12 @@ namespace InvaderInsider.UI
             {
                 int choiceIndex = i; // 클로저를 위해 지역 변수 사용
                 choiceButtons[i].onClick.AddListener(() => OnChoiceButtonClicked(choiceIndex));
+            }
+
+            // 필드 보기 버튼에 클릭 이벤트 리스너 추가
+            if (viewFieldButton != null)
+            {
+                viewFieldButton.onClick.AddListener(OnViewFieldButtonClicked);
             }
         }
 
@@ -97,6 +107,18 @@ namespace InvaderInsider.UI
 
             // 패널 활성화 (UICanvas 아래에 적절히 배치 필요)
             gameObject.SetActive(true);
+
+            // 필드 보기 버튼 활성화
+            if (viewFieldButton != null)
+            {
+                viewFieldButton.gameObject.SetActive(true);
+            }
+
+            // 게임 필드는 기본적으로 비활성화 (선택 패널이 나타나면)
+            if (gameplayFieldRoot != null)
+            {
+                gameplayFieldRoot.SetActive(false);
+            }
         }
 
         // 버튼 클릭 시 호출될 함수
@@ -116,10 +138,33 @@ namespace InvaderInsider.UI
                 // 선택 완료 후 패널 비활성화 또는 파괴 (SummonManager에서도 처리)
                 // gameObject.SetActive(false); // 예시
                 // Destroy(gameObject); // SummonManager에서 처리하는 것이 일반적
+
+                // 카드 선택 완료 시 게임 필드 다시 활성화 (선택 패널이 숨겨지므로)
+                if (gameplayFieldRoot != null)
+                {
+                    gameplayFieldRoot.SetActive(true);
+                }
             }
             else
             {
                 Debug.LogError($"잘못된 선택 버튼 인덱스: {choiceIndex}");
+            }
+        }
+
+        // 필드 보기 버튼 클릭 시 호출될 함수
+        private void OnViewFieldButtonClicked()
+        {
+            if (gameplayFieldRoot != null)
+            {
+                gameplayFieldRoot.SetActive(!gameplayFieldRoot.activeSelf); // 현재 상태 토글
+                Debug.Log($"필드 보기 버튼 클릭. 게임 필드 활성화 상태: {gameplayFieldRoot.activeSelf}");
+
+                // 패널은 계속 활성화 상태 유지
+                gameObject.SetActive(true); // SummonChoicePanel을 계속 표시
+            }
+            else
+            {
+                Debug.LogError("게임 필드 루트 GameObject가 할당되지 않았습니다. 필드 보기 기능이 작동하지 않습니다.");
             }
         }
 
