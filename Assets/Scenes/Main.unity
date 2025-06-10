@@ -797,7 +797,10 @@ PrefabInstance:
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6a91e5ecbd1293644b1b9f5eeb148ec1, type: 3}
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 <<<<<<< HEAD
 --- !u!4 &116619610 stripped
 Transform:
@@ -868,6 +871,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
 =======
 >>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 --- !u!1 &157071684
 GameObject:
@@ -9578,7 +9584,10 @@ PrefabInstance:
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c2d67a6201633b046879ef9c8947c9f1, type: 3}
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 <<<<<<< HEAD
 --- !u!1001 &1573304805
 PrefabInstance:
@@ -9708,6 +9717,9 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 =======
 >>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 --- !u!1 &1582962439
 GameObject:
@@ -13322,13 +13334,19 @@ PrefabInstance:
     - target: {fileID: 269471889640616327, guid: 24116cc6d6f785d4ea6c763de60be2e4, type: 3}
       propertyPath: m_Name
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       value: balistar_Ver3
 =======
+=======
+>>>>>>> Stashed changes
 <<<<<<< HEAD
       value: Balistar
 =======
       value: balistar_Ver3
 >>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
       objectReference: {fileID: 0}
     - target: {fileID: 645857447005334333, guid: 24116cc6d6f785d4ea6c763de60be2e4, type: 3}
@@ -13514,6 +13532,10 @@ SceneRoots:
   - {fileID: 1590320967}
   - {fileID: 555653463715977430}
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
+>>>>>>> Stashed changes
 =======
 >>>>>>> 37b50ce0d75a92bd80fb3985d2979511c9aea354
 >>>>>>> Stashed changes

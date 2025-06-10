@@ -1,7 +1,10 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 --- !u!114 &-4756153476049185647
 MonoBehaviour:
   m_ObjectHideFlags: 11
@@ -15,6 +18,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   version: 7
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 --- !u!21 &2100000
 Material:
@@ -24,6 +30,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   m_Name: BulletMat
   m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
   m_Parent: {fileID: 0}
@@ -32,14 +39,22 @@ Material:
 =======
 <<<<<<<< Updated upstream:Assets/MyAssets/Models/Tower/Turret/Under_Ver2,3.mat
   m_Name: Under_Ver2,3
+=======
+<<<<<<<< Updated upstream:Assets/MyAssets/Materials/BulletMat.mat
+  m_Name: BulletMat
+>>>>>>> Stashed changes
 ========
   m_Name: under
 >>>>>>>> Stashed changes:Assets/MyAssets/Models/Tower/Ballista/Under.mat
   m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
+<<<<<<< Updated upstream
   m_ValidKeywords:
   - _NORMALMAP
+>>>>>>> Stashed changes
+=======
+  m_ValidKeywords: []
 >>>>>>> Stashed changes
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -55,17 +70,29 @@ Material:
     m_TexEnvs:
     - _BaseMap:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+<<<<<<<< Updated upstream:Assets/MyAssets/Materials/BulletMat.mat
+>>>>>>> Stashed changes
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
         m_Texture: {fileID: 0}
+<<<<<<< Updated upstream
 =======
+=======
+========
+>>>>>>> Stashed changes
         m_Texture: {fileID: 2800000, guid: ac39e5828c5e63c46a6a99e1a7d069e3, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
         m_Texture: {fileID: 2800000, guid: f125f3e5d07f06f4b842511d4c0c91d5, type: 3}
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+>>>>>>>> Stashed changes:Assets/MyAssets/Models/Tower/Ballista/Under.mat
 >>>>>>> Stashed changes
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -87,9 +114,17 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _MainTex:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         m_Texture: {fileID: 0}
 =======
         m_Texture: {fileID: 2800000, guid: ac39e5828c5e63c46a6a99e1a7d069e3, type: 3}
+>>>>>>> Stashed changes
+=======
+<<<<<<<< Updated upstream:Assets/MyAssets/Materials/BulletMat.mat
+        m_Texture: {fileID: 0}
+========
+        m_Texture: {fileID: 2800000, guid: ac39e5828c5e63c46a6a99e1a7d069e3, type: 3}
+>>>>>>>> Stashed changes:Assets/MyAssets/Models/Tower/Ballista/Under.mat
 >>>>>>> Stashed changes
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -146,7 +181,11 @@ Material:
     - _QueueOffset: 0
     - _ReceiveShadows: 1
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     - _Smoothness: 0.5
+=======
+    - _Smoothness: 0.1
+>>>>>>> Stashed changes
 =======
     - _Smoothness: 0.1
 >>>>>>> Stashed changes
@@ -164,6 +203,10 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+<<<<<<<< Updated upstream:Assets/MyAssets/Materials/BulletMat.mat
+>>>>>>> Stashed changes
 --- !u!114 &7585054840662238707
 MonoBehaviour:
   m_ObjectHideFlags: 11
@@ -177,5 +220,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   version: 7
+<<<<<<< Updated upstream
 =======
+>>>>>>> Stashed changes
+=======
+========
+>>>>>>>> Stashed changes:Assets/MyAssets/Models/Tower/Ballista/Under.mat
 >>>>>>> Stashed changes
