@@ -34,6 +34,9 @@ namespace InvaderInsider.UI
             {
                 Debug.LogError("MenuManager not initialized on Start!");
             }
+            
+            // Start에서 한 번 더 패널 상태 확인 및 수정
+            HideAllPanelsExceptMain();
             ShowMainMenu();
         }
         
@@ -74,6 +77,9 @@ namespace InvaderInsider.UI
 
             try
             {
+                // 먼저 모든 패널을 강제로 숨김
+                HideAllPanelsExceptMain();
+                
                 if (mainMenuPanel != null)
                 {
                     UIManager.Instance.RegisterPanel("MainMenu", mainMenuPanel);
@@ -83,22 +89,22 @@ namespace InvaderInsider.UI
                 if (settingsPanel != null)
                 {
                     UIManager.Instance.RegisterPanel("Settings", settingsPanel);
-                    settingsPanel.HideImmediate();
-                    Debug.Log("Settings panel registered and hidden");
+                    settingsPanel.ForceHide();
+                    Debug.Log("Settings panel registered and force hidden");
                 }
 
                 if (deckPanel != null)
                 {
                     UIManager.Instance.RegisterPanel("Deck", deckPanel);
-                    deckPanel.HideImmediate();
-                    Debug.Log("Deck panel registered and hidden");
+                    deckPanel.ForceHide();
+                    Debug.Log("Deck panel registered and force hidden");
                 }
 
                 if (pausePanel != null)
                 {
                     UIManager.Instance.RegisterPanel("Pause", pausePanel);
-                    pausePanel.HideImmediate();
-                    Debug.Log("Pause panel registered and hidden");
+                    pausePanel.ForceHide();
+                    Debug.Log("Pause panel registered and force hidden");
                 }
 
                 isInitialized = true;
@@ -108,6 +114,61 @@ namespace InvaderInsider.UI
             {
                 Debug.LogError($"Error during UI initialization: {e.Message}");
                 isInitialized = false;
+            }
+        }
+
+        private void HideAllPanelsExceptMain()
+        {
+            Debug.Log("Hiding all panels except main menu");
+            
+            if (settingsPanel != null)
+            {
+                settingsPanel.gameObject.SetActive(false);
+                var canvasGroup = settingsPanel.GetComponent<CanvasGroup>();
+                if (canvasGroup != null)
+                {
+                    canvasGroup.alpha = 0f;
+                    canvasGroup.interactable = false;
+                    canvasGroup.blocksRaycasts = false;
+                }
+            }
+            
+            if (deckPanel != null)
+            {
+                deckPanel.gameObject.SetActive(false);
+                var canvasGroup = deckPanel.GetComponent<CanvasGroup>();
+                if (canvasGroup != null)
+                {
+                    canvasGroup.alpha = 0f;
+                    canvasGroup.interactable = false;
+                    canvasGroup.blocksRaycasts = false;
+                }
+            }
+            
+            if (pausePanel != null)
+            {
+                pausePanel.gameObject.SetActive(false);
+                var canvasGroup = pausePanel.GetComponent<CanvasGroup>();
+                if (canvasGroup != null)
+                {
+                    canvasGroup.alpha = 0f;
+                    canvasGroup.interactable = false;
+                    canvasGroup.blocksRaycasts = false;
+                }
+            }
+            
+            // MainMenuPanel은 활성화 상태로 유지
+            if (mainMenuPanel != null)
+            {
+                mainMenuPanel.gameObject.SetActive(true);
+                var canvasGroup = mainMenuPanel.GetComponent<CanvasGroup>();
+                if (canvasGroup != null)
+                {
+                    canvasGroup.alpha = 1f;
+                    canvasGroup.interactable = true;
+                    canvasGroup.blocksRaycasts = true;
+                }
+                Debug.Log("MainMenu panel kept active");
             }
         }
 

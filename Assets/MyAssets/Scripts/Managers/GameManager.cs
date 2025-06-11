@@ -2,35 +2,68 @@ using UnityEngine;
 using System;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
+using UnityEngine.SceneManagement;
 
 namespace InvaderInsider.Managers
 {
     public enum GameState
     {
+        None,
         MainMenu,
+        Loading,
         Playing,
         Paused,
+        GameOver,
         Settings
     }
 
     public class GameManager : MonoBehaviour
     {
+        private const string LOG_PREFIX = "[Game] ";
+        private static readonly string[] LOG_MESSAGES = new string[]
+        {
+            "State changed to: {0}",
+            "Game started",
+            "Game paused",
+            "Game resumed",
+            "Game ended",
+            "Settings opened",
+            "Settings closed",
+            "Game data loaded. Updating game state and UI...",
+            "UI update initiated based on loaded data",
+            "StageManager not found. Cannot update Stage/Wave/Enemy Count UI",
+            "StageManager not found in the scene",
+            "BottomBarPanel not found in the scene",
+            "Player not found in the scene",
+            "EData spent: {0}",
+            "EData added: {0}",
+            "Stage {0} cleared with {1} stars"
+        };
+
         private static GameManager instance;
+        private static readonly object _lock = new object();
+        private static bool isQuitting = false;
+
         public static GameManager Instance
         {
             get
             {
-                if (instance == null)
+                if (isQuitting) return null;
+
+                lock (_lock)
                 {
-                    instance = FindObjectOfType<GameManager>();
                     if (instance == null)
                     {
-                        GameObject go = new GameObject("GameManager");
-                        instance = go.AddComponent<GameManager>();
-                        DontDestroyOnLoad(go);
+                        instance = FindObjectOfType<GameManager>();
+                        if (instance == null && !isQuitting)
+                        {
+                            GameObject go = new GameObject("GameManager");
+                            instance = go.AddComponent<GameManager>();
+                            DontDestroyOnLoad(go);
+                        }
                     }
+                    return instance;
                 }
-                return instance;
             }
         }
 
@@ -39,37 +72,25 @@ namespace InvaderInsider.Managers
         public GameState CurrentGameState
         {
             get => currentGameState;
-            set
+            private set
             {
-                currentGameState = value;
-                OnGameStateChanged?.Invoke(value);
+                if (currentGameState != value)
+                {
+                    currentGameState = value;
+                    OnGameStateChanged?.Invoke(value);
+                }
             }
         }
 
         public event Action<GameState> OnGameStateChanged;
 
-        // 캐싱할 매니저 및 플레이어 참조
         private StageManager cachedStageManager;
         private BottomBarPanel cachedBottomBarPanel;
         private Player cachedPlayer;
+        private SaveDataManager saveDataManager;
+        private UIManager uiManager;
 
-        private void OnEnable()
-        {
-            // SaveDataManager의 데이터 로드 완료 이벤트 구독
-            if (SaveDataManager.Instance != null)
-            {
-                SaveDataManager.Instance.OnGameDataLoaded += HandleGameDataLoaded;
-            }
-        }
-
-        private void OnDisable()
-        {
-            // SaveDataManager의 데이터 로드 완료 이벤트 구독 해지
-            if (SaveDataManager.Instance != null)
-            {
-                SaveDataManager.Instance.OnGameDataLoaded -= HandleGameDataLoaded;
-            }
-        }
+        public event System.Action OnStageClearedEvent;
 
         private void Awake()
         {
@@ -77,37 +98,186 @@ namespace InvaderInsider.Managers
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
+                InitializeManagers();
+                SceneManager.sceneLoaded += OnSceneLoaded;
             }
-            else
+            else if (instance != this)
             {
                 Destroy(gameObject);
             }
+        }
 
-            // 필요한 참조들을 Awake에서 캐싱
+        private void InitializeManagers()
+        {
+            saveDataManager = SaveDataManager.Instance;
+            uiManager = UIManager.Instance;
+            UpdateCachedComponents();
+        }
+
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            CleanupEventListeners();
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            UpdateCachedComponents();
+        }
+
+        private void UpdateCachedComponents()
+        {
             cachedStageManager = FindObjectOfType<StageManager>();
             cachedBottomBarPanel = FindObjectOfType<BottomBarPanel>();
             cachedPlayer = FindObjectOfType<Player>();
 
-            if (cachedStageManager == null) Debug.LogWarning("StageManager not found in the scene.");
-            if (cachedBottomBarPanel == null) Debug.LogWarning("BottomBarPanel not found in the scene.");
-            if (cachedPlayer == null) Debug.LogWarning("Player not found in the scene.");
+            if (cachedStageManager == null) Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[10]);
+            if (cachedBottomBarPanel == null) Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[11]);
+            if (cachedPlayer == null) Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[12]);
         }
 
-        void Start()
+        private void CleanupEventListeners()
         {
+            if (saveDataManager != null)
+            {
+                saveDataManager.OnGameDataLoaded -= HandleGameDataLoaded;
+            }
+            OnGameStateChanged -= HandleGameStateChanged;
         }
 
-        private void LoadGameData()
+        private void OnEnable()
         {
-            SaveDataManager.Instance.LoadGameData();
+            if (saveDataManager != null)
+            {
+                saveDataManager.OnGameDataLoaded -= HandleGameDataLoaded;
+                saveDataManager.OnGameDataLoaded += HandleGameDataLoaded;
+            }
+            OnGameStateChanged -= HandleGameStateChanged;
+            OnGameStateChanged += HandleGameStateChanged;
+        }
+
+        private void OnDisable()
+        {
+            CleanupEventListeners();
+        }
+
+        private void OnApplicationQuit()
+        {
+            isQuitting = true;
+        }
+
+        private void Start()
+        {
+            CurrentGameState = GameState.MainMenu;
+        }
+
+        private void HandleGameDataLoaded()
+        {
+            if (saveDataManager == null) return;
+
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[7]);
+            SaveData loadedData = saveDataManager.CurrentSaveData;
+
+            if (cachedStageManager != null)
+            {
+                uiManager.UpdateStage(loadedData.progressData.highestStageCleared, cachedStageManager.GetStageCount());
+                cachedStageManager.InitializeStageFromLoadedData(loadedData.progressData.highestStageCleared);
+
+                if (cachedBottomBarPanel != null)
+                {
+                    cachedBottomBarPanel.UpdateMonsterCountDisplay(cachedStageManager.ActiveEnemyCount);
+                }
+            }
+            else
+            {
+                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[9]);
+            }
+
+            if (cachedPlayer != null)
+            {
+                cachedPlayer.ResetHealth();
+            }
+
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[8]);
+        }
+
+        private void HandleGameStateChanged(GameState newState)
+        {
+            if (Application.isPlaying)
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], newState));
+            }
+            
+            switch (newState)
+            {
+                case GameState.MainMenu:
+                    if (uiManager != null)
+                    {
+                        uiManager.ShowPanel("MainMenu");
+                        uiManager.HideCurrentPanel();
+                        uiManager.HidePanel("InGame");
+                        uiManager.HidePanel("Pause");
+                    }
+                    break;
+
+                case GameState.Playing:
+                    if (uiManager != null)
+                    {
+                        uiManager.ShowPanel("InGame");
+                        if (uiManager.IsCurrentPanel("Pause"))
+                        {
+                            uiManager.GoBack();
+                        }
+                        else
+                        {
+                            uiManager.HideCurrentPanel();
+                        }
+                    }
+                    if (Application.isPlaying)
+                    {
+                        Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
+                    }
+                    break;
+
+                case GameState.Paused:
+                    if (uiManager != null && !uiManager.IsPanelActive("Pause"))
+                    {
+                        uiManager.ShowPanel("Pause");
+                    }
+                    if (Application.isPlaying)
+                    {
+                        Debug.Log(LOG_PREFIX + LOG_MESSAGES[2]);
+                    }
+                    break;
+
+                case GameState.Settings:
+                    if (uiManager != null)
+                    {
+                        uiManager.ShowPanel("Settings");
+                        uiManager.HideCurrentPanel();
+                    }
+                    if (Application.isPlaying)
+                    {
+                        Debug.Log(LOG_PREFIX + LOG_MESSAGES[5]);
+                    }
+                    break;
+            }
+        }
+
+        public void SetGameState(GameState newState)
+        {
+            CurrentGameState = newState;
         }
 
         public bool TrySpendEData(int amount)
         {
-            var currentEData = SaveDataManager.Instance.GetCurrentEData();
+            if (saveDataManager == null || amount <= 0) return false;
+            
+            var currentEData = saveDataManager.GetCurrentEData();
             if (currentEData >= amount)
             {
-                SaveDataManager.Instance.UpdateEData(-amount);
+                saveDataManager.UpdateEData(-amount);
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[13], amount));
                 return true;
             }
             return false;
@@ -115,64 +285,60 @@ namespace InvaderInsider.Managers
 
         public void AddEData(int amount)
         {
-            SaveDataManager.Instance.UpdateEData(amount);
+            if (saveDataManager != null && amount > 0)
+            {
+                saveDataManager.UpdateEData(amount);
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[14], amount));
+            }
         }
 
         public void StageCleared(int stageNum, int stars)
         {
-            SaveDataManager.Instance.UpdateStageProgress(stageNum, stars);
-            SaveDataManager.Instance.SaveGameData();
+            if (saveDataManager != null && stageNum > 0 && stars > 0)
+            {
+                saveDataManager.UpdateStageProgress(stageNum, stars);
+                saveDataManager.SaveGameData();
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[15], stageNum, stars));
+            }
         }
 
         public void AddResourcePointsListener(Action<int> listener)
         {
-            SaveDataManager.Instance.OnEDataChanged += listener;
-            // 현재 값으로 즉시 호출
-            listener?.Invoke(SaveDataManager.Instance.GetCurrentEData());
+            if (saveDataManager != null)
+            {
+                saveDataManager.OnEDataChanged += listener;
+            }
         }
 
         public void RemoveResourcePointsListener(Action<int> listener)
         {
-            SaveDataManager.Instance.OnEDataChanged -= listener;
+            if (saveDataManager != null)
+            {
+                saveDataManager.OnEDataChanged -= listener;
+            }
         }
 
-        private void HandleGameDataLoaded()
+        private void Update()
         {
-            Debug.Log("[GameManager] Game data loaded. Updating game state and UI...");
+            if (CurrentGameState != GameState.Playing || cachedStageManager == null) return;
 
-            // SaveDataManager에서 로드된 데이터를 가져옵니다.
-            SaveData loadedData = SaveDataManager.Instance.CurrentSaveData;
-
-            // --- 로드된 데이터를 기반으로 게임 상태 및 UI 업데이트 --- //
-
-            // StageManager 인스턴스를 캐싱된 참조로 사용
-            if (cachedStageManager != null)
+            if (cachedStageManager.ActiveEnemyCount <= 0)
             {
-                // UIManager의 UpdateStage 함수 호출. 총 스테이지 수는 StageManager에서 가져옵니다。
-                UIManager.Instance.UpdateStage(loadedData.progressData.highestStageCleared, cachedStageManager.GetStageCount());
-                
-                // 로드된 스테이지에 맞춰 웨이브 관리자 초기화 함수 호출
-                cachedStageManager.InitializeStageFromLoadedData(loadedData.progressData.highestStageCleared);
-
-                // StageManager 초기화 완료 후 BottomBarPanel의 적 수 업데이트
-                if (cachedBottomBarPanel != null)
-                {
-                    cachedBottomBarPanel.UpdateMonsterCountDisplay(cachedStageManager.activeEnemyCount);
-                }
-            } else {
-                Debug.LogWarning("StageManager not found. Cannot update Stage/Wave/Enemy Count UI.");
+                HandleStageCleared();
             }
+        }
 
-            // 플레이어 체력 업데이트 (Player 스크립트가 체력을 관리하고 Health UI는 BottomBarPanel이 표시)
-            if (cachedPlayer != null)
+        private void HandleStageCleared()
+        {
+            if (CurrentGameState != GameState.Playing) return;
+
+            CurrentGameState = GameState.None;
+            if (Application.isPlaying)
             {
-                cachedPlayer.ResetHealth();
+                Debug.Log(LOG_PREFIX + LOG_MESSAGES[16]);
             }
-
-            // eData UI 업데이트는 SaveDataManager의 OnEDataChanged 이벤트에 의해 이미 처리됩니다。
-            // 여기서는 별도 호출 필요 없습니다.
-
-            Debug.Log("[GameManager] UI update initiated based on loaded data.");
+            
+            OnStageClearedEvent?.Invoke();
         }
     }
 } 

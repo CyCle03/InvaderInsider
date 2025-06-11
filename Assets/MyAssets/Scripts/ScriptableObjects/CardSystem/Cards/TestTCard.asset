@@ -9,14 +9,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5fae93d134d9833499169dbe7269d4b2, type: 3}
-  m_Name: New Card
+  m_Script: {fileID: 11500000, guid: 8c5eb0922fb53074a9b84cfd64357fc6, type: 3}
+  m_Name: TestTCard
   m_EditorClassIdentifier: 
-  cardId: 1
-  cardName: 
+  cardId: 4
+  cardName: TestT
   description: 
   artwork: {fileID: 0}
   cost: 0
   power: 0
-  type: 0
   rarity: 0
+  type: 2
+  equipmentTarget: 0
+  equipmentBonusAttack: 0
+  equipmentBonusHealth: 0
+  summonWeight: 1
+  cardPrefab: {fileID: 0}

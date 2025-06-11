@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using InvaderInsider.Cards;
+using System.Threading.Tasks;
 
 namespace InvaderInsider.Data
 {
@@ -12,131 +13,224 @@ namespace InvaderInsider.Data
         public DeckData deckData = new DeckData();
         public SerializableSettings settings = new SerializableSettings();
         public SerializableStageProgress stageProgress = new SerializableStageProgress();
+
+        public SaveData Clone()
+        {
+            return new SaveData
+            {
+                progressData = new ProgressData
+                {
+                    currentEData = this.progressData.currentEData,
+                    highestStageCleared = this.progressData.highestStageCleared,
+                    summonCount = this.progressData.summonCount
+                },
+                deckData = new DeckData
+                {
+                    deckCardIds = new List<int>(this.deckData.deckCardIds),
+                    ownedCardIds = new List<int>(this.deckData.ownedCardIds),
+                    handCardIds = new List<int>(this.deckData.handCardIds)
+                },
+                settings = this.settings.Clone(),
+                stageProgress = this.stageProgress.Clone()
+            };
+        }
     }
 
     [Serializable]
     public class ProgressData
     {
-        public int currentEData = 0;
-        public int highestStageCleared = 0;
-        public int summonCount = 0;
+        public int currentEData;
+        public int highestStageCleared;
+        public int summonCount;
     }
 
     [Serializable]
     public class DeckData
     {
-        public List<int> deckCardIds = new List<int>();
-        public List<int> ownedCardIds = new List<int>();
-        public List<int> handCardIds = new List<int>();
+        private HashSet<int> deckCardSet = new HashSet<int>();
+        private HashSet<int> ownedCardSet = new HashSet<int>();
+        private HashSet<int> handCardSet = new HashSet<int>();
+
+        public List<int> deckCardIds
+        {
+            get => new List<int>(deckCardSet);
+            set => deckCardSet = new HashSet<int>(value);
+        }
+
+        public List<int> ownedCardIds
+        {
+            get => new List<int>(ownedCardSet);
+            set => ownedCardSet = new HashSet<int>(value);
+        }
+
+        public List<int> handCardIds
+        {
+            get => new List<int>(handCardSet);
+            set => handCardSet = new HashSet<int>(value);
+        }
+
+        public bool AddToDeck(int cardId) => deckCardSet.Add(cardId);
+        public bool RemoveFromDeck(int cardId) => deckCardSet.Remove(cardId);
+        public bool AddToOwned(int cardId) => ownedCardSet.Add(cardId);
+        public bool AddToHand(int cardId) => handCardSet.Add(cardId);
+        public bool RemoveFromHand(int cardId) => handCardSet.Remove(cardId);
+        public bool IsInDeck(int cardId) => deckCardSet.Contains(cardId);
+        public bool IsOwned(int cardId) => ownedCardSet.Contains(cardId);
+        public bool IsInHand(int cardId) => handCardSet.Contains(cardId);
     }
 
     [Serializable]
     public class SerializableSettings
     {
-        public List<string> keys = new List<string>();
-        public List<string> values = new List<string>();
+        private Dictionary<string, string> settings = new Dictionary<string, string>();
+
+        public List<string> keys
+        {
+            get => new List<string>(settings.Keys);
+            set { } // 직렬화를 위해 필요
+        }
+
+        public List<string> values
+        {
+            get => new List<string>(settings.Values);
+            set { } // 직렬화를 위해 필요
+        }
 
         public void Set(string key, object value)
         {
-            int index = keys.IndexOf(key);
-            if (index != -1)
-            {
-                values[index] = value.ToString();
-            }
-            else
-            {
-                keys.Add(key);
-                values.Add(value.ToString());
-            }
+            if (string.IsNullOrEmpty(key)) return;
+            settings[key] = value?.ToString() ?? string.Empty;
         }
 
         public bool TryGetValue<T>(string key, out T value)
         {
-            int index = keys.IndexOf(key);
-            if (index != -1)
+            value = default;
+            if (string.IsNullOrEmpty(key) || !settings.TryGetValue(key, out string strValue))
+                return false;
+
+            try
             {
-                try
+                if (typeof(T).IsEnum)
                 {
-                    if (typeof(T).IsEnum)
-                    {
-                        value = (T)Enum.Parse(typeof(T), values[index]);
-                    }
-                    else
-                    {
-                        value = (T)Convert.ChangeType(values[index], typeof(T));
-                    }
-                    return true;
+                    value = (T)Enum.Parse(typeof(T), strValue);
                 }
-                catch
+                else
                 {
-                    value = default(T);
-                    return false;
+                    value = (T)Convert.ChangeType(strValue, typeof(T));
                 }
+                return true;
             }
-            value = default(T);
-            return false;
+            catch
+            {
+                return false;
+            }
+        }
+
+        public SerializableSettings Clone()
+        {
+            var clone = new SerializableSettings();
+            foreach (var kvp in settings)
+            {
+                clone.settings[kvp.Key] = kvp.Value;
+            }
+            return clone;
         }
     }
 
     [Serializable]
     public class SerializableStageProgress
     {
-        public List<int> stageNumbers = new List<int>();
-        public List<int> stars = new List<int>();
+        private Dictionary<int, int> stageStars = new Dictionary<int, int>();
+
+        public List<int> stageNumbers
+        {
+            get => new List<int>(stageStars.Keys);
+            set { } // 직렬화를 위해 필요
+        }
+
+        public List<int> stars
+        {
+            get => new List<int>(stageStars.Values);
+            set { } // 직렬화를 위해 필요
+        }
 
         public void Set(int stageNum, int starCount)
         {
-            int index = stageNumbers.IndexOf(stageNum);
-            if (index != -1)
-            {
-                stars[index] = starCount;
-            }
-            else
-            {
-                stageNumbers.Add(stageNum);
-                stars.Add(starCount);
-            }
+            if (stageNum <= 0) return;
+            stageStars[stageNum] = Mathf.Clamp(starCount, 0, 3);
         }
 
         public bool TryGetValue(int stageNum, out int starCount)
         {
-            int index = stageNumbers.IndexOf(stageNum);
-            if (index != -1)
-            {
-                starCount = stars[index];
-                return true;
-            }
-            starCount = 0;
-            return false;
+            return stageStars.TryGetValue(stageNum, out starCount);
         }
 
         public bool ContainsKey(int stageNum)
         {
-            return stageNumbers.Contains(stageNum);
+            return stageStars.ContainsKey(stageNum);
+        }
+
+        public SerializableStageProgress Clone()
+        {
+            var clone = new SerializableStageProgress();
+            foreach (var kvp in stageStars)
+            {
+                clone.stageStars[kvp.Key] = kvp.Value;
+            }
+            return clone;
         }
     }
 
     public class SaveDataManager : MonoBehaviour
     {
+        private const string LOG_PREFIX = "[SaveData] ";
+        private static readonly string[] LOG_MESSAGES = new string[]
+        {
+            "Initializing instance",
+            "Instance already exists, destroying duplicate",
+            "Game data has been reset.",
+            "Saved game data: {0}",
+            "Loaded game data: {0}",
+            "No saved data found, using default values",
+            "Stage {0} progress updated to {1} stars",
+            "Stage {0} is now unlocked",
+            "EData updated: {0}",
+            "Card {0} added to deck",
+            "Card {0} removed from deck",
+            "Card {0} added to owned cards",
+            "Card {0} added to hand and owned cards",
+            "Card {0} removed from hand",
+            "SaveData key not found in PlayerPrefs",
+            "Failed to parse saved data: {0}",
+            "Failed to save game data: {0}",
+            "Save operation started",
+            "Save operation completed",
+            "Load operation started",
+            "Load operation completed"
+        };
+
+        private const string SAVE_KEY = "GameSaveData";
         private static SaveDataManager instance;
         private static readonly object _lock = new object();
         private static bool isQuitting = false;
+        private static bool isSaving = false;
+        private static bool isLoading = false;
+
+        private SaveData currentSaveData;
+        private readonly Queue<Action> saveQueue = new Queue<Action>();
+        private readonly Queue<Action> loadQueue = new Queue<Action>();
 
         public static SaveDataManager Instance
         {
             get
             {
-                if (isQuitting)
-                {
-                    return null;
-                }
+                if (isQuitting) return null;
 
                 lock (_lock)
                 {
                     if (instance == null)
                     {
                         instance = FindObjectOfType<SaveDataManager>();
-                        
                         if (instance == null && !isQuitting)
                         {
                             GameObject go = new GameObject("SaveDataManager");
@@ -149,97 +243,301 @@ namespace InvaderInsider.Data
             }
         }
 
-        private SaveData currentSaveData = new SaveData();
-        public SaveData CurrentSaveData => currentSaveData;
+        public SaveData CurrentSaveData => currentSaveData?.Clone();
 
-        // eData 변경 이벤트 추가
-        public event Action<int> OnEDataChanged;
+        private event Action<int> onEDataChanged;
+        public event Action<int> OnEDataChanged
+        {
+            add
+            {
+                if (!isQuitting)
+                {
+                    onEDataChanged -= value;
+                    onEDataChanged += value;
+                }
+            }
+            remove
+            {
+                if (!isQuitting)
+                {
+                    onEDataChanged -= value;
+                }
+            }
+        }
 
-        // 핸드 데이터 변경 이벤트 추가
-        public event Action<List<int>> OnHandDataChanged; // 핸드에 있는 카드 ID 목록을 전달
+        private event Action<List<int>> onHandDataChanged;
+        public event Action<List<int>> OnHandDataChanged
+        {
+            add
+            {
+                if (!isQuitting)
+                {
+                    onHandDataChanged -= value;
+                    onHandDataChanged += value;
+                }
+            }
+            remove
+            {
+                if (!isQuitting)
+                {
+                    onHandDataChanged -= value;
+                }
+            }
+        }
 
-        // 저장된 게임 데이터 로드가 완료되었음을 알리는 이벤트
-        public event Action OnGameDataLoaded;
+        private event Action onGameDataLoaded;
+        public event Action OnGameDataLoaded
+        {
+            add
+            {
+                if (!isQuitting)
+                {
+                    onGameDataLoaded -= value;
+                    onGameDataLoaded += value;
+                }
+            }
+            remove
+            {
+                if (!isQuitting)
+                {
+                    onGameDataLoaded -= value;
+                }
+            }
+        }
 
         private void Awake()
         {
             if (instance == null)
             {
-                Debug.Log("[SaveDataManager] Initializing instance");
+                if (Application.isPlaying)
+                {
+                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[0]);
+                }
                 instance = this;
                 DontDestroyOnLoad(gameObject);
+                currentSaveData = new SaveData();
+                LoadGameData();
             }
             else if (instance != this)
             {
-                Debug.Log("[SaveDataManager] Instance already exists, destroying duplicate");
+                if (Application.isPlaying)
+                {
+                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
+                }
                 Destroy(gameObject);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                SaveGameData();
+                CleanupEventListeners();
             }
         }
 
         private void OnApplicationQuit()
         {
             isQuitting = true;
+            SaveGameData();
         }
 
-        // 저장된 게임 데이터를 모두 초기화하는 함수
+        private void CleanupEventListeners()
+        {
+            onEDataChanged = null;
+            onHandDataChanged = null;
+            onGameDataLoaded = null;
+        }
+
+        public bool HasSaveData()
+        {
+            return PlayerPrefs.HasKey(SAVE_KEY);
+        }
+
         public void ResetGameData()
         {
-            currentSaveData = new SaveData(); // 새로운 SaveData 인스턴스로 교체
-            PlayerPrefs.DeleteKey("SaveData"); // PlayerPrefs에 저장된 데이터 삭제
-            PlayerPrefs.Save(); // 변경사항 저장
-            Debug.Log("[SaveDataManager] Game data has been reset.");
-        }
-
-        public void SaveGameData()
-        {
-            string jsonData = JsonUtility.ToJson(currentSaveData);
-            PlayerPrefs.SetString("SaveData", jsonData);
+            currentSaveData = new SaveData();
+            PlayerPrefs.DeleteKey(SAVE_KEY);
             PlayerPrefs.Save();
-            Debug.Log($"[SaveDataManager] Saved game data: {jsonData}");
+            if (Application.isPlaying)
+            {
+                Debug.Log(LOG_PREFIX + LOG_MESSAGES[2]);
+            }
         }
 
-        public void LoadGameData()
+        public async void SaveGameData()
         {
-            if (PlayerPrefs.HasKey("SaveData"))
+            if (isSaving)
             {
-                string jsonData = PlayerPrefs.GetString("SaveData");
-                currentSaveData = JsonUtility.FromJson<SaveData>(jsonData);
-                Debug.Log($"[SaveDataManager] Loaded game data: {jsonData}");
-
-                // 로드된 eData 값을 UI에 반영하기 위해 이벤트 발생
-                OnEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
-
-                // 저장된 게임 데이터 로드가 완료되었음을 알리는 이벤트
-                OnGameDataLoaded?.Invoke();
+                saveQueue.Enqueue(() => SaveGameData());
+                return;
             }
-            else
+
+            isSaving = true;
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[17]);
+
+            try
             {
-                Debug.Log("[SaveDataManager] No saved data found, using default values");
+                string json = JsonUtility.ToJson(currentSaveData);
+                PlayerPrefs.SetString(SAVE_KEY, json);
+                PlayerPrefs.Save();
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], json));
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[16], e.Message));
+            }
+
+            isSaving = false;
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[18]);
+
+            if (saveQueue.Count > 0)
+            {
+                var nextSave = saveQueue.Dequeue();
+                nextSave?.Invoke();
+            }
+        }
+
+        public async void LoadGameData()
+        {
+            if (isLoading)
+            {
+                loadQueue.Enqueue(() => LoadGameData());
+                return;
+            }
+
+            isLoading = true;
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[19]);
+
+            try
+            {
+                if (PlayerPrefs.HasKey(SAVE_KEY))
+                {
+                    string json = PlayerPrefs.GetString(SAVE_KEY);
+                    currentSaveData = JsonUtility.FromJson<SaveData>(json);
+                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[4], json));
+                }
+                else
+                {
+                    currentSaveData = new SaveData();
+                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[5]);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[15], e.Message));
                 currentSaveData = new SaveData();
+            }
+
+            isLoading = false;
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[20]);
+            onGameDataLoaded?.Invoke();
+
+            if (loadQueue.Count > 0)
+            {
+                var nextLoad = loadQueue.Dequeue();
+                nextLoad?.Invoke();
             }
         }
 
         public void UpdateStageProgress(int stageNum, int stars)
         {
-            if (!currentSaveData.stageProgress.ContainsKey(stageNum) || 
-                !currentSaveData.stageProgress.TryGetValue(stageNum, out int currentStars) || 
-                currentStars < stars)
+            if (stageNum <= 0 || stars < 0 || stars > 3) return;
+
+            currentSaveData.stageProgress.Set(stageNum, stars);
+            if (stars > 0)
             {
-                currentSaveData.stageProgress.Set(stageNum, stars);
-                
-                if (stageNum >= currentSaveData.progressData.highestStageCleared)
-                {
-                    // 클리어한 스테이지 번호가 현재 최고 기록과 같거나 높으면 다음 스테이지로 업데이트
-                    currentSaveData.progressData.highestStageCleared = stageNum + 1;
-                }
-                
-                // SaveGameData(); // 스테이지 클리어 시점에 저장
+                currentSaveData.progressData.highestStageCleared = 
+                    Mathf.Max(currentSaveData.progressData.highestStageCleared, stageNum);
+            }
+
+            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[6], stageNum, stars));
+            SaveGameData();
+        }
+
+        public void UpdateEData(int amount)
+        {
+            if (amount == 0) return;
+
+            currentSaveData.progressData.currentEData += amount;
+            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], currentSaveData.progressData.currentEData));
+            onEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
+            SaveGameData();
+        }
+
+        public void AddCardToDeck(int cardId)
+        {
+            if (cardId <= 0) return;
+
+            if (currentSaveData.deckData.AddToDeck(cardId))
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[9], cardId));
+                SaveGameData();
+            }
+        }
+
+        public void RemoveCardFromDeck(int cardId)
+        {
+            if (cardId <= 0) return;
+
+            if (currentSaveData.deckData.RemoveFromDeck(cardId))
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[10], cardId));
+                SaveGameData();
+            }
+        }
+
+        public void AddCardToOwned(int cardId)
+        {
+            if (cardId <= 0) return;
+
+            if (currentSaveData.deckData.AddToOwned(cardId))
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[11], cardId));
+                SaveGameData();
+            }
+        }
+
+        public void AddCardToHandAndOwned(int cardId)
+        {
+            if (cardId <= 0) return;
+
+            bool added = false;
+            if (currentSaveData.deckData.AddToOwned(cardId))
+            {
+                added = true;
+            }
+            if (currentSaveData.deckData.AddToHand(cardId))
+            {
+                added = true;
+                onHandDataChanged?.Invoke(currentSaveData.deckData.handCardIds);
+            }
+
+            if (added)
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[12], cardId));
+                SaveGameData();
+            }
+        }
+
+        public void RemoveCardFromHand(int cardId)
+        {
+            if (cardId <= 0) return;
+
+            if (currentSaveData.deckData.RemoveFromHand(cardId))
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[13], cardId));
+                onHandDataChanged?.Invoke(currentSaveData.deckData.handCardIds);
+                SaveGameData();
             }
         }
 
         public T GetSetting<T>(string key, T defaultValue)
         {
-            if (currentSaveData.settings.TryGetValue<T>(key, out T value))
+            if (string.IsNullOrEmpty(key)) return defaultValue;
+
+            if (currentSaveData.settings.TryGetValue(key, out T value))
             {
                 return value;
             }
@@ -248,35 +546,10 @@ namespace InvaderInsider.Data
 
         public void SaveSetting<T>(string key, T value)
         {
+            if (string.IsNullOrEmpty(key)) return;
+
             currentSaveData.settings.Set(key, value);
-            // SaveGameData();
-        }
-
-        public void AddCardToDeck(int cardId)
-        {
-            if (!currentSaveData.deckData.deckCardIds.Contains(cardId))
-            {
-                currentSaveData.deckData.deckCardIds.Add(cardId);
-                SaveGameData();
-            }
-        }
-
-        public void RemoveCardFromDeck(int cardId)
-        {
-            if (currentSaveData.deckData.deckCardIds.Contains(cardId))
-            {
-                currentSaveData.deckData.deckCardIds.Remove(cardId);
-                SaveGameData();
-            }
-        }
-
-        public void AddCardToOwned(int cardId)
-        {
-            if (!currentSaveData.deckData.ownedCardIds.Contains(cardId))
-            {
-                currentSaveData.deckData.ownedCardIds.Add(cardId);
-                SaveGameData();
-            }
+            SaveGameData();
         }
 
         public int GetStageStars(int stageNum)
@@ -286,63 +559,12 @@ namespace InvaderInsider.Data
 
         public bool IsStageUnlocked(int stageNum)
         {
-            return stageNum <= currentSaveData.progressData.highestStageCleared + 1;
-        }
-
-        public void UpdateEData(int amount)
-        {
-            currentSaveData.progressData.currentEData += amount;
-            // eData가 0 미만이 되지 않도록 방지 (선택 사항)
-            if (currentSaveData.progressData.currentEData < 0)
-            {
-                currentSaveData.progressData.currentEData = 0;
-            }
-            OnEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
+            return stageNum <= 1 || currentSaveData.progressData.highestStageCleared >= stageNum - 1;
         }
 
         public int GetCurrentEData()
         {
             return currentSaveData.progressData.currentEData;
-        }
-
-        // 새로운 카드를 핸드 및 소유 목록에 추가하는 함수
-        public void AddCardToHandAndOwned(int cardId)
-        {
-            // 핸드에 추가
-            if (currentSaveData.deckData.handCardIds.Count < 10) // 핸드 최대 크기 제한 (예시: 10)
-            {
-                currentSaveData.deckData.handCardIds.Add(cardId);
-                Debug.Log($"[SaveDataManager] Card {cardId} added to hand. Hand size: {currentSaveData.deckData.handCardIds.Count}");
-
-                // 소유 목록에 없으면 추가
-                if (!currentSaveData.deckData.ownedCardIds.Contains(cardId))
-                {
-                    currentSaveData.deckData.ownedCardIds.Add(cardId);
-                    Debug.Log($"[SaveDataManager] Card {cardId} added to owned list.");
-                }
-
-                SaveGameData(); // 데이터 저장
-                // 핸드 UI 업데이트 이벤트 발생
-                OnHandDataChanged?.Invoke(currentSaveData.deckData.handCardIds);
-            }
-            else
-            {
-                Debug.LogWarning($"[SaveDataManager] Hand is full. Cannot add card {cardId}.");
-                // TODO: 핸드가 가득 찼음을 알리는 UI 메시지 표시
-            }
-        }
-
-        // 핸드에서 카드를 제거하는 함수 (사용 또는 장착 시)
-        public void RemoveCardFromHand(int cardId)
-        {
-            if (currentSaveData.deckData.handCardIds.Contains(cardId))
-            {
-                currentSaveData.deckData.handCardIds.Remove(cardId);
-                SaveGameData(); // 데이터 저장
-                Debug.Log($"[SaveDataManager] Card {cardId} removed from hand. Hand size: {currentSaveData.deckData.handCardIds.Count}");
-                // 핸드 UI 업데이트 이벤트 발생
-                OnHandDataChanged?.Invoke(currentSaveData.deckData.handCardIds);
-            }
         }
     }
 } 

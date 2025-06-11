@@ -9,21 +9,51 @@ namespace InvaderInsider.UI
 {
     public class UIManager : MonoBehaviour
     {
+        private const string LOG_PREFIX = "[UI] ";
+        private static readonly string[] LOG_MESSAGES = new string[]
+        {
+            "Awake",
+            "Start",
+            "Panel {0} already registered",
+            "Attempting to show panel: {0}",
+            "Panel {0} not found!",
+            "Panel {0} shown successfully",
+            "No previous panel to return to",
+            "Returned to previous panel: {0}",
+            "Panel {0} hidden successfully",
+            "Panel {0} not found to hide",
+            "UIManager destroyed: {0}",
+            "Stage {0} / {1}",
+            "Wave {0} / {1}"
+        };
+
         private static UIManager _instance;
+        private static readonly object _lock = new object();
+        private static bool isQuitting = false;
+
         public static UIManager Instance
         {
             get
             {
-                if (_instance == null)
+                if (isQuitting)
                 {
-                    _instance = FindObjectOfType<UIManager>();
+                    return null;
+                }
+
+                lock (_lock)
+                {
                     if (_instance == null)
                     {
-                        GameObject go = new GameObject("UIManager");
-                        _instance = go.AddComponent<UIManager>();
+                        _instance = FindObjectOfType<UIManager>();
+                        if (_instance == null && !isQuitting)
+                        {
+                            GameObject go = new GameObject("UIManager");
+                            _instance = go.AddComponent<UIManager>();
+                            DontDestroyOnLoad(go);
+                        }
                     }
+                    return _instance;
                 }
-                return _instance;
             }
         }
 
@@ -31,46 +61,61 @@ namespace InvaderInsider.UI
         [SerializeField] private TextMeshProUGUI stageText;
         [SerializeField] private TextMeshProUGUI waveText;
 
-        private Dictionary<string, BasePanel> panels = new Dictionary<string, BasePanel>();
-        private Stack<BasePanel> panelHistory = new Stack<BasePanel>();
+        private readonly Dictionary<string, BasePanel> panels = new Dictionary<string, BasePanel>();
+        private readonly Stack<BasePanel> panelHistory = new Stack<BasePanel>();
         private BasePanel currentPanel;
 
         private void Awake()
         {
             if (_instance != null && _instance != this)
             {
-                Debug.LogWarning("Multiple UIManager instances found. Destroying duplicate.");
+                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[2]);
                 Destroy(gameObject);
                 return;
             }
 
             _instance = this;
             DontDestroyOnLoad(gameObject);
-            Debug.Log("UIManager Awake");
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[0]);
+        }
+
+        private void OnApplicationQuit()
+        {
+            isQuitting = true;
         }
 
         private void Start()
         {
-            Debug.Log("UIManager Start");
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
         }
 
         public void RegisterPanel(string panelName, BasePanel panel)
         {
+            if (string.IsNullOrEmpty(panelName) || panel == null) return;
+
             if (panels.ContainsKey(panelName))
             {
-                Debug.LogWarning($"Panel {panelName} already registered");
-                return; // 이미 등록된 패널은 무시
+                if (panels[panelName] == panel)
+                {
+                    return;
+                }
+                
+                Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[2], panelName));
+                return;
             }
+            
             panels[panelName] = panel;
         }
 
         public void ShowPanel(string panelName)
         {
-            Debug.Log($"Attempting to show panel: {panelName}");
+            if (string.IsNullOrEmpty(panelName)) return;
+
+            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], panelName));
             
-            if (!panels.ContainsKey(panelName))
+            if (!panels.TryGetValue(panelName, out BasePanel panel))
             {
-                Debug.LogError($"Panel {panelName} not found!");
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[4], panelName));
                 return;
             }
 
@@ -80,40 +125,37 @@ namespace InvaderInsider.UI
                 panelHistory.Push(currentPanel);
             }
 
-            BasePanel panel = panels[panelName];
             panel.Show();
             currentPanel = panel;
 
-            Debug.Log($"Panel {panelName} shown successfully");
+            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[5], panelName));
         }
 
         public void GoBack()
         {
-            if (panelHistory.Count > 0)
+            if (panelHistory.Count == 0)
             {
-                if (currentPanel != null)
-                {
-                    currentPanel.Hide();
-                }
-
-                currentPanel = panelHistory.Pop();
-                if (currentPanel != null)
-                {
-                    currentPanel.Show();
-                    Debug.Log($"Returned to previous panel: {currentPanel.gameObject.name}");
-                }
+                Debug.Log(LOG_PREFIX + LOG_MESSAGES[7]);
+                return;
             }
-            else
+
+            if (currentPanel != null)
             {
-                Debug.Log("No previous panel to return to");
+                currentPanel.Hide();
+            }
+
+            currentPanel = panelHistory.Pop();
+            if (currentPanel != null)
+            {
+                currentPanel.Show();
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], currentPanel.gameObject.name));
             }
         }
 
         public bool IsCurrentPanel(string panelName)
         {
-            if (currentPanel == null) return false;
-            if (!panels.ContainsKey(panelName)) return false;
-            return currentPanel == panels[panelName];
+            if (string.IsNullOrEmpty(panelName) || currentPanel == null) return false;
+            return panels.TryGetValue(panelName, out BasePanel panel) && currentPanel == panel;
         }
 
         public void HideCurrentPanel()
@@ -125,16 +167,33 @@ namespace InvaderInsider.UI
             }
         }
 
+        public void HidePanel(string panelName)
+        {
+            if (string.IsNullOrEmpty(panelName)) return;
+
+            if (panels.TryGetValue(panelName, out BasePanel panel))
+            {
+                panel.Hide();
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], panelName));
+            }
+            else
+            {
+                Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[9], panelName));
+            }
+        }
+
         public bool IsPanelRegistered(string panelName)
         {
-            return panels.ContainsKey(panelName);
+            return !string.IsNullOrEmpty(panelName) && panels.ContainsKey(panelName);
         }
 
         public void UnregisterPanel(string panelName)
         {
-            if (panels.ContainsKey(panelName))
+            if (string.IsNullOrEmpty(panelName)) return;
+
+            if (panels.TryGetValue(panelName, out BasePanel panel))
             {
-                if (currentPanel == panels[panelName])
+                if (currentPanel == panel)
                 {
                     currentPanel = null;
                 }
@@ -154,7 +213,7 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
-            Debug.Log($"UIManager 오브젝트가 파괴되었습니다: {gameObject.name}");
+            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[10], gameObject.name));
             if (_instance == this)
             {
                 _instance = null;
@@ -164,19 +223,23 @@ namespace InvaderInsider.UI
         public void UpdateStage(int currentStage, int totalStages)
         {
             if (stageText != null)
-                stageText.text = $"Stage {currentStage + 1} / {totalStages}";
+            {
+                stageText.text = string.Format(LOG_PREFIX + LOG_MESSAGES[11], currentStage + 1, totalStages);
+            }
         }
 
         public void UpdateWave(int currentWave, int totalWaves)
         {
             if (waveText != null)
-                waveText.text = $"Wave {currentWave} / {totalWaves}";
+            {
+                waveText.text = string.Format(LOG_PREFIX + LOG_MESSAGES[12], currentWave, totalWaves);
+            }
         }
 
-        private void CloseMainMenu()
+        public bool IsPanelActive(string panelName)
         {
-            // 메인 메뉴를 닫는 로직, 예: 메뉴 게임 오브젝트 비활성화
-            gameObject.SetActive(false);
+            if (string.IsNullOrEmpty(panelName)) return false;
+            return panels.TryGetValue(panelName, out BasePanel panel) && panel.gameObject.activeSelf;
         }
     }
 } 

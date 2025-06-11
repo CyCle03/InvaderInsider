@@ -5,6 +5,14 @@ namespace InvaderInsider.UI
 {
     public class MenuInputHandler : MonoBehaviour
     {
+        private const string LOG_PREFIX = "[MenuInput] ";
+        private static readonly string[] LOG_MESSAGES = new string[]
+        {
+            "Escape key released. Current Game State: {0}",
+            "Resuming game from pause state",
+            "Toggling panel: {0}"
+        };
+
         [System.Serializable]
         public struct MenuKeyBinding
         {
@@ -29,9 +37,10 @@ namespace InvaderInsider.UI
 
         private void HandleEscapeKey()
         {
-            Debug.Log($"Escape key released. Current Game State: {GameManager.Instance.CurrentGameState}");
+            var gameManager = GameManager.Instance;
+            var currentState = gameManager.CurrentGameState;
+            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], currentState));
 
-            GameState currentState = GameManager.Instance.CurrentGameState;
             switch (currentState)
             {
                 case GameState.Playing:
@@ -42,8 +51,9 @@ namespace InvaderInsider.UI
                 case GameState.Paused:
                     // 일시정지 상태: 게임 재개 (PausePanel의 Resume 기능과 동일)
                     Time.timeScale = 1f;
-                    GameManager.Instance.CurrentGameState = GameState.Playing;
+                    gameManager.SetGameState(GameState.Playing);
                     UIManager.Instance.HideCurrentPanel();
+                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
                     break;
 
                 case GameState.MainMenu:
@@ -56,7 +66,7 @@ namespace InvaderInsider.UI
 
         private void HandleMenuBindings()
         {
-            GameState currentState = GameManager.Instance.CurrentGameState;
+            var currentState = GameManager.Instance.CurrentGameState;
 
             foreach (var binding in menuBindings)
             {
@@ -71,6 +81,8 @@ namespace InvaderInsider.UI
 
         private void TogglePanel(string panelName)
         {
+            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], panelName));
+            
             if (UIManager.Instance.IsCurrentPanel(panelName))
             {
                 UIManager.Instance.HideCurrentPanel();

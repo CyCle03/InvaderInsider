@@ -4,26 +4,72 @@ using UnityEngine;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
 using InvaderInsider.Managers;
+using System.Threading.Tasks;
 
 namespace InvaderInsider.Managers
 {
     public class StageManager : MonoBehaviour
     {
+        private const string LOG_PREFIX = "[Stage] ";
+        private static readonly string[] LOG_MESSAGES = new string[]
+        {
+            "Stage {0} Ready",
+            "Stage {0} cleared: All enemies spawned and defeated.",
+            "Stage {0} End",
+            "Stage {0} progress updated and saved.",
+            "All stages completed!",
+            "StageLoopCoroutine started",
+            "StageLoopCoroutine finished",
+            "Stage data is not assigned in the inspector! Please assign a StageList ScriptableObject.",
+            "BottomBarPanel not found in the scene. UI updates may not work.",
+            "Stage data is not set!",
+            "StageManager InitializeStage called",
+            "StageManager StartStageFrom called for stage {0}",
+            "Invalid stage index {0} provided for StartStageFrom.",
+            "Stage data is not set in StartStageInternal!",
+            "No waypoints set for enemy path!",
+            "StageData did not provide an enemy prefab for stage {0}, enemy {1}. Using defaultEnemyPrefab.",
+            "Failed to spawn enemy: No prefab assigned or retrieved for stage {0}, enemy {1}.",
+            "Stage {0} wave {1} started",
+            "Stage {0} wave {1} completed",
+            "Stage {0} wave {1} enemy spawned",
+            "Stage {0} wave {1} enemy reached end",
+            "Stage {0} wave {1} enemy died"
+        };
+
         private static StageManager instance;
+        private static readonly object _lock = new object();
+        private static bool isQuitting = false;
+        private static bool isInitialized = false;
+
         public static StageManager Instance
         {
             get
             {
-                if (instance == null)
+                if (isQuitting) return null;
+
+                lock (_lock)
                 {
-                    instance = FindObjectOfType<StageManager>();
-                    if (instance == null)
+                    if (instance == null && !isQuitting)
                     {
-                        GameObject go = new GameObject("StageManager");
-                        instance = go.AddComponent<StageManager>();
+                        instance = FindObjectOfType<StageManager>();
+                        if (instance == null)
+                        {
+                            GameObject go = new GameObject("StageManager");
+                            instance = go.AddComponent<StageManager>();
+                            DontDestroyOnLoad(go);
+                        }
                     }
+                    
+                    // 인스턴스가 있지만 초기화되지 않은 경우 강제 초기화
+                    if (instance != null && !isInitialized)
+                    {
+                        Debug.Log(LOG_PREFIX + "Instance exists but not initialized in getter, forcing initialization");
+                        instance.PerformInitialization();
+                    }
+                    
+                    return instance;
                 }
-                return instance;
             }
         }
 
@@ -34,17 +80,24 @@ namespace InvaderInsider.Managers
         [Header("Stage Settings")]
         private const float STAGE_START_DELAY = 1f;
         private const float STAGE_END_DELAY = 3f;
-        public List<Transform> wayPoints = new List<Transform>();
+        private const float MIN_SPAWN_INTERVAL = 0.1f;
+        private const float MAX_SPAWN_INTERVAL = 2f;
+        private const int MAX_ACTIVE_ENEMIES = 50;
+
+        [SerializeField] private List<Transform> wayPointsList;
+        public IReadOnlyList<Transform> WayPoints => wayPointsList;
         [SerializeField] private GameObject defaultEnemyPrefab;
-        public int stageNum = 0;
-        public int stageWave = 20;
-        [Tooltip("Time between enemy spawns")]
-        public float createTime = 1f;
+        [SerializeField] private int stageNum = 0;
+        [SerializeField] private int stageWave = 20;
+        [SerializeField, Range(MIN_SPAWN_INTERVAL, MAX_SPAWN_INTERVAL)] 
+        private float createTime = 1f;
 
         private float currentTime = 0f;
         private int enemyCount = 0;
-        public int activeEnemyCount = 0;
+        private int activeEnemyCountValue = 0;
         private Coroutine stageCoroutine = null;
+        private readonly Queue<EnemyObject> enemyPool = new Queue<EnemyObject>();
+        private readonly HashSet<EnemyObject> activeEnemies = new HashSet<EnemyObject>();
 
         public enum StageState
         {
@@ -55,193 +108,410 @@ namespace InvaderInsider.Managers
             Over
         }
 
-        public StageState currentState;
+        private StageState currentState;
         private int clearedStageIndex;
-
         private BottomBarPanel bottomBarPanel;
+        private readonly List<Tower> activeTowers = new List<Tower>();
+        private UIManager uiManager;
+        private GameManager gameManager;
+        private SaveDataManager saveDataManager;
 
-        private List<Tower> _activeTowers;
+        public int ActiveEnemyCount => activeEnemyCountValue;
 
         private void Awake()
         {
+            Debug.Log(LOG_PREFIX + "=== AWAKE CALLED ===");
+            
             if (instance == null)
             {
+                Debug.Log(LOG_PREFIX + "Setting as instance");
                 instance = this;
-                
-                stageData = stageDataObject;
-                if (stageData == null)
+                DontDestroyOnLoad(gameObject);
+                PerformInitialization();
+            }
+            else if (instance != this)
+            {
+                Debug.Log(LOG_PREFIX + "Destroying duplicate StageManager");
+                Destroy(gameObject);
+                return;
+            }
+            else
+            {
+                Debug.Log(LOG_PREFIX + "This is already the instance");
+                // 이미 instance이지만 초기화가 안 되어 있을 수 있음
+                if (!isInitialized)
                 {
-                    Debug.LogError("Stage data is not assigned in the inspector! Please assign a StageList ScriptableObject.");
+                    Debug.Log(LOG_PREFIX + "Instance exists but not initialized, performing initialization");
+                    PerformInitialization();
+                }
+            }
+        }
+
+        private void PerformInitialization()
+        {
+            Debug.Log(LOG_PREFIX + "=== PERFORMING INITIALIZATION ===");
+            Debug.Log(LOG_PREFIX + "StageManager - stageDataObject: " + (stageDataObject != null ? "Assigned" : "Null"));
+            if (stageDataObject != null)
+            {
+                Debug.Log(LOG_PREFIX + "stageDataObject name: " + stageDataObject.name);
+            }
+            
+            if (stageDataObject == null)
+            {
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[7]);
+                // 다양한 경로에서 StageList를 찾아서 할당
+                stageDataObject = Resources.Load<StageList>("StageList1");
+                if (stageDataObject == null)
+                {
+                    stageDataObject = Resources.Load<StageList>("ScriptableObjects/StageSystem/StageList1");
+                    if (stageDataObject == null)
+                    {
+                        Debug.LogError(LOG_PREFIX + "기본 StageList를 찾을 수 없습니다. StageList1.asset 파일을 확인하세요.");
+                        Debug.LogError(LOG_PREFIX + "검색한 경로: Resources/StageList1, Resources/ScriptableObjects/StageSystem/StageList1");
+                        return;
+                    }
+                    else
+                    {
+                        Debug.Log(LOG_PREFIX + "StageList1을 ScriptableObjects 폴더에서 로드했습니다.");
+                    }
+                }
+                else
+                {
+                    Debug.Log(LOG_PREFIX + "기본 StageList1을 로드했습니다.");
                 }
             }
             else
             {
-                Destroy(gameObject);
+                Debug.Log(LOG_PREFIX + "StageDataObject가 Inspector에서 할당되었습니다: " + stageDataObject.name);
             }
 
+            stageData = stageDataObject;
+            Debug.Log(LOG_PREFIX + "StageData assigned: " + (stageData != null ? "Success" : "Failed"));
+            
+            if (stageData != null)
+            {
+                Debug.Log(LOG_PREFIX + "StageData StageCount: " + stageData.StageCount);
+            }
+            
+            Debug.Log(LOG_PREFIX + "Calling InitializeComponents");
+            InitializeComponents();
+            
+            isInitialized = true;
+            Debug.Log(LOG_PREFIX + "=== INITIALIZATION COMPLETED - isInitialized: " + isInitialized + " ===");
+        }
+
+        private void InitializeComponents()
+        {
             bottomBarPanel = FindObjectOfType<BottomBarPanel>();
             if (bottomBarPanel == null)
             {
-                Debug.LogWarning("BottomBarPanel not found in the scene. UI updates may not work.");
+                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[8]);
             }
-            _activeTowers = new List<Tower>(FindObjectsOfType<Tower>());
+
+            uiManager = UIManager.Instance;
+            gameManager = GameManager.Instance;
+            saveDataManager = SaveDataManager.Instance;
+
+            activeTowers.Clear();
+            activeTowers.AddRange(FindObjectsOfType<Tower>());
+
+            if (wayPointsList.Count == 0)
+            {
+                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[14]);
+            }
         }
 
-        void Start()
+        private void Start()
         {
-            if (stageData == null)
+            Debug.Log(LOG_PREFIX + "=== START CALLED ===");
+            Debug.Log(LOG_PREFIX + "instance == this: " + (instance == this));
+            Debug.Log(LOG_PREFIX + "StageManager Start - isInitialized: " + isInitialized + ", stageData: " + (stageData != null ? "Valid" : "Null"));
+            Debug.Log(LOG_PREFIX + "stageDataObject: " + (stageDataObject != null ? stageDataObject.name : "null"));
+            
+            if (!isInitialized)
             {
-                Debug.LogError("Stage data is not set!");
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[9]);
+                Debug.LogError(LOG_PREFIX + "Awake가 제대로 호출되지 않았습니다!");
+                
+                // 강제로 초기화 시도
+                Debug.Log(LOG_PREFIX + "강제 초기화 시도...");
+                if (stageDataObject != null)
+                {
+                    stageData = stageDataObject;
+                    InitializeComponents();
+                    isInitialized = true;
+                    Debug.Log(LOG_PREFIX + "강제 초기화 완료");
+                }
                 return;
             }
+            
+            if (stageData == null)
+            {
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[9]);
+                Debug.LogError(LOG_PREFIX + "stageDataObject is: " + (stageDataObject != null ? stageDataObject.name : "null"));
+                
+                // stageDataObject가 있는데 stageData가 null인 경우 다시 할당
+                if (stageDataObject != null)
+                {
+                    Debug.Log(LOG_PREFIX + "stageDataObject가 있으므로 다시 할당 시도");
+                    stageData = stageDataObject;
+                }
+                
+                if (stageData == null)
+                {
+                    return;
+                }
+            }
+            
+            Debug.Log(LOG_PREFIX + "StageManager initialized successfully with " + stageData.StageCount + " stages");
         }
 
         public void InitializeStage()
         {
-            Debug.Log("StageManager InitializeStage called");
+            if (!isInitialized) return;
+
+            if (Application.isPlaying)
+            {
+                Debug.Log(LOG_PREFIX + LOG_MESSAGES[10]);
+            }
             StartStageInternal(0);
         }
 
         public void StartStageFrom(int stageIndex)
         {
-             Debug.Log($"StageManager StartStageFrom called for stage {stageIndex}");
+            if (!isInitialized) return;
+
+            if (Application.isPlaying)
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[11], stageIndex));
+            }
+
             if (stageData != null && stageIndex >= 0 && stageIndex < stageData.StageCount)
             {
-                 StartStageInternal(stageIndex);
+                StartStageInternal(stageIndex);
             }
             else
             {
-                Debug.LogError($"Invalid stage index {stageIndex} provided for StartStageFrom.");
-                 StartStageInternal(0);
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[12], stageIndex));
+                StartStageInternal(0);
             }
         }
 
         private void StartStageInternal(int startStageIndex)
         {
-             currentTime = 0f;
-            enemyCount = 0;
-            activeEnemyCount = 0;
-            stageNum = startStageIndex;
-            if (stageData == null)
-            {
-                 Debug.LogError("Stage data is not set in StartStageInternal!");
-                 return;
-            }
-            stageWave = stageData.GetStageWaveCount(stageNum);
-            currentState = StageState.Ready;
-            
             if (stageCoroutine != null)
             {
                 StopCoroutine(stageCoroutine);
+                stageCoroutine = null;
             }
-            stageCoroutine = StartCoroutine(StageLoopCoroutine());
 
+            CleanupActiveEnemies();
+            ResetStageState(startStageIndex);
+            
+            if (stageData == null)
+            {
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[13]);
+                return;
+            }
+
+            stageWave = stageData.GetStageWaveCount(stageNum);
+            currentState = StageState.Ready;
+            
+            stageCoroutine = StartCoroutine(StageLoopCoroutine());
             ResetAllTowersRotation();
+
+            if (Application.isPlaying)
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[17], stageNum + 1, stageWave));
+            }
+        }
+
+        private void ResetStageState(int startStageIndex)
+        {
+            currentTime = 0f;
+            enemyCount = 0;
+            activeEnemyCountValue = 0;
+            stageNum = startStageIndex;
+        }
+
+        private void CleanupActiveEnemies()
+        {
+            foreach (var enemy in activeEnemies)
+            {
+                if (enemy != null)
+                {
+                    enemyPool.Enqueue(enemy);
+                    enemy.gameObject.SetActive(false);
+                }
+            }
+            activeEnemies.Clear();
         }
 
         private IEnumerator StageLoopCoroutine()
         {
-            Debug.Log("StageLoopCoroutine started");
-            while (currentState != StageState.Over)
+            if (Application.isPlaying)
             {
-                switch (currentState)
+                Debug.Log(LOG_PREFIX + LOG_MESSAGES[5]);
+            }
+
+            while (currentState != StageState.Over && !isQuitting)
+            {
+                yield return HandleStageState();
+            }
+
+            if (Application.isPlaying)
+            {
+                Debug.Log(LOG_PREFIX + LOG_MESSAGES[6]);
+            }
+        }
+
+        private IEnumerator HandleStageState()
+        {
+            switch (currentState)
+            {
+                case StageState.Ready:
+                    yield return HandleReadyState();
+                    break;
+
+                case StageState.Run:
+                    yield return HandleRunState();
+                    break;
+
+                case StageState.End:
+                    yield return HandleEndState();
+                    break;
+
+                case StageState.Wait:
+                    yield return HandleWaitState();
+                    break;
+
+                default:
+                    yield return null;
+                    break;
+            }
+        }
+
+        private IEnumerator HandleReadyState()
+        {
+            if (Application.isPlaying)
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], stageNum + 1));
+            }
+
+            if (uiManager != null)
+            {
+                uiManager.UpdateStage(stageNum, GetStageCount());
+            }
+
+            yield return new WaitForSeconds(STAGE_START_DELAY);
+            currentState = StageState.Run;
+        }
+
+        private IEnumerator HandleRunState()
+        {
+            currentTime += Time.deltaTime;
+
+            if (enemyCount < stageWave && activeEnemyCountValue < MAX_ACTIVE_ENEMIES)
+            {
+                if (currentTime >= createTime)
                 {
-                    case StageState.Ready:
-                        Debug.Log($"Stage {stageNum + 1} Ready");
-                        UIManager.Instance.UpdateStage(stageNum, GetStageCount());
-                        yield return new WaitForSeconds(STAGE_START_DELAY);
-                        currentState = StageState.Run;
-                        break;
-
-                    case StageState.Run:
-                        currentTime += Time.deltaTime;
-                        if(enemyCount < stageWave)
-                        {
-                            if (currentTime > createTime)
-                            {
-                                SpawnEnemy();
-                                currentTime = 0f;
-                            }
-                        }
-                        if (enemyCount >= stageWave && activeEnemyCount <= 0)
-                        {
-                            clearedStageIndex = stageNum;
-                            currentState = StageState.End;
-                            Debug.Log($"Stage {clearedStageIndex + 1} cleared: All enemies spawned and defeated.");
-                        }
-                        yield return null;
-                        break;
-
-                    case StageState.End:
-                        Debug.Log($"Stage {stageNum + 1} End");
-                        if (GameManager.Instance != null)
-                        {
-                            int stars = 0; 
-                            GameManager.Instance.StageCleared(clearedStageIndex, stars);
-                            Debug.Log($"Stage {clearedStageIndex} progress updated and saved.");
-                        }
-
-                        stageNum++;
-                        currentTime = 0f;
-                        enemyCount = 0;
-
-                        if (stageNum < stageData.StageCount)
-                        {
-                            stageWave = stageData.GetStageWaveCount(stageNum);
-                            yield return new WaitForSeconds(STAGE_END_DELAY);
-                            ResetAllTowersRotation();
-                            currentState = StageState.Ready;
-                        }
-                        else
-                        {
-                            stageWave = 0;
-                            currentState = StageState.Over;
-                            Debug.Log("All stages completed!");
-                            yield return new WaitForSeconds(STAGE_END_DELAY);
-                            if (UIManager.Instance != null)
-                            {
-                                UIManager.Instance.ShowPanel("MainMenu");
-                            }
-                            ResetAllTowersRotation();
-                        }
-                        yield return null;
-                        break;
+                    SpawnEnemy();
+                    currentTime = 0f;
                 }
             }
-             Debug.Log("StageLoopCoroutine finished");
+
+            if (enemyCount >= stageWave && activeEnemyCountValue <= 0)
+            {
+                clearedStageIndex = stageNum;
+                currentState = StageState.End;
+
+                if (Application.isPlaying)
+                {
+                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[1], clearedStageIndex + 1));
+                }
+            }
+
+            yield return null;
+        }
+
+        private IEnumerator HandleEndState()
+        {
+            if (Application.isPlaying)
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], stageNum + 1));
+            }
+
+            if (gameManager != null)
+            {
+                int stars = CalculateStageStars();
+                gameManager.StageCleared(clearedStageIndex, stars);
+
+                if (Application.isPlaying)
+                {
+                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], clearedStageIndex));
+                }
+            }
+
+            stageNum++;
+            currentTime = 0f;
+
+            if (stageNum >= GetStageCount())
+            {
+                if (Application.isPlaying)
+                {
+                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[4]);
+                }
+                currentState = StageState.Over;
+            }
+            else
+            {
+                currentState = StageState.Wait;
+            }
+
+            yield return new WaitForSeconds(STAGE_END_DELAY);
+        }
+
+        private IEnumerator HandleWaitState()
+        {
+            yield return new WaitForSeconds(STAGE_START_DELAY);
+            StartStageInternal(stageNum);
+        }
+
+        private int CalculateStageStars()
+        {
+            // TODO: Implement star calculation logic based on performance
+            return 1;
         }
 
         public void SpawnEnemy()
         {
-            if (wayPoints.Count == 0)
+            if (!isInitialized || stageData == null) return;
+
+            GameObject enemyPrefab = stageData.GetStageObject(stageNum, enemyCount);
+            if (enemyPrefab == null)
             {
-                Debug.LogError("No waypoints set for enemy path!");
+                Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[15], stageNum, enemyCount));
+                enemyPrefab = defaultEnemyPrefab;
+            }
+
+            if (enemyPrefab == null)
+            {
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[16], stageNum, enemyCount));
                 return;
             }
 
-            GameObject enemyToSpawn = stageData?.GetStageObject(stageNum, enemyCount);
-            if (enemyToSpawn == null)
+            GameObject enemyObject = Instantiate(enemyPrefab, wayPointsList[0].position, Quaternion.identity);
+            EnemyObject enemy = enemyObject.GetComponent<EnemyObject>();
+            if (enemy != null)
             {
-                Debug.LogWarning($"StageData did not provide an enemy prefab for stage {stageNum}, enemy {enemyCount}. Using defaultEnemyPrefab.");
-                enemyToSpawn = defaultEnemyPrefab;
+                enemy.SetupEnemy(stageNum, enemyCount);
+                activeEnemies.Add(enemy);
+                IncrementEnemyCount();
             }
 
-            if (enemyToSpawn != null)
+            if (Application.isPlaying)
             {
-                GameObject enemy = Instantiate(enemyToSpawn);
-                enemy.transform.position = wayPoints[0].position;
-                enemyCount++;
-                activeEnemyCount++;
-                UIManager.Instance.UpdateWave(enemyCount, stageWave);
-                if (bottomBarPanel != null)
-                {
-                     bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCount);
-                }
-                currentTime = 0f;
-            }
-            else
-            {
-                Debug.LogError($"Failed to spawn enemy: No prefab assigned or retrieved for stage {stageNum}, enemy {enemyCount}.");
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[19], stageNum, stageWave, enemyCount));
             }
         }
 
@@ -257,57 +527,60 @@ namespace InvaderInsider.Managers
 
         public void DecreaseActiveEnemyCount()
         {
-            activeEnemyCount--;
-            Debug.Log($"Active enemies: {activeEnemyCount}");
-            if (bottomBarPanel != null)
+            if (activeEnemyCountValue > 0)
             {
-                bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCount);
+                activeEnemyCountValue--;
             }
         }
 
         public void OnEnemyDied(int eDataAmount)
         {
+            if (!isInitialized) return;
+
             DecreaseActiveEnemyCount();
-            SaveDataManager.Instance.UpdateEData(eDataAmount);
-            Debug.Log($"Enemy Died! eData reward: {eDataAmount}");
+            if (saveDataManager != null)
+            {
+                saveDataManager.UpdateEData(eDataAmount);
+            }
+
+            if (Application.isPlaying)
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[21], stageNum + 1, enemyCount));
+            }
         }
 
         public void EnemyReachedEnd()
         {
+            if (!isInitialized) return;
+
             DecreaseActiveEnemyCount();
-            Debug.Log("Enemy reached end waypoint. Active enemies: " + activeEnemyCount);
+            if (Application.isPlaying)
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[20], stageNum + 1, enemyCount));
+            }
         }
 
         public void InitializeStageFromLoadedData(int stageIndex)
         {
-            Debug.Log($"StageManager: Initializing for stage {stageIndex} from loaded data.");
+            if (!isInitialized) return;
 
-            StartStageFrom(stageIndex);
-
-            if (UIManager.Instance != null)
+            if (stageIndex >= 0 && stageIndex < GetStageCount())
             {
-                 UIManager.Instance.UpdateStage(stageNum, GetStageCount());
+                StartStageFrom(stageIndex);
             }
-
-            if (UIManager.Instance != null)
+            else
             {
-                UIManager.Instance.UpdateWave(1, stageWave);
-            }
-
-            if (bottomBarPanel != null)
-            {
-                bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCount);
-                Debug.Log($"StageManager Initialized: Stage {stageNum + 1}, Total Waves: {stageWave}, Active Enemies: {activeEnemyCount}");
+                StartStageFrom(0);
             }
         }
 
         private void ResetAllTowersRotation()
         {
-            foreach (Tower tower in _activeTowers)
+            foreach (var tower in activeTowers)
             {
                 if (tower != null)
                 {
-                    tower.ResetTowerRotation();
+                    tower.ResetRotation();
                 }
             }
         }
@@ -316,9 +589,43 @@ namespace InvaderInsider.Managers
         {
             if (instance == this)
             {
-                instance = null;
-                Debug.Log("StageManager instance cleared on destroy.");
+                CleanupActiveEnemies();
+                if (stageCoroutine != null)
+                {
+                    StopCoroutine(stageCoroutine);
+                    stageCoroutine = null;
+                }
+                isInitialized = false;
             }
+        }
+
+        private void OnApplicationQuit()
+        {
+            isQuitting = true;
+            CleanupActiveEnemies();
+        }
+
+        public void IncrementEnemyCount()
+        {
+            activeEnemyCountValue++;
+            if (Application.isPlaying)
+            {
+                Debug.Log($"[Stage] 활성 적 수 증가: {activeEnemyCountValue}");
+            }
+        }
+
+        public void DecrementEnemyCount()
+        {
+            activeEnemyCountValue = Mathf.Max(0, activeEnemyCountValue - 1);
+            if (Application.isPlaying)
+            {
+                Debug.Log($"[Stage] 활성 적 수 감소: {activeEnemyCountValue}");
+            }
+        }
+
+        public int GetCurrentStageIndex()
+        {
+            return stageNum;
         }
     }
 } 

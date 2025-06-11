@@ -11,12 +11,23 @@ namespace InvaderInsider.UI
     [RequireComponent(typeof(CardInteractionHandler))] // CardInteractionHandler 요구
     public class CardUI : MonoBehaviour
     {
+        private const string LOG_PREFIX = "[UI] ";
+        private static readonly string[] LOG_MESSAGES = new string[]
+        {
+            "Card: CardDisplay component not found",
+            "Card: CardInteractionHandler component not found",
+            "Card: Card data set - ID {0}"
+        };
+
         // [Header("Card Interaction")] // Button 필드를 제거했으므로 주석 처리하거나 제거
         // [SerializeField] private Button cardButton; // 제거
         private CardDisplay cardDisplay; // CardDisplay 컴포넌트 참조
         private CardInteractionHandler cardInteractionHandler; // CardInteractionHandler 컴포넌트 참조
 
         private CardDBObject cardData;
+        private readonly string[] cachedStrings = new string[3];
+
+        public int CardId => cardData?.cardId ?? -1;
         public event Action OnCardClicked; // 카드 클릭 이벤트
 
         private void Awake()
@@ -24,13 +35,15 @@ namespace InvaderInsider.UI
             cardDisplay = GetComponent<CardDisplay>();
             if (cardDisplay == null)
             {
-                Debug.LogError("CardDisplay component not found on this GameObject!", this);
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0], this);
+                return;
             }
 
             cardInteractionHandler = GetComponent<CardInteractionHandler>(); // 같은 GameObject에서 CardInteractionHandler 컴포넌트 가져오기
             if (cardInteractionHandler == null)
             {
-                Debug.LogError("CardInteractionHandler component not found on this GameObject!", this);
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[1], this);
+                return;
             }
             else
             {
@@ -42,10 +55,16 @@ namespace InvaderInsider.UI
 
         public void SetCard(CardDBObject data)
         {
+            if (data == null) return;
+
             cardData = data;
             if (cardDisplay != null)
             {
                 cardDisplay.SetupCard(cardData); // CardDisplay를 통해 시각적 요소 설정
+                if (cachedStrings[2] == null)
+                {
+                    cachedStrings[2] = string.Format(LOG_PREFIX + LOG_MESSAGES[2], cardData.cardId);
+                }
             }
         }
 

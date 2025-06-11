@@ -7,6 +7,12 @@ namespace InvaderInsider
     // [RequireComponent(typeof(ParticleSystem))] // 제거
     public class CharacterObject : BaseCharacter
     {
+        private const string LOG_PREFIX = "[Character] ";
+        private static readonly string[] LOG_MESSAGES = new string[]
+        {
+            "Character {0} leveled up to {1}. Health: {2}, Damage: {3}"
+        };
+
         [Header("Character Specific")]
         [SerializeField] private bool isDestinationPoint = true;
         [SerializeField] private ParticleSystem attackEffect;
@@ -16,30 +22,20 @@ namespace InvaderInsider
         public event Action<int> OnLevelUp; // LevelUp 이벤트는 CharacterObject 고유
         // public new event Action<float> OnHealthChanged; // BaseCharacter의 이벤트를 사용하므로 제거
         
-        // Start is called before the first frame-update
-        protected override void Start()
+        private bool isInitialized = false;
+        private readonly Collider[] hitColliders = new Collider[20];
+
+        protected override void Awake()
         {
-            base.Start();
-            // InitializeEffects(); // 제거
+            base.Awake();
+            Initialize();
         }
 
-        // Update is called once per frame
-        private void Update()
+        protected override void Initialize()
         {
-            if (Time.time >= base.nextAttackTime)
-            {
-                DetectAndAttackEnemies();
-            }
-        }
+            if (isInitialized) return;
 
-        // InitializeEffects 메서드 제거 (파티클 시스템은 인스펙터에서 할당한다고 가정)
-        /*
-        private void InitializeEffects()
-        {
-            if (attackEffect == null)
-            {
-                attackEffect = GetComponent<ParticleSystem>();
-            }
+            base.Initialize();
 
             if (attackEffect != null)
             {
@@ -47,18 +43,58 @@ namespace InvaderInsider
                 main.loop = false;
                 main.playOnAwake = false;
             }
+
+            isInitialized = true;
         }
-        */
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            if (!isInitialized)
+            {
+                Initialize();
+            }
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            CleanupEventListeners();
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            CleanupEventListeners();
+        }
+
+        protected override void CleanupEventListeners()
+        {
+            base.CleanupEventListeners();
+            OnLevelUp = null;
+        }
+
+        // Update is called once per frame
+        private void Update()
+        {
+            if (!isInitialized) return;
+
+            if (Time.time >= nextAttackTime)
+            {
+                DetectAndAttackEnemies();
+            }
+        }
 
         private void DetectAndAttackEnemies()
         {
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, base.AttackRange);
-            foreach (var hitCollider in hitColliders)
+            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, AttackRange, hitColliders, LayerMask.GetMask("Enemy"));
+            
+            for (int i = 0; i < hitCount; i++)
             {
-                if (hitCollider.TryGetComponent<EnemyObject>(out var enemy))
+                if (hitColliders[i].TryGetComponent<EnemyObject>(out var enemy))
                 {
                     Attack(enemy);
-                    base.nextAttackTime = Time.time + base.attackRate;
+                    nextAttackTime = Time.time + attackRate;
                     break;
                 }
             }
@@ -66,7 +102,9 @@ namespace InvaderInsider
 
         public override void Attack(IDamageable target)
         {
-            target.TakeDamage(base.AttackDamage);
+            if (!isInitialized || target == null) return;
+
+            target.TakeDamage(AttackDamage);
             if (attackEffect != null)
             {
                 attackEffect.Play();
@@ -75,6 +113,8 @@ namespace InvaderInsider
 
         public override void TakeDamage(float damage)
         {
+            if (!isInitialized) return;
+
             base.TakeDamage(damage); // BaseCharacter의 TakeDamage 호출 (OnHealthChanged 이벤트 발생)
             if (damageEffect != null)
             {
@@ -85,17 +125,25 @@ namespace InvaderInsider
 
         public void LevelUp()
         {
-            level++;
-            float healthIncrease = base.MaxHealth * 0.1f;
-            float damageIncrease = base.AttackDamage * 0.1f;
+            if (!isInitialized) return;
 
-            base.maxHealth += healthIncrease;
-            base.currentHealth += healthIncrease; // 체력 증가 반영
-            base.attackDamage += damageIncrease;
+            level++;
+            float healthIncrease = MaxHealth * 0.1f;
+            float damageIncrease = AttackDamage * 0.1f;
+
+            maxHealth += healthIncrease;
+            currentHealth += healthIncrease; // 체력 증가 반영
+            attackDamage += damageIncrease;
 
             OnLevelUp?.Invoke(level);
             // 레벨업으로 체력이 변경되었으므로 BaseCharacter의 OnHealthChanged 이벤트 발생
             InvokeHealthChanged(); // BaseCharacter의 InvokeHealthChanged 메서드 호출
+
+            if (Application.isPlaying)
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], 
+                    gameObject.name, level, currentHealth, attackDamage));
+            }
         }
 
         protected override void Die()
@@ -108,8 +156,10 @@ namespace InvaderInsider
         // Draw attack range in editor for debugging
         private void OnDrawGizmosSelected()
         {
+            if (!Application.isPlaying) return;
+            
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, base.AttackRange);
+            Gizmos.DrawWireSphere(transform.position, AttackRange);
         }
 
         // Properties (BaseCharacter의 속성을 사용하므로 제거)

@@ -9,6 +9,15 @@ namespace InvaderInsider.UI
 {
     public class SummonChoicePanel : MonoBehaviour
     {
+        private const string LOG_PREFIX = "[SummonChoice] ";
+        private static readonly string[] LOG_MESSAGES = new string[]
+        {
+            "SummonManager 인스턴스를 찾을 수 없습니다. SummonChoicePanel이 제대로 작동하지 않습니다.",
+            "잘못된 수의 카드 선택지가 전달되었습니다. (필요: 3)",
+            "선택 버튼 클릭됨: 인덱스 {0}, 카드: {1}",
+            "잘못된 선택 버튼 인덱스: {0}"
+        };
+
         [Header("UI Elements")]
         [SerializeField] private List<Button> choiceButtons; // 3개의 선택 버튼
         [SerializeField] private List<Image> cardImages; // 각 버튼에 표시할 카드 이미지
@@ -19,107 +28,154 @@ namespace InvaderInsider.UI
 
         // SummonManager 인스턴스 참조 (Awake에서 찾도록 하거나 다른 방식으로 주입 가능)
         private SummonManager summonManager;
+        private bool isInitialized = false;
 
         private void Awake()
         {
-            // SummonManager 인스턴스 찾기
-            summonManager = SummonManager.Instance; // FindObjectOfType 대신 Instance 사용
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            if (isInitialized) return;
+
+            summonManager = SummonManager.Instance;
             if (summonManager == null)
             {
-                Debug.LogError("SummonManager 인스턴스를 찾을 수 없습니다. SummonChoicePanel이 제대로 작동하지 않습니다.");
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+                return;
             }
 
-            // 각 버튼에 클릭 이벤트 리스너 추가
-            for (int i = 0; i < choiceButtons.Count; i++)
+            if (choiceButtons != null)
             {
-                int choiceIndex = i; // 클로저를 위해 지역 변수 사용
-                choiceButtons[i].onClick.AddListener(() => OnChoiceButtonClicked(choiceIndex));
+                for (int i = 0; i < choiceButtons.Count; i++)
+                {
+                    if (choiceButtons[i] != null)
+                    {
+                        int choiceIndex = i;
+                        choiceButtons[i].onClick.RemoveAllListeners(); // 중복 등록 방지
+                        choiceButtons[i].onClick.AddListener(() => OnChoiceButtonClicked(choiceIndex));
+                    }
+                }
             }
+
+            isInitialized = true;
+        }
+
+        private void OnEnable()
+        {
+            if (!isInitialized)
+            {
+                Initialize();
+            }
+        }
+
+        private void OnDisable()
+        {
+            CleanupEventListeners();
         }
 
         private void OnDestroy()
         {
-            // 리스너 제거 (씬 전환 등에서 오류 방지)
-             for (int i = 0; i < choiceButtons.Count; i++)
+            CleanupEventListeners();
+            currentChoices?.Clear();
+            currentChoices = null;
+        }
+
+        private void CleanupEventListeners()
+        {
+            if (choiceButtons != null)
             {
-                choiceButtons[i].onClick.RemoveAllListeners();
+                foreach (var button in choiceButtons)
+                {
+                    if (button != null)
+                    {
+                        button.onClick.RemoveAllListeners();
+                    }
+                }
             }
         }
 
         // SummonManager에서 호출하여 선택지 카드 정보를 받아와 UI에 표시하는 함수
         public void DisplayChoices(List<CardDBObject> choices)
         {
+            if (!isInitialized)
+            {
+                Initialize();
+            }
+
             if (choices == null || choices.Count != 3)
             {
-                Debug.LogError("잘못된 수의 카드 선택지가 전달되었습니다. (필요: 3)");
-                // 패널 비활성화 또는 오류 메시지 표시
-                gameObject.SetActive(false); // 예시
+                if (Application.isPlaying)
+                {
+                    Debug.LogError(LOG_PREFIX + LOG_MESSAGES[1]);
+                }
+                gameObject.SetActive(false);
                 return;
             }
 
-            currentChoices = choices; // 선택지 목록 저장
+            currentChoices = new List<CardDBObject>(choices);
 
-            // 각 버튼의 UI 요소 업데이트
             for (int i = 0; i < 3; i++)
             {
-                if (i < choices.Count)
-                {
-                    CardDBObject card = choices[i];
-                    // 실제 카드 이미지 로드 및 표시 로직
-                    if (cardImages != null && cardImages.Count > i && card.artwork != null)
-                    {
-                        cardImages[i].sprite = card.artwork;
-                    }
-
-                    if (cardNames != null && cardNames.Count > i && cardNames[i] != null)
-                    {
-                        cardNames[i].text = card.cardName; // 카드 이름 표시
-                    } /* else if (cardNamesLegacy != null && cardNamesLegacy[i] != null)
-                    {
-                         cardNamesLegacy[i].text = card.cardName; // 기본 Text 사용 시
-                    }*/
-
-                    // 버튼 활성화
-                    if (choiceButtons != null && choiceButtons.Count > i)
-                    {
-                         choiceButtons[i].gameObject.SetActive(true);
-                    }
-
-                } else
-                {
-                     // 카드가 3개 미만이면 해당 버튼 비활성화
-                     if (choiceButtons != null && choiceButtons.Count > i)
-                     {
-                         choiceButtons[i].gameObject.SetActive(false);
-                     }
-                }
+                bool hasValidChoice = i < choices.Count;
+                UpdateChoiceUI(i, hasValidChoice ? choices[i] : null);
             }
 
-            // 패널 활성화 (UICanvas 아래에 적절히 배치 필요)
             gameObject.SetActive(true);
+        }
+
+        private void UpdateChoiceUI(int index, CardDBObject card)
+        {
+            if (index < 0 || index >= 3) return;
+
+            bool hasValidButton = choiceButtons != null && index < choiceButtons.Count;
+            bool hasValidImage = cardImages != null && index < cardImages.Count;
+            bool hasValidName = cardNames != null && index < cardNames.Count;
+
+            if (hasValidButton)
+            {
+                choiceButtons[index].gameObject.SetActive(card != null);
+            }
+
+            if (card != null)
+            {
+                if (hasValidImage && card.artwork != null)
+                {
+                    cardImages[index].sprite = card.artwork;
+                }
+
+                if (hasValidName)
+                {
+                    cardNames[index].text = card.cardName;
+                }
+            }
         }
 
         // 버튼 클릭 시 호출될 함수
         private void OnChoiceButtonClicked(int choiceIndex)
         {
+            if (!isInitialized || currentChoices == null)
+            {
+                return;
+            }
+
             if (choiceIndex >= 0 && choiceIndex < currentChoices.Count)
             {
                 CardDBObject selectedCard = currentChoices[choiceIndex];
-                Debug.Log($"선택 버튼 클릭됨: 인덱스 {choiceIndex}, 카드: {selectedCard.cardName}");
+                if (Application.isPlaying)
+                {
+                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], choiceIndex, selectedCard.cardName));
+                }
 
-                // 선택된 카드를 SummonManager에 전달
                 if (summonManager != null)
                 {
                     summonManager.OnCardChoiceSelected(selectedCard);
                 }
-
-                // 선택 완료 후 패널 비활성화 또는 파괴 (SummonManager에서도 처리)
-                // gameObject.SetActive(false); // 예시
-                // Destroy(gameObject); // SummonManager에서 처리하는 것이 일반적
             }
-            else
+            else if (Application.isPlaying)
             {
-                Debug.LogError($"잘못된 선택 버튼 인덱스: {choiceIndex}");
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[3], choiceIndex));
             }
         }
 

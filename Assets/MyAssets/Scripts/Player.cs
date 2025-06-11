@@ -5,104 +5,126 @@ using InvaderInsider.UI; // Changed from InvaderInsider.Managers
 using InvaderInsider; // IDamageable 인터페이스 사용을 위해 추가
 using System; // Action 델리게이트 사용을 위해 추가
 
-public class Player : MonoBehaviour, IDamageable
+namespace InvaderInsider
 {
-    // 체력 관련 변수
-    [SerializeField] private float maxHealth = 100f; // float로 변경
-    private float currentHealth;
-
-    // 체력 속성 추가 (IDamageable 인터페이스 구현)
-    public float CurrentHealth { get { return currentHealth; } }
-    public float MaxHealth { get { return maxHealth; } }
-
-    // IDamageable 인터페이스 이벤트 구현
-    public event Action<float> OnHealthChanged; // 현재 체력 비율을 전달
-    public event Action OnDeath;
-
-    // 체력 UI 업데이트를 위한 TextMeshProUGUI 및 Slider 참조
-    public TextMeshProUGUI healthText;
-    //[SerializeField] private Slider healthSlider; // 체력을 표시할 UI Slider 요소
-
-    private BottomBarPanel _bottomBarPanel; // BottomBarPanel 인스턴스 캐싱
-    private UIManager _uiManager; // UIManager 인스턴스 캐싱
-
-    // Start is called before the first frame update
-    void Start()
+    public class Player : MonoBehaviour, IDamageable
     {
-        _bottomBarPanel = FindObjectOfType<BottomBarPanel>(); // BottomBarPanel 인스턴스 찾기
-        if (_bottomBarPanel == null)
+        private const string LOG_PREFIX = "[Player] ";
+        private static readonly string[] LOG_MESSAGES = new string[]
         {
-            Debug.LogError("BottomBarPanel 인스턴스를 찾을 수 없습니다.");
+            "Player health reset.",
+            "Player Died!",
+            "BottomBarPanel 인스턴스를 찾을 수 없습니다.",
+            "UIManager 인스턴스를 찾을 수 없습니다."
+        };
+
+        [Header("Health Settings")]
+        [SerializeField] private float maxHealth = 100f;
+        private float currentHealth;
+
+        [Header("UI References")]
+        [SerializeField] private TextMeshProUGUI healthText;
+
+        public float CurrentHealth => currentHealth;
+        public float MaxHealth => maxHealth;
+
+        public event Action<float> OnHealthChanged;
+        public event Action OnDeath;
+
+        private BottomBarPanel bottomBarPanel;
+        private UIManager uiManager;
+        private bool isInitialized = false;
+
+        private void Awake()
+        {
+            Initialize();
         }
 
-        _uiManager = UIManager.Instance; // UIManager 인스턴스 찾기
-        if (_uiManager == null)
+        private void Initialize()
         {
-            Debug.LogError("UIManager 인스턴스를 찾을 수 없습니다.");
-        }
-        
-        ResetHealth(); // Start에서 체력 초기화 및 UI 업데이트
-    }
+            if (isInitialized) return;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+            bottomBarPanel = FindObjectOfType<BottomBarPanel>();
+            if (bottomBarPanel == null && Application.isPlaying)
+            {
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
+            }
 
-    // 체력을 최대로 초기화하고 UI를 업데이트하는 함수
-    public void ResetHealth()
-    {
-        currentHealth = maxHealth;
-        OnHealthChanged?.Invoke(currentHealth / maxHealth); // 체력 변경 이벤트 발생 (비율 전달)
-        Debug.Log("Player health reset.");
-    }
+            uiManager = UIManager.Instance;
+            if (uiManager == null && Application.isPlaying)
+            {
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[3]);
+            }
 
-    // 체력을 감소시키는 함수 (IDamageable 인터페이스 구현)
-    public void TakeDamage(float damageAmount)
-    {
-        currentHealth -= damageAmount;
-        if (currentHealth <= 0)
-        {
-            currentHealth = 0; // 체력이 0 이하로 내려가지 않도록 보정
-            Die(); // 체력이 0 이하가 되면 죽음 처리
-        }
-        OnHealthChanged?.Invoke(currentHealth / maxHealth); // 체력 변경 이벤트 발생 (비율 전달)
-    }
-
-    // 주인공이 죽었을 때 처리하는 함수 (예정)
-    void Die()
-    {
-        Debug.Log("Player Died!");
-        OnDeath?.Invoke(); // 사망 이벤트 발생
-
-        // TODO: 게임 오버 처리 또는 리스폰 로직 구현
-        if (_uiManager != null)
-        {
-            _uiManager.ShowPanel("MainMenu"); // 메인 메뉴 패널 이름 사용
+            ResetHealth();
+            isInitialized = true;
         }
 
-        // 게임 일시 정지 (선택 사항)
-        // Time.timeScale = 0f;
+        private void OnEnable()
+        {
+            if (!isInitialized)
+            {
+                Initialize();
+            }
+        }
 
-        // 주인공 오브젝트를 즉시 파괴하지 않도록 처리 (씬 전환 등으로 처리될 것이므로)
-        // gameObject.SetActive(false); 
+        private void OnDisable()
+        {
+            CleanupEventListeners();
+        }
+
+        private void OnDestroy()
+        {
+            CleanupEventListeners();
+        }
+
+        private void CleanupEventListeners()
+        {
+            OnHealthChanged = null;
+            OnDeath = null;
+        }
+
+        public void ResetHealth()
+        {
+            if (!isInitialized) return;
+
+            currentHealth = maxHealth;
+            OnHealthChanged?.Invoke(currentHealth / maxHealth);
+
+            if (Application.isPlaying)
+            {
+                Debug.Log(LOG_PREFIX + LOG_MESSAGES[0]);
+            }
+        }
+
+        public void TakeDamage(float damageAmount)
+        {
+            if (!isInitialized) return;
+
+            currentHealth = Mathf.Max(0, currentHealth - damageAmount);
+            OnHealthChanged?.Invoke(currentHealth / maxHealth);
+
+            if (currentHealth <= 0)
+            {
+                Die();
+            }
+        }
+
+        private void Die()
+        {
+            if (!isInitialized) return;
+
+            if (Application.isPlaying)
+            {
+                Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
+            }
+
+            OnDeath?.Invoke();
+
+            if (uiManager != null)
+            {
+                uiManager.ShowPanel("MainMenu");
+            }
+        }
     }
-
-    // 체력 UI를 업데이트하는 함수 (더 이상 사용하지 않음)
-    // private void UpdateHealthUI()
-    // {
-    //     // TextMeshPro UI 업데이트
-    //     if (healthText != null)
-    //     {
-    //         //healthText.text = "Health: " + currentHealth.ToString();
-    //         healthText.text = $"HP: {currentHealth}/{maxHealth}"; // 최대 체력과 함께 표시
-    //     }
-
-    //     // Slider UI 업데이트
-    //     if (healthSlider != null)
-    //     {
-    //         healthSlider.value = currentHealth; // 현재 체력 값을 Slider value에 반영
-    //     }
-    // }
 } 

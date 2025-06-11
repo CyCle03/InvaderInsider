@@ -20,17 +20,36 @@ namespace InvaderInsider.UI
 
     public class CardDropZone : MonoBehaviour, IDropHandler
     {
+        private const string LOG_PREFIX = "[UI] ";
+        private static readonly string[] LOG_MESSAGES = new string[]
+        {
+            "CardDrop: Equipment card {0} dropped. Target type: {1}",
+            "CardDrop: Equipment {0} applied to Character {1}",
+            "CardDrop: Equipment {0} applied to Tower {1}",
+            "CardDrop: Card {0} upgraded. (Old: {1}, New: {2})",
+            "CardDrop: Card {0} already exists, but cannot upgrade with different rarity",
+            "CardDrop: New card {0} placed",
+            "CardDrop: Card {0} removed from drop zone"
+        };
+
         [SerializeField] private bool isPlayableZone = false; // 이 드롭 존이 카드를 낼 수 있는 필드인지
         [SerializeField] private Transform cardPlacementParent; // 카드가 놓여질 부모 Transform (선택 사항)
         [SerializeField] private List<CardDisplay> placedCards = new List<CardDisplay>(); // 이 존에 현재 놓여있는 카드들
 
         // 카드가 성공적으로 필드에 놓였을 때 발생 (새로운 카드 배치)
-        public UnityEvent<InvaderInsider.Data.CardDBObject> OnCardSuccessfullyPlayed = new UnityEvent<InvaderInsider.Data.CardDBObject>();
+        public UnityEvent<CardDBObject> OnCardSuccessfullyPlayed = new UnityEvent<CardDBObject>();
         // 카드가 성공적으로 업그레이드되었을 때 발생 (새로운 카드 데이터, 업그레이드된 기존 카드 Display)
-        public UnityEvent<InvaderInsider.Data.CardDBObject, CardDisplay> OnCardSuccessfullyUpgraded = new UnityEvent<InvaderInsider.Data.CardDBObject, CardDisplay>();
+        public UnityEvent<CardDBObject, CardDisplay> OnCardSuccessfullyUpgraded = new UnityEvent<CardDBObject, CardDisplay>();
 
         public bool IsPlayableZone => isPlayableZone;
         public Transform CardPlacementParent => cardPlacementParent;
+
+        private void OnDestroy()
+        {
+            OnCardSuccessfullyPlayed.RemoveAllListeners();
+            OnCardSuccessfullyUpgraded.RemoveAllListeners();
+            placedCards.Clear();
+        }
 
         public void OnDrop(PointerEventData eventData)
         {
@@ -40,92 +59,116 @@ namespace InvaderInsider.UI
         // 카드를 놓으려 할 때 호출되는 메서드
         public CardPlacementResult TryPlaceCard(CardDisplay droppedCardDisplay)
         {
-            if (!isPlayableZone) return CardPlacementResult.Failed_InvalidZone; // 플레이 불가능한 존이면 실패
+            if (!isPlayableZone || droppedCardDisplay == null) return CardPlacementResult.Failed_InvalidZone;
 
-            InvaderInsider.Data.CardDBObject droppedCardData = droppedCardDisplay.GetCardData(); // 완전한 네임스페이스 명시
+            CardDBObject droppedCardData = droppedCardDisplay.GetCardData();
+            if (droppedCardData == null) return CardPlacementResult.Failed_OtherReason;
 
-            // 장비 아이템 처리 (EquipmentTargetType에 따라)
             if (droppedCardData.type == CardType.Equipment)
             {
-                Debug.Log($"Equipment card {droppedCardData.cardName} dropped. Target type: {droppedCardData.equipmentTarget}");
-                
+                if (Application.isPlaying)
+                {
+                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], droppedCardData.cardName, droppedCardData.equipmentTarget));
+                }
+
                 bool applied = false;
-                // 현재 존에 캐릭터/타워 카드가 있는지 확인
                 foreach (var placedCard in placedCards)
                 {
-                    InvaderInsider.Data.CardDBObject placedCardData = placedCard.GetCardData(); // 완전한 네임스페이스 명시
+                    if (placedCard == null) continue;
+
+                    CardDBObject placedCardData = placedCard.GetCardData();
+                    if (placedCardData == null) continue;
 
                     if (placedCardData.type == CardType.Character && droppedCardData.equipmentTarget == EquipmentTargetType.Character)
                     {
-                        BaseCharacter character = placedCard.GetComponent<BaseCharacter>(); // 가정: BaseCharacter가 CardDisplay와 같은 GameObject에 있음
+                        BaseCharacter character = placedCard.GetComponent<BaseCharacter>();
                         if (character != null)
                         {
                             character.ApplyEquipment(droppedCardData);
-                            Debug.Log($"Equipment {droppedCardData.cardName} applied to Character {placedCardData.cardName}.");
-                            applied = true; 
-                            break; // 적용 후 루프 종료
+                            if (Application.isPlaying)
+                            {
+                                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[1], droppedCardData.cardName, placedCardData.cardName));
+                            }
+                            applied = true;
+                            break;
                         }
                     }
                     else if (placedCardData.type == CardType.Tower && droppedCardData.equipmentTarget == EquipmentTargetType.Tower)
                     {
-                        Tower tower = placedCard.GetComponent<Tower>(); // 가정: Tower가 CardDisplay와 같은 GameObject에 있음
+                        Tower tower = placedCard.GetComponent<Tower>();
                         if (tower != null)
                         {
                             tower.ApplyEquipment(droppedCardData);
-                            Debug.Log($"Equipment {droppedCardData.cardName} applied to Tower {placedCardData.cardName}.");
-                            applied = true; 
-                            break; // 적용 후 루프 종료
+                            if (Application.isPlaying)
+                            {
+                                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], droppedCardData.cardName, placedCardData.cardName));
+                            }
+                            applied = true;
+                            break;
                         }
                     }
                 }
+
                 if (applied)
                 {
-                    OnCardSuccessfullyPlayed.Invoke(droppedCardData); // 장비도 플레이로 간주
+                    OnCardSuccessfullyPlayed.Invoke(droppedCardData);
                     return CardPlacementResult.Success_Place;
                 }
-                else return CardPlacementResult.Failed_InvalidTarget; // 적용 가능한 대상이 없는 경우
+                return CardPlacementResult.Failed_InvalidTarget;
             }
             else if (droppedCardData.type == CardType.Character || droppedCardData.type == CardType.Tower)
             {
-                // 캐릭터/타워 카드 처리 (업그레이드 또는 신규 배치)
                 foreach (var placedCard in placedCards)
                 {
-                    InvaderInsider.Data.CardDBObject existingCardData = placedCard.GetCardData(); // 완전한 네임스페이스 명시
+                    if (placedCard == null) continue;
 
-                    // 같은 ID의 카드가 존재하고 등급이 같으면 업그레이드
+                    CardDBObject existingCardData = placedCard.GetCardData();
+                    if (existingCardData == null) continue;
+
                     if (existingCardData.cardId == droppedCardData.cardId)
                     {
                         if (existingCardData.rarity == droppedCardData.rarity)
                         {
-                            Debug.Log($"Card {droppedCardData.cardName} upgraded. (Old: {existingCardData.rarity}, New: {droppedCardData.rarity})");
-                            placedCard.SetupCard(droppedCardData); // 기존 카드의 비주얼을 업그레이드된 데이터로 업데이트
-                            OnCardSuccessfullyUpgraded.Invoke(droppedCardData, placedCard); // 업그레이드 이벤트 발생
+                            if (Application.isPlaying)
+                            {
+                                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], droppedCardData.cardName, existingCardData.rarity, droppedCardData.rarity));
+                            }
+                            placedCard.SetupCard(droppedCardData);
+                            OnCardSuccessfullyUpgraded.Invoke(droppedCardData, placedCard);
                             return CardPlacementResult.Success_Upgrade;
                         }
                         else
                         {
-                            // 같은 카드인데 등급이 다른 경우 (업그레이드 불가능)
-                            Debug.Log($"Card {droppedCardData.cardName} already exists, but cannot upgrade with different rarity.");
+                            if (Application.isPlaying)
+                            {
+                                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[4], droppedCardData.cardName));
+                            }
                             return CardPlacementResult.Failed_AlreadyExists;
                         }
                     }
                 }
-                // 기존 같은 카드가 없는 경우, 새로운 카드 배치
-                Debug.Log($"New card {droppedCardData.cardName} placed.");
-                placedCards.Add(droppedCardDisplay); // 새로운 카드 추가
-                OnCardSuccessfullyPlayed.Invoke(droppedCardData); // 배치 이벤트 발생
+
+                if (Application.isPlaying)
+                {
+                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[5], droppedCardData.cardName));
+                }
+                placedCards.Add(droppedCardDisplay);
+                OnCardSuccessfullyPlayed.Invoke(droppedCardData);
                 return CardPlacementResult.Success_Place;
             }
-            return CardPlacementResult.Failed_OtherReason; // 기타 타입의 카드 (예: Spell)는 여기에 로직 추가
+
+            return CardPlacementResult.Failed_OtherReason;
         }
 
         // 존에서 카드를 제거할 때 호출 (예: 카드가 필드를 떠날 때)
         public void RemoveCard(CardDisplay cardToRemove)
         {
-            if (placedCards.Contains(cardToRemove))
+            if (cardToRemove == null || !placedCards.Contains(cardToRemove)) return;
+
+            placedCards.Remove(cardToRemove);
+            if (Application.isPlaying)
             {
-                placedCards.Remove(cardToRemove);
-                Debug.Log($"Card {cardToRemove.GetCardData()?.cardName} removed from drop zone.");
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[6], cardToRemove.GetCardData()?.cardName ?? "Unknown"));
             }
         }
     }

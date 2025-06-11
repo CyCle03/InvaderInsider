@@ -10,21 +10,38 @@ namespace InvaderInsider.Cards
     public class CardManager : MonoBehaviour
     {
         private static CardManager instance;
+        private static readonly object _lock = new object();
+        private static bool isQuitting = false;
+        private static bool isInitialized = false;
+        
         public static CardManager Instance
         {
             get
             {
-                if (instance == null)
+                if (isQuitting) return null;
+
+                lock (_lock)
                 {
-                    instance = FindObjectOfType<CardManager>();
-                    if (instance == null)
+                    if (instance == null && !isQuitting)
                     {
-                        GameObject go = new GameObject("CardManager");
-                        instance = go.AddComponent<CardManager>();
-                        DontDestroyOnLoad(go);
+                        instance = FindObjectOfType<CardManager>();
+                        if (instance == null)
+                        {
+                            GameObject go = new GameObject("CardManager");
+                            instance = go.AddComponent<CardManager>();
+                            DontDestroyOnLoad(go);
+                        }
                     }
+                    
+                    // 인스턴스가 있지만 초기화되지 않은 경우 강제 초기화
+                    if (instance != null && !isInitialized)
+                    {
+                        Debug.Log("CardManager: Instance exists but not initialized in getter, forcing initialization");
+                        instance.PerformInitialization();
+                    }
+                    
+                    return instance;
                 }
-                return instance;
             }
         }
 
@@ -42,19 +59,90 @@ namespace InvaderInsider.Cards
 
         private void Awake()
         {
+            Debug.Log("CardManager: === AWAKE CALLED ===");
+            
             if (instance == null)
             {
+                Debug.Log("CardManager: Setting as instance");
                 instance = this;
                 DontDestroyOnLoad(gameObject);
+                PerformInitialization();
+            }
+            else if (instance != this)
+            {
+                Debug.Log("CardManager: Destroying duplicate CardManager");
+                Destroy(gameObject);
+                return;
+            }
+            else
+            {
+                Debug.Log("CardManager: This is already the instance");
+                // 이미 instance이지만 초기화가 안 되어 있을 수 있음
+                if (!isInitialized)
+                {
+                    Debug.Log("CardManager: Instance exists but not initialized, performing initialization");
+                    PerformInitialization();
+                }
+            }
+        }
+
+        private void PerformInitialization()
+        {
+            Debug.Log("CardManager: === PERFORMING INITIALIZATION ===");
+            Debug.Log("CardManager: cardDatabase: " + (cardDatabase != null ? "Assigned" : "Null"));
+            if (cardDatabase != null)
+            {
+                Debug.Log("CardManager: cardDatabase name: " + cardDatabase.name);
+            }
+            
+            if (cardDatabase == null)
+            {
+                Debug.LogError("Card Database Scriptable Object is not assigned in the inspector!");
+                // Resources 폴더에서 CardDatabase를 찾아서 할당
+                cardDatabase = Resources.Load<CardDatabase>("CardDatabase1");
                 if (cardDatabase == null)
                 {
-                    Debug.LogError("Card Database Scriptable Object is not assigned in the inspector!");
+                    // ScriptableObjects 폴더에서 직접 로드 시도
+                    cardDatabase = Resources.Load<CardDatabase>("ScriptableObjects/CardSystem/CardDatabase1");
+                    if (cardDatabase == null)
+                    {
+                        Debug.LogError("기본 CardDatabase를 찾을 수 없습니다. CardDatabase1.asset 파일을 확인하세요.");
+                        // 빈 CardDatabase 생성
+                        cardDatabase = ScriptableObject.CreateInstance<CardDatabase>();
+                        Debug.LogWarning("빈 CardDatabase를 생성했습니다. Inspector에서 올바른 CardDatabase를 할당하세요.");
+                    }
+                    else
+                    {
+                        Debug.Log("CardDatabase1을 ScriptableObjects 폴더에서 로드했습니다.");
+                    }
+                }
+                else
+                {
+                    Debug.Log("기본 CardDatabase1을 로드했습니다.");
                 }
             }
             else
             {
-                Destroy(gameObject);
+                Debug.Log("CardDatabase가 Inspector에서 할당되었습니다: " + cardDatabase.name);
+                Debug.Log("CardDatabase 카드 개수: " + cardDatabase.cards.Count);
             }
+            
+            isInitialized = true;
+            Debug.Log("CardManager: === INITIALIZATION COMPLETED - isInitialized: " + isInitialized + " ===");
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                instance = null;
+                isInitialized = false;
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            isQuitting = true;
         }
 
         // 단일 카드 뽑기
