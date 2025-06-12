@@ -30,10 +30,7 @@ namespace InvaderInsider
 
         private void Update()
         {
-            if (!isInitialized || StageManager.Instance == null) return;
-            
-            var wayPoints = StageManager.Instance.WayPoints;
-            if (wayPoints == null || wayPoints.Count == 0) return;
+            if (!isInitialized) return;
 
             if (currentTarget == null || !currentTarget.gameObject.activeInHierarchy)
             {
@@ -56,7 +53,10 @@ namespace InvaderInsider
 
         public override void Attack(IDamageable target)
         {
-            if (target == null || firePoint == null || projectilePrefab == null) return;
+            if (target == null || firePoint == null || projectilePrefab == null) 
+            {
+                return;
+            }
 
             GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
             Projectile projectile = projectileObj.GetComponent<Projectile>();
@@ -79,46 +79,52 @@ namespace InvaderInsider
             if (cardData.type == CardType.Equipment && cardData.equipmentTarget == EquipmentTargetType.Tower)
             {
                 attackDamage += cardData.equipmentBonusAttack;
-                
-                if (Application.isPlaying)
-                {
-                    Debug.Log($"[Tower] 타워 장비 적용: {cardData.cardName}, 공격력 증가: {cardData.equipmentBonusAttack}");
-                }
             }
         }
 
         private void FindTarget()
         {
-            if (StageManager.Instance == null || StageManager.Instance.WayPoints == null) return;
-
             float closestDistance = towerAttackRange;
-            IDamageable closestTarget = null;
+            EnemyObject closestTarget = null;
 
-            foreach (var waypoint in StageManager.Instance.WayPoints)
+            // Physics.OverlapSphere를 사용하여 효율적으로 범위 내 적들을 찾기
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, towerAttackRange, enemyLayer);
+            
+            foreach (var collider in hitColliders)
             {
-                if (waypoint == null) continue;
+                // 태그로 한 번 더 검증
+                if (!collider.CompareTag("Enemy")) continue;
+                
+                EnemyObject enemy = collider.GetComponent<EnemyObject>();
+                if (enemy == null || !enemy.gameObject.activeInHierarchy) continue;
 
-                float distance = Vector3.Distance(transform.position, waypoint.position);
-                if (distance <= towerAttackRange)
+                float distance = Vector3.Distance(transform.position, enemy.transform.position);
+                if (distance < closestDistance)
                 {
-                    var enemies = Physics.OverlapSphere(waypoint.position, 0.5f, enemyLayer);
-                    foreach (var enemy in enemies)
+                    closestDistance = distance;
+                    closestTarget = enemy;
+                }
+            }
+
+            // 레이어 검색에서 찾지 못했다면 fallback으로 모든 EnemyObject 검색
+            if (closestTarget == null)
+            {
+                EnemyObject[] allEnemies = FindObjectsOfType<EnemyObject>();
+                
+                foreach (var enemy in allEnemies)
+                {
+                    if (enemy == null || !enemy.gameObject.activeInHierarchy) continue;
+
+                    float distance = Vector3.Distance(transform.position, enemy.transform.position);
+                    if (distance <= towerAttackRange && distance < closestDistance)
                     {
-                        var enemyObject = enemy.GetComponent<EnemyObject>();
-                        if (enemyObject != null && enemyObject.gameObject.activeInHierarchy)
-                        {
-                            float enemyDistance = Vector3.Distance(transform.position, enemy.transform.position);
-                            if (enemyDistance < closestDistance)
-                            {
-                                closestDistance = enemyDistance;
-                                closestTarget = enemyObject;
-                            }
-                        }
+                        closestDistance = distance;
+                        closestTarget = enemy;
                     }
                 }
             }
 
-            currentTarget = closestTarget as EnemyObject;
+            currentTarget = closestTarget;
         }
 
         private void RotateTurret()

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
+using System.Linq;
 
 namespace InvaderInsider.UI
 {
@@ -12,47 +13,31 @@ namespace InvaderInsider.UI
         private const string LOG_PREFIX = "[UI] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
-            "Awake",
-            "Start",
-            "Panel {0} already registered",
-            "Attempting to show panel: {0}",
-            "Panel {0} not found!",
-            "Panel {0} shown successfully",
-            "No previous panel to return to",
-            "Returned to previous panel: {0}",
-            "Panel {0} hidden successfully",
-            "Panel {0} not found to hide",
-            "UIManager destroyed: {0}",
-            "Stage {0} / {1}",
-            "Wave {0} / {1}"
+            "Panel not found: {0}", // 0
+            "Panel {0} not found for showing", // 1
+            "UIManager destroyed: {0}" // 2
         };
 
-        private static UIManager _instance;
+        private static UIManager instance;
         private static readonly object _lock = new object();
-        private static bool isQuitting = false;
 
         public static UIManager Instance
         {
             get
             {
-                if (isQuitting)
-                {
-                    return null;
-                }
-
                 lock (_lock)
                 {
-                    if (_instance == null)
+                    if (instance == null)
                     {
-                        _instance = FindObjectOfType<UIManager>();
-                        if (_instance == null && !isQuitting)
+                        instance = FindObjectOfType<UIManager>();
+                        if (instance == null)
                         {
                             GameObject go = new GameObject("UIManager");
-                            _instance = go.AddComponent<UIManager>();
+                            instance = go.AddComponent<UIManager>();
                             DontDestroyOnLoad(go);
                         }
                     }
-                    return _instance;
+                    return instance;
                 }
             }
         }
@@ -65,97 +50,72 @@ namespace InvaderInsider.UI
         private readonly Stack<BasePanel> panelHistory = new Stack<BasePanel>();
         private BasePanel currentPanel;
 
+        // 이벤트 선언 추가
+        public event Action<string> OnPanelShown;
+        public event Action<string> OnPanelHidden;
+
+        private readonly string[] menuScenes = { "Main" }; // 메인 메뉴 씬
+        private readonly string[] gameScenes = { "Game" }; // 게임 씬
+
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            if (instance == null)
             {
-                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[2]);
+                instance = this;
+                DontDestroyOnLoad(gameObject);
+                UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+                UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+            }
+            else if (instance != this)
+            {
                 Destroy(gameObject);
                 return;
             }
-
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[0]);
-        }
-
-        private void OnApplicationQuit()
-        {
-            isQuitting = true;
         }
 
         private void Start()
         {
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
+            // 시작 시 기본 설정
         }
 
         public void RegisterPanel(string panelName, BasePanel panel)
         {
-            if (string.IsNullOrEmpty(panelName) || panel == null) return;
+            if (string.IsNullOrEmpty(panelName) || panel == null)
+            {
+                return;
+            }
 
             if (panels.ContainsKey(panelName))
             {
-                if (panels[panelName] == panel)
-                {
-                    return;
-                }
-                
-                Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[2], panelName));
-                return;
+                Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[0], panelName));
+                panels[panelName] = panel;
             }
-            
-            panels[panelName] = panel;
+            else
+            {
+                panels.Add(panelName, panel);
+            }
         }
 
         public void ShowPanel(string panelName)
         {
             if (string.IsNullOrEmpty(panelName)) return;
 
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], panelName));
-            
-            if (!panels.TryGetValue(panelName, out BasePanel panel))
+            if (panels.TryGetValue(panelName, out BasePanel panel))
             {
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[4], panelName));
-                return;
-            }
+                if (currentPanel != null && currentPanel != panel)
+                {
+                    currentPanel.Hide();
+                    OnPanelHidden?.Invoke(currentPanel.name);
+                }
 
-            if (currentPanel != null)
+                panel.Show();
+                currentPanel = panel;
+                OnPanelShown?.Invoke(panelName);
+            }
+            else
             {
-                currentPanel.Hide();
-                panelHistory.Push(currentPanel);
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], panelName));
             }
-
-            panel.Show();
-            currentPanel = panel;
-
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[5], panelName));
-        }
-
-        public void GoBack()
-        {
-            if (panelHistory.Count == 0)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[7]);
-                return;
-            }
-
-            if (currentPanel != null)
-            {
-                currentPanel.Hide();
-            }
-
-            currentPanel = panelHistory.Pop();
-            if (currentPanel != null)
-            {
-                currentPanel.Show();
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], currentPanel.gameObject.name));
-            }
-        }
-
-        public bool IsCurrentPanel(string panelName)
-        {
-            if (string.IsNullOrEmpty(panelName) || currentPanel == null) return false;
-            return panels.TryGetValue(panelName, out BasePanel panel) && currentPanel == panel;
         }
 
         public void HideCurrentPanel()
@@ -169,62 +129,37 @@ namespace InvaderInsider.UI
 
         public void HidePanel(string panelName)
         {
-            if (string.IsNullOrEmpty(panelName)) return;
-
             if (panels.TryGetValue(panelName, out BasePanel panel))
             {
                 panel.Hide();
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], panelName));
-            }
-            else
-            {
-                Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[9], panelName));
-            }
-        }
-
-        public bool IsPanelRegistered(string panelName)
-        {
-            return !string.IsNullOrEmpty(panelName) && panels.ContainsKey(panelName);
-        }
-
-        public void UnregisterPanel(string panelName)
-        {
-            if (string.IsNullOrEmpty(panelName)) return;
-
-            if (panels.TryGetValue(panelName, out BasePanel panel))
-            {
+                OnPanelHidden?.Invoke(panelName);
                 if (currentPanel == panel)
                 {
                     currentPanel = null;
                 }
-                panels.Remove(panelName);
             }
         }
 
-        public void ClearPanelHistory()
+        public bool IsPanelActive(string panelName)
         {
-            panelHistory.Clear();
-            if (currentPanel != null)
-            {
-                currentPanel.Hide();
-                currentPanel = null;
-            }
+            return panels.TryGetValue(panelName, out BasePanel panel) && panel.gameObject.activeInHierarchy;
         }
 
-        private void OnDestroy()
+        public bool IsCurrentPanel(string panelName)
         {
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[10], gameObject.name));
-            if (_instance == this)
-            {
-                _instance = null;
-            }
+            return currentPanel != null && panels.TryGetValue(panelName, out BasePanel panel) && currentPanel == panel;
+        }
+
+        public void GoBack()
+        {
+            HideCurrentPanel();
         }
 
         public void UpdateStage(int currentStage, int totalStages)
         {
             if (stageText != null)
             {
-                stageText.text = string.Format(LOG_PREFIX + LOG_MESSAGES[11], currentStage + 1, totalStages);
+                stageText.text = string.Format(LOG_PREFIX + LOG_MESSAGES[3], currentStage + 1, totalStages);
             }
         }
 
@@ -232,14 +167,69 @@ namespace InvaderInsider.UI
         {
             if (waveText != null)
             {
-                waveText.text = string.Format(LOG_PREFIX + LOG_MESSAGES[12], currentWave, totalWaves);
+                waveText.text = string.Format(LOG_PREFIX + LOG_MESSAGES[4], currentWave, totalWaves);
             }
         }
 
-        public bool IsPanelActive(string panelName)
+        private void OnDestroy()
         {
-            if (string.IsNullOrEmpty(panelName)) return false;
-            return panels.TryGetValue(panelName, out BasePanel panel) && panel.gameObject.activeSelf;
+            if (instance == this)
+            {
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], gameObject.name));
+                UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+                UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
+                instance = null;
+            }
+        }
+
+        private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            string sceneName = scene.name;
+            Debug.Log($"{LOG_PREFIX}Scene loaded: {sceneName}");
+        }
+
+        private void OnSceneUnloaded(UnityEngine.SceneManagement.Scene scene)
+        {
+            string sceneName = scene.name;
+            Debug.Log($"{LOG_PREFIX}Scene unloaded: {sceneName}");
+
+            if (menuScenes.Any(s => s == sceneName))
+            {
+                // 메뉴 씬이 언로드될 때 패널 목록 초기화
+                panels.Clear();
+            }
+        }
+
+        // 디버그용 - 개발 중에만 사용
+        public void DebugPrintRegisteredPanels()
+        {
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "=== 등록된 패널 목록 ===");
+            foreach (var kvp in panels)
+            {
+                Debug.Log(string.Format(LOG_PREFIX + "Panel: {0}, Active: {1}", kvp.Key, kvp.Value.gameObject.activeSelf));
+            }
+            Debug.Log(LOG_PREFIX + string.Format("총 {0}개 패널 등록됨", panels.Count));
+            #endif
+        }
+
+        public void Cleanup()
+        {
+            // 모든 패널 숨기기
+            foreach (var panel in panels.Values)
+            {
+                if (panel != null)
+                {
+                    panel.ForceHide();
+                }
+            }
+            
+            // 패널 목록 초기화
+            panels.Clear();
+            
+            // 이벤트 정리
+            OnPanelShown = null;
+            OnPanelHidden = null;
         }
     }
 } 

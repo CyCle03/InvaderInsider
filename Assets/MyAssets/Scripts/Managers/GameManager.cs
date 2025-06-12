@@ -3,6 +3,7 @@ using System;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
 using UnityEngine.SceneManagement;
+using InvaderInsider.Cards;
 
 namespace InvaderInsider.Managers
 {
@@ -19,19 +20,13 @@ namespace InvaderInsider.Managers
 
     public class GameManager : MonoBehaviour
     {
-        private const string LOG_PREFIX = "[Game] ";
+        private const string LOG_PREFIX = "[GameManager] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "State changed to: {0}",
             "Game started",
             "Game paused",
-            "Game resumed",
-            "Game ended",
             "Settings opened",
-            "Settings closed",
-            "Game data loaded. Updating game state and UI...",
-            "UI update initiated based on loaded data",
-            "StageManager not found. Cannot update Stage/Wave/Enemy Count UI",
             "StageManager not found in the scene",
             "BottomBarPanel not found in the scene",
             "Player not found in the scene",
@@ -89,6 +84,7 @@ namespace InvaderInsider.Managers
         private Player cachedPlayer;
         private SaveDataManager saveDataManager;
         private UIManager uiManager;
+        private CardManager cardManager;
 
         public event System.Action OnStageClearedEvent;
 
@@ -111,6 +107,7 @@ namespace InvaderInsider.Managers
         {
             saveDataManager = SaveDataManager.Instance;
             uiManager = UIManager.Instance;
+            cardManager = FindObjectOfType<CardManager>();
             UpdateCachedComponents();
         }
 
@@ -131,27 +128,18 @@ namespace InvaderInsider.Managers
             cachedBottomBarPanel = FindObjectOfType<BottomBarPanel>();
             cachedPlayer = FindObjectOfType<Player>();
 
-            if (cachedStageManager == null) Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[10]);
-            if (cachedBottomBarPanel == null) Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[11]);
-            if (cachedPlayer == null) Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[12]);
+            if (cachedStageManager == null) Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[4]);
+            if (cachedBottomBarPanel == null) Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[5]);
+            if (cachedPlayer == null) Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[6]);
         }
 
         private void CleanupEventListeners()
         {
-            if (saveDataManager != null)
-            {
-                saveDataManager.OnGameDataLoaded -= HandleGameDataLoaded;
-            }
             OnGameStateChanged -= HandleGameStateChanged;
         }
 
         private void OnEnable()
         {
-            if (saveDataManager != null)
-            {
-                saveDataManager.OnGameDataLoaded -= HandleGameDataLoaded;
-                saveDataManager.OnGameDataLoaded += HandleGameDataLoaded;
-            }
             OnGameStateChanged -= HandleGameStateChanged;
             OnGameStateChanged += HandleGameStateChanged;
         }
@@ -168,37 +156,7 @@ namespace InvaderInsider.Managers
 
         private void Start()
         {
-            CurrentGameState = GameState.MainMenu;
-        }
-
-        private void HandleGameDataLoaded()
-        {
-            if (saveDataManager == null) return;
-
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[7]);
-            SaveData loadedData = saveDataManager.CurrentSaveData;
-
-            if (cachedStageManager != null)
-            {
-                uiManager.UpdateStage(loadedData.progressData.highestStageCleared, cachedStageManager.GetStageCount());
-                cachedStageManager.InitializeStageFromLoadedData(loadedData.progressData.highestStageCleared);
-
-                if (cachedBottomBarPanel != null)
-                {
-                    cachedBottomBarPanel.UpdateMonsterCountDisplay(cachedStageManager.ActiveEnemyCount);
-                }
-            }
-            else
-            {
-                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[9]);
-            }
-
-            if (cachedPlayer != null)
-            {
-                cachedPlayer.ResetHealth();
-            }
-
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[8]);
+            InitializeGame();
         }
 
         private void HandleGameStateChanged(GameState newState)
@@ -211,26 +169,51 @@ namespace InvaderInsider.Managers
             switch (newState)
             {
                 case GameState.MainMenu:
-                    if (uiManager != null)
+                    UIManager mainMenuUIManager = UIManager.Instance;
+                    if (mainMenuUIManager != null)
                     {
-                        uiManager.ShowPanel("MainMenu");
-                        uiManager.HideCurrentPanel();
-                        uiManager.HidePanel("InGame");
-                        uiManager.HidePanel("Pause");
+                        mainMenuUIManager.ShowPanel("MainMenu");
+                        mainMenuUIManager.HideCurrentPanel();
+                        mainMenuUIManager.HidePanel("InGame");
+                        mainMenuUIManager.HidePanel("Pause");
+                    }
+                    break;
+
+                case GameState.Loading:
+                    if (Application.isPlaying)
+                    {
+                        Debug.Log(LOG_PREFIX + "게임 로딩 중 - UI 전환 시작");
+                    }
+                    // UIManager를 실시간으로 가져오기
+                    UIManager currentUIManager = UIManager.Instance;
+                    if (currentUIManager != null)
+                    {
+                        Debug.Log(LOG_PREFIX + "UIManager 찾음, 패널 전환 실행");
+                        currentUIManager.DebugPrintRegisteredPanels();
+                        Debug.Log(LOG_PREFIX + "MainMenu 패널 숨기기 시도");
+                        currentUIManager.HidePanel("MainMenu");
+                        Debug.Log(LOG_PREFIX + "InGame 패널 보이기 시도");
+                        currentUIManager.ShowPanel("InGame");
+                        Debug.Log(LOG_PREFIX + "UI 전환 완료");
+                    }
+                    else
+                    {
+                        Debug.LogError(LOG_PREFIX + "UIManager.Instance가 null입니다!");
                     }
                     break;
 
                 case GameState.Playing:
-                    if (uiManager != null)
+                    UIManager playingUIManager = UIManager.Instance;
+                    if (playingUIManager != null)
                     {
-                        uiManager.ShowPanel("InGame");
-                        if (uiManager.IsCurrentPanel("Pause"))
+                        playingUIManager.ShowPanel("InGame");
+                        if (playingUIManager.IsCurrentPanel("Pause"))
                         {
-                            uiManager.GoBack();
+                            playingUIManager.GoBack();
                         }
                         else
                         {
-                            uiManager.HideCurrentPanel();
+                            playingUIManager.HideCurrentPanel();
                         }
                     }
                     if (Application.isPlaying)
@@ -240,9 +223,10 @@ namespace InvaderInsider.Managers
                     break;
 
                 case GameState.Paused:
-                    if (uiManager != null && !uiManager.IsPanelActive("Pause"))
+                    UIManager pausedUIManager = UIManager.Instance;
+                    if (pausedUIManager != null && !pausedUIManager.IsPanelActive("Pause"))
                     {
-                        uiManager.ShowPanel("Pause");
+                        pausedUIManager.ShowPanel("Pause");
                     }
                     if (Application.isPlaying)
                     {
@@ -251,14 +235,15 @@ namespace InvaderInsider.Managers
                     break;
 
                 case GameState.Settings:
-                    if (uiManager != null)
+                    UIManager settingsUIManager = UIManager.Instance;
+                    if (settingsUIManager != null)
                     {
-                        uiManager.ShowPanel("Settings");
-                        uiManager.HideCurrentPanel();
+                        settingsUIManager.ShowPanel("Settings");
+                        settingsUIManager.HideCurrentPanel();
                     }
                     if (Application.isPlaying)
                     {
-                        Debug.Log(LOG_PREFIX + LOG_MESSAGES[5]);
+                        Debug.Log(LOG_PREFIX + LOG_MESSAGES[3]);
                     }
                     break;
             }
@@ -277,7 +262,7 @@ namespace InvaderInsider.Managers
             if (currentEData >= amount)
             {
                 saveDataManager.UpdateEData(-amount);
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[13], amount));
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[7], amount));
                 return true;
             }
             return false;
@@ -288,7 +273,7 @@ namespace InvaderInsider.Managers
             if (saveDataManager != null && amount > 0)
             {
                 saveDataManager.UpdateEData(amount);
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[14], amount));
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], amount));
             }
         }
 
@@ -298,7 +283,7 @@ namespace InvaderInsider.Managers
             {
                 saveDataManager.UpdateStageProgress(stageNum, stars);
                 saveDataManager.SaveGameData();
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[15], stageNum, stars));
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[9], stageNum, stars));
             }
         }
 
@@ -335,10 +320,98 @@ namespace InvaderInsider.Managers
             CurrentGameState = GameState.None;
             if (Application.isPlaying)
             {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[16]);
+                Debug.Log(LOG_PREFIX + LOG_MESSAGES[9]);
             }
             
             OnStageClearedEvent?.Invoke();
+        }
+
+        public void InitializeGame()
+        {
+            Debug.Log(LOG_PREFIX + "Initializing game...");
+
+            // UI 패널 등록
+            var inGamePanel = FindObjectOfType<InvaderInsider.UI.InGamePanel>();
+            if (inGamePanel != null)
+                UIManager.Instance.RegisterPanel("InGame", inGamePanel);
+
+            var topBarPanel = FindObjectOfType<InvaderInsider.UI.TopBarPanel>();
+            if (topBarPanel != null)
+                UIManager.Instance.RegisterPanel("TopBar", topBarPanel);
+
+            var bottomBarPanel = FindObjectOfType<InvaderInsider.UI.BottomBarPanel>();
+            if (bottomBarPanel != null)
+                UIManager.Instance.RegisterPanel("BottomBar", bottomBarPanel);
+
+            var pausePanel = FindObjectOfType<InvaderInsider.UI.PausePanel>();
+            if (pausePanel != null)
+                UIManager.Instance.RegisterPanel("Pause", pausePanel);
+
+            var settingsPanel = FindObjectOfType<InvaderInsider.UI.SettingsPanel>();
+            if (settingsPanel != null)
+                UIManager.Instance.RegisterPanel("Settings", settingsPanel);
+
+            var deckPanel = FindObjectOfType<InvaderInsider.UI.DeckPanel>();
+            if (deckPanel != null)
+                UIManager.Instance.RegisterPanel("Deck", deckPanel);
+
+            var achievementsPanel = FindObjectOfType<InvaderInsider.UI.AchievementsPanel>();
+            if (achievementsPanel != null)
+                UIManager.Instance.RegisterPanel("Achievements", achievementsPanel);
+
+            var handDisplayPanel = FindObjectOfType<InvaderInsider.UI.HandDisplayPanel>();
+            if (handDisplayPanel != null)
+                UIManager.Instance.RegisterPanel("HandDisplay", handDisplayPanel);
+
+            var shopPanel = FindObjectOfType<InvaderInsider.UI.ShopPanel>();
+            if (shopPanel != null)
+                UIManager.Instance.RegisterPanel("Shop", shopPanel);
+
+            var stageSelectPanel = FindObjectOfType<InvaderInsider.UI.StageSelectPanel>();
+            if (stageSelectPanel != null)
+                UIManager.Instance.RegisterPanel("StageSelect", stageSelectPanel);
+
+            // 나머지 패널 숨기기
+            string[] panelsToHide = { "Pause", "Settings", "Deck", "Achievements", "HandDisplay", "Shop", "StageSelect" };
+            foreach (var panelName in panelsToHide)
+            {
+                UIManager.Instance.HidePanel(panelName);
+            }
+
+            // InGame, TopBar, BottomBar만 표시
+            if (inGamePanel != null)
+                UIManager.Instance.ShowPanel("InGame");
+            if (topBarPanel != null)
+                UIManager.Instance.ShowPanel("TopBar");
+            if (bottomBarPanel != null)
+                UIManager.Instance.ShowPanel("BottomBar");
+
+            // 카드 매니저 초기화
+            if (cardManager != null)
+                cardManager.LoadSummonData();
+
+            // 게임 상태 초기화
+            Time.timeScale = 1f;
+
+            Debug.Log(LOG_PREFIX + "Game initialized");
+        }
+
+        public void PauseGame()
+        {
+            Time.timeScale = 0f;
+            uiManager?.ShowPanel("Pause");
+        }
+
+        public void ResumeGame()
+        {
+            Time.timeScale = 1f;
+            uiManager?.HidePanel("Pause");
+        }
+
+        public void EndGame()
+        {
+            Time.timeScale = 0f;
+            // 게임 종료 로직
         }
     }
 } 

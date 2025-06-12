@@ -1,161 +1,190 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using InvaderInsider.Data;
-using InvaderInsider.Managers;
-using InvaderInsider.UI;
+using UnityEngine.Audio;
 
 namespace InvaderInsider.UI
 {
     public class SettingsPanel : BasePanel
     {
-        private const string LOG_PREFIX = "[UI] ";
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "Settings: Back clicked",
-            "Settings: Panel shown",
-            "Settings: Panel hidden",
-            "Settings: BGM volume {0}",
-            "Settings: SFX volume {0}",
-            "Settings: Fullscreen {0}"
-        };
-
-        private const string SETTING_BGM_VOLUME = "BGMVolume";
-        private const string SETTING_SFX_VOLUME = "SFXVolume";
-        private const string SETTING_FULLSCREEN = "Fullscreen";
-        private const float DEFAULT_VOLUME = 1f;
-
-        [Header("Settings Controls")]
-        [SerializeField] private Slider bgmVolumeSlider;
-        [SerializeField] private Slider sfxVolumeSlider;
-        [SerializeField] private Toggle fullscreenToggle;
+        private const string LOG_PREFIX = "[Settings] ";
         
-        [Header("Buttons")]
-        [SerializeField] private Button backButton;
+        [Header("Audio Settings")]
+        public Slider masterVolumeSlider;
+        public Slider musicVolumeSlider;
+        public Slider sfxVolumeSlider;
+        public AudioMixer audioMixer;
 
-        private UIManager uiManager;
-        private SaveDataManager saveManager;
+        [Header("Graphics Settings")]
+        public Toggle fullscreenToggle;
+        public Dropdown resolutionDropdown;
+        public Dropdown qualityDropdown;
 
-        protected override void Awake()
+        [Header("Control Buttons")]
+        public Button applyButton;
+        public Button cancelButton;
+        public Button defaultsButton;
+
+        private float originalMasterVolume;
+        private float originalMusicVolume;
+        private float originalSfxVolume;
+        private bool originalFullscreen;
+
+        private void Start()
         {
-            base.Awake();
-            
-            uiManager = UIManager.Instance;
-            saveManager = SaveDataManager.Instance;
-            
-            uiManager.RegisterPanel("Settings", this);
-            Initialize();
+            SetupUI();
+            LoadSettings();
         }
 
-        protected override void Initialize()
+        private void SetupUI()
         {
-            LoadSettings();
-
-            if (bgmVolumeSlider != null)
-            {
-                bgmVolumeSlider.onValueChanged.AddListener(SetBGMVolume);
-            }
+            // 볼륨 슬라이더 설정
+            if (masterVolumeSlider != null)
+                masterVolumeSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
+            
+            if (musicVolumeSlider != null)
+                musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
             
             if (sfxVolumeSlider != null)
-            {
-                sfxVolumeSlider.onValueChanged.AddListener(SetSFXVolume);
-            }
-            
+                sfxVolumeSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
+
+            // 그래픽 설정
             if (fullscreenToggle != null)
-            {
-                fullscreenToggle.onValueChanged.AddListener(SetFullscreen);
-            }
+                fullscreenToggle.onValueChanged.AddListener(OnFullscreenToggleChanged);
+
+            // 버튼 설정
+            if (applyButton != null)
+                applyButton.onClick.AddListener(OnApplySettings);
             
-            if (backButton != null)
-            {
-                backButton.onClick.AddListener(OnBackButtonClicked);
-            }
+            if (cancelButton != null)
+                cancelButton.onClick.AddListener(OnCancelSettings);
+            
+            if (defaultsButton != null)
+                defaultsButton.onClick.AddListener(OnResetToDefaults);
         }
 
         private void LoadSettings()
         {
-            if (saveManager == null) return;
+            // 저장된 설정 로드
+            float masterVolume = PlayerPrefs.GetFloat("MasterVolume", 0.75f);
+            float musicVolume = PlayerPrefs.GetFloat("MusicVolume", 0.75f);
+            float sfxVolume = PlayerPrefs.GetFloat("SfxVolume", 0.75f);
+            bool isFullscreen = PlayerPrefs.GetInt("Fullscreen", 1) == 1;
 
-            if (bgmVolumeSlider != null)
-            {
-                bgmVolumeSlider.value = saveManager.GetSetting(SETTING_BGM_VOLUME, DEFAULT_VOLUME);
-            }
+            // 원본값 저장
+            originalMasterVolume = masterVolume;
+            originalMusicVolume = musicVolume;
+            originalSfxVolume = sfxVolume;
+            originalFullscreen = isFullscreen;
+
+            // UI 업데이트
+            if (masterVolumeSlider != null)
+                masterVolumeSlider.value = masterVolume;
+            
+            if (musicVolumeSlider != null)
+                musicVolumeSlider.value = musicVolume;
             
             if (sfxVolumeSlider != null)
-            {
-                sfxVolumeSlider.value = saveManager.GetSetting(SETTING_SFX_VOLUME, DEFAULT_VOLUME);
-            }
+                sfxVolumeSlider.value = sfxVolume;
             
             if (fullscreenToggle != null)
+                fullscreenToggle.isOn = isFullscreen;
+        }
+
+        private void OnMasterVolumeChanged(float volume)
+        {
+            if (audioMixer != null)
             {
-                fullscreenToggle.isOn = Screen.fullScreen;
+                float dbValue = volume > 0.001f ? Mathf.Log10(volume) * 20f : -80f;
+                audioMixer.SetFloat("MasterVolume", dbValue);
             }
         }
 
-        private void SetBGMVolume(float volume)
+        private void OnMusicVolumeChanged(float volume)
         {
-            if (saveManager == null) return;
-            
-            saveManager.SaveSetting(SETTING_BGM_VOLUME, volume);
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], volume));
+            if (audioMixer != null)
+            {
+                float dbValue = volume > 0.001f ? Mathf.Log10(volume) * 20f : -80f;
+                audioMixer.SetFloat("MusicVolume", dbValue);
+            }
         }
 
-        private void SetSFXVolume(float volume)
+        private void OnSfxVolumeChanged(float volume)
         {
-            if (saveManager == null) return;
-            
-            saveManager.SaveSetting(SETTING_SFX_VOLUME, volume);
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[4], volume));
+            if (audioMixer != null)
+            {
+                float dbValue = volume > 0.001f ? Mathf.Log10(volume) * 20f : -80f;
+                audioMixer.SetFloat("SfxVolume", dbValue);
+            }
         }
 
-        private void SetFullscreen(bool isFullscreen)
+        private void OnFullscreenToggleChanged(bool isFullscreen)
         {
-            if (saveManager == null) return;
-            
             Screen.fullScreen = isFullscreen;
-            saveManager.SaveSetting(SETTING_FULLSCREEN, isFullscreen);
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[5], isFullscreen));
         }
 
-        private void OnBackButtonClicked()
+        private void OnApplySettings()
         {
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[0]);
-            uiManager.GoBack();
+            SaveSettings();
+            Hide();
         }
 
-        protected override void OnShow()
+        private void OnCancelSettings()
         {
-            base.OnShow();
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
+            RestoreOriginalSettings();
+            Hide();
         }
 
-        protected override void OnHide()
+        private void OnResetToDefaults()
         {
-            base.OnHide();
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[2]);
-        }
-
-        private void OnDestroy()
-        {
-            if (bgmVolumeSlider != null)
-            {
-                bgmVolumeSlider.onValueChanged.RemoveAllListeners();
-            }
+            if (masterVolumeSlider != null)
+                masterVolumeSlider.value = 0.75f;
+            
+            if (musicVolumeSlider != null)
+                musicVolumeSlider.value = 0.75f;
             
             if (sfxVolumeSlider != null)
-            {
-                sfxVolumeSlider.onValueChanged.RemoveAllListeners();
-            }
+                sfxVolumeSlider.value = 0.75f;
             
             if (fullscreenToggle != null)
-            {
-                fullscreenToggle.onValueChanged.RemoveAllListeners();
-            }
+                fullscreenToggle.isOn = true;
+        }
+
+        private void SaveSettings()
+        {
+            if (masterVolumeSlider != null)
+                PlayerPrefs.SetFloat("MasterVolume", masterVolumeSlider.value);
             
-            if (backButton != null)
-            {
-                backButton.onClick.RemoveAllListeners();
-            }
+            if (musicVolumeSlider != null)
+                PlayerPrefs.SetFloat("MusicVolume", musicVolumeSlider.value);
+            
+            if (sfxVolumeSlider != null)
+                PlayerPrefs.SetFloat("SfxVolume", sfxVolumeSlider.value);
+            
+            if (fullscreenToggle != null)
+                PlayerPrefs.SetInt("Fullscreen", fullscreenToggle.isOn ? 1 : 0);
+
+            PlayerPrefs.Save();
+        }
+
+        private void RestoreOriginalSettings()
+        {
+            if (masterVolumeSlider != null)
+                masterVolumeSlider.value = originalMasterVolume;
+            
+            if (musicVolumeSlider != null)
+                musicVolumeSlider.value = originalMusicVolume;
+            
+            if (sfxVolumeSlider != null)
+                sfxVolumeSlider.value = originalSfxVolume;
+            
+            if (fullscreenToggle != null)
+                fullscreenToggle.isOn = originalFullscreen;
+        }
+
+        public override void Show()
+        {
+            base.Show();
+            LoadSettings(); // 패널이 열릴 때마다 최신 설정 로드
         }
     }
 } 

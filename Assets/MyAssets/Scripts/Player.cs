@@ -12,10 +12,10 @@ namespace InvaderInsider
         private const string LOG_PREFIX = "[Player] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
-            "Player health reset.",
+            "Player health reset",
             "Player Died!",
-            "BottomBarPanel 인스턴스를 찾을 수 없습니다.",
-            "UIManager 인스턴스를 찾을 수 없습니다."
+            "BottomBarPanel instance not found",
+            "UIManager instance not found"
         };
 
         [Header("Health Settings")]

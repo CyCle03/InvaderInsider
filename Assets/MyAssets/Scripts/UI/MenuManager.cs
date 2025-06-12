@@ -6,185 +6,133 @@ using InvaderInsider.Data;
 using InvaderInsider.Cards;
 using System.Collections.Generic;
 using System.Collections;
+using InvaderInsider.UI;
 
 namespace InvaderInsider.UI
 {
     public class MenuManager : MonoBehaviour
     {
-        [Header("Panels")]
-        [SerializeField] private MainMenuPanel mainMenuPanel;
-        [SerializeField] private SettingsPanel settingsPanel;
-        [SerializeField] private DeckPanel deckPanel;
-        [SerializeField] private PausePanel pausePanel;
+        [Header("Panel References")]
+        public MainMenuPanel mainMenuPanel;
+        public SettingsPanel settingsPanel;
+        public DeckPanel deckPanel;
+        public PausePanel pausePanel;
 
+        private UIManager uiManager;
         private bool isInitialized = false;
 
         private void Awake()
         {
-            Debug.Log("MenuManager Awake");
-            // Ensure UIManager is created first
-            var uiManager = UIManager.Instance;
-            Debug.Log($"UIManager instance: {uiManager != null}");
-            InitializeUI();
+            // UIManager 인스턴스 확보
+            uiManager = UIManager.Instance;
         }
 
         private void Start()
         {
             if (!isInitialized)
             {
-                Debug.LogError("MenuManager not initialized on Start!");
-            }
-            
-            // Start에서 한 번 더 패널 상태 확인 및 수정
-            HideAllPanelsExceptMain();
-            ShowMainMenu();
-        }
-        
-        private IEnumerator RetryInitialization()
-        {
-            Debug.Log("Retrying initialization...");
-            float timeout = 5f;
-            float elapsed = 0f;
-
-            while (!isInitialized && elapsed < timeout)
-            {
-                elapsed += Time.deltaTime;
                 InitializeUI();
-                if (isInitialized)
-                {
-                    Debug.Log("Initialization successful on retry");
-                    ShowMainMenu();
-                    yield break;
-                }
-                yield return new WaitForSeconds(0.5f);
             }
 
             if (!isInitialized)
             {
-                Debug.LogError("Initialization retry failed!");
+                // 1프레임 대기 후 재시도
+                StartCoroutine(RetryInitialization());
+            }
+        }
+
+        private System.Collections.IEnumerator RetryInitialization()
+        {
+            yield return new WaitForEndOfFrame();
+            
+            InitializeUI();
+            
+            if (!isInitialized)
+            {
+                yield return new WaitForEndOfFrame();
+                InitializeUI();
             }
         }
 
         private void InitializeUI()
         {
-            Debug.Log($"InitializeUI - MainMenuPanel: {mainMenuPanel != null}");
-            
-            if (mainMenuPanel == null)
-            {
-                Debug.LogError("MainMenuPanel is missing!");
-                return;
-            }
-
             try
             {
-                // 먼저 모든 패널을 강제로 숨김
-                HideAllPanelsExceptMain();
-                
+                if (mainMenuPanel == null)
+                {
+                    return;
+                }
+
+                if (uiManager == null)
+                {
+                    uiManager = UIManager.Instance;
+                }
+
+                // 메인 메뉴 패널 등록
                 if (mainMenuPanel != null)
                 {
-                    UIManager.Instance.RegisterPanel("MainMenu", mainMenuPanel);
-                    Debug.Log("MainMenu panel registered");
+                    uiManager.RegisterPanel("MainMenu", mainMenuPanel);
                 }
 
+                // 설정 패널 등록
                 if (settingsPanel != null)
                 {
-                    UIManager.Instance.RegisterPanel("Settings", settingsPanel);
-                    settingsPanel.ForceHide();
-                    Debug.Log("Settings panel registered and force hidden");
+                    uiManager.RegisterPanel("Settings", settingsPanel);
+                    settingsPanel.gameObject.SetActive(false);
                 }
 
+                // 덱 패널 등록
                 if (deckPanel != null)
                 {
-                    UIManager.Instance.RegisterPanel("Deck", deckPanel);
-                    deckPanel.ForceHide();
-                    Debug.Log("Deck panel registered and force hidden");
+                    uiManager.RegisterPanel("Deck", deckPanel);
+                    deckPanel.gameObject.SetActive(false);
                 }
 
+                // 일시정지 패널 등록
                 if (pausePanel != null)
                 {
-                    UIManager.Instance.RegisterPanel("Pause", pausePanel);
-                    pausePanel.ForceHide();
-                    Debug.Log("Pause panel registered and force hidden");
+                    uiManager.RegisterPanel("Pause", pausePanel);
+                    pausePanel.gameObject.SetActive(false);
                 }
 
                 isInitialized = true;
-                Debug.Log("All panels initialized successfully");
             }
             catch (System.Exception e)
             {
                 Debug.LogError($"Error during UI initialization: {e.Message}");
-                isInitialized = false;
             }
         }
 
         private void HideAllPanelsExceptMain()
         {
-            Debug.Log("Hiding all panels except main menu");
+            // 메인 메뉴를 제외한 모든 패널 숨기기
+            GameObject[] allPanels = GameObject.FindGameObjectsWithTag("UIPanel");
             
-            if (settingsPanel != null)
+            foreach (GameObject panel in allPanels)
             {
-                settingsPanel.gameObject.SetActive(false);
-                var canvasGroup = settingsPanel.GetComponent<CanvasGroup>();
-                if (canvasGroup != null)
+                if (panel != null && panel != mainMenuPanel?.gameObject)
                 {
-                    canvasGroup.alpha = 0f;
-                    canvasGroup.interactable = false;
-                    canvasGroup.blocksRaycasts = false;
+                    panel.SetActive(false);
                 }
             }
-            
-            if (deckPanel != null)
-            {
-                deckPanel.gameObject.SetActive(false);
-                var canvasGroup = deckPanel.GetComponent<CanvasGroup>();
-                if (canvasGroup != null)
-                {
-                    canvasGroup.alpha = 0f;
-                    canvasGroup.interactable = false;
-                    canvasGroup.blocksRaycasts = false;
-                }
-            }
-            
-            if (pausePanel != null)
-            {
-                pausePanel.gameObject.SetActive(false);
-                var canvasGroup = pausePanel.GetComponent<CanvasGroup>();
-                if (canvasGroup != null)
-                {
-                    canvasGroup.alpha = 0f;
-                    canvasGroup.interactable = false;
-                    canvasGroup.blocksRaycasts = false;
-                }
-            }
-            
-            // MainMenuPanel은 활성화 상태로 유지
+
+            // 메인 메뉴는 활성화 상태 유지
             if (mainMenuPanel != null)
             {
                 mainMenuPanel.gameObject.SetActive(true);
-                var canvasGroup = mainMenuPanel.GetComponent<CanvasGroup>();
-                if (canvasGroup != null)
-                {
-                    canvasGroup.alpha = 1f;
-                    canvasGroup.interactable = true;
-                    canvasGroup.blocksRaycasts = true;
-                }
-                Debug.Log("MainMenu panel kept active");
             }
         }
 
         public void ShowMainMenu()
         {
-            Debug.Log("ShowMainMenu called");
             if (!isInitialized)
             {
-                Debug.LogError("Trying to show main menu before initialization!");
                 return;
             }
 
             try
             {
-                UIManager.Instance.ShowPanel("MainMenu");
-                Debug.Log("Main menu panel show command sent");
+                uiManager.ShowPanel("MainMenu");
             }
             catch (System.Exception e)
             {
@@ -194,37 +142,50 @@ namespace InvaderInsider.UI
 
         public void ShowSettings()
         {
-            if (!isInitialized) return;
-            UIManager.Instance.ShowPanel("Settings");
+            if (isInitialized)
+            {
+                uiManager.ShowPanel("Settings");
+            }
         }
 
         public void ShowDeck()
         {
-            if (!isInitialized) return;
-            UIManager.Instance.ShowPanel("Deck");
+            if (isInitialized)
+            {
+                uiManager.ShowPanel("Deck");
+            }
         }
 
         public void ShowPause()
         {
-            if (!isInitialized) return;
-            UIManager.Instance.ShowPanel("Pause");
-            Time.timeScale = 0f;
+            if (isInitialized)
+            {
+                uiManager.ShowPanel("Pause");
+            }
+        }
+
+        public void HideMainMenu()
+        {
+            if (isInitialized && mainMenuPanel != null)
+            {
+                uiManager.HidePanel("MainMenu");
+                mainMenuPanel.gameObject.SetActive(false);
+            }
         }
 
         public void HidePause()
         {
-            if (!isInitialized) return;
-            UIManager.Instance.HideCurrentPanel();
-            Time.timeScale = 1f;
+            if (isInitialized)
+            {
+                uiManager.HidePanel("Pause");
+            }
         }
 
         public void GoBack()
         {
-            if (!isInitialized) return;
-            UIManager.Instance.GoBack();
-            if (!UIManager.Instance.IsCurrentPanel("Pause"))
+            if (isInitialized)
             {
-                Time.timeScale = 1f;
+                uiManager.GoBack();
             }
         }
 
@@ -234,7 +195,7 @@ namespace InvaderInsider.UI
             
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                if (UIManager.Instance.IsCurrentPanel("Pause"))
+                if (uiManager.IsCurrentPanel("Pause"))
                 {
                     HidePause();
                 }

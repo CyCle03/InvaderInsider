@@ -9,7 +9,7 @@ namespace InvaderInsider.UI
 {
     public class DeckPanel : BasePanel
     {
-        private const string LOG_PREFIX = "[UI] ";
+        private const string LOG_PREFIX = "[Deck] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "Deck: Panel shown",
@@ -38,12 +38,10 @@ namespace InvaderInsider.UI
         {
             base.Awake();
             
-            panelName = "Deck";
             uiManager = UIManager.Instance;
             saveManager = SaveDataManager.Instance;
             cardManager = CardManager.Instance;
             
-            uiManager.RegisterPanel("Deck", this);
             Initialize();
         }
 

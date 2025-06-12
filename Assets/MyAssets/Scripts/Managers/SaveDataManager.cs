@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using InvaderInsider.Cards;
 using System.Threading.Tasks;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace InvaderInsider.Data
 {
@@ -186,39 +188,16 @@ namespace InvaderInsider.Data
         private const string LOG_PREFIX = "[SaveData] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
-            "Initializing instance",
-            "Instance already exists, destroying duplicate",
-            "Game data has been reset.",
-            "Saved game data: {0}",
-            "Loaded game data: {0}",
-            "No saved data found, using default values",
-            "Stage {0} progress updated to {1} stars",
-            "Stage {0} is now unlocked",
-            "EData updated: {0}",
-            "Card {0} added to deck",
-            "Card {0} removed from deck",
-            "Card {0} added to owned cards",
-            "Card {0} added to hand and owned cards",
-            "Card {0} removed from hand",
-            "SaveData key not found in PlayerPrefs",
-            "Failed to parse saved data: {0}",
-            "Failed to save game data: {0}",
-            "Save operation started",
-            "Save operation completed",
-            "Load operation started",
-            "Load operation completed"
+            "Error saving game data: {0}", // 0
+            "Error loading game data: {0}" // 1
         };
 
         private const string SAVE_KEY = "GameSaveData";
         private static SaveDataManager instance;
         private static readonly object _lock = new object();
         private static bool isQuitting = false;
-        private static bool isSaving = false;
-        private static bool isLoading = false;
 
         private SaveData currentSaveData;
-        private readonly Queue<Action> saveQueue = new Queue<Action>();
-        private readonly Queue<Action> loadQueue = new Queue<Action>();
 
         public static SaveDataManager Instance
         {
@@ -285,46 +264,19 @@ namespace InvaderInsider.Data
             }
         }
 
-        private event Action onGameDataLoaded;
-        public event Action OnGameDataLoaded
-        {
-            add
-            {
-                if (!isQuitting)
-                {
-                    onGameDataLoaded -= value;
-                    onGameDataLoaded += value;
-                }
-            }
-            remove
-            {
-                if (!isQuitting)
-                {
-                    onGameDataLoaded -= value;
-                }
-            }
-        }
-
         private void Awake()
         {
             if (instance == null)
             {
-                if (Application.isPlaying)
-                {
-                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[0]);
-                }
                 instance = this;
                 DontDestroyOnLoad(gameObject);
-                currentSaveData = new SaveData();
+                
                 LoadGameData();
             }
             else if (instance != this)
             {
-                if (Application.isPlaying)
-                {
-                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
-                }
                 Destroy(gameObject);
+                return;
             }
         }
 
@@ -333,13 +285,12 @@ namespace InvaderInsider.Data
             if (instance == this)
             {
                 SaveGameData();
-                CleanupEventListeners();
+                instance = null;
             }
         }
 
         private void OnApplicationQuit()
         {
-            isQuitting = true;
             SaveGameData();
         }
 
@@ -347,7 +298,6 @@ namespace InvaderInsider.Data
         {
             onEDataChanged = null;
             onHandDataChanged = null;
-            onGameDataLoaded = null;
         }
 
         public bool HasSaveData()
@@ -360,84 +310,40 @@ namespace InvaderInsider.Data
             currentSaveData = new SaveData();
             PlayerPrefs.DeleteKey(SAVE_KEY);
             PlayerPrefs.Save();
-            if (Application.isPlaying)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[2]);
-            }
         }
 
         public async void SaveGameData()
         {
-            if (isSaving)
-            {
-                saveQueue.Enqueue(() => SaveGameData());
-                return;
-            }
-
-            isSaving = true;
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[17]);
-
             try
             {
-                string json = JsonUtility.ToJson(currentSaveData);
-                PlayerPrefs.SetString(SAVE_KEY, json);
-                PlayerPrefs.Save();
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], json));
+                string json = JsonConvert.SerializeObject(currentSaveData, Formatting.Indented);
+                await File.WriteAllTextAsync(SAVE_KEY, json);
             }
             catch (Exception e)
             {
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[16], e.Message));
-            }
-
-            isSaving = false;
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[18]);
-
-            if (saveQueue.Count > 0)
-            {
-                var nextSave = saveQueue.Dequeue();
-                nextSave?.Invoke();
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[0], e.Message));
             }
         }
 
         public async void LoadGameData()
         {
-            if (isLoading)
-            {
-                loadQueue.Enqueue(() => LoadGameData());
-                return;
-            }
-
-            isLoading = true;
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[19]);
-
             try
             {
-                if (PlayerPrefs.HasKey(SAVE_KEY))
+                if (File.Exists(SAVE_KEY))
                 {
-                    string json = PlayerPrefs.GetString(SAVE_KEY);
-                    currentSaveData = JsonUtility.FromJson<SaveData>(json);
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[4], json));
+                    string json = await File.ReadAllTextAsync(SAVE_KEY);
+                    currentSaveData = JsonConvert.DeserializeObject<SaveData>(json);
                 }
                 else
                 {
                     currentSaveData = new SaveData();
-                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[5]);
+                    SaveGameData();
                 }
             }
             catch (Exception e)
             {
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[15], e.Message));
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], e.Message));
                 currentSaveData = new SaveData();
-            }
-
-            isLoading = false;
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[20]);
-            onGameDataLoaded?.Invoke();
-
-            if (loadQueue.Count > 0)
-            {
-                var nextLoad = loadQueue.Dequeue();
-                nextLoad?.Invoke();
             }
         }
 
@@ -452,7 +358,6 @@ namespace InvaderInsider.Data
                     Mathf.Max(currentSaveData.progressData.highestStageCleared, stageNum);
             }
 
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[6], stageNum, stars));
             SaveGameData();
         }
 
@@ -461,7 +366,6 @@ namespace InvaderInsider.Data
             if (amount == 0) return;
 
             currentSaveData.progressData.currentEData += amount;
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], currentSaveData.progressData.currentEData));
             onEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
             SaveGameData();
         }
@@ -472,7 +376,6 @@ namespace InvaderInsider.Data
 
             if (currentSaveData.deckData.AddToDeck(cardId))
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[9], cardId));
                 SaveGameData();
             }
         }
@@ -483,7 +386,6 @@ namespace InvaderInsider.Data
 
             if (currentSaveData.deckData.RemoveFromDeck(cardId))
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[10], cardId));
                 SaveGameData();
             }
         }
@@ -494,7 +396,6 @@ namespace InvaderInsider.Data
 
             if (currentSaveData.deckData.AddToOwned(cardId))
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[11], cardId));
                 SaveGameData();
             }
         }
@@ -516,7 +417,6 @@ namespace InvaderInsider.Data
 
             if (added)
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[12], cardId));
                 SaveGameData();
             }
         }
@@ -527,7 +427,6 @@ namespace InvaderInsider.Data
 
             if (currentSaveData.deckData.RemoveFromHand(cardId))
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[13], cardId));
                 onHandDataChanged?.Invoke(currentSaveData.deckData.handCardIds);
                 SaveGameData();
             }

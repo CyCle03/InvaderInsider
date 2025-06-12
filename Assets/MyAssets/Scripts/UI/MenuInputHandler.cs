@@ -6,91 +6,125 @@ namespace InvaderInsider.UI
     public class MenuInputHandler : MonoBehaviour
     {
         private const string LOG_PREFIX = "[MenuInput] ";
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "Escape key released. Current Game State: {0}",
-            "Resuming game from pause state",
-            "Toggling panel: {0}"
-        };
+        
+        // LOG_MESSAGES 제거 - 로그 출력하지 않음
 
-        [System.Serializable]
-        public struct MenuKeyBinding
+        [Header("Input Settings")]
+        public bool enableEscapeInput = true;
+        public bool enableBackgroundClick = true;
+
+        private UIManager uiManager;
+        private MenuManager menuManager;
+        private UIState currentState = UIState.MainMenu;
+
+        private void Start()
         {
-            public KeyCode key;
-            public string panelName;
-            public GameState allowedState; // 이 키가 동작할 수 있는 게임 상태
+            uiManager = UIManager.Instance;
+            menuManager = FindObjectOfType<MenuManager>();
         }
-
-        [SerializeField] private MenuKeyBinding[] menuBindings;
-        [SerializeField] private KeyCode escapeKey = KeyCode.Escape;
 
         private void Update()
         {
-            // Use GetKeyUp for Escape key to avoid double triggering
-            if (Input.GetKeyUp(escapeKey))
-            {
-                HandleEscapeKey();
-            }
-
-            HandleMenuBindings();
+            HandleInput();
         }
 
-        private void HandleEscapeKey()
+        private void HandleInput()
         {
-            var gameManager = GameManager.Instance;
-            var currentState = gameManager.CurrentGameState;
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], currentState));
+            // ESC 키 입력 처리
+            if (enableEscapeInput && Input.GetKeyDown(KeyCode.Escape))
+            {
+                HandleEscapeInput();
+            }
 
+            // 마우스 우클릭으로 뒤로가기
+            if (enableBackgroundClick && Input.GetMouseButtonDown(1))
+            {
+                HandleBackInput();
+            }
+        }
+
+        private void HandleEscapeInput()
+        {
             switch (currentState)
             {
-                case GameState.Playing:
-                    // 게임 플레이 중: PausePanel 표시
-                    UIManager.Instance.ShowPanel("Pause");
+                case UIState.MainMenu:
+                    // 메인 메뉴에서는 게임 종료 확인
                     break;
-
-                case GameState.Paused:
-                    // 일시정지 상태: 게임 재개 (PausePanel의 Resume 기능과 동일)
-                    Time.timeScale = 1f;
-                    gameManager.SetGameState(GameState.Playing);
-                    UIManager.Instance.HideCurrentPanel();
-                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
+                
+                case UIState.Settings:
+                case UIState.Deck:
+                case UIState.Achievements:
+                    // 서브 패널에서는 메인 메뉴로 돌아가기
+                    GoBackToMainMenu();
                     break;
-
-                case GameState.MainMenu:
-                case GameState.Settings:
-                    // 메인메뉴나 설정 화면: 이전 화면으로 돌아가기
-                    UIManager.Instance.GoBack();
+                
+                case UIState.Pause:
+                    // 일시정지에서는 게임 재개
+                    ResumeGame();
                     break;
             }
         }
 
-        private void HandleMenuBindings()
+        private void HandleBackInput()
         {
-            var currentState = GameManager.Instance.CurrentGameState;
-
-            foreach (var binding in menuBindings)
+            if (currentState != UIState.MainMenu)
             {
-                // 현재 게임 상태가 허용된 상태일 때만 키 입력 처리
-                if (binding.allowedState == currentState && Input.GetKeyDown(binding.key))
-                {
-                    TogglePanel(binding.panelName);
-                    break;
-                }
+                GoBackToMainMenu();
             }
         }
 
-        private void TogglePanel(string panelName)
+        private void GoBackToMainMenu()
         {
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], panelName));
-            
-            if (UIManager.Instance.IsCurrentPanel(panelName))
+            menuManager?.ShowMainMenu();
+            currentState = UIState.MainMenu;
+        }
+
+        private void ResumeGame()
+        {
+            uiManager?.HideCurrentPanel();
+            Time.timeScale = 1f;
+        }
+
+        public void SetUIState(UIState newState)
+        {
+            currentState = newState;
+        }
+
+        public UIState GetCurrentState()
+        {
+            return currentState;
+        }
+
+        public void SetPanelActive(string panelName)
+        {
+            switch (panelName.ToLower())
             {
-                UIManager.Instance.HideCurrentPanel();
-            }
-            else
-            {
-                UIManager.Instance.ShowPanel(panelName);
+                case "mainmenu":
+                    currentState = UIState.MainMenu;
+                    break;
+                case "settings":
+                    currentState = UIState.Settings;
+                    break;
+                case "deck":
+                    currentState = UIState.Deck;
+                    break;
+                case "achievements":
+                    currentState = UIState.Achievements;
+                    break;
+                case "pause":
+                    currentState = UIState.Pause;
+                    break;
             }
         }
+    }
+
+    public enum UIState
+    {
+        MainMenu,
+        Settings,
+        Deck,
+        Achievements,
+        Pause,
+        InGame
     }
 } 

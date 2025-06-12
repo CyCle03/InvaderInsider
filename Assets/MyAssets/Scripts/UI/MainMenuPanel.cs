@@ -1,224 +1,208 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
+using UnityEngine.SceneManagement;
 using InvaderInsider.Data;
 using InvaderInsider.Managers;
-using InvaderInsider;
-using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement; // 씬 관리를 위해 추가
-using InvaderInsider.UI;
-using System.Collections.Generic;
 
 namespace InvaderInsider.UI
 {
     public class MainMenuPanel : BasePanel
     {
-        private const string LOG_PREFIX = "[UI] ";
+        private const string LOG_PREFIX = "[MainMenu] ";
+        
         private static readonly string[] LOG_MESSAGES = new string[]
         {
-            "MainMenu: Time scale {0}",
-            "MainMenu: Load button {0}",
-            "MainMenu: Loading stage {0}",
-            "MainMenu: No saved game data found"
+            "Scene transition initiated", // 0
+            "No save data found", // 1
+            "Loading stage: {0}" // 2
         };
 
         [Header("Components")]
-        [SerializeField] private MainMenuCanvasSetup canvasSetup;
-        [SerializeField] private MainMenuLayout layout;
         [SerializeField] private MainMenuButtonHandler buttonHandler;
-        [SerializeField] private Animator menuAnimator;
 
-        private UIManager uiManager;
-        private GameManager gameManager;
+        [Header("Menu Buttons")]
+        public Button newGameButton;
+        public Button continueButton;
+        public Button settingsButton;
+        public Button deckButton;
+        public Button achievementsButton;
+        public Button exitButton;
+
+        [Header("Version Info")]
+        public Text versionText;
+
         private SaveDataManager saveDataManager;
-        private StageManager stageManager;
-        private Player cachedPlayer;
-        private bool hasAnimator;
 
-        protected override void Awake()
+        private void Start()
         {
-            base.Awake();
-            panelName = "MainMenu";
-            
-            InitializeManagers();
-            ValidateComponents();
-            SetupEventHandlers();
-            
-            uiManager.RegisterPanel("MainMenu", this);
+            Initialize();
         }
 
-        private void InitializeManagers()
+        protected override void Initialize()
         {
-            uiManager = UIManager.Instance;
-            gameManager = GameManager.Instance;
             saveDataManager = SaveDataManager.Instance;
-            stageManager = StageManager.Instance;
-            cachedPlayer = FindObjectOfType<Player>();
+            
+            SetupButtons();
+            UpdateContinueButton();
+            UpdateVersionInfo();
         }
 
-        private void ValidateComponents()
+        private void SetupButtons()
         {
-            if (canvasSetup == null)
-            {
-                canvasSetup = GetComponent<MainMenuCanvasSetup>();
-                if (canvasSetup == null)
-                {
-                    canvasSetup = gameObject.AddComponent<MainMenuCanvasSetup>();
-                }
-            }
-
-            if (layout == null)
-            {
-                layout = GetComponent<MainMenuLayout>();
-                if (layout == null)
-                {
-                    layout = gameObject.AddComponent<MainMenuLayout>();
-                }
-            }
-
-            if (buttonHandler == null)
-            {
-                buttonHandler = GetComponent<MainMenuButtonHandler>();
-                if (buttonHandler == null)
-                {
-                    buttonHandler = gameObject.AddComponent<MainMenuButtonHandler>();
-                }
-            }
-
-            hasAnimator = menuAnimator != null;
+            if (newGameButton != null)
+                newGameButton.onClick.AddListener(OnNewGameClicked);
+            
+            if (continueButton != null)
+                continueButton.onClick.AddListener(OnContinueClicked);
+            
+            if (settingsButton != null)
+                settingsButton.onClick.AddListener(OnSettingsClicked);
+            
+            if (deckButton != null)
+                deckButton.onClick.AddListener(OnDeckClicked);
+            
+            if (achievementsButton != null)
+                achievementsButton.onClick.AddListener(OnAchievementsClicked);
+            
+            if (exitButton != null)
+                exitButton.onClick.AddListener(OnExitClicked);
         }
 
-        private void SetupEventHandlers()
+        private void UpdateContinueButton()
         {
-            if (buttonHandler != null)
+            if (continueButton != null && saveDataManager != null)
             {
-                buttonHandler.OnNewGameClicked += HandleNewGame;
-                buttonHandler.OnLoadGameClicked += HandleLoadGame;
-                buttonHandler.OnDeckClicked += HandleDeck;
-                buttonHandler.OnShopClicked += HandleShop;
-                buttonHandler.OnSettingsClicked += HandleSettings;
-                buttonHandler.OnAchievementsClicked += HandleAchievements;
-                buttonHandler.OnQuitClicked += HandleQuit;
+                bool hasSaveData = saveDataManager.HasSaveData();
+                continueButton.interactable = hasSaveData;
             }
         }
 
-        private void HandleNewGame()
+        private void UpdateVersionInfo()
         {
-            if (gameManager != null)
+            if (versionText != null)
             {
-                gameManager.SetGameState(GameState.Loading);
-                if (stageManager != null)
-                {
-                    stageManager.StartStageFrom(0);
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], 1));
-                }
+                versionText.text = $"v{Application.version}";
             }
         }
 
-        private void HandleLoadGame()
+        // 버튼 이벤트 핸들러들
+        private void OnNewGameClicked()
         {
-            if (saveDataManager != null && stageManager != null)
+            StartNewGame();
+        }
+
+        private void OnContinueClicked()
+        {
+            ContinueGame();
+        }
+
+        private void OnSettingsClicked()
+        {
+            UIManager.Instance?.ShowPanel("Settings");
+        }
+
+        private void OnDeckClicked()
+        {
+            UIManager.Instance?.ShowPanel("Deck");
+        }
+
+        private void OnAchievementsClicked()
+        {
+            UIManager.Instance?.ShowPanel("Achievements");
+        }
+
+        private void OnExitClicked()
+        {
+            ExitGame();
+        }
+
+        // 게임 로직 메서드들
+        private void StartNewGame()
+        {
+            if (saveDataManager != null)
             {
+                saveDataManager.ResetGameData();
+                #if UNITY_EDITOR
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], 1));
+                #endif
+            }
+            
+            LoadGameScene();
+        }
+
+        private void ContinueGame()
+        {
+            if (saveDataManager != null && saveDataManager.HasSaveData())
+            {
+                saveDataManager.LoadGameData();
                 var saveData = saveDataManager.CurrentSaveData;
                 if (saveData != null)
                 {
-                    gameManager.SetGameState(GameState.Loading);
-                    stageManager.StartStageFrom(saveData.progressData.highestStageCleared);
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], saveData.progressData.highestStageCleared + 1));
-                }
-                else
-                {
-                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[3]);
+                    int nextStage = saveData.progressData.highestStageCleared + 1;
+                    #if UNITY_EDITOR
+                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], nextStage));
+                    #endif
                 }
             }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
+                #endif
+                return;
+            }
+            
+            LoadGameScene();
         }
 
-        private void HandleDeck()
+        private void LoadGameScene()
         {
+            Time.timeScale = 1f;
+            
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[0]);
+            #endif
+
+            // UI 정리
+            var uiManager = UIManager.Instance;
             if (uiManager != null)
             {
-                uiManager.ShowPanel("Deck");
+                uiManager.Cleanup();
             }
-        }
 
-        private void HandleShop()
-        {
-            if (uiManager != null)
+            // 게임 매니저 초기화
+            var gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
             {
-                uiManager.ShowPanel("Shop");
+                gameManager.InitializeGame();
             }
+            
+            SceneManager.LoadScene("Game");
         }
 
-        private void HandleSettings()
-        {
-            if (uiManager != null)
-            {
-                uiManager.ShowPanel("Settings");
-            }
-        }
-
-        private void HandleAchievements()
-        {
-            if (uiManager != null)
-            {
-                uiManager.ShowPanel("Achievements");
-            }
-        }
-
-        private void HandleQuit()
+        private void ExitGame()
         {
             #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
+                UnityEditor.EditorApplication.isPlaying = false;
             #else
-            Application.Quit();
+                Application.Quit();
             #endif
         }
 
-        protected override void OnShow()
+        // 외부에서 호출 가능한 공개 메서드들
+        public void RefreshContinueButton()
         {
-            base.OnShow();
-            
-            if (buttonHandler != null)
-            {
-                buttonHandler.SetButtonsInteractable(true);
-            }
-
-            if (hasAnimator)
-            {
-                menuAnimator.SetTrigger("Show");
-            }
-
-            Time.timeScale = 1f;
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], Time.timeScale));
+            UpdateContinueButton();
         }
 
-        protected override void OnHide()
+        public void SetInteractable(bool interactable)
         {
-            base.OnHide();
-            
-            if (buttonHandler != null)
-            {
-                buttonHandler.SetButtonsInteractable(false);
-            }
-
-            if (hasAnimator)
-            {
-                menuAnimator.SetTrigger("Hide");
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (buttonHandler != null)
-            {
-                buttonHandler.OnNewGameClicked -= HandleNewGame;
-                buttonHandler.OnLoadGameClicked -= HandleLoadGame;
-                buttonHandler.OnDeckClicked -= HandleDeck;
-                buttonHandler.OnShopClicked -= HandleShop;
-                buttonHandler.OnSettingsClicked -= HandleSettings;
-                buttonHandler.OnAchievementsClicked -= HandleAchievements;
-                buttonHandler.OnQuitClicked -= HandleQuit;
-            }
+            if (newGameButton != null) newGameButton.interactable = interactable;
+            if (continueButton != null) continueButton.interactable = interactable && saveDataManager?.HasSaveData() == true;
+            if (settingsButton != null) settingsButton.interactable = interactable;
+            if (deckButton != null) deckButton.interactable = interactable;
+            if (achievementsButton != null) achievementsButton.interactable = interactable;
+            if (exitButton != null) exitButton.interactable = interactable;
         }
     }
 } 

@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
-using InvaderInsider.Managers; // GameManager 사용을 위해 추가
-using InvaderInsider.UI; // UIManager와 BasePanel 사용을 위해 추가
+using InvaderInsider.Managers;
+using InvaderInsider.UI;
+using InvaderInsider.Cards;
 
 namespace InvaderInsider.UI
 {
@@ -14,7 +15,7 @@ namespace InvaderInsider.UI
             "InGame: Summon button missing",
             "InGame: Pause clicked",
             "InGame: Summon clicked",
-            "InGame: SummonManager not found",
+            "InGame: CardManager not found",
             "InGame: Panel shown",
             "InGame: Panel hidden"
         };
@@ -24,16 +25,12 @@ namespace InvaderInsider.UI
         [SerializeField] private Button summonButton;
 
         private UIManager uiManager;
-        private SummonManager summonManager;
 
         protected override void Awake()
         {
             base.Awake();
             
             uiManager = UIManager.Instance;
-            summonManager = SummonManager.Instance;
-            
-            uiManager.RegisterPanel("InGame", this);
             
             // InGame 패널은 초기에 숨김
             ForceHide();
@@ -71,9 +68,9 @@ namespace InvaderInsider.UI
 
         private void OnSummonButtonClicked()
         {
-            if (summonManager != null)
+            if (CardManager.Instance != null)
             {
-                summonManager.Summon();
+                CardManager.Instance.Summon();
                 Debug.Log(LOG_PREFIX + LOG_MESSAGES[3]);
             }
             else

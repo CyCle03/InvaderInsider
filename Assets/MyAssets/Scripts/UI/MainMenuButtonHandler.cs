@@ -1,342 +1,260 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using System;
-using InvaderInsider.Managers;
 using InvaderInsider.Data;
-using System.Collections.Generic;
 
 namespace InvaderInsider.UI
 {
     public class MainMenuButtonHandler : MonoBehaviour
     {
-        private const string LOG_PREFIX = "[UI] ";
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "MainMenu: Button {0} missing",
-            "MainMenu: Button {0} at {1}, size {2}",
-            "MainMenu: Button {0} missing Image",
-            "MainMenu: Button {0} zero alpha",
-            "MainMenu: Button {0} raycast disabled",
-            "MainMenu: Button {0} not interactable",
-            "MainMenu: New Game clicked",
-            "MainMenu: Load Game clicked",
-            "MainMenu: Loading stage {0}",
-            "MainMenu: Deck clicked",
-            "MainMenu: Shop clicked",
-            "MainMenu: Settings clicked",
-            "MainMenu: Achievements clicked",
-            "MainMenu: Quit clicked",
-            "MainMenu: Button {0} validation failed",
-            "MainMenu: Button {0} validation passed"
-        };
+        private const string LOG_PREFIX = "[MainMenuButtonHandler] ";
+        
+        // LOG_MESSAGES 완전히 제거
+        
+        [Header("Button References")]
+        public Button newGameButton;
+        public Button continueButton;
+        public Button settingsButton;
+        public Button deckButton;
+        public Button exitButton;
 
-        [Header("Main Menu Buttons")]
-        [SerializeField] private Button newGameButton;
-        [SerializeField] private Button loadGameButton;
-        [SerializeField] private Button deckButton;
-        [SerializeField] private Button shopButton;
-        [SerializeField] private Button settingsButton;
+        [Header("Button States")]
+        public bool forceActivateAllButtons = true;
+        public bool debugButtonStates = false;
 
-        [Header("Optional Buttons")]
-        [SerializeField] private Button achievementsButton;
-        [SerializeField] private Button quitButton;
+        private MenuManager menuManager;
 
-        private UIManager uiManager;
-        private GameManager gameManager;
-        private SaveDataManager saveDataManager;
-        private StageManager stageManager;
-        private bool isInitialized;
-        private readonly Dictionary<Button, string> buttonNames = new Dictionary<Button, string>();
-        private readonly List<Button> validatedButtons = new List<Button>();
-
+        // Events for external scripts - 사용하는 이벤트만 유지
         public event Action OnNewGameClicked;
         public event Action OnLoadGameClicked;
-        public event Action OnDeckClicked;
-        public event Action OnShopClicked;
         public event Action OnSettingsClicked;
-        public event Action OnAchievementsClicked;
+        public event Action OnDeckClicked;
         public event Action OnQuitClicked;
 
         private void Awake()
         {
-            if (!isInitialized)
+            menuManager = FindObjectOfType<MenuManager>();
+            if (menuManager == null)
             {
-                InitializeManagers();
-                InitializeButtonNames();
-                ValidateButtons();
-                SetupButtonListeners();
-                isInitialized = true;
+                GameObject menuManagerGO = GameObject.Find("MenuManager");
+                if (menuManagerGO != null)
+                {
+                    menuManager = menuManagerGO.GetComponent<MenuManager>();
+                }
             }
+
+            SetupButtonEvents();
         }
 
         private void Start()
         {
-            // Start에서 한 번 더 강제 활성화
-            Debug.Log(LOG_PREFIX + "Start called - forcing button activation");
-            if (isInitialized)
+            // 개발 단계에서만 강제 활성화
+            #if UNITY_EDITOR
+            if (forceActivateAllButtons)
             {
-                ValidateButtons();
                 ForceActivateAllButtons();
             }
+            #endif
+
+            ValidateAllButtons();
+        }
+
+        private void SetupButtonEvents()
+        {
+            if (newGameButton != null)
+                newGameButton.onClick.AddListener(() => {
+                    OnNewGameClicked?.Invoke();
+                    HandleNewGameClick();
+                });
+            
+            if (continueButton != null)
+                continueButton.onClick.AddListener(() => {
+                    OnLoadGameClicked?.Invoke();
+                    HandleContinueClick();
+                });
+            
+            if (settingsButton != null)
+                settingsButton.onClick.AddListener(() => {
+                    OnSettingsClicked?.Invoke();
+                    HandleSettingsClick();
+                });
+            
+            if (deckButton != null)
+                deckButton.onClick.AddListener(() => {
+                    OnDeckClicked?.Invoke();
+                    HandleDeckClick();
+                });
+            
+            if (exitButton != null)
+                exitButton.onClick.AddListener(() => {
+                    OnQuitClicked?.Invoke();
+                    HandleExitClick();
+                });
         }
 
         private void ForceActivateAllButtons()
         {
-            Debug.Log(LOG_PREFIX + "Force activating all buttons");
-            foreach (var kvp in buttonNames)
+            #if UNITY_EDITOR
+            Button[] buttons = { newGameButton, continueButton, settingsButton, deckButton, exitButton };
+            string[] buttonNames = { "NewGame", "Continue", "Settings", "Deck", "Exit" };
+
+            for (int i = 0; i < buttons.Length; i++)
             {
-                Button button = kvp.Key;
-                string name = kvp.Value;
-                
-                if (button != null)
+                if (buttons[i] != null)
                 {
-                    // 강제 활성화
-                    button.interactable = true;
-                    button.gameObject.SetActive(true);
-                    
-                    // Image raycast 활성화
-                    var image = button.GetComponent<Image>();
-                    if (image != null)
-                    {
-                        image.raycastTarget = true;
-                        if (image.color.a < 0.1f)
-                        {
-                            Color color = image.color;
-                            color.a = 1f;
-                            image.color = color;
-                        }
-                    }
-                    
-                    Debug.Log(LOG_PREFIX + "Force activated button: " + name + " - interactable: " + button.interactable + ", raycast: " + (image != null ? image.raycastTarget.ToString() : "no image"));
+                    ForceButtonInteractable(buttons[i], buttonNames[i]);
                 }
             }
+            #endif
         }
 
-        private void InitializeManagers()
+        private void ForceButtonInteractable(Button button, string buttonName)
         {
-            uiManager = UIManager.Instance;
-            gameManager = GameManager.Instance;
-            saveDataManager = SaveDataManager.Instance;
-            stageManager = StageManager.Instance;
-        }
+            #if UNITY_EDITOR
+            if (button == null) return;
 
-        private void InitializeButtonNames()
-        {
-            buttonNames.Clear();
-            if (newGameButton != null) buttonNames[newGameButton] = "New Game";
-            if (loadGameButton != null) buttonNames[loadGameButton] = "Load Game";
-            if (deckButton != null) buttonNames[deckButton] = "Deck";
-            if (shopButton != null) buttonNames[shopButton] = "Shop";
-            if (settingsButton != null) buttonNames[settingsButton] = "Settings";
-            if (achievementsButton != null) buttonNames[achievementsButton] = "Achievements";
-            if (quitButton != null) buttonNames[quitButton] = "Quit";
-        }
-
-        private void ValidateButtons()
-        {
-            validatedButtons.Clear();
-            foreach (var kvp in buttonNames)
-            {
-                if (ValidateButton(kvp.Key, kvp.Value))
-                {
-                    validatedButtons.Add(kvp.Key);
-                }
-            }
-        }
-
-        private bool ValidateButton(Button button, string buttonName)
-        {
-            if (button == null)
-            {
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[3], buttonName));
-                return false;
-            }
-
-            // 강제로 버튼 활성화
+            // 기본 상호작용 활성화
             if (!button.interactable)
             {
-                Debug.Log(LOG_PREFIX + "Button " + buttonName + " not interactable");
                 button.interactable = true;
-                Debug.Log(LOG_PREFIX + "Button " + buttonName + " forced to interactable");
             }
 
-            // GameObject 활성화 확인
-            if (!button.gameObject.activeInHierarchy)
+            // GameObject 활성화
+            if (!button.gameObject.activeSelf)
             {
-                Debug.Log(LOG_PREFIX + "Button " + buttonName + " GameObject not active");
                 button.gameObject.SetActive(true);
-                Debug.Log(LOG_PREFIX + "Button " + buttonName + " GameObject activated");
             }
 
-            // Image 컴포넌트의 raycastTarget 활성화
-            var buttonImage = button.GetComponent<Image>();
+            // Image 컴포넌트 raycast 활성화
+            Image buttonImage = button.GetComponent<Image>();
             if (buttonImage != null)
             {
                 if (!buttonImage.raycastTarget)
                 {
-                    Debug.Log(LOG_PREFIX + "Button " + buttonName + " raycast disabled");
                     buttonImage.raycastTarget = true;
-                    Debug.Log(LOG_PREFIX + "Button " + buttonName + " raycast enabled");
                 }
-                
-                // 투명도가 0이면 보이도록 수정
-                if (buttonImage.color.a == 0)
+
+                // 투명도 수정
+                Color color = buttonImage.color;
+                if (color.a < 0.5f)
                 {
-                    Color color = buttonImage.color;
                     color.a = 1f;
                     buttonImage.color = color;
-                    Debug.Log(LOG_PREFIX + "Button " + buttonName + " opacity fixed");
                 }
-            }
-            else
-            {
-                Debug.LogError(LOG_PREFIX + "Button " + buttonName + " has no Image component");
-                return false;
             }
 
             // GraphicRaycaster 활성화
-            var raycaster = button.GetComponentInParent<GraphicRaycaster>();
+            GraphicRaycaster raycaster = button.GetComponentInParent<GraphicRaycaster>();
             if (raycaster != null)
             {
                 if (!raycaster.enabled)
                 {
-                    Debug.Log(LOG_PREFIX + "Button " + buttonName + " raycaster disabled");
                     raycaster.enabled = true;
-                    Debug.Log(LOG_PREFIX + "Button " + buttonName + " raycaster enabled");
                 }
             }
-            else
-            {
-                Debug.LogWarning(LOG_PREFIX + "Button " + buttonName + " has no GraphicRaycaster in parent");
-            }
 
-            // Canvas 확인
-            var canvas = button.GetComponentInParent<Canvas>();
+            // Canvas 활성화
+            Canvas canvas = button.GetComponentInParent<Canvas>();
             if (canvas != null && !canvas.enabled)
             {
                 canvas.enabled = true;
-                Debug.Log(LOG_PREFIX + "Button " + buttonName + " Canvas enabled");
             }
-
-            Debug.Log(LOG_PREFIX + "Button " + buttonName + " validation completed - interactable: " + button.interactable + ", raycast: " + (buttonImage != null ? buttonImage.raycastTarget.ToString() : "no image"));
-            return true;
+            #endif
         }
 
-        private void SetupButtonListeners()
+        private void ValidateAllButtons()
         {
-            foreach (var button in validatedButtons)
+            // 개발 중에만 유효성 검사
+            #if UNITY_EDITOR
+            if (debugButtonStates)
             {
-                if (button == newGameButton) button.onClick.AddListener(HandleNewGameClick);
-                else if (button == loadGameButton) button.onClick.AddListener(HandleLoadGameClick);
-                else if (button == deckButton) button.onClick.AddListener(HandleDeckClick);
-                else if (button == shopButton) button.onClick.AddListener(HandleShopClick);
-                else if (button == settingsButton) button.onClick.AddListener(HandleSettingsClick);
-                else if (button == achievementsButton) button.onClick.AddListener(HandleAchievementsClick);
-                else if (button == quitButton) button.onClick.AddListener(HandleQuitClick);
+                ValidateButton(newGameButton, "NewGame");
+                ValidateButton(continueButton, "Continue");
+                ValidateButton(settingsButton, "Settings");
+                ValidateButton(deckButton, "Deck");
+                ValidateButton(exitButton, "Exit");
             }
+            #endif
         }
 
+        private void ValidateButton(Button button, string buttonName)
+        {
+            #if UNITY_EDITOR
+            if (button == null) return;
+
+            // 기본 정보만 체크, 로그 제거
+            bool isInteractable = button.interactable;
+            bool isActive = button.gameObject.activeSelf;
+            Image image = button.GetComponent<Image>();
+            bool hasRaycast = image != null && image.raycastTarget;
+            #endif
+        }
+
+        // Direct button handlers (for backward compatibility)
         private void HandleNewGameClick()
         {
-            if (!isInitialized) return;
-            if (Application.isPlaying)
+            if (menuManager != null)
             {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[6]);
+                menuManager.HideMainMenu();
             }
-            OnNewGameClicked?.Invoke();
+            
+            var uiManager = FindObjectOfType<UIManager>();
+            if (uiManager != null)
+            {
+                uiManager.Cleanup();
+            }
+            
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Game");
         }
 
-        private void HandleLoadGameClick()
+        private void HandleContinueClick()
         {
-            if (!isInitialized) return;
-            if (Application.isPlaying)
+            if (SaveDataManager.Instance?.HasSaveData() == true)
             {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[7]);
+                if (menuManager != null)
+                {
+                    menuManager.HideMainMenu();
+                }
+                
+                var uiManager = FindObjectOfType<UIManager>();
+                if (uiManager != null)
+                {
+                    uiManager.Cleanup();
+                }
+                
+                SaveDataManager.Instance.LoadGameData();
+                UnityEngine.SceneManagement.SceneManager.LoadScene("Game");
             }
-            OnLoadGameClicked?.Invoke();
-        }
-
-        private void HandleDeckClick()
-        {
-            if (!isInitialized) return;
-            if (Application.isPlaying)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[9]);
-            }
-            OnDeckClicked?.Invoke();
-        }
-
-        private void HandleShopClick()
-        {
-            if (!isInitialized) return;
-            if (Application.isPlaying)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[10]);
-            }
-            OnShopClicked?.Invoke();
         }
 
         private void HandleSettingsClick()
         {
-            if (!isInitialized) return;
-            if (Application.isPlaying)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[11]);
-            }
-            OnSettingsClicked?.Invoke();
+            menuManager?.ShowSettings();
         }
 
-        private void HandleAchievementsClick()
+        private void HandleDeckClick()
         {
-            if (!isInitialized) return;
-            if (Application.isPlaying)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[12]);
-            }
-            OnAchievementsClicked?.Invoke();
+            menuManager?.ShowDeck();
         }
 
-        private void HandleQuitClick()
+        private void HandleExitClick()
         {
-            if (!isInitialized) return;
-            if (Application.isPlaying)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[13]);
-            }
-            OnQuitClicked?.Invoke();
-        }
-
-        private void OnDestroy()
-        {
-            if (!isInitialized) return;
-
-            foreach (var button in validatedButtons)
-            {
-                if (button == newGameButton) button.onClick.RemoveListener(HandleNewGameClick);
-                else if (button == loadGameButton) button.onClick.RemoveListener(HandleLoadGameClick);
-                else if (button == deckButton) button.onClick.RemoveListener(HandleDeckClick);
-                else if (button == shopButton) button.onClick.RemoveListener(HandleShopClick);
-                else if (button == settingsButton) button.onClick.RemoveListener(HandleSettingsClick);
-                else if (button == achievementsButton) button.onClick.RemoveListener(HandleAchievementsClick);
-                else if (button == quitButton) button.onClick.RemoveListener(HandleQuitClick);
-            }
-
-            validatedButtons.Clear();
-            buttonNames.Clear();
-            isInitialized = false;
+            #if UNITY_EDITOR
+                UnityEditor.EditorApplication.isPlaying = false;
+            #else
+                Application.Quit();
+            #endif
         }
 
         public void SetButtonsInteractable(bool interactable)
         {
-            if (!isInitialized) return;
-
-            foreach (var button in validatedButtons)
-            {
-                if (button != null)
-                {
-                    button.interactable = interactable;
-                }
-            }
+            if (newGameButton != null) newGameButton.interactable = interactable;
+            if (continueButton != null && SaveDataManager.Instance?.HasSaveData() == true) 
+                continueButton.interactable = interactable;
+            if (settingsButton != null) settingsButton.interactable = interactable;
+            if (deckButton != null) deckButton.interactable = interactable;
+            if (exitButton != null) exitButton.interactable = interactable;
         }
     }
 } 

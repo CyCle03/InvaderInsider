@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2404699285322480898}
   - component: {fileID: 309087202406148023}
   - component: {fileID: 1199222837775233514}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -86,7 +86,7 @@ GameObject:
   - component: {fileID: 244951415469924236}
   - component: {fileID: 7923197764736875359}
   - component: {fileID: 7956665320196755085}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -165,7 +165,7 @@ GameObject:
   - component: {fileID: -1243140610155947256}
   - component: {fileID: 7361604924346112834}
   - component: {fileID: 452643211829694546}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Enemy1
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -296,7 +296,7 @@ MonoBehaviour:
   maxHealth: 3
   currentHealth: 3
   attackDamage: 1
-  attackRange: 5
+  baseAttackRange: 5
   attackRate: 1
   enemyData:
     enemyName: 
@@ -307,7 +307,6 @@ MonoBehaviour:
     moveSpeed: 3
     eDataAmount: 1
     damageOnFinalWaypoint: 10
-  pathUpdateRate: 0.2
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
 --- !u!114 &452643211829694546
@@ -334,7 +333,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5231742715766805973}
   - component: {fileID: 8364744215530237860}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: Slider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -422,7 +421,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6208073629028816541}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -462,7 +461,7 @@ GameObject:
   - component: {fileID: 6785260358409236903}
   - component: {fileID: 8577913098016201048}
   - component: {fileID: 1352206324947497860}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: EnemyHPBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6699650902771000083}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -47,7 +47,7 @@ GameObject:
   - component: {fileID: 5657859644459905604}
   - component: {fileID: 3932070893615078147}
   - component: {fileID: 7310157889961895398}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -124,7 +124,7 @@ GameObject:
   - component: {fileID: 262611321776910187}
   - component: {fileID: 4644881721608121206}
   - component: {fileID: 3214383795621100256}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: EnemyHPBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -241,7 +241,7 @@ GameObject:
   - component: {fileID: -1243140610155947256}
   - component: {fileID: 7361604924346112834}
   - component: {fileID: 4366760524199491358}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Enemy3
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -372,7 +372,7 @@ MonoBehaviour:
   maxHealth: 3
   currentHealth: 3
   attackDamage: 3
-  attackRange: 5
+  baseAttackRange: 5
   attackRate: 1
   enemyData:
     enemyName: 
@@ -383,7 +383,6 @@ MonoBehaviour:
     moveSpeed: 3
     eDataAmount: 3
     damageOnFinalWaypoint: 30
-  pathUpdateRate: 0.2
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
 --- !u!114 &4366760524199491358
@@ -410,7 +409,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4496985341490261879}
   - component: {fileID: 8709902853022629263}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: Slider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -500,7 +499,7 @@ GameObject:
   - component: {fileID: 6199396206250790185}
   - component: {fileID: 1183139217248073607}
   - component: {fileID: 7533517589171254440}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}

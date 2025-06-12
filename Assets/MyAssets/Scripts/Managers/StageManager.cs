@@ -13,28 +13,9 @@ namespace InvaderInsider.Managers
         private const string LOG_PREFIX = "[Stage] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
-            "Stage {0} Ready",
-            "Stage {0} cleared: All enemies spawned and defeated.",
-            "Stage {0} End",
-            "Stage {0} progress updated and saved.",
-            "All stages completed!",
-            "StageLoopCoroutine started",
-            "StageLoopCoroutine finished",
-            "Stage data is not assigned in the inspector! Please assign a StageList ScriptableObject.",
-            "BottomBarPanel not found in the scene. UI updates may not work.",
-            "Stage data is not set!",
-            "StageManager InitializeStage called",
-            "StageManager StartStageFrom called for stage {0}",
-            "Invalid stage index {0} provided for StartStageFrom.",
-            "Stage data is not set in StartStageInternal!",
-            "No waypoints set for enemy path!",
-            "StageData did not provide an enemy prefab for stage {0}, enemy {1}. Using defaultEnemyPrefab.",
-            "Failed to spawn enemy: No prefab assigned or retrieved for stage {0}, enemy {1}.",
-            "Stage {0} wave {1} started",
-            "Stage {0} wave {1} completed",
-            "Stage {0} wave {1} enemy spawned",
-            "Stage {0} wave {1} enemy reached end",
-            "Stage {0} wave {1} enemy died"
+            "Stage data is null - initialization failed",
+            "Invalid stage index: {0}",
+            "Invalid enemy spawn - Stage: {0}, Count: {1}"
         };
 
         private static StageManager instance;
@@ -120,93 +101,58 @@ namespace InvaderInsider.Managers
 
         private void Awake()
         {
-            Debug.Log(LOG_PREFIX + "=== AWAKE CALLED ===");
-            
             if (instance == null)
             {
-                Debug.Log(LOG_PREFIX + "Setting as instance");
                 instance = this;
                 DontDestroyOnLoad(gameObject);
-                PerformInitialization();
             }
             else if (instance != this)
             {
-                Debug.Log(LOG_PREFIX + "Destroying duplicate StageManager");
                 Destroy(gameObject);
                 return;
             }
-            else
+            
+            if (!isInitialized)
             {
-                Debug.Log(LOG_PREFIX + "This is already the instance");
-                // 이미 instance이지만 초기화가 안 되어 있을 수 있음
-                if (!isInitialized)
-                {
-                    Debug.Log(LOG_PREFIX + "Instance exists but not initialized, performing initialization");
-                    PerformInitialization();
-                }
+                PerformInitialization();
             }
         }
 
         private void PerformInitialization()
         {
-            Debug.Log(LOG_PREFIX + "=== PERFORMING INITIALIZATION ===");
-            Debug.Log(LOG_PREFIX + "StageManager - stageDataObject: " + (stageDataObject != null ? "Assigned" : "Null"));
+            if (isInitialized) return;
+
             if (stageDataObject != null)
             {
-                Debug.Log(LOG_PREFIX + "stageDataObject name: " + stageDataObject.name);
-            }
-            
-            if (stageDataObject == null)
-            {
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[7]);
-                // 다양한 경로에서 StageList를 찾아서 할당
-                stageDataObject = Resources.Load<StageList>("StageList1");
-                if (stageDataObject == null)
-                {
-                    stageDataObject = Resources.Load<StageList>("ScriptableObjects/StageSystem/StageList1");
-                    if (stageDataObject == null)
-                    {
-                        Debug.LogError(LOG_PREFIX + "기본 StageList를 찾을 수 없습니다. StageList1.asset 파일을 확인하세요.");
-                        Debug.LogError(LOG_PREFIX + "검색한 경로: Resources/StageList1, Resources/ScriptableObjects/StageSystem/StageList1");
-                        return;
-                    }
-                    else
-                    {
-                        Debug.Log(LOG_PREFIX + "StageList1을 ScriptableObjects 폴더에서 로드했습니다.");
-                    }
-                }
-                else
-                {
-                    Debug.Log(LOG_PREFIX + "기본 StageList1을 로드했습니다.");
-                }
+                stageData = stageDataObject;
             }
             else
             {
-                Debug.Log(LOG_PREFIX + "StageDataObject가 Inspector에서 할당되었습니다: " + stageDataObject.name);
+                var defaultStageList = Resources.Load<StageList>("StageList1") ?? 
+                                      Resources.Load<StageList>("ScriptableObjects/StageSystem/StageList1");
+                
+                if (defaultStageList != null)
+                {
+                    stageDataObject = defaultStageList;
+                    stageData = stageDataObject;
+                }
+                else
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogError(LOG_PREFIX + "기본 StageList를 찾을 수 없습니다. StageList1.asset 파일을 확인하세요.");
+                    #endif
+                    return;
+                }
             }
 
-            stageData = stageDataObject;
-            Debug.Log(LOG_PREFIX + "StageData assigned: " + (stageData != null ? "Success" : "Failed"));
-            
-            if (stageData != null)
-            {
-                Debug.Log(LOG_PREFIX + "StageData StageCount: " + stageData.StageCount);
-            }
-            
-            Debug.Log(LOG_PREFIX + "Calling InitializeComponents");
             InitializeComponents();
-            
             isInitialized = true;
-            Debug.Log(LOG_PREFIX + "=== INITIALIZATION COMPLETED - isInitialized: " + isInitialized + " ===");
         }
 
         private void InitializeComponents()
         {
             bottomBarPanel = FindObjectOfType<BottomBarPanel>();
-            if (bottomBarPanel == null)
-            {
-                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[8]);
-            }
+            // BottomBarPanel은 선택사항이므로 경고 제거
 
             uiManager = UIManager.Instance;
             gameManager = GameManager.Instance;
@@ -215,45 +161,72 @@ namespace InvaderInsider.Managers
             activeTowers.Clear();
             activeTowers.AddRange(FindObjectsOfType<Tower>());
 
+            // 웨이포인트가 설정되지 않은 경우 자동으로 찾기 시도
             if (wayPointsList.Count == 0)
             {
-                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[14]);
+                AutoFindWaypoints();
+            }
+        }
+
+        private void AutoFindWaypoints()
+        {
+            // "Waypoint" 태그나 "EnemyPath" 태그를 가진 오브젝트들을 찾아서 자동으로 웨이포인트 설정
+            GameObject[] waypoints = GameObject.FindGameObjectsWithTag("Waypoint");
+            if (waypoints.Length == 0)
+            {
+                waypoints = GameObject.FindGameObjectsWithTag("EnemyPath");
+            }
+
+            if (waypoints.Length > 0)
+            {
+                wayPointsList.Clear();
+                // 이름순으로 정렬하여 올바른 순서로 웨이포인트 설정
+                System.Array.Sort(waypoints, (a, b) => a.name.CompareTo(b.name));
+                
+                foreach (GameObject wp in waypoints)
+                {
+                    wayPointsList.Add(wp.transform);
+                }
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"자동으로 {wayPointsList.Count}개의 웨이포인트를 찾았습니다.");
+                #endif
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "웨이포인트를 찾을 수 없습니다. 'Waypoint' 또는 'EnemyPath' 태그를 가진 오브젝트가 필요합니다.");
+                #endif
             }
         }
 
         private void Start()
         {
-            Debug.Log(LOG_PREFIX + "=== START CALLED ===");
-            Debug.Log(LOG_PREFIX + "instance == this: " + (instance == this));
-            Debug.Log(LOG_PREFIX + "StageManager Start - isInitialized: " + isInitialized + ", stageData: " + (stageData != null ? "Valid" : "Null"));
-            Debug.Log(LOG_PREFIX + "stageDataObject: " + (stageDataObject != null ? stageDataObject.name : "null"));
-            
             if (!isInitialized)
             {
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[9]);
-                Debug.LogError(LOG_PREFIX + "Awake가 제대로 호출되지 않았습니다!");
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+                #endif
                 
                 // 강제로 초기화 시도
-                Debug.Log(LOG_PREFIX + "강제 초기화 시도...");
                 if (stageDataObject != null)
                 {
                     stageData = stageDataObject;
                     InitializeComponents();
                     isInitialized = true;
-                    Debug.Log(LOG_PREFIX + "강제 초기화 완료");
                 }
                 return;
             }
             
             if (stageData == null)
             {
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[9]);
-                Debug.LogError(LOG_PREFIX + "stageDataObject is: " + (stageDataObject != null ? stageDataObject.name : "null"));
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+                #endif
                 
                 // stageDataObject가 있는데 stageData가 null인 경우 다시 할당
                 if (stageDataObject != null)
                 {
-                    Debug.Log(LOG_PREFIX + "stageDataObject가 있으므로 다시 할당 시도");
                     stageData = stageDataObject;
                 }
                 
@@ -262,18 +235,11 @@ namespace InvaderInsider.Managers
                     return;
                 }
             }
-            
-            Debug.Log(LOG_PREFIX + "StageManager initialized successfully with " + stageData.StageCount + " stages");
         }
 
         public void InitializeStage()
         {
             if (!isInitialized) return;
-
-            if (Application.isPlaying)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[10]);
-            }
             StartStageInternal(0);
         }
 
@@ -281,18 +247,15 @@ namespace InvaderInsider.Managers
         {
             if (!isInitialized) return;
 
-            if (Application.isPlaying)
-            {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[11], stageIndex));
-            }
-
             if (stageData != null && stageIndex >= 0 && stageIndex < stageData.StageCount)
             {
                 StartStageInternal(stageIndex);
             }
             else
             {
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[12], stageIndex));
+                #if UNITY_EDITOR
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], stageIndex));
+                #endif
                 StartStageInternal(0);
             }
         }
@@ -310,7 +273,9 @@ namespace InvaderInsider.Managers
             
             if (stageData == null)
             {
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[13]);
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+                #endif
                 return;
             }
 
@@ -319,11 +284,6 @@ namespace InvaderInsider.Managers
             
             stageCoroutine = StartCoroutine(StageLoopCoroutine());
             ResetAllTowersRotation();
-
-            if (Application.isPlaying)
-            {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[17], stageNum + 1, stageWave));
-            }
         }
 
         private void ResetStageState(int startStageIndex)
@@ -349,20 +309,13 @@ namespace InvaderInsider.Managers
 
         private IEnumerator StageLoopCoroutine()
         {
-            if (Application.isPlaying)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[5]);
-            }
 
             while (currentState != StageState.Over && !isQuitting)
             {
                 yield return HandleStageState();
             }
 
-            if (Application.isPlaying)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[6]);
-            }
+            // 스테이지 루프 완료
         }
 
         private IEnumerator HandleStageState()
@@ -393,14 +346,15 @@ namespace InvaderInsider.Managers
 
         private IEnumerator HandleReadyState()
         {
-            if (Application.isPlaying)
-            {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], stageNum + 1));
-            }
-
             if (uiManager != null)
             {
                 uiManager.UpdateStage(stageNum, GetStageCount());
+            }
+
+            // 스테이지가 준비되었으므로 게임 상태를 Playing으로 변경
+            if (gameManager != null)
+            {
+                gameManager.SetGameState(GameState.Playing);
             }
 
             yield return new WaitForSeconds(STAGE_START_DELAY);
@@ -424,11 +378,6 @@ namespace InvaderInsider.Managers
             {
                 clearedStageIndex = stageNum;
                 currentState = StageState.End;
-
-                if (Application.isPlaying)
-                {
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[1], clearedStageIndex + 1));
-                }
             }
 
             yield return null;
@@ -436,20 +385,10 @@ namespace InvaderInsider.Managers
 
         private IEnumerator HandleEndState()
         {
-            if (Application.isPlaying)
-            {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], stageNum + 1));
-            }
-
             if (gameManager != null)
             {
                 int stars = CalculateStageStars();
                 gameManager.StageCleared(clearedStageIndex, stars);
-
-                if (Application.isPlaying)
-                {
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], clearedStageIndex));
-                }
             }
 
             stageNum++;
@@ -457,10 +396,6 @@ namespace InvaderInsider.Managers
 
             if (stageNum >= GetStageCount())
             {
-                if (Application.isPlaying)
-                {
-                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[4]);
-                }
                 currentState = StageState.Over;
             }
             else
@@ -485,33 +420,31 @@ namespace InvaderInsider.Managers
 
         public void SpawnEnemy()
         {
-            if (!isInitialized || stageData == null) return;
-
-            GameObject enemyPrefab = stageData.GetStageObject(stageNum, enemyCount);
-            if (enemyPrefab == null)
+            if (wayPointsList == null || wayPointsList.Count == 0)
             {
-                Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[15], stageNum, enemyCount));
-                enemyPrefab = defaultEnemyPrefab;
-            }
-
-            if (enemyPrefab == null)
-            {
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[16], stageNum, enemyCount));
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "웨이포인트가 설정되지 않았습니다. 적을 스폰할 수 없습니다.");
+                #endif
                 return;
             }
 
-            GameObject enemyObject = Instantiate(enemyPrefab, wayPointsList[0].position, Quaternion.identity);
-            EnemyObject enemy = enemyObject.GetComponent<EnemyObject>();
-            if (enemy != null)
+            if (defaultEnemyPrefab == null)
             {
-                enemy.SetupEnemy(stageNum, enemyCount);
-                activeEnemies.Add(enemy);
-                IncrementEnemyCount();
+                #if UNITY_EDITOR
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[2], stageNum, enemyCount));
+                #endif
+                return;
             }
 
-            if (Application.isPlaying)
+            Vector3 spawnPosition = wayPointsList[0].position;
+            GameObject enemy = Instantiate(defaultEnemyPrefab, spawnPosition, Quaternion.identity);
+            
+            EnemyObject enemyObject = enemy.GetComponent<EnemyObject>();
+            if (enemyObject != null)
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[19], stageNum, stageWave, enemyCount));
+                enemyObject.SetupEnemy(stageNum, enemyCount);
+                activeEnemies.Add(enemyObject);
+                IncrementEnemyCount();
             }
         }
 
@@ -542,11 +475,6 @@ namespace InvaderInsider.Managers
             {
                 saveDataManager.UpdateEData(eDataAmount);
             }
-
-            if (Application.isPlaying)
-            {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[21], stageNum + 1, enemyCount));
-            }
         }
 
         public void EnemyReachedEnd()
@@ -554,10 +482,6 @@ namespace InvaderInsider.Managers
             if (!isInitialized) return;
 
             DecreaseActiveEnemyCount();
-            if (Application.isPlaying)
-            {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[20], stageNum + 1, enemyCount));
-            }
         }
 
         public void InitializeStageFromLoadedData(int stageIndex)
@@ -608,19 +532,11 @@ namespace InvaderInsider.Managers
         public void IncrementEnemyCount()
         {
             activeEnemyCountValue++;
-            if (Application.isPlaying)
-            {
-                Debug.Log($"[Stage] 활성 적 수 증가: {activeEnemyCountValue}");
-            }
         }
 
         public void DecrementEnemyCount()
         {
             activeEnemyCountValue = Mathf.Max(0, activeEnemyCountValue - 1);
-            if (Application.isPlaying)
-            {
-                Debug.Log($"[Stage] 활성 적 수 감소: {activeEnemyCountValue}");
-            }
         }
 
         public int GetCurrentStageIndex()

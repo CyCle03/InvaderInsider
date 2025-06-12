@@ -9,7 +9,7 @@ using InvaderInsider.Cards; // CardDrawUI, CardInteractionHandler 참조를 위�
 namespace InvaderInsider.UI
 {
     // 핸드에 있는 카드들을 작게 표시하는 UI 패널 스크립트
-    public class HandDisplayPanel : MonoBehaviour
+    public class HandDisplayPanel : BasePanel
     {
         private const string LOG_PREFIX = "[UI] ";
         private static readonly string[] LOG_MESSAGES = new string[]
@@ -42,12 +42,7 @@ namespace InvaderInsider.UI
         [SerializeField] private CardDatabase cardDatabase; // 카드 데이터베이스 Scriptable Object 참조
         private readonly string[] cachedStrings = new string[11];
 
-        private void Awake()
-        {
-            Initialize();
-        }
-
-        private void Initialize()
+        protected override void Initialize()
         {
             if (isInitialized) return;
 
@@ -101,6 +96,21 @@ namespace InvaderInsider.UI
         {
             CleanupEventListeners();
             ClearHandItems();
+        }
+
+        protected override void OnShow()
+        {
+            base.OnShow();
+            if (!isInitialized)
+            {
+                Initialize();
+            }
+        }
+
+        protected override void OnHide()
+        {
+            base.OnHide();
+            CleanupEventListeners();
         }
 
         private void CleanupEventListeners()

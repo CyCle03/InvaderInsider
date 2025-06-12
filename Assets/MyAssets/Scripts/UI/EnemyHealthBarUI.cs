@@ -1,19 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 using InvaderInsider;
+using System.Collections;
 
 namespace InvaderInsider.UI
 {
     public class EnemyHealthBarUI : MonoBehaviour
     {
-        private const string LOG_PREFIX = "[UI] ";
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "EnemyHealth: BaseCharacter component not found - {0}",
-            "EnemyHealth: Health updated - {0}/{1}",
-            "EnemyHealth: Health bar visibility changed - {0}"
-        };
-
         [SerializeField] private Slider healthSlider; // 체력 슬라이더 UI
         [SerializeField] private GameObject healthBarObject; // 체력바 전체 오브젝트 (활성화/비활성화용)
 
@@ -32,18 +25,22 @@ namespace InvaderInsider.UI
             character = GetComponentInParent<BaseCharacter>(); // 부모 또는 자신에게서 BaseCharacter 찾기
             if (character == null)
             {
-                if (Application.isPlaying)
-                {
-                    Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[0], gameObject.name), this);
-                }
                 enabled = false; // 스크립트 비활성화
                 return;
             }
 
             SetupEventListeners();
-            UpdateHealthDisplay(character.CurrentHealth / character.MaxHealth);
+            // 초기 체력 표시 - 즉시 호출
+            StartCoroutine(DelayedHealthUpdate());
 
             isInitialized = true;
+        }
+
+        private System.Collections.IEnumerator DelayedHealthUpdate()
+        {
+            // 한 프레임 대기 후 체력 업데이트
+            yield return null;
+            UpdateHealthDisplay(character.CurrentHealth / character.MaxHealth);
         }
 
         private void OnEnable()
@@ -51,6 +48,11 @@ namespace InvaderInsider.UI
             if (!isInitialized)
             {
                 Initialize();
+            }
+            else if (character != null)
+            {
+                // 활성화될 때마다 체력 업데이트
+                UpdateHealthDisplay(character.CurrentHealth / character.MaxHealth);
             }
         }
 
@@ -87,22 +89,16 @@ namespace InvaderInsider.UI
 
             if (healthSlider != null)
             {
-                healthSlider.maxValue = character.MaxHealth;
-                healthSlider.value = character.CurrentHealth;
-
-                if (Application.isPlaying)
-                {
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[1], character.CurrentHealth, character.MaxHealth));
-                }
+                // 슬라이더를 0~1 범위로 설정
+                healthSlider.minValue = 0f;
+                healthSlider.maxValue = 1f;
+                healthSlider.value = healthRatio;
             }
 
+            // 체력바는 항상 표시하되, 체력이 0이 되면 숨김
             if (healthBarObject != null)
             {
-                bool isActive = character.CurrentHealth < character.MaxHealth && character.CurrentHealth > 0;
-                if (Application.isPlaying)
-                {
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], isActive));
-                }
+                bool isActive = character.CurrentHealth > 0;
                 healthBarObject.SetActive(isActive);
             }
         }

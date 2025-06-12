@@ -1,103 +1,115 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
-using InvaderInsider.Data;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
-    public class TopBarPanel : MonoBehaviour
+    public class TopBarPanel : BasePanel
     {
-        private const string LOG_PREFIX = "[UI] ";
+        [Header("Top Bar References")]
+        [SerializeField] private TextMeshProUGUI stageText;
+        [SerializeField] private TextMeshProUGUI eDataText;
+        [SerializeField] private TextMeshProUGUI waveText;
+        [SerializeField] private TextMeshProUGUI lifeText;
+        [SerializeField] private Button pauseButton;
+
         private static readonly string[] LOG_MESSAGES = new string[]
         {
-            "TopBar: SaveDataManager instance not found",
-            "TopBar: E-Data updated - {0:N0}",
-            "TopBar: Player info updated - {0}"
+            "TopBarPanel: UI 요소가 할당되지 않았습니다."
         };
 
-        [Header("UI Elements")]
-        [SerializeField] private TextMeshProUGUI eDataText;
-        [SerializeField] private TextMeshProUGUI playerNameText;
+        private int currentEData;
+        private UIManager uiManager;
 
-        private SaveDataManager saveManager;
-        private bool isInitialized = false;
-
-        private void Awake()
+        protected override void Initialize()
         {
-            Initialize();
-        }
-
-        private void Initialize()
-        {
-            if (isInitialized) return;
-
-            saveManager = SaveDataManager.Instance;
-            if (saveManager == null)
+            if (!ValidateReferences())
             {
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
                 return;
             }
 
-            SetupEDataDisplay();
-            UpdatePlayerInfo();
-
-            isInitialized = true;
+            uiManager = UIManager.Instance;
+            pauseButton.onClick.AddListener(HandlePauseClick);
+            UpdateUI();
         }
 
-        private void OnEnable()
+        private bool ValidateReferences()
         {
-            if (!isInitialized)
+            if (stageText == null || eDataText == null || 
+                waveText == null || lifeText == null || pauseButton == null)
             {
-                Initialize();
+                Debug.LogError(LOG_MESSAGES[0]);
+                return false;
+            }
+            return true;
+        }
+
+        private void UpdateUI()
+        {
+            // 초기값 설정
+            currentEData = 100;
+            UpdateEData(currentEData);
+            UpdateStageInfo(1, 1);
+        }
+
+        private void HandlePauseClick()
+        {
+            if (uiManager != null)
+            {
+                uiManager.ShowPanel("Pause");
             }
         }
 
-        private void OnDisable()
+        public void UpdateEData(int amount)
         {
-            CleanupEventListeners();
-        }
-
-        private void OnDestroy()
-        {
-            CleanupEventListeners();
-        }
-
-        private void CleanupEventListeners()
-        {
-            if (saveManager != null)
+            currentEData = amount;
+            if (eDataText != null)
             {
-                saveManager.OnEDataChanged -= UpdateEDataDisplay;
+                eDataText.text = amount.ToString();
             }
         }
 
-        private void SetupEDataDisplay()
+        public void AddEData(int amount)
         {
-            if (!isInitialized || eDataText == null || saveManager == null) return;
-
-            saveManager.OnEDataChanged += UpdateEDataDisplay;
-            UpdateEDataDisplay(saveManager.GetCurrentEData());
+            currentEData += amount;
+            if (eDataText != null)
+            {
+                eDataText.text = currentEData.ToString();
+            }
         }
 
-        private void UpdatePlayerInfo()
+        public void UpdateStageInfo(int stage, int wave)
         {
-            if (!isInitialized || playerNameText == null || saveManager == null) return;
-
-            string playerName = saveManager.GetSetting("PlayerName", "Player");
-            if (Application.isPlaying)
+            if (stageText != null)
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], playerName));
+                stageText.text = $"Stage {stage}";
             }
-            playerNameText.text = playerName;
+            
+            if (waveText != null)
+            {
+                waveText.text = $"Wave {wave}";
+            }
         }
 
-        private void UpdateEDataDisplay(int amount)
+        public int GetCurrentEData()
         {
-            if (!isInitialized || eDataText == null) return;
+            return currentEData;
+        }
 
-            if (Application.isPlaying)
+        public bool CanAfford(int cost)
+        {
+            return currentEData >= cost;
+        }
+
+        public bool SpendEData(int cost)
+        {
+            if (CanAfford(cost))
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[1], amount));
+                UpdateEData(currentEData - cost);
+                return true;
             }
-            eDataText.text = $"eData: {amount:N0}";
+            return false;
         }
     }
 } 

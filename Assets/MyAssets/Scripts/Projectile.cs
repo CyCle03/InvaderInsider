@@ -23,6 +23,7 @@ namespace InvaderInsider
         private bool isInitialized = false;
         private Rigidbody rb;
         private Collider col;
+        private float lifeTime = 5f; // Assuming a default lifeTime
 
         private void Awake()
         {
@@ -69,45 +70,58 @@ namespace InvaderInsider
             damage = dmg;
         }
 
-        void Update()
+        private void Update()
         {
-            if (!isInitialized) return;
+            if (target == null)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
+            Vector3 direction = (target.position - transform.position).normalized;
+            float distance = Vector3.Distance(transform.position, target.position);
+
+            if (distance <= 0.5f)
+            {
+                HitTarget();
+                return;
+            }
+
+            transform.position += direction * speed * Time.deltaTime;
+            transform.LookAt(target);
+
+            lifeTime -= Time.deltaTime;
+            if (lifeTime <= 0)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private void HitTarget()
+        {
             if (target != null)
             {
-                // 목표가 존재하면 목표로 이동
-                Vector3 direction = target.position - transform.position;  // 방향 벡터
-                float step = speed * Time.deltaTime;                         // 이동 거리
-
-                // 목표의 위치로 발사체 이동
-                transform.position = Vector3.MoveTowards(transform.position, target.position, step);
-            }
-            else
-            {
-                if (Application.isPlaying)
+                IDamageable damageable = target.GetComponent<IDamageable>();
+                if (damageable != null)
                 {
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[1], gameObject.name));
+                    damageable.TakeDamage(damage);
                 }
-                // 목표가 없으면 발사체 제거 (0.1f초 후 파괴)
-                Destroy(gameObject, 0.1f); 
             }
+            Destroy(gameObject);
         }
 
         // OnTriggerEnter를 사용하여 충돌 감지
         private void OnTriggerEnter(Collider other)
         {
-            if (!isInitialized || target == null || other.transform != target) return;
-
-            IDamageable damageable = other.GetComponent<IDamageable>();
-            if (damageable != null)
+            if (other.CompareTag("Enemy"))
             {
-                damageable.TakeDamage(damage);
-                if (Application.isPlaying)
+                IDamageable damageable = other.GetComponent<IDamageable>();
+                if (damageable != null)
                 {
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], gameObject.name, target.name, damage));
+                    damageable.TakeDamage(damage);
                 }
+                Destroy(gameObject);
             }
-            Destroy(gameObject); // 발사체 제거
         }
 
         private void OnDestroy()

@@ -47,7 +47,10 @@ namespace InvaderInsider
             "No waypoints available for enemy path!",
             "Enemy {0} attacked",
             "Enemy {0} died",
-            "Enemy {0} reached end"
+            "Enemy {0} reached end",
+            "Enemy using NavMeshAgent movement",
+            "Enemy using Transform movement",
+            "Enemy initialized with {0} waypoints"
         };
 
         [Header("Enemy Data")]
@@ -81,6 +84,7 @@ namespace InvaderInsider
             base.Awake();
             stageManager = StageManager.Instance;
             player = FindObjectOfType<Player>();
+            agent = GetComponent<NavMeshAgent>();
             pathUpdateWait = new WaitForSeconds(0.1f);
         }
 
@@ -100,7 +104,12 @@ namespace InvaderInsider
             {
                 Initialize();
             }
-            pathUpdateCoroutine = StartCoroutine(UpdatePathRoutine());
+            
+            // 초기화가 완료된 후에만 코루틴 시작
+            if (IsInitialized && agent != null)
+            {
+                StartPathUpdateCoroutine();
+            }
         }
 
         protected override void OnDisable()
@@ -125,6 +134,15 @@ namespace InvaderInsider
             }
         }
 
+        private void StartPathUpdateCoroutine()
+        {
+            StopPathUpdateCoroutine(); // 기존 코루틴이 있다면 중지
+            if (agent != null && isInitialized)
+            {
+                pathUpdateCoroutine = StartCoroutine(UpdatePathRoutine());
+            }
+        }
+
         private IEnumerator UpdatePathRoutine()
         {
             while (enabled)
@@ -136,9 +154,18 @@ namespace InvaderInsider
 
         private void UpdatePath()
         {
-            if (!IsInitialized || currentWaypoint == null || agent == null || !agent.isActiveAndEnabled) return;
+            if (!IsInitialized || currentWaypoint == null || agent == null || !agent.isActiveAndEnabled) 
+            {
+                return;
+            }
 
-            if (Vector3.Distance(transform.position, currentWaypoint.position) <= agent.stoppingDistance)
+            // 목적지가 설정되지 않았거나 경로를 찾지 못한 경우 다시 설정
+            if (!agent.hasPath || agent.pathStatus != NavMeshPathStatus.PathComplete)
+            {
+                agent.SetDestination(currentWaypoint.position);
+            }
+
+            if (Vector3.Distance(transform.position, currentWaypoint.position) <= agent.stoppingDistance + 0.5f)
             {
                 if (waypoints.Count == 0)
                 {
@@ -149,10 +176,6 @@ namespace InvaderInsider
                     OnWaypointReached?.Invoke(this);
                     MoveToNextWaypoint();
                 }
-            }
-            else
-            {
-                agent.SetDestination(currentWaypoint.position);
             }
         }
 
@@ -180,10 +203,8 @@ namespace InvaderInsider
 
         private void MoveToNextWaypoint()
         {
-            if (!IsInitialized || waypoints.Count == 0) return;
-
             currentWaypoint = waypoints.Dequeue();
-            if (agent != null && agent.isActiveAndEnabled)
+            if (currentWaypoint != null && agent != null)
             {
                 agent.SetDestination(currentWaypoint.position);
             }
@@ -238,47 +259,82 @@ namespace InvaderInsider
         {
             if (!IsInitialized) return;
 
+            float oldHealth = CurrentHealth;
             base.TakeDamage(damage);
-
-            if (hitEffect != null)
-            {
-                ParticleSystem effect = Instantiate(hitEffect, transform.position, Quaternion.identity);
-                Destroy(effect.gameObject, effect.main.duration);
-            }
         }
 
         public void SetupEnemy(int stageNum, int enemyCount)
         {
             if (stageManager == null) return;
 
-            var stageWayPoints = stageManager.WayPoints;
-            if (stageWayPoints != null)
+            this.stageNum = stageNum;
+            this.enemyCount = enemyCount;
+
+            // 적의 체력을 최대체력으로 설정
+            if (enemyData != null)
             {
-                wayPoints = new List<Transform>(stageWayPoints);
+                maxHealth = enemyData.baseHealth;
+                currentHealth = maxHealth;
+                attackDamage = enemyData.baseDamage;
+                
+                // 체력 변경 이벤트 호출하여 UI 업데이트
+                InvokeHealthChanged();
+            }
+
+            var stageWayPoints = stageManager.WayPoints;
+            if (stageWayPoints == null || stageWayPoints.Count == 0)
+            {
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
+                return;
+            }
+
+            // NavMeshAgent가 있는 경우 NavMesh 기반 이동 사용
+            if (agent != null)
+            {
+                // 에이전트 설정
+                agent.speed = enemyData?.moveSpeed ?? moveSpeed;
+                agent.stoppingDistance = 0.1f;
+                
+                // 웨이포인트 큐 초기화
+                InitializeWaypoints();
             }
             else
             {
-                wayPoints = new List<Transform>();
+                // NavMeshAgent가 없는 경우 직접 Transform 이동 사용
+                wayPoints = new List<Transform>(stageWayPoints);
+                moveSpeed = enemyData?.moveSpeed ?? moveSpeed;
+                currentWaypointIndex = 0;
+                
+                if (wayPoints.Count > 0)
+                {
+                    transform.position = wayPoints[0].position;
+                }
             }
 
-            this.stageNum = stageNum;
-            this.enemyCount = enemyCount;
             isInitialized = true;
-
-            if (wayPoints.Count > 0)
+            
+            // NavMeshAgent가 있고 게임 오브젝트가 활성화된 상태라면 코루틴 시작
+            if (agent != null && gameObject.activeInHierarchy)
             {
-                transform.position = wayPoints[0].position;
+                StartPathUpdateCoroutine();
             }
         }
 
         private void Start()
         {
-            if (stageManager == null) return;
-            SetupEnemy(stageManager.GetCurrentStageIndex(), enemyCount);
+            // SetupEnemy는 StageManager에서 SpawnEnemy 시 호출되므로 여기서는 중복 호출 방지
+            if (!isInitialized && stageManager != null)
+            {
+                SetupEnemy(stageManager.GetCurrentStageIndex(), enemyCount);
+            }
         }
 
         private void Update()
         {
+            // NavMeshAgent가 있는 경우에는 UpdatePathRoutine에서 처리하므로 여기서는 건너뜀
+            if (agent != null) return;
+            
+            // NavMeshAgent가 없는 경우에만 직접 Transform 이동 처리
             if (!isInitialized || wayPoints == null || wayPoints.Count == 0) return;
 
             if (currentWaypointIndex < wayPoints.Count)
