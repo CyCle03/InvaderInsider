@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: B_crysyal
+  m_Name: T_crystal
   m_Shader: {fileID: -6465566751694194690, guid: b063fa2620649fb41a2943d3c27859c2, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -42,10 +42,10 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _Smoothness: 1
-    - _TopLine: 0.172
+    - _TopLine: 0.205
     m_Colors:
-    - _BaseColor: {r: 3.9805734, g: 0, b: 3.9999998, a: 1}
-    - _BotoomColor: {r: 0, g: 24, b: 2.800003, a: 1}
+    - _BaseColor: {r: 0, g: 3.4666665, b: 3.9999993, a: 1}
+    - _BotoomColor: {r: 0, g: 48, b: 5.600006, a: 1}
     - _TopColor: {r: 9.43837, g: 0, b: 31.66819, a: 0}
   m_BuildTextureStacks: []
 --- !u!114 &7015572641931620699
