@@ -185,6 +185,26 @@ namespace InvaderInsider.UI
         {
             base.Show();
             LoadSettings(); // 패널이 열릴 때마다 최신 설정 로드
+            
+            // GameManager 상태를 Settings로 변경
+            var gameManager = InvaderInsider.Managers.GameManager.Instance;
+            if (gameManager != null)
+            {
+                gameManager.SetGameState(InvaderInsider.Managers.GameState.Settings);
+            }
+        }
+
+        public override void Hide()
+        {
+            base.Hide();
+            
+            // GameManager 상태를 Playing으로 복구
+            var gameManager = InvaderInsider.Managers.GameManager.Instance;
+            if (gameManager != null)
+            {
+                gameManager.SetGameState(InvaderInsider.Managers.GameState.Playing);
+                Time.timeScale = 1f; // 게임 재개
+            }
         }
     }
 } 

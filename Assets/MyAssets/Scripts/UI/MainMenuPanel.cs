@@ -3,6 +3,8 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using InvaderInsider.Data;
 using InvaderInsider.Managers;
+using TMPro;
+using System.Collections;
 
 namespace InvaderInsider.UI
 {
@@ -32,10 +34,22 @@ namespace InvaderInsider.UI
         public Text versionText;
 
         private SaveDataManager saveDataManager;
+        private bool isLoadingScene = false; // 씬 로딩 중복 방지 플래그
 
         private void Start()
         {
             Initialize();
+            
+            // SaveDataManager가 아직 없다면 코루틴으로 재시도
+            if (saveDataManager == null)
+            {
+                StartCoroutine(TryGetSaveDataManager());
+            }
+        }
+
+        private void OnEnable()
+        {
+            UpdateContinueButton();
         }
 
         protected override void Initialize()
@@ -45,6 +59,44 @@ namespace InvaderInsider.UI
             SetupButtons();
             UpdateContinueButton();
             UpdateVersionInfo();
+        }
+
+        private System.Collections.IEnumerator TryGetSaveDataManager()
+        {
+            int attempts = 0;
+            const int maxAttempts = 10;
+            
+            while (saveDataManager == null && attempts < maxAttempts)
+            {
+                yield return new WaitForSeconds(0.1f); // 0.1초 대기
+                saveDataManager = SaveDataManager.Instance;
+                attempts++;
+                
+                #if UNITY_EDITOR
+                if (saveDataManager == null)
+                {
+                    Debug.Log(LOG_PREFIX + $"SaveDataManager 찾기 시도 {attempts}/{maxAttempts}");
+                }
+                #endif
+            }
+            
+            if (saveDataManager != null)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "SaveDataManager 연결 성공");
+                #endif
+                UpdateContinueButton();
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + "SaveDataManager 연결 실패 - Continue 버튼이 비활성화됩니다");
+                #endif
+                if (continueButton != null)
+                {
+                    continueButton.interactable = false;
+                }
+            }
         }
 
         private void SetupButtons()
@@ -74,7 +126,17 @@ namespace InvaderInsider.UI
             {
                 bool hasSaveData = saveDataManager.HasSaveData();
                 continueButton.interactable = hasSaveData;
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"Continue 버튼 업데이트: HasSaveData = {hasSaveData}, 버튼 활성화 = {continueButton.interactable}");
+                #endif
             }
+            #if UNITY_EDITOR
+            else
+            {
+                Debug.LogWarning(LOG_PREFIX + $"Continue 버튼 업데이트 실패 - continueButton: {continueButton != null}, saveDataManager: {saveDataManager != null}");
+            }
+            #endif
         }
 
         private void UpdateVersionInfo()
@@ -132,6 +194,12 @@ namespace InvaderInsider.UI
 
         private void ContinueGame()
         {
+            // SaveDataManager가 없다면 즉시 다시 시도
+            if (saveDataManager == null)
+            {
+                saveDataManager = SaveDataManager.Instance;
+            }
+            
             if (saveDataManager != null && saveDataManager.HasSaveData())
             {
                 saveDataManager.LoadGameData();
@@ -143,20 +211,30 @@ namespace InvaderInsider.UI
                     Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], nextStage));
                     #endif
                 }
+                
+                LoadGameScene();
             }
             else
             {
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
+                if (saveDataManager == null)
+                {
+                    Debug.LogWarning(LOG_PREFIX + "SaveDataManager를 찾을 수 없습니다.");
+                }
+                else
+                {
+                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
+                }
                 #endif
                 return;
             }
-            
-            LoadGameScene();
         }
 
         private void LoadGameScene()
         {
+            if (isLoadingScene) return;
+            isLoadingScene = true;
+
             Time.timeScale = 1f;
             
             #if UNITY_EDITOR
@@ -170,14 +248,31 @@ namespace InvaderInsider.UI
                 uiManager.Cleanup();
             }
 
-            // 게임 매니저 초기화
+            // 비동기 씬 로딩 시작
+            StartCoroutine(LoadGameSceneAsync());
+        }
+
+        private IEnumerator LoadGameSceneAsync()
+        {
+            // 비동기로 Game 씬 로드
+            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("Game");
+            
+            // 씬 로딩 완료까지 대기
+            while (!asyncLoad.isDone)
+            {
+                yield return null;
+            }
+
+            // 씬 로딩 완료 후 게임 매니저 초기화
+            yield return new WaitForEndOfFrame(); // 한 프레임 더 대기하여 모든 오브젝트가 완전히 초기화되도록 함
+            
             var gameManager = FindObjectOfType<GameManager>();
             if (gameManager != null)
             {
                 gameManager.InitializeGame();
             }
-            
-            SceneManager.LoadScene("Game");
+
+            isLoadingScene = false;
         }
 
         private void ExitGame()

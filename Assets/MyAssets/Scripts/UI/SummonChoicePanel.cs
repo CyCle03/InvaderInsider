@@ -28,9 +28,11 @@ namespace InvaderInsider.UI
 
         protected override void Initialize()
         {
-            if (cardContainer == null || cardButtonPrefab == null || closeButton == null)
+            if (cardContainer == null || closeButton == null)
             {
+                #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + "필수 UI 요소가 할당되지 않았습니다.");
+                #endif
                 return;
             }
 
@@ -42,12 +44,31 @@ namespace InvaderInsider.UI
         {
             if (cards == null || cards.Count == 0)
             {
+                #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+                #endif
                 return;
             }
 
             availableCards = cards;
+            #if UNITY_EDITOR
             Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[1], cards.Count));
+            #endif
+
+            // cardButtons 리스트가 null인 경우 초기화
+            if (cardButtons == null)
+            {
+                cardButtons = new List<Button>();
+            }
+
+            // cardContainer null 체크 추가
+            if (cardContainer == null)
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "cardContainer가 할당되지 않았습니다.");
+                #endif
+                return;
+            }
 
             // 기존 카드 버튼 제거
             foreach (var button in cardButtons)
@@ -62,6 +83,14 @@ namespace InvaderInsider.UI
             // 새로운 카드 버튼 생성
             foreach (var card in cards)
             {
+                if (cardButtonPrefab == null)
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogError(LOG_PREFIX + "cardButtonPrefab이 할당되지 않았습니다.");
+                    #endif
+                    continue;
+                }
+
                 GameObject buttonObj = Instantiate(cardButtonPrefab, cardContainer);
                 Button cardButton = buttonObj.GetComponent<Button>();
                 if (cardButton != null)
@@ -79,7 +108,9 @@ namespace InvaderInsider.UI
 
         private void HandleCardSelect(CardDBObject selectedCard)
         {
+            #if UNITY_EDITOR
             Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], selectedCard.cardName));
+            #endif
             if (CardManager.Instance != null)
             {
                 CardManager.Instance.OnCardChoiceSelected(selectedCard);
@@ -89,7 +120,9 @@ namespace InvaderInsider.UI
 
         private void HandleCloseClick()
         {
+            #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + LOG_MESSAGES[3]);
+            #endif
             if (CardManager.Instance != null)
             {
                 CardManager.Instance.OnCardChoiceSelected(null);
@@ -103,11 +136,14 @@ namespace InvaderInsider.UI
                 closeButton.onClick.RemoveListener(HandleCloseClick);
             }
 
-            foreach (var button in cardButtons)
+            if (cardButtons != null)
             {
-                if (button != null)
+                foreach (var button in cardButtons)
                 {
-                    button.onClick.RemoveAllListeners();
+                    if (button != null)
+                    {
+                        button.onClick.RemoveAllListeners();
+                    }
                 }
             }
         }

@@ -105,9 +105,13 @@ namespace InvaderInsider.Cards
                     cardDatabase = Resources.Load<CardDatabase>("ScriptableObjects/CardSystem/CardDatabase");
                     if (cardDatabase == null)
                     {
+                        #if UNITY_EDITOR
                         Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+                        #endif
                         cardDatabase = ScriptableObject.CreateInstance<CardDatabase>();
+                        #if UNITY_EDITOR
                         Debug.LogWarning(LOG_PREFIX + "빈 CardDatabase를 생성했습니다. Inspector에서 올바른 CardDatabase를 할당하세요.");
+                        #endif
                     }
                 }
             }
@@ -141,13 +145,17 @@ namespace InvaderInsider.Cards
             {
                 summonCount = SaveDataManager.Instance.CurrentSaveData.progressData.summonCount;
                 currentSummonCost = initialSummonCost + summonCount * summonCostIncrease;
+                #if UNITY_EDITOR
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[1], summonCount, currentSummonCost));
+                #endif
             }
             else
             {
                 summonCount = 0;
                 currentSummonCost = initialSummonCost;
+                #if UNITY_EDITOR
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], summonCount, currentSummonCost));
+                #endif
             }
         }
 
@@ -157,11 +165,15 @@ namespace InvaderInsider.Cards
             {
                 SaveDataManager.Instance.CurrentSaveData.progressData.summonCount = summonCount;
                 SaveDataManager.Instance.SaveGameData();
+                #if UNITY_EDITOR
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], summonCount));
+                #endif
             }
             else
             {
+                #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[4]);
+                #endif
             }
         }
 
@@ -169,25 +181,32 @@ namespace InvaderInsider.Cards
         {
             if (SaveDataManager.Instance == null)
             {
+                #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[5]);
+                #endif
                 return;
             }
 
             if (SaveDataManager.Instance.CurrentSaveData.progressData.currentEData >= currentSummonCost)
             {
-                SaveDataManager.Instance.UpdateEData(-currentSummonCost);
+                // 소환 시에는 저장하지 않고 eData만 감소 (스테이지 클리어 시 저장됨)
+                SaveDataManager.Instance.UpdateEDataWithoutSave(-currentSummonCost);
                 summonCount++;
                 currentSummonCost = initialSummonCost + summonCount * summonCostIncrease;
+                #if UNITY_EDITOR
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[7], summonCount, currentSummonCost));
+                #endif
 
                 List<CardDBObject> selectedCards = SelectRandomCards(3);
                 DisplaySummonChoices(selectedCards);
             }
             else
             {
+                #if UNITY_EDITOR
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[6], 
                     SaveDataManager.Instance.CurrentSaveData.progressData.currentEData, 
                     currentSummonCost));
+                #endif
             }
         }
 
@@ -226,7 +245,9 @@ namespace InvaderInsider.Cards
         {
             if (summonChoicePanelPrefab == null)
             {
+                #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[8]);
+                #endif
                 return;
             }
 
@@ -250,6 +271,13 @@ namespace InvaderInsider.Cards
                 Destroy(currentSummonChoicePanel.gameObject);
                 currentSummonChoicePanel = null;
             }
+            
+            // 선택된 카드를 이벤트로 전달
+            OnCardDrawn?.Invoke(selectedCard);
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + $"플레이어가 카드를 선택했습니다: {selectedCard.cardName}");
+            #endif
+            
             SaveSummonData();
         }
         #endregion
@@ -259,7 +287,9 @@ namespace InvaderInsider.Cards
         {
             if (!GameManager.Instance.TrySpendEData(singleDrawCost))
             {
+                #if UNITY_EDITOR
                 Debug.Log(LOG_PREFIX + "Not enough eData to draw a card!");
+                #endif
                 return false;
             }
 
@@ -272,7 +302,9 @@ namespace InvaderInsider.Cards
         {
             if (!GameManager.Instance.TrySpendEData(multiDrawCost))
             {
+                #if UNITY_EDITOR
                 Debug.Log(LOG_PREFIX + "Not enough eData to draw multiple cards!");
+                #endif
                 return false;
             }
 
@@ -305,7 +337,9 @@ namespace InvaderInsider.Cards
             var cardsOfRarity = cardDatabase.cards.Where(card => card.rarity == selectedRarity).ToList();
             if (cardsOfRarity.Count == 0)
             {
+                #if UNITY_EDITOR
                 Debug.LogWarning(LOG_PREFIX + $"No cards found for rarity: {selectedRarity}");
+                #endif
                 return cardDatabase.cards[0];
             }
 

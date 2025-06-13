@@ -610,7 +610,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  healthText: {fileID: 0}
+  healthText: {fileID: 636028777}
 --- !u!1 &101416146
 GameObject:
   m_ObjectHideFlags: 0
@@ -3676,10 +3676,10 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 79394966}
+  - {fileID: 1343210168}
   - {fileID: 157071685}
   - {fileID: 1542351013}
   - {fileID: 857696269}
-  - {fileID: 1343210168}
   - {fileID: 1886596326}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

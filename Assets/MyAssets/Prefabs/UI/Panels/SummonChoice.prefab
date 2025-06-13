@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1767453550690673225}
   - component: {fileID: 5316603153913420956}
   - component: {fileID: 4761364124554942608}
+  - component: {fileID: 2400702059034366708}
   m_Layer: 5
   m_Name: SummonChoice
   m_TagString: Untagged
@@ -52,18 +53,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe7b19b3d8294ac42b05c99a49af819c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  choiceButtons:
-  - {fileID: 717436546635962412}
-  - {fileID: 1883559978345196130}
-  - {fileID: 3256131305052380534}
-  cardImages:
-  - {fileID: 4941174784741828537}
-  - {fileID: 8427459044474845348}
-  - {fileID: 8638928454967993562}
-  cardNames:
-  - {fileID: 249184590265243734}
-  - {fileID: 4895492647521321796}
-  - {fileID: 1244068402958169778}
+  canvasGroup: {fileID: 2400702059034366708}
+  fadeTime: 0.3
+  panelName: SummonChoice
+  cardContainer: {fileID: 0}
+  cardButtonPrefab: {fileID: 0}
+  closeButton: {fileID: 0}
 --- !u!114 &4761364124554942608
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -90,6 +85,18 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!225 &2400702059034366708
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1490974925397459410}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1583003446401162848
 GameObject:
   m_ObjectHideFlags: 0

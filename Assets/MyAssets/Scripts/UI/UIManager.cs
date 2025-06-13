@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 namespace InvaderInsider.UI
 {
@@ -25,6 +26,11 @@ namespace InvaderInsider.UI
         {
             get
             {
+                // 에디터에서 플레이 모드가 아닐 때는 인스턴스 생성하지 않음
+                #if UNITY_EDITOR
+                if (!UnityEngine.Application.isPlaying) return null;
+                #endif
+                
                 lock (_lock)
                 {
                     if (instance == null)
@@ -52,19 +58,23 @@ namespace InvaderInsider.UI
 
         // 이벤트 선언 추가
         public event Action<string> OnPanelShown;
-        public event Action<string> OnPanelHidden;
 
         private readonly string[] menuScenes = { "Main" }; // 메인 메뉴 씬
         private readonly string[] gameScenes = { "Game" }; // 게임 씬
 
         private void Awake()
         {
+            // 에디터 모드에서는 초기화하지 않음
+            #if UNITY_EDITOR
+            if (!Application.isPlaying) return;
+            #endif
+            
             if (instance == null)
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
-                UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
-                UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+                SceneManager.sceneLoaded += OnSceneLoaded;
+                SceneManager.sceneUnloaded += OnSceneUnloaded;
             }
             else if (instance != this)
             {
@@ -80,19 +90,21 @@ namespace InvaderInsider.UI
 
         public void RegisterPanel(string panelName, BasePanel panel)
         {
-            if (string.IsNullOrEmpty(panelName) || panel == null)
-            {
-                return;
-            }
+            if (string.IsNullOrEmpty(panelName) || panel == null) return;
 
             if (panels.ContainsKey(panelName))
             {
+                #if UNITY_EDITOR
                 Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[0], panelName));
-                panels[panelName] = panel;
+                #endif
+                return;
             }
-            else
+
+            panels[panelName] = panel;
+            
+            if (!panel.gameObject.activeSelf)
             {
-                panels.Add(panelName, panel);
+                panel.gameObject.SetActive(true);
             }
         }
 
@@ -105,16 +117,41 @@ namespace InvaderInsider.UI
                 if (currentPanel != null && currentPanel != panel)
                 {
                     currentPanel.Hide();
-                    OnPanelHidden?.Invoke(currentPanel.name);
+                }
+
+                if (!panel.gameObject.activeSelf)
+                {
+                    panel.gameObject.SetActive(true);
                 }
 
                 panel.Show();
                 currentPanel = panel;
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+                string registeredPanels = string.Join(", ", panels.Keys);
+                Debug.LogError($"{LOG_PREFIX}Panel '{panelName}' not found for showing. 현재 씬: {currentSceneName}, 등록된 패널: [{registeredPanels}]");
+                #endif
+            }
+        }
+
+        // 기존 패널을 숨기지 않고 새 패널을 표시하는 메서드
+        public void ShowPanelConcurrent(string panelName)
+        {
+            if (string.IsNullOrEmpty(panelName)) return;
+
+            if (panels.TryGetValue(panelName, out BasePanel panel))
+            {
+                panel.Show();
                 OnPanelShown?.Invoke(panelName);
             }
             else
             {
+                #if UNITY_EDITOR
                 Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], panelName));
+                #endif
             }
         }
 
@@ -129,20 +166,33 @@ namespace InvaderInsider.UI
 
         public void HidePanel(string panelName)
         {
+            if (string.IsNullOrEmpty(panelName)) return;
+
             if (panels.TryGetValue(panelName, out BasePanel panel))
             {
                 panel.Hide();
-                OnPanelHidden?.Invoke(panelName);
+                
                 if (currentPanel == panel)
                 {
                     currentPanel = null;
                 }
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], panelName));
+                #endif
             }
         }
 
         public bool IsPanelActive(string panelName)
         {
             return panels.TryGetValue(panelName, out BasePanel panel) && panel.gameObject.activeInHierarchy;
+        }
+
+        public bool IsPanelRegistered(string panelName)
+        {
+            return panels.ContainsKey(panelName);
         }
 
         public bool IsCurrentPanel(string panelName)
@@ -173,30 +223,60 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
-            if (instance == this)
-            {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], gameObject.name));
-                UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
-                UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
-                instance = null;
-            }
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+            #if UNITY_EDITOR
+            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], gameObject.name));
+            #endif
         }
 
-        private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             string sceneName = scene.name;
+            #if UNITY_EDITOR
             Debug.Log($"{LOG_PREFIX}Scene loaded: {sceneName}");
+            #endif
         }
 
-        private void OnSceneUnloaded(UnityEngine.SceneManagement.Scene scene)
+        private void OnSceneUnloaded(Scene scene)
         {
             string sceneName = scene.name;
+            #if UNITY_EDITOR
             Debug.Log($"{LOG_PREFIX}Scene unloaded: {sceneName}");
+            #endif
 
+            // 씬별로 적절한 패널 정리
             if (menuScenes.Any(s => s == sceneName))
             {
-                // 메뉴 씬이 언로드될 때 패널 목록 초기화
-                panels.Clear();
+                // 메뉴 씬이 언로드될 때 메뉴 관련 패널만 정리
+                #if UNITY_EDITOR
+                Debug.Log($"{LOG_PREFIX}메뉴 씬 언로드 - 메뉴 관련 패널 정리");
+                #endif
+                
+                var menuPanels = new List<string> { "MainMenu", "Settings" };
+                foreach (var panelName in menuPanels)
+                {
+                    if (panels.ContainsKey(panelName))
+                    {
+                        panels.Remove(panelName);
+                    }
+                }
+            }
+            else if (gameScenes.Any(s => s == sceneName))
+            {
+                // 게임 씬이 언로드될 때 게임 관련 패널만 정리
+                #if UNITY_EDITOR
+                Debug.Log($"{LOG_PREFIX}게임 씬 언로드 - 게임 관련 패널 정리");
+                #endif
+                
+                var gamePanels = new List<string> { "InGame", "Pause", "Deck", "SummonChoice" };
+                foreach (var panelName in gamePanels)
+                {
+                    if (panels.ContainsKey(panelName))
+                    {
+                        panels.Remove(panelName);
+                    }
+                }
             }
         }
 
@@ -229,7 +309,6 @@ namespace InvaderInsider.UI
             
             // 이벤트 정리
             OnPanelShown = null;
-            OnPanelHidden = null;
         }
     }
 } 

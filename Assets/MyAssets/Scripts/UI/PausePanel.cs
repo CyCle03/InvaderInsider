@@ -43,7 +43,7 @@ namespace InvaderInsider.UI
         public override void Hide()
         {
             base.Hide();
-            ResumeGame();
+            // ResumeGame() 호출 제거 - GameManager에서 직접 처리하여 순환 참조 방지
         }
 
         private void PauseGame()
@@ -51,7 +51,16 @@ namespace InvaderInsider.UI
             wasPaused = Time.timeScale == 0f;
             if (!wasPaused)
             {
-                Time.timeScale = 0f;
+                if (GameManager.Instance != null)
+                {
+                    // GameManager에서 일시정지 처리하지만 패널 표시는 이미 되어있음
+                    Time.timeScale = 0f;
+                    GameManager.Instance.SetGameState(InvaderInsider.Managers.GameState.Paused);
+                }
+                else
+                {
+                    Time.timeScale = 0f;
+                }
             }
         }
 
@@ -59,25 +68,60 @@ namespace InvaderInsider.UI
         {
             if (!wasPaused)
             {
+                // 순환 참조 방지를 위해 GameManager.ResumeGame() 호출하지 않음
                 Time.timeScale = 1f;
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.SetGameState(InvaderInsider.Managers.GameState.Playing);
+                }
             }
         }
 
         private void OnResumeClicked()
         {
-            Hide();
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "Resume 버튼 클릭됨");
+            #endif
+            
+            // 순환 참조 방지를 위해 먼저 패널 숨기고 게임 재시작
+            gameObject.SetActive(false);
+            
+            if (GameManager.Instance != null)
+            {
+                Time.timeScale = 1f;
+                GameManager.Instance.SetGameState(InvaderInsider.Managers.GameState.Playing);
+            }
+            else
+            {
+                Time.timeScale = 1f;
+            }
         }
 
         private void OnSettingsClicked()
         {
-            // 설정 패널 표시 로직
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "설정 버튼 클릭됨");
+            #endif
+            
+            // Pause 패널 숨기고 Settings 패널 표시
+            Hide();
             UIManager.Instance?.ShowPanel("Settings");
         }
 
         private void OnMainMenuClicked()
         {
-            ResumeGame();
-            UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "메인 메뉴로 이동");
+            #endif
+            
+            // 순환 참조 방지를 위해 직접 시간 스케일 복구
+            Time.timeScale = 1f;
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.SetGameState(InvaderInsider.Managers.GameState.MainMenu);
+            }
+            
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
         }
 
         private void OnDestroy()

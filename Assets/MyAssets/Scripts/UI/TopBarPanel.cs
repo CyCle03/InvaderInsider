@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using InvaderInsider.Managers;
+using InvaderInsider.Data;
 
 namespace InvaderInsider.UI
 {
@@ -21,6 +22,51 @@ namespace InvaderInsider.UI
 
         private int currentEData;
         private UIManager uiManager;
+
+        private void Start()
+        {
+            #if UNITY_EDITOR
+            Debug.Log($"[TopBarPanel] Start - stageText: {(stageText != null ? "할당됨" : "없음")}, " +
+                     $"waveText: {(waveText != null ? "할당됨" : "없음")}, " +
+                     $"lifeText: {(lifeText != null ? "할당됨" : "없음")}, " +
+                     $"eDataText: {(eDataText != null ? "할당됨" : "없음")}, " +
+                     $"pauseButton: {(pauseButton != null ? "할당됨" : "없음")}");
+            #endif
+            
+            if (stageText == null || waveText == null || lifeText == null || eDataText == null || pauseButton == null)
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_MESSAGES[0]);
+                #endif
+                return;
+            }
+
+            InitializeUI();
+        }
+
+        private void InitializeUI()
+        {
+            // 기본 텍스트 설정
+            if (stageText != null)
+            {
+                stageText.text = "Stage 1/10";
+            }
+            
+            if (waveText != null)
+            {
+                waveText.text = "0/20"; // 소환된 몬스터/최대 몬스터
+            }
+            
+            if (lifeText != null)
+            {
+                lifeText.text = "100%";
+            }
+            
+            if (eDataText != null)
+            {
+                eDataText.text = "0";
+            }
+        }
 
         protected override void Initialize()
         {
@@ -47,10 +93,23 @@ namespace InvaderInsider.UI
 
         private void UpdateUI()
         {
-            // 초기값 설정
-            currentEData = 100;
+            // SaveDataManager에서 실제 eData 값 가져오기
+            var saveDataManager = SaveDataManager.Instance;
+            currentEData = saveDataManager != null ? saveDataManager.GetCurrentEData() : 0;
             UpdateEData(currentEData);
-            UpdateStageInfo(1, 1);
+            
+            // 초기 스테이지 정보 표시 (기본값)
+            if (stageText != null)
+            {
+                stageText.text = "Stage 1/1";
+            }
+            
+            if (waveText != null)
+            {
+                waveText.text = "Wave 0/0";  // 몬스터 소환 수/최대 몬스터 수
+            }
+            
+            Debug.Log("[TopBarPanel] UI 초기화 완료 - Stage와 Wave 기본값 설정");
         }
 
         private void HandlePauseClick()
@@ -66,7 +125,7 @@ namespace InvaderInsider.UI
             currentEData = amount;
             if (eDataText != null)
             {
-                eDataText.text = amount.ToString();
+                eDataText.text = $"eData: {amount}";
             }
         }
 
@@ -75,7 +134,7 @@ namespace InvaderInsider.UI
             currentEData += amount;
             if (eDataText != null)
             {
-                eDataText.text = currentEData.ToString();
+                eDataText.text = $"eData: {currentEData}";
             }
         }
 
@@ -89,6 +148,27 @@ namespace InvaderInsider.UI
             if (waveText != null)
             {
                 waveText.text = $"Wave {wave}";
+            }
+        }
+
+        public void UpdateStageInfo(int currentStage, int totalStages, int spawnedMonsters, int maxMonsters)
+        {
+            if (stageText != null)
+            {
+                stageText.text = $"Stage {currentStage}/{totalStages}";
+            }
+            
+            if (waveText != null)
+            {
+                waveText.text = $"{spawnedMonsters}/{maxMonsters}";
+            }
+        }
+
+        public void UpdateHealth(float currentHealth, float maxHealth)
+        {
+            if (lifeText != null)
+            {
+                lifeText.text = $"HP: {currentHealth:F0}/{maxHealth:F0}";
             }
         }
 
@@ -110,6 +190,22 @@ namespace InvaderInsider.UI
                 return true;
             }
             return false;
+        }
+
+        protected override void OnShow()
+        {
+            base.OnShow();
+            
+            var saveDataManager = SaveDataManager.Instance;
+            if (saveDataManager != null)
+            {
+                UpdateEData(saveDataManager.GetCurrentEData());
+            }
+        }
+
+        protected override void OnHide()
+        {
+            base.OnHide();
         }
     }
 } 

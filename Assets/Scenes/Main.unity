@@ -2289,7 +2289,7 @@ GameObject:
   - component: {fileID: 1768066367}
   - component: {fileID: 1768066366}
   m_Layer: 0
-  m_Name: UIManger
+  m_Name: UIManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2363,7 +2363,7 @@ MonoBehaviour:
   - 0.02
   initialSummonCost: 10
   summonCostIncrease: 1
-  summonChoicePanelPrefab: {fileID: 0}
+  summonChoicePanelPrefab: {fileID: 1490974925397459410, guid: ad331030cfcf0b44e85a3fb2601ed979, type: 3}
   OnCardDrawn:
     m_PersistentCalls:
       m_Calls: []

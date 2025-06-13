@@ -5,6 +5,7 @@ using InvaderInsider.Data;
 using InvaderInsider.UI;
 using InvaderInsider.Managers;
 using System.Threading.Tasks;
+using System;
 
 namespace InvaderInsider.Managers
 {
@@ -13,9 +14,14 @@ namespace InvaderInsider.Managers
         private const string LOG_PREFIX = "[Stage] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
-            "Stage data is null - initialization failed",
-            "Invalid stage index: {0}",
-            "Invalid enemy spawn - Stage: {0}, Count: {1}"
+            "Invalid stage index: {0}",  // 0
+            "스테이지 {0} 준비 중... (총 적: {1})", // 1  
+            "2개의 웨이포인트를 자동으로 찾았습니다.", // 2
+            "웨이포인트를 찾을 수 없습니다. 수동으로 설정해주세요.", // 3
+            "스테이지 {0} 시작!", // 4
+            "스테이지 {0} 클리어! (적 처치: {1}/{2})", // 5
+            "적 프리팹을 찾을 수 없습니다. 스테이지: {0}", // 6
+            "웨이포인트 수동 재설정 시작" // 7
         };
 
         private static StageManager instance;
@@ -45,7 +51,9 @@ namespace InvaderInsider.Managers
                     // 인스턴스가 있지만 초기화되지 않은 경우 강제 초기화
                     if (instance != null && !isInitialized)
                     {
+                        #if UNITY_EDITOR && ENABLE_VERBOSE_LOGS
                         Debug.Log(LOG_PREFIX + "Instance exists but not initialized in getter, forcing initialization");
+                        #endif
                         instance.PerformInitialization();
                     }
                     
@@ -92,6 +100,7 @@ namespace InvaderInsider.Managers
         private StageState currentState;
         private int clearedStageIndex;
         private BottomBarPanel bottomBarPanel;
+        private InvaderInsider.UI.TopBarPanel topBarPanel;
         private readonly List<Tower> activeTowers = new List<Tower>();
         private UIManager uiManager;
         private GameManager gameManager;
@@ -152,7 +161,11 @@ namespace InvaderInsider.Managers
         private void InitializeComponents()
         {
             bottomBarPanel = FindObjectOfType<BottomBarPanel>();
-            // BottomBarPanel은 선택사항이므로 경고 제거
+            topBarPanel = FindObjectOfType<InvaderInsider.UI.TopBarPanel>();
+            
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + $"컴포넌트 초기화 - TopBarPanel: {(topBarPanel != null ? "찾음" : "없음")}, BottomBarPanel: {(bottomBarPanel != null ? "찾음" : "없음")}");
+            #endif
 
             uiManager = UIManager.Instance;
             gameManager = GameManager.Instance;
@@ -170,32 +183,59 @@ namespace InvaderInsider.Managers
 
         private void AutoFindWaypoints()
         {
-            // "Waypoint" 태그나 "EnemyPath" 태그를 가진 오브젝트들을 찾아서 자동으로 웨이포인트 설정
-            GameObject[] waypoints = GameObject.FindGameObjectsWithTag("Waypoint");
+            wayPointsList.Clear();
+            
+            // 1. "Waypoint" 태그를 가진 오브젝트들을 찾기
+            GameObject[] waypoints = new GameObject[0];
+            
+            try
+            {
+                waypoints = GameObject.FindGameObjectsWithTag("Waypoint");
+            }
+            catch (UnityException)
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + "Waypoint 태그가 정의되지 않았습니다.");
+                #endif
+            }
+            
+            // 2. 태그로 찾지 못한 경우 이름으로 찾기 시도
             if (waypoints.Length == 0)
             {
-                waypoints = GameObject.FindGameObjectsWithTag("EnemyPath");
+                List<GameObject> foundWaypoints = new List<GameObject>();
+                GameObject[] allObjects = FindObjectsOfType<GameObject>();
+                
+                foreach (GameObject obj in allObjects)
+                {
+                    string objName = obj.name.ToLower();
+                    if (objName.Contains("waypoint") || objName.Contains("way") || 
+                        objName.Contains("path") || objName.Contains("point"))
+                    {
+                        foundWaypoints.Add(obj);
+                    }
+                }
+                
+                waypoints = foundWaypoints.ToArray();
             }
-
+            
+            // 3. 찾은 웨이포인트들을 정렬하여 추가
             if (waypoints.Length > 0)
             {
-                wayPointsList.Clear();
-                // 이름순으로 정렬하여 올바른 순서로 웨이포인트 설정
-                System.Array.Sort(waypoints, (a, b) => a.name.CompareTo(b.name));
+                Array.Sort(waypoints, (a, b) => string.Compare(a.name, b.name, StringComparison.Ordinal));
                 
-                foreach (GameObject wp in waypoints)
+                foreach (GameObject waypoint in waypoints)
                 {
-                    wayPointsList.Add(wp.transform);
+                    wayPointsList.Add(waypoint.transform);
                 }
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"자동으로 {wayPointsList.Count}개의 웨이포인트를 찾았습니다.");
+                Debug.Log(LOG_PREFIX + LOG_MESSAGES[2]);
                 #endif
             }
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "웨이포인트를 찾을 수 없습니다. 'Waypoint' 또는 'EnemyPath' 태그를 가진 오브젝트가 필요합니다.");
+                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[3]);
                 #endif
             }
         }
@@ -204,35 +244,20 @@ namespace InvaderInsider.Managers
         {
             if (!isInitialized)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
-                #endif
-                
-                // 강제로 초기화 시도
-                if (stageDataObject != null)
-                {
-                    stageData = stageDataObject;
-                    InitializeComponents();
-                    isInitialized = true;
-                }
-                return;
+                PerformInitialization();
             }
-            
-            if (stageData == null)
+
+            // 웨이포인트가 누락된 경우 자동 재설정 시도
+            if (wayPointsList == null || wayPointsList.Count == 0)
             {
                 #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+                Debug.Log(LOG_PREFIX + "웨이포인트가 누락되어 재초기화를 시도합니다.");
                 #endif
+                AutoFindWaypoints();
                 
-                // stageDataObject가 있는데 stageData가 null인 경우 다시 할당
-                if (stageDataObject != null)
+                if (wayPointsList == null || wayPointsList.Count == 0)
                 {
-                    stageData = stageDataObject;
-                }
-                
-                if (stageData == null)
-                {
-                    return;
+                    Debug.LogWarning(LOG_PREFIX + "웨이포인트를 찾을 수 없습니다. 게임 오브젝트에 'Waypoint' 또는 'EnemyPath' 태그를 설정하세요.");
                 }
             }
         }
@@ -254,7 +279,7 @@ namespace InvaderInsider.Managers
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], stageIndex));
+                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[0], stageIndex));
                 #endif
                 StartStageInternal(0);
             }
@@ -262,28 +287,39 @@ namespace InvaderInsider.Managers
 
         private void StartStageInternal(int startStageIndex)
         {
-            if (stageCoroutine != null)
+            if (!isInitialized)
             {
-                StopCoroutine(stageCoroutine);
-                stageCoroutine = null;
-            }
-
-            CleanupActiveEnemies();
-            ResetStageState(startStageIndex);
-            
-            if (stageData == null)
-            {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
-                #endif
+                Debug.LogError(LOG_PREFIX + "StageManager가 초기화되지 않았습니다.");
                 return;
             }
 
-            stageWave = stageData.GetStageWaveCount(stageNum);
-            currentState = StageState.Ready;
-            
-            stageCoroutine = StartCoroutine(StageLoopCoroutine());
+            // 게임 상태를 Loading으로 변경
+            if (gameManager != null)
+            {
+                gameManager.SetGameState(GameState.Loading);
+            }
+
+            // 스테이지 데이터에서 실제 wave 수 가져오기
+            if (stageData != null)
+            {
+                stageWave = stageData.GetStageWaveCount(startStageIndex);
+            }
+            else
+            {
+                stageWave = 20; // 기본값
+            }
+
+            ResetStageState(startStageIndex);
+            CleanupActiveEnemies();
             ResetAllTowersRotation();
+
+            currentState = StageState.Ready;
+
+            if (stageCoroutine != null)
+            {
+                StopCoroutine(stageCoroutine);
+            }
+            stageCoroutine = StartCoroutine(StageLoopCoroutine());
         }
 
         private void ResetStageState(int startStageIndex)
@@ -309,43 +345,68 @@ namespace InvaderInsider.Managers
 
         private IEnumerator StageLoopCoroutine()
         {
-
+            StageState lastState = StageState.Ready;
+            
             while (currentState != StageState.Over && !isQuitting)
             {
-                yield return HandleStageState();
+                // 상태가 변경되었는지 확인
+                if (lastState != currentState)
+                {
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + $"스테이지 상태 변경: {lastState} -> {currentState}");
+                    #endif
+                    lastState = currentState;
+                }
+                
+                switch (currentState)
+                {
+                    case StageState.Ready:
+                        yield return StartCoroutine(HandleReadyState());
+                        break;
+                    case StageState.Run:
+                        yield return StartCoroutine(HandleRunState());
+                        break;
+                    case StageState.Wait:
+                        yield return StartCoroutine(HandleWaitState());
+                        break;
+                    case StageState.End:
+                        yield return StartCoroutine(HandleEndState());
+                        break;
+                    default:
+                        yield return null;
+                        break;
+                }
+                
+                // 프레임당 한 번씩 체크
+                yield return null;
             }
-
-            // 스테이지 루프 완료
-        }
-
-        private IEnumerator HandleStageState()
-        {
-            switch (currentState)
-            {
-                case StageState.Ready:
-                    yield return HandleReadyState();
-                    break;
-
-                case StageState.Run:
-                    yield return HandleRunState();
-                    break;
-
-                case StageState.End:
-                    yield return HandleEndState();
-                    break;
-
-                case StageState.Wait:
-                    yield return HandleWaitState();
-                    break;
-
-                default:
-                    yield return null;
-                    break;
-            }
+            
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "스테이지 상태 핸들러 종료");
+            #endif
         }
 
         private IEnumerator HandleReadyState()
         {
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[1], stageNum + 1, stageWave));
+            #endif
+            
+            // TopBar UI 업데이트 (현재/최대 형식) - 캐시된 참조 사용
+            if (topBarPanel != null)
+            {
+                int totalStages = GetStageCount();
+                int spawnedMonsters = enemyCount; // 현재 소환된 몬스터 수
+                int maxMonsters = stageWave;      // 현재 스테이지의 최대 몬스터 수
+                topBarPanel.UpdateStageInfo(stageNum + 1, totalStages, spawnedMonsters, maxMonsters);
+            }
+            
+            // BottomBar UI 업데이트 (초기 적 수)
+            if (bottomBarPanel != null)
+            {
+                bottomBarPanel.UpdateMonsterCountDisplay(stageWave);
+            }
+            
             if (uiManager != null)
             {
                 uiManager.UpdateStage(stageNum, GetStageCount());
@@ -359,28 +420,38 @@ namespace InvaderInsider.Managers
 
             yield return new WaitForSeconds(STAGE_START_DELAY);
             currentState = StageState.Run;
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[4], stageNum));
+            #endif
         }
 
         private IEnumerator HandleRunState()
         {
-            currentTime += Time.deltaTime;
-
-            if (enemyCount < stageWave && activeEnemyCountValue < MAX_ACTIVE_ENEMIES)
+            while (currentState == StageState.Run && !isQuitting)
             {
-                if (currentTime >= createTime)
+                currentTime += Time.deltaTime;
+
+                if (enemyCount < stageWave && activeEnemyCountValue < MAX_ACTIVE_ENEMIES)
                 {
-                    SpawnEnemy();
-                    currentTime = 0f;
+                    if (currentTime >= createTime)
+                    {
+                        SpawnEnemy();
+                        currentTime = 0f;
+                    }
                 }
-            }
 
-            if (enemyCount >= stageWave && activeEnemyCountValue <= 0)
-            {
-                clearedStageIndex = stageNum;
-                currentState = StageState.End;
-            }
+                if (enemyCount >= stageWave && activeEnemyCountValue <= 0)
+                {
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[5], stageNum, enemyCount, stageWave));
+                    #endif
+                    clearedStageIndex = stageNum;
+                    currentState = StageState.End;
+                    break; // 상태가 변경되었으므로 루프 종료
+                }
 
-            yield return null;
+                yield return null;
+            }
         }
 
         private IEnumerator HandleEndState()
@@ -420,32 +491,65 @@ namespace InvaderInsider.Managers
 
         public void SpawnEnemy()
         {
-            if (wayPointsList == null || wayPointsList.Count == 0)
+            if (!ValidateWaypoints())
             {
                 #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "웨이포인트가 설정되지 않았습니다. 적을 스폰할 수 없습니다.");
+                Debug.LogError(LOG_PREFIX + "웨이포인트 검증에 실패했습니다. 스테이지를 강제 종료합니다.");
                 #endif
+                
+                // 웨이포인트가 없는 경우 적 스폰을 완료로 처리하여 스테이지 종료
+                enemyCount = stageWave;
+                if (activeEnemyCountValue <= 0)
+                {
+                    currentState = StageState.End;
+                }
                 return;
             }
 
-            if (defaultEnemyPrefab == null)
+            // StageData에서 적 프리팹 가져오기
+            GameObject enemyPrefab = null;
+            int currentEnemyIndex = enemyCount;
+            
+            if (stageData != null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[2], stageNum, enemyCount));
-                #endif
+                int waveCount = stageData.GetStageWaveCount(stageNum);
+                if (waveCount > 0)
+                {
+                    int enemyIndex = currentEnemyIndex % waveCount;
+                    enemyPrefab = stageData.GetStageObject(stageNum, enemyIndex);
+                }
+            }
+            
+            if (enemyPrefab == null)
+            {
+                enemyPrefab = defaultEnemyPrefab;
+            }
+            
+            if (enemyPrefab == null)
+            {
+                Debug.LogError(LOG_PREFIX + string.Format(LOG_MESSAGES[6], stageNum));
                 return;
             }
 
             Vector3 spawnPosition = wayPointsList[0].position;
-            GameObject enemy = Instantiate(defaultEnemyPrefab, spawnPosition, Quaternion.identity);
+            GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+            
+            enemyCount++;
             
             EnemyObject enemyObject = enemy.GetComponent<EnemyObject>();
             if (enemyObject != null)
             {
-                enemyObject.SetupEnemy(stageNum, enemyCount);
+                enemyObject.SetupEnemy(stageNum, currentEnemyIndex);
                 activeEnemies.Add(enemyObject);
                 IncrementEnemyCount();
             }
+            else
+            {
+                IncrementEnemyCount();
+            }
+            
+            // UI 업데이트는 GameManager에서 담당하므로 여기서는 제거
+            // TopBar와 BottomBar UI 업데이트는 GameManager.UpdateUIOnChange()에서 처리됨
         }
 
         public int GetStageCount()
@@ -471,9 +575,14 @@ namespace InvaderInsider.Managers
             if (!isInitialized) return;
 
             DecreaseActiveEnemyCount();
+            
+            // UI 업데이트는 GameManager에서 담당하므로 여기서는 제거
+            // BottomBar UI 업데이트는 GameManager.UpdateUIOnChange()에서 처리됨
+            
+            // 적을 잡을 때는 저장하지 않고 eData만 업데이트
             if (saveDataManager != null)
             {
-                saveDataManager.UpdateEData(eDataAmount);
+                saveDataManager.UpdateEDataWithoutSave(eDataAmount);
             }
         }
 
@@ -511,22 +620,50 @@ namespace InvaderInsider.Managers
 
         private void OnDestroy()
         {
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "StageManager 파괴 - 모든 리소스 정리");
+            #endif
+            
+            CleanupActiveEnemies();
+            StopStageCoroutine();
+            
+            // 싱글톤 인스턴스 정리
             if (instance == this)
             {
-                CleanupActiveEnemies();
-                if (stageCoroutine != null)
-                {
-                    StopCoroutine(stageCoroutine);
-                    stageCoroutine = null;
-                }
-                isInitialized = false;
+                instance = null;
             }
+            
+            isInitialized = false;
+        }
+
+        private void OnDisable()
+        {
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "StageManager 비활성화 - 코루틴 정리");
+            #endif
+            
+            // 씬 전환시 코루틴 정리
+            StopStageCoroutine();
+            CleanupActiveEnemies();
         }
 
         private void OnApplicationQuit()
         {
             isQuitting = true;
             CleanupActiveEnemies();
+            StopStageCoroutine();
+        }
+
+        private void StopStageCoroutine()
+        {
+            if (stageCoroutine != null)
+            {
+                StopCoroutine(stageCoroutine);
+                stageCoroutine = null;
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "스테이지 코루틴 정리 완료");
+                #endif
+            }
         }
 
         public void IncrementEnemyCount()
@@ -542,6 +679,53 @@ namespace InvaderInsider.Managers
         public int GetCurrentStageIndex()
         {
             return stageNum;
+        }
+
+        public int GetSpawnedEnemyCount()
+        {
+            return enemyCount;
+        }
+        
+        // 웨이포인트를 수동으로 재설정하는 공개 함수
+        public void RefreshWaypoints()
+        {
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[7]);
+            #endif
+            AutoFindWaypoints();
+        }
+
+        private bool ValidateWaypoints()
+        {
+            // 웨이포인트가 설정되지 않은 경우
+            if (wayPointsList == null || wayPointsList.Count == 0)
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + "웨이포인트가 설정되지 않아 자동 찾기를 시도합니다.");
+                #endif
+                AutoFindWaypoints();
+                return wayPointsList != null && wayPointsList.Count > 0;
+            }
+
+            // 웨이포인트가 파괴되었는지 검사 (첫 번째만 체크로 성능 최적화)
+            if (wayPointsList[0] == null)
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + "웨이포인트가 파괴되어 재초기화합니다.");
+                #endif
+                AutoFindWaypoints();
+                
+                // 자동 찾기 후에도 웨이포인트가 없다면 false 반환
+                if (wayPointsList == null || wayPointsList.Count == 0 || wayPointsList[0] == null)
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogError(LOG_PREFIX + "웨이포인트 자동 찾기에 실패했습니다. 씬에 웨이포인트 오브젝트가 있는지 확인해주세요.");
+                    #endif
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 } 

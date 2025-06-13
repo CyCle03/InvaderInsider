@@ -47,13 +47,17 @@ namespace InvaderInsider
             bottomBarPanel = FindObjectOfType<BottomBarPanel>();
             if (bottomBarPanel == null && Application.isPlaying)
             {
+                #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
+                #endif
             }
 
             uiManager = UIManager.Instance;
             if (uiManager == null && Application.isPlaying)
             {
+                #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[3]);
+                #endif
             }
 
             ResetHealth();
@@ -90,11 +94,6 @@ namespace InvaderInsider
 
             currentHealth = maxHealth;
             OnHealthChanged?.Invoke(currentHealth / maxHealth);
-
-            if (Application.isPlaying)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[0]);
-            }
         }
 
         public void TakeDamage(float damageAmount)
@@ -113,11 +112,6 @@ namespace InvaderInsider
         private void Die()
         {
             if (!isInitialized) return;
-
-            if (Application.isPlaying)
-            {
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
-            }
 
             OnDeath?.Invoke();
 

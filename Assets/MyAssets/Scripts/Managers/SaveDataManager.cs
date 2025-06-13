@@ -52,30 +52,103 @@ namespace InvaderInsider.Data
         private HashSet<int> deckCardSet = new HashSet<int>();
         private HashSet<int> ownedCardSet = new HashSet<int>();
         private HashSet<int> handCardSet = new HashSet<int>();
+        
+        // 캐시된 리스트들 (메모리 할당 최소화)
+        [System.NonSerialized] private List<int> cachedDeckCardIds = null;
+        [System.NonSerialized] private List<int> cachedOwnedCardIds = null;
+        [System.NonSerialized] private List<int> cachedHandCardIds = null;
+        [System.NonSerialized] private bool deckCacheDirty = true;
+        [System.NonSerialized] private bool ownedCacheDirty = true;
+        [System.NonSerialized] private bool handCacheDirty = true;
 
         public List<int> deckCardIds
         {
-            get => new List<int>(deckCardSet);
-            set => deckCardSet = new HashSet<int>(value);
+            get 
+            {
+                if (deckCacheDirty || cachedDeckCardIds == null)
+                {
+                    cachedDeckCardIds = new List<int>(deckCardSet);
+                    deckCacheDirty = false;
+                }
+                return cachedDeckCardIds;
+            }
+            set 
+            {
+                deckCardSet = new HashSet<int>(value);
+                deckCacheDirty = true;
+            }
         }
 
         public List<int> ownedCardIds
         {
-            get => new List<int>(ownedCardSet);
-            set => ownedCardSet = new HashSet<int>(value);
+            get 
+            {
+                if (ownedCacheDirty || cachedOwnedCardIds == null)
+                {
+                    cachedOwnedCardIds = new List<int>(ownedCardSet);
+                    ownedCacheDirty = false;
+                }
+                return cachedOwnedCardIds;
+            }
+            set 
+            {
+                ownedCardSet = new HashSet<int>(value);
+                ownedCacheDirty = true;
+            }
         }
 
         public List<int> handCardIds
         {
-            get => new List<int>(handCardSet);
-            set => handCardSet = new HashSet<int>(value);
+            get 
+            {
+                if (handCacheDirty || cachedHandCardIds == null)
+                {
+                    cachedHandCardIds = new List<int>(handCardSet);
+                    handCacheDirty = false;
+                }
+                return cachedHandCardIds;
+            }
+            set 
+            {
+                handCardSet = new HashSet<int>(value);
+                handCacheDirty = true;
+            }
         }
 
-        public bool AddToDeck(int cardId) => deckCardSet.Add(cardId);
-        public bool RemoveFromDeck(int cardId) => deckCardSet.Remove(cardId);
-        public bool AddToOwned(int cardId) => ownedCardSet.Add(cardId);
-        public bool AddToHand(int cardId) => handCardSet.Add(cardId);
-        public bool RemoveFromHand(int cardId) => handCardSet.Remove(cardId);
+        public bool AddToDeck(int cardId) 
+        { 
+            bool added = deckCardSet.Add(cardId);
+            if (added) deckCacheDirty = true;
+            return added;
+        }
+        
+        public bool RemoveFromDeck(int cardId) 
+        { 
+            bool removed = deckCardSet.Remove(cardId);
+            if (removed) deckCacheDirty = true;
+            return removed;
+        }
+        
+        public bool AddToOwned(int cardId) 
+        { 
+            bool added = ownedCardSet.Add(cardId);
+            if (added) ownedCacheDirty = true;
+            return added;
+        }
+        
+        public bool AddToHand(int cardId) 
+        { 
+            bool added = handCardSet.Add(cardId);
+            if (added) handCacheDirty = true;
+            return added;
+        }
+        
+        public bool RemoveFromHand(int cardId) 
+        { 
+            bool removed = handCardSet.Remove(cardId);
+            if (removed) handCacheDirty = true;
+            return removed;
+        }
         public bool IsInDeck(int cardId) => deckCardSet.Contains(cardId);
         public bool IsOwned(int cardId) => ownedCardSet.Contains(cardId);
         public bool IsInHand(int cardId) => handCardSet.Contains(cardId);
@@ -85,16 +158,38 @@ namespace InvaderInsider.Data
     public class SerializableSettings
     {
         private Dictionary<string, string> settings = new Dictionary<string, string>();
+        
+        // 캐시된 리스트들 (메모리 할당 최소화)
+        [System.NonSerialized] private List<string> cachedKeys = null;
+        [System.NonSerialized] private List<string> cachedValues = null;
+        [System.NonSerialized] private bool keysCacheDirty = true;
+        [System.NonSerialized] private bool valuesCacheDirty = true;
 
         public List<string> keys
         {
-            get => new List<string>(settings.Keys);
+            get 
+            {
+                if (keysCacheDirty || cachedKeys == null)
+                {
+                    cachedKeys = new List<string>(settings.Keys);
+                    keysCacheDirty = false;
+                }
+                return cachedKeys;
+            }
             set { } // 직렬화를 위해 필요
         }
 
         public List<string> values
         {
-            get => new List<string>(settings.Values);
+            get 
+            {
+                if (valuesCacheDirty || cachedValues == null)
+                {
+                    cachedValues = new List<string>(settings.Values);
+                    valuesCacheDirty = false;
+                }
+                return cachedValues;
+            }
             set { } // 직렬화를 위해 필요
         }
 
@@ -102,6 +197,8 @@ namespace InvaderInsider.Data
         {
             if (string.IsNullOrEmpty(key)) return;
             settings[key] = value?.ToString() ?? string.Empty;
+            keysCacheDirty = true;
+            valuesCacheDirty = true;
         }
 
         public bool TryGetValue<T>(string key, out T value)
@@ -143,16 +240,38 @@ namespace InvaderInsider.Data
     public class SerializableStageProgress
     {
         private Dictionary<int, int> stageStars = new Dictionary<int, int>();
+        
+        // 캐시된 리스트들 (메모리 할당 최소화)
+        [System.NonSerialized] private List<int> cachedStageNumbers = null;
+        [System.NonSerialized] private List<int> cachedStars = null;
+        [System.NonSerialized] private bool stageNumbersCacheDirty = true;
+        [System.NonSerialized] private bool starsCacheDirty = true;
 
         public List<int> stageNumbers
         {
-            get => new List<int>(stageStars.Keys);
+            get 
+            {
+                if (stageNumbersCacheDirty || cachedStageNumbers == null)
+                {
+                    cachedStageNumbers = new List<int>(stageStars.Keys);
+                    stageNumbersCacheDirty = false;
+                }
+                return cachedStageNumbers;
+            }
             set { } // 직렬화를 위해 필요
         }
 
         public List<int> stars
         {
-            get => new List<int>(stageStars.Values);
+            get 
+            {
+                if (starsCacheDirty || cachedStars == null)
+                {
+                    cachedStars = new List<int>(stageStars.Values);
+                    starsCacheDirty = false;
+                }
+                return cachedStars;
+            }
             set { } // 직렬화를 위해 필요
         }
 
@@ -160,6 +279,8 @@ namespace InvaderInsider.Data
         {
             if (stageNum <= 0) return;
             stageStars[stageNum] = Mathf.Clamp(starCount, 0, 3);
+            stageNumbersCacheDirty = true;
+            starsCacheDirty = true;
         }
 
         public bool TryGetValue(int stageNum, out int starCount)
@@ -192,18 +313,28 @@ namespace InvaderInsider.Data
             "Error loading game data: {0}" // 1
         };
 
-        private const string SAVE_KEY = "GameSaveData";
+        private const string SAVE_KEY = "GameSaveData.json";
         private static SaveDataManager instance;
         private static readonly object _lock = new object();
         private static bool isQuitting = false;
 
         private SaveData currentSaveData;
+        
+        // 지연 저장 시스템
+        private bool pendingSave = false;
+        private float saveDelay = 1f; // 1초 대기 후 저장
+        private Coroutine saveCoroutine = null;
 
         public static SaveDataManager Instance
         {
             get
             {
                 if (isQuitting) return null;
+                
+                // 에디터에서 플레이 모드가 아닐 때는 인스턴스 생성하지 않음
+                #if UNITY_EDITOR
+                if (!UnityEngine.Application.isPlaying) return null;
+                #endif
 
                 lock (_lock)
                 {
@@ -266,6 +397,11 @@ namespace InvaderInsider.Data
 
         private void Awake()
         {
+            // 에디터 모드에서는 초기화하지 않음
+            #if UNITY_EDITOR
+            if (!Application.isPlaying) return;
+            #endif
+            
             if (instance == null)
             {
                 instance = this;
@@ -282,16 +418,24 @@ namespace InvaderInsider.Data
 
         private void OnDestroy()
         {
-            if (instance == this)
+            // 지연 저장 코루틴 정리
+            if (saveCoroutine != null)
             {
-                SaveGameData();
-                instance = null;
+                StopCoroutine(saveCoroutine);
+                saveCoroutine = null;
             }
+            
+            CleanupEventListeners();
+            isQuitting = true;
         }
 
         private void OnApplicationQuit()
         {
-            SaveGameData();
+            // 애플리케이션 종료 시 즉시 저장
+            if (pendingSave)
+            {
+                SaveGameDataImmediate();
+            }
         }
 
         private void CleanupEventListeners()
@@ -302,37 +446,85 @@ namespace InvaderInsider.Data
 
         public bool HasSaveData()
         {
-            return PlayerPrefs.HasKey(SAVE_KEY);
+            return File.Exists(SAVE_KEY);
         }
 
         public void ResetGameData()
         {
             currentSaveData = new SaveData();
-            PlayerPrefs.DeleteKey(SAVE_KEY);
-            PlayerPrefs.Save();
+            if (File.Exists(SAVE_KEY))
+            {
+                File.Delete(SAVE_KEY);
+            }
         }
 
-        public async void SaveGameData()
+        // 지연 저장: 여러 변경사항을 모아서 한 번에 저장
+        public void SaveGameData()
+        {
+            // 에디터 모드에서는 저장하지 않음
+            #if UNITY_EDITOR
+            if (!Application.isPlaying) return;
+            #endif
+            
+            if (!pendingSave)
+            {
+                pendingSave = true;
+                if (saveCoroutine != null)
+                {
+                    StopCoroutine(saveCoroutine);
+                }
+                saveCoroutine = StartCoroutine(SaveGameDataDelayed());
+            }
+        }
+        
+        // 코루틴을 통한 지연 저장
+        private System.Collections.IEnumerator SaveGameDataDelayed()
+        {
+            yield return new WaitForSecondsRealtime(saveDelay);
+            SaveGameDataImmediate();
+        }
+        
+        // 즉시 저장 (동기식)
+        private void SaveGameDataImmediate()
         {
             try
             {
                 string json = JsonConvert.SerializeObject(currentSaveData, Formatting.Indented);
-                await File.WriteAllTextAsync(SAVE_KEY, json);
+                File.WriteAllText(SAVE_KEY, json);
+                pendingSave = false;
+                saveCoroutine = null;
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "게임 데이터 저장 성공");
+                #endif
             }
             catch (Exception e)
             {
+                pendingSave = false;
+                saveCoroutine = null;
+                
+                #if UNITY_EDITOR
                 Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[0], e.Message));
+                #endif
             }
         }
 
-        public async void LoadGameData()
+        public void LoadGameData()
         {
+            // 에디터 모드에서는 로드하지 않음
+            #if UNITY_EDITOR
+            if (!Application.isPlaying) return;
+            #endif
+            
             try
             {
                 if (File.Exists(SAVE_KEY))
                 {
-                    string json = await File.ReadAllTextAsync(SAVE_KEY);
+                    string json = File.ReadAllText(SAVE_KEY);
                     currentSaveData = JsonConvert.DeserializeObject<SaveData>(json);
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + $"게임 데이터 로드 성공 - 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}");
+                    #endif
                 }
                 else
                 {
@@ -342,7 +534,9 @@ namespace InvaderInsider.Data
             }
             catch (Exception e)
             {
+                #if UNITY_EDITOR
                 Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], e.Message));
+                #endif
                 currentSaveData = new SaveData();
             }
         }
@@ -358,6 +552,10 @@ namespace InvaderInsider.Data
                     Mathf.Max(currentSaveData.progressData.highestStageCleared, stageNum);
             }
 
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + $"스테이지 진행 업데이트: 스테이지 {stageNum}, 별 {stars}개, 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}");
+            #endif
+
             SaveGameData();
         }
 
@@ -367,6 +565,21 @@ namespace InvaderInsider.Data
 
             currentSaveData.progressData.currentEData += amount;
             onEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
+            SaveGameData();
+        }
+
+        // 저장하지 않고 eData만 업데이트 (적을 잡을 때 사용)
+        public void UpdateEDataWithoutSave(int amount)
+        {
+            if (amount == 0) return;
+
+            currentSaveData.progressData.currentEData += amount;
+            onEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
+        }
+
+        // 강제 저장 (스테이지 클리어, 게임 종료 등 중요한 이벤트 시 사용)
+        public void ForceSave()
+        {
             SaveGameData();
         }
 
@@ -466,4 +679,4 @@ namespace InvaderInsider.Data
             return currentSaveData.progressData.currentEData;
         }
     }
-} 
+}

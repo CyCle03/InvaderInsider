@@ -40,7 +40,7 @@ namespace InvaderInsider.UI
             }
 
             SetupEventListeners();
-            UpdateHealthDisplay(player.CurrentHealth / player.MaxHealth);
+            UpdateHealthDisplayFromPlayer(player.CurrentHealth / player.MaxHealth);
 
             isInitialized = true;
         }
@@ -94,7 +94,6 @@ namespace InvaderInsider.UI
         {
             if (!isInitialized || enemyRemainText == null) return;
 
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], count));
             enemyRemainText.text = $"Enemy: {count}";
         }
 
@@ -102,14 +101,21 @@ namespace InvaderInsider.UI
         {
             if (!isInitialized || player == null) return;
 
-            UpdateHealthDisplay(healthRatio);
+            UpdateHealthDisplayFromPlayer(healthRatio);
         }
 
-        private void UpdateHealthDisplay(float healthRatio)
+        public void UpdateHealthDisplay(float healthRatio)
+        {
+            if (healthSlider != null)
+            {
+                healthSlider.maxValue = 1.0f; // 0-1 사이의 비율로 설정
+                healthSlider.value = healthRatio;
+            }
+        }
+
+        private void UpdateHealthDisplayFromPlayer(float healthRatio)
         {
             if (!isInitialized || player == null) return;
-
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], player.CurrentHealth, player.MaxHealth));
             
             if (healthSlider != null)
             {
@@ -122,7 +128,6 @@ namespace InvaderInsider.UI
         {
             if (!isInitialized) return;
 
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
             // TODO: 게임 오버 UI 표시 등 추가적인 사망 처리 로직
         }
     }

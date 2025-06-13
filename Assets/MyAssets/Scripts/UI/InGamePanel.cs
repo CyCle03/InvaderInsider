@@ -32,22 +32,20 @@ namespace InvaderInsider.UI
             
             uiManager = UIManager.Instance;
             
-            // InGame 패널은 초기에 숨김
-            ForceHide();
-            Debug.Log(LOG_PREFIX + "InGame panel registered and force hidden");
-            
             Initialize();
         }
 
         protected override void Initialize()
         {
-            if (pauseButton != null)
+            if (pauseButton == null)
             {
-                pauseButton.onClick.AddListener(OnPauseButtonClicked);
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[0]);
+                #endif
             }
             else
             {
-                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[0]);
+                pauseButton.onClick.AddListener(OnPauseButtonClicked);
             }
 
             if (summonButton != null)
@@ -56,39 +54,58 @@ namespace InvaderInsider.UI
             }
             else
             {
+                #if UNITY_EDITOR
                 Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[1]);
+                #endif
             }
+
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "InGame 패널 초기화 완료");
+            #endif
         }
 
         private void OnPauseButtonClicked()
         {
+            #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + LOG_MESSAGES[2]);
-            uiManager.ShowPanel("Pause");
+            #endif
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.PauseGame();
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "GameManager를 찾을 수 없습니다");
+                #endif
+            }
         }
 
         private void OnSummonButtonClicked()
         {
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[3]);
+            #endif
             if (CardManager.Instance != null)
             {
                 CardManager.Instance.Summon();
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[3]);
             }
             else
             {
+                #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[4]);
+                #endif
             }
         }
 
         protected override void OnShow()
         {
             base.OnShow();
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[5]);
         }
 
         protected override void OnHide()
         {
             base.OnHide();
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[6]);
         }
 
         private void OnDestroy()
