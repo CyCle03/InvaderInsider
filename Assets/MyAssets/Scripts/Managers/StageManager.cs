@@ -34,29 +34,26 @@ namespace InvaderInsider.Managers
             get
             {
                 if (isQuitting) return null;
+                
+                // 에디터에서 플레이 모드가 아닐 때는 인스턴스 생성하지 않음
+                #if UNITY_EDITOR
+                if (!UnityEngine.Application.isPlaying) return null;
+                #endif
+
+                // 현재 씬이 Game 씬이 아니면 null 반환
+                string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+                if (currentSceneName != "Game")
+                {
+                    return null;
+                }
 
                 lock (_lock)
                 {
-                    if (instance == null && !isQuitting)
+                    if (instance == null)
                     {
+                        // 게임 씬에서만 자동 생성 허용
                         instance = FindObjectOfType<StageManager>();
-                        if (instance == null)
-                        {
-                            GameObject go = new GameObject("StageManager");
-                            instance = go.AddComponent<StageManager>();
-                            DontDestroyOnLoad(go);
-                        }
                     }
-                    
-                    // 인스턴스가 있지만 초기화되지 않은 경우 강제 초기화
-                    if (instance != null && !isInitialized)
-                    {
-                        #if UNITY_EDITOR && ENABLE_VERBOSE_LOGS
-                        Debug.Log(LOG_PREFIX + "Instance exists but not initialized in getter, forcing initialization");
-                        #endif
-                        instance.PerformInitialization();
-                    }
-                    
                     return instance;
                 }
             }
@@ -110,17 +107,44 @@ namespace InvaderInsider.Managers
 
         private void Awake()
         {
-            if (instance == null)
+            // 에디터 모드에서는 초기화하지 않음
+            #if UNITY_EDITOR
+            if (!Application.isPlaying) return;
+            #endif
+            
+            // 현재 씬이 Game 씬인지 확인
+            string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            if (currentSceneName != "Game")
             {
-                instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else if (instance != this)
-            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"게임 씬이 아니므로 StageManager를 파괴합니다. 현재 씬: {currentSceneName}");
+                #endif
                 Destroy(gameObject);
                 return;
             }
             
+            // 게임 씬에서는 싱글톤 패턴 적용 (DontDestroyOnLoad 제거)
+            if (instance == null)
+            {
+                instance = this;
+                // 게임 씬 전용이므로 DontDestroyOnLoad 제거
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "StageManager 인스턴스 생성됨 (게임 씬 전용)");
+                #endif
+            }
+            else if (instance != this)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "중복 StageManager 인스턴스 파괴됨");
+                #endif
+                
+                // 기존 인스턴스가 있다면 새로운 인스턴스는 파괴
+                Destroy(gameObject);
+                return;
+            }
+            
+            // 이미 초기화된 경우 중복 초기화 방지
             if (!isInitialized)
             {
                 PerformInitialization();
@@ -191,11 +215,14 @@ namespace InvaderInsider.Managers
             try
             {
                 waypoints = GameObject.FindGameObjectsWithTag("Waypoint");
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"Waypoint 태그로 {waypoints.Length}개 찾음");
+                #endif
             }
-            catch (UnityException)
+            catch (UnityException ex)
             {
                 #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + "Waypoint 태그가 정의되지 않았습니다.");
+                Debug.LogWarning(LOG_PREFIX + $"Waypoint 태그가 정의되지 않았습니다: {ex.Message}");
                 #endif
             }
             
@@ -207,15 +234,23 @@ namespace InvaderInsider.Managers
                 
                 foreach (GameObject obj in allObjects)
                 {
+                    if (obj == null) continue;
+                    
                     string objName = obj.name.ToLower();
                     if (objName.Contains("waypoint") || objName.Contains("way") || 
                         objName.Contains("path") || objName.Contains("point"))
                     {
                         foundWaypoints.Add(obj);
+                        #if UNITY_EDITOR
+                        Debug.Log(LOG_PREFIX + $"이름으로 찾은 웨이포인트: {obj.name}");
+                        #endif
                     }
                 }
                 
                 waypoints = foundWaypoints.ToArray();
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"이름으로 {waypoints.Length}개 찾음");
+                #endif
             }
             
             // 3. 찾은 웨이포인트들을 정렬하여 추가
@@ -225,17 +260,23 @@ namespace InvaderInsider.Managers
                 
                 foreach (GameObject waypoint in waypoints)
                 {
-                    wayPointsList.Add(waypoint.transform);
+                    if (waypoint != null && waypoint.transform != null)
+                    {
+                        wayPointsList.Add(waypoint.transform);
+                        #if UNITY_EDITOR
+                        Debug.Log(LOG_PREFIX + $"웨이포인트 추가됨: {waypoint.name} at {waypoint.transform.position}");
+                        #endif
+                    }
                 }
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[2]);
+                Debug.Log(LOG_PREFIX + $"{wayPointsList.Count}개의 웨이포인트를 자동으로 찾았습니다.");
                 #endif
             }
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[3]);
+                Debug.LogWarning(LOG_PREFIX + "웨이포인트를 찾을 수 없습니다. 수동으로 설정해주세요.");
                 #endif
             }
         }
@@ -404,7 +445,7 @@ namespace InvaderInsider.Managers
             // BottomBar UI 업데이트 (초기 적 수)
             if (bottomBarPanel != null)
             {
-                bottomBarPanel.UpdateMonsterCountDisplay(stageWave);
+                bottomBarPanel.UpdateMonsterCountDisplay(0);
             }
             
             if (uiManager != null)
@@ -621,30 +662,34 @@ namespace InvaderInsider.Managers
         private void OnDestroy()
         {
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "StageManager 파괴 - 모든 리소스 정리");
+            Debug.Log(LOG_PREFIX + "StageManager 파괴 - 리소스 정리");
             #endif
             
-            CleanupActiveEnemies();
+            // 코루틴 정리
             StopStageCoroutine();
             
-            // 싱글톤 인스턴스 정리
+            // 적 오브젝트 정리
+            CleanupActiveEnemies();
+            
+            // 싱글톤 인스턴스 정리 (자신이 메인 인스턴스인 경우에만)
             if (instance == this)
             {
                 instance = null;
+                isInitialized = false;
             }
-            
-            isInitialized = false;
         }
 
         private void OnDisable()
         {
+            // 애플리케이션 종료 중이면 정리 과정 생략
+            if (isQuitting) return;
+            
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "StageManager 비활성화 - 코루틴 정리");
             #endif
             
-            // 씬 전환시 코루틴 정리
+            // 씬 전환시 코루틴만 정리 (인스턴스는 유지)
             StopStageCoroutine();
-            CleanupActiveEnemies();
         }
 
         private void OnApplicationQuit()
@@ -704,7 +749,15 @@ namespace InvaderInsider.Managers
                 Debug.LogWarning(LOG_PREFIX + "웨이포인트가 설정되지 않아 자동 찾기를 시도합니다.");
                 #endif
                 AutoFindWaypoints();
-                return wayPointsList != null && wayPointsList.Count > 0;
+                
+                if (wayPointsList == null || wayPointsList.Count == 0)
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogError(LOG_PREFIX + "웨이포인트를 찾을 수 없습니다. Game 씬에 WayPoint1, WayPoint2 오브젝트가 있는지 확인하세요.");
+                    #endif
+                    return false;
+                }
+                return true;
             }
 
             // 웨이포인트가 파괴되었는지 검사 (첫 번째만 체크로 성능 최적화)
@@ -719,7 +772,7 @@ namespace InvaderInsider.Managers
                 if (wayPointsList == null || wayPointsList.Count == 0 || wayPointsList[0] == null)
                 {
                     #if UNITY_EDITOR
-                    Debug.LogError(LOG_PREFIX + "웨이포인트 자동 찾기에 실패했습니다. 씬에 웨이포인트 오브젝트가 있는지 확인해주세요.");
+                    Debug.LogError(LOG_PREFIX + "웨이포인트 자동 찾기에 실패했습니다. Game 씬에 WayPoint1, WayPoint2 오브젝트가 활성화되어 있는지 확인해주세요.");
                     #endif
                     return false;
                 }

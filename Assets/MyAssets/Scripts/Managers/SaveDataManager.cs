@@ -340,12 +340,19 @@ namespace InvaderInsider.Data
                 {
                     if (instance == null)
                     {
+                        // 먼저 씬에서 기존 인스턴스 찾기
                         instance = FindObjectOfType<SaveDataManager>();
+                        
+                        // 찾지 못했다면 새로 생성
                         if (instance == null && !isQuitting)
                         {
                             GameObject go = new GameObject("SaveDataManager");
                             instance = go.AddComponent<SaveDataManager>();
                             DontDestroyOnLoad(go);
+                            
+                            #if UNITY_EDITOR
+                            Debug.Log("[SaveData] SaveDataManager 인스턴스가 동적으로 생성되었습니다.");
+                            #endif
                         }
                     }
                     return instance;
@@ -402,15 +409,26 @@ namespace InvaderInsider.Data
             if (!Application.isPlaying) return;
             #endif
             
+            // 싱글톤 패턴 적용
             if (instance == null)
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
                 
+                // 게임 데이터 로드
                 LoadGameData();
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "SaveDataManager 인스턴스 생성 및 초기화 완료");
+                #endif
             }
             else if (instance != this)
             {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "중복 SaveDataManager 인스턴스 파괴됨");
+                #endif
+                
+                // 기존 인스턴스가 있다면 새로운 인스턴스는 파괴
                 Destroy(gameObject);
                 return;
             }

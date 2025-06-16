@@ -64,12 +64,21 @@ namespace InvaderInsider.UI
         private System.Collections.IEnumerator TryGetSaveDataManager()
         {
             int attempts = 0;
-            const int maxAttempts = 10;
+            const int maxAttempts = 15; // 최대 시도 횟수 증가
             
             while (saveDataManager == null && attempts < maxAttempts)
             {
                 yield return new WaitForSeconds(0.1f); // 0.1초 대기
+                
+                // 여러 방법으로 SaveDataManager 찾기 시도
                 saveDataManager = SaveDataManager.Instance;
+                
+                if (saveDataManager == null)
+                {
+                    // 직접 찾기 시도
+                    saveDataManager = FindObjectOfType<SaveDataManager>();
+                }
+                
                 attempts++;
                 
                 #if UNITY_EDITOR
@@ -90,11 +99,26 @@ namespace InvaderInsider.UI
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + "SaveDataManager 연결 실패 - Continue 버튼이 비활성화됩니다");
+                Debug.LogWarning(LOG_PREFIX + "SaveDataManager 연결 실패 - SaveDataManager 생성을 시도합니다");
                 #endif
-                if (continueButton != null)
+                
+                // SaveDataManager를 강제로 생성
+                var saveDataManagerInstance = SaveDataManager.Instance; // 이것만으로도 인스턴스가 생성됨
+                
+                if (saveDataManagerInstance != null)
                 {
-                    continueButton.interactable = false;
+                    saveDataManager = saveDataManagerInstance;
+                    UpdateContinueButton();
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + "SaveDataManager 생성 후 연결 성공");
+                    #endif
+                }
+                else
+                {
+                    if (continueButton != null)
+                    {
+                        continueButton.interactable = false;
+                    }
                 }
             }
         }

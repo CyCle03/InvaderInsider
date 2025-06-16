@@ -90,6 +90,14 @@ namespace InvaderInsider.UI
             }
         }
 
+        public void UpdateMonsterCountDisplay(int activeCount, int totalCount)
+        {
+            if (!isInitialized || enemyRemainText == null) return;
+
+            enemyRemainText.text = $"Enemy: {activeCount}/{totalCount}";
+        }
+        
+        // 기존 메서드와의 호환성을 위한 오버로드
         public void UpdateMonsterCountDisplay(int count)
         {
             if (!isInitialized || enemyRemainText == null) return;

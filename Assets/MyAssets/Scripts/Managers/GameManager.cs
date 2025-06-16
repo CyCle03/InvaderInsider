@@ -129,7 +129,15 @@ namespace InvaderInsider.Managers
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            // 매니저들 재초기화 (씬 전환 시 인스턴스가 변경될 수 있음)
+            InitializeManagers();
+            
+            // 컴포넌트 캐시 업데이트
             UpdateCachedComponents();
+            
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + $"씬 로드 후 매니저 재초기화 완료: {scene.name}, UIManager: {uiManager != null}");
+            #endif
         }
 
         private void UpdateCachedComponents()
@@ -180,6 +188,30 @@ namespace InvaderInsider.Managers
 
         private void HandleGameStateChanged(GameState newState)
         {
+            // UI 매니저가 없다면 재초기화 시도
+            if (uiManager == null)
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + "UIManager가 없어 재초기화를 시도합니다.");
+                #endif
+                
+                // 매니저들 재초기화 시도
+                InitializeManagers();
+                
+                // 여전히 null이면 포기
+                if (uiManager == null)
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogError(LOG_PREFIX + "UIManager 재초기화 실패 - UI 상태 변경을 건너뜁니다.");
+                    #endif
+                    return;
+                }
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "UIManager 재초기화 성공!");
+                #endif
+            }
+
             // 에디터에서만 상태 변경 로그 출력 (메모리 할당 최적화)
             #if UNITY_EDITOR && ENABLE_STATE_LOGS
             if (Application.isPlaying)
@@ -194,46 +226,19 @@ namespace InvaderInsider.Managers
             switch (newState)
             {
                 case GameState.MainMenu:
-                    // 현재 씬이 Main 씬이 아닌 경우 씬 전환
-                    if (currentSceneName != "Main")
+                    Time.timeScale = 1f;
+                    // Main 씬에서만 MainMenu 패널 표시
+                    if (currentSceneName == "Main")
                     {
-                        // Main 씬으로 전환
-                        UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
-                    }
-                    else
-                    {
-                        // 이미 Main 씬인 경우에만 UI 패널 조작
-                        UIManager mainMenuUIManager = UIManager.Instance;
-                        if (mainMenuUIManager != null && mainMenuUIManager.IsPanelRegistered("MainMenu"))
-                        {
-                            mainMenuUIManager.ShowPanel("MainMenu");
-                            mainMenuUIManager.HideCurrentPanel();
-                            mainMenuUIManager.HidePanel("InGame");
-                            mainMenuUIManager.HidePanel("Pause");
-                        }
+                        uiManager?.ShowPanel("MainMenu");
                     }
                     break;
 
                 case GameState.Loading:
-                    // UIManager를 실시간으로 가져오기
-                    UIManager currentUIManager = UIManager.Instance;
-                    if (currentUIManager != null)
-                    {
-                        currentUIManager.DebugPrintRegisteredPanels();
-                        
-                        // 현재 씬이 Game 씬인 경우에만 InGame 패널 표시
-                        if (currentSceneName == "Game")
-                        {
-                            currentUIManager.ShowPanelConcurrent("InGame");
-                        }
-                        
-                        // MainMenu 패널은 Game 씬에 없으므로 숨기지 않음
-                    }
+                    Time.timeScale = 1f;
                     #if UNITY_EDITOR
-                    else
-                    {
-                        Debug.LogError(LOG_PREFIX + "UIManager.Instance가 null입니다!");
-                    }
+                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[0]);
+                    uiManager.DebugPrintRegisteredPanels();
                     #endif
                     break;
 
@@ -241,8 +246,11 @@ namespace InvaderInsider.Managers
                     #if UNITY_EDITOR
                     Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
                     #endif
-                    // Settings 패널이 열려있으면 닫기
-                    uiManager?.HidePanel("Settings");
+                    // Settings 패널이 등록되어 있는 경우에만 숨기기
+                    if (uiManager.IsPanelRegistered("Settings"))
+                    {
+                        uiManager.HidePanel("Settings");
+                    }
                     break;
 
                 case GameState.Paused:
@@ -333,7 +341,7 @@ namespace InvaderInsider.Managers
         {
             if (CurrentGameState == GameState.Playing)
             {
-                // UI 업데이트 제한 (0.1초마다만 업데이트)
+                // UI 업데이트 제한 (0.2초마다만 업데이트)
                 float currentTime = Time.unscaledTime;
                 if (currentTime - lastUIUpdateTime >= UI_UPDATE_INTERVAL)
                 {
@@ -404,10 +412,10 @@ namespace InvaderInsider.Managers
                 if ((stageChanged || enemyCountChanged) && cachedTopBarPanel != null)
                 {
                     int totalStages = cachedStageManager.GetStageCount();
-                    int spawnedMonsters = cachedStageManager.GetSpawnedEnemyCount();
                     int maxMonsters = cachedStageManager.GetStageWaveCount(currentStageIndex);
                     
-                    cachedTopBarPanel.UpdateStageInfo(currentStageIndex + 1, totalStages, spawnedMonsters, maxMonsters);
+                    // TopBar의 Wave에는 활성 적 수/총 적 수 표시
+                    cachedTopBarPanel.UpdateStageInfo(currentStageIndex + 1, totalStages, currentActiveEnemyCount, maxMonsters);
                 }
                 
                 // 스테이지 인덱스 캐시 업데이트
@@ -483,6 +491,18 @@ namespace InvaderInsider.Managers
                 return;
             }
 
+            // 매니저들 재초기화 (씬 로드 후 인스턴스들이 변경되었을 수 있음)
+            InitializeManagers();
+            
+            // UIManager가 없다면 에러 로그 출력 후 대기
+            if (uiManager == null)
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "UIManager를 찾을 수 없어 게임 초기화를 중단합니다!");
+                #endif
+                return;
+            }
+
             // UI 패널 등록 - 더 강력한 검색
             var inGamePanel = FindObjectOfType<InvaderInsider.UI.InGamePanel>(true);
             if (inGamePanel != null)
@@ -494,7 +514,7 @@ namespace InvaderInsider.Managers
                     current.gameObject.SetActive(true);
                     current = current.parent;
                 }
-                UIManager.Instance.RegisterPanel("InGame", inGamePanel);
+                uiManager.RegisterPanel("InGame", inGamePanel);
             }
             else
             {
@@ -504,7 +524,7 @@ namespace InvaderInsider.Managers
                     inGamePanel = inGameGO.GetComponent<InvaderInsider.UI.InGamePanel>();
                     if (inGamePanel != null)
                     {
-                        UIManager.Instance.RegisterPanel("InGame", inGamePanel);
+                        uiManager.RegisterPanel("InGame", inGamePanel);
                     }
                 }
                 #if UNITY_EDITOR
@@ -525,7 +545,7 @@ namespace InvaderInsider.Managers
                     current.gameObject.SetActive(true);
                     current = current.parent;
                 }
-                UIManager.Instance.RegisterPanel("TopBar", topBarPanel);
+                uiManager.RegisterPanel("TopBar", topBarPanel);
                 cachedTopBarPanel = topBarPanel; // 캐시 업데이트
             }
             else
@@ -536,7 +556,7 @@ namespace InvaderInsider.Managers
                     topBarPanel = topBarGO.GetComponent<InvaderInsider.UI.TopBarPanel>();
                     if (topBarPanel != null)
                     {
-                        UIManager.Instance.RegisterPanel("TopBar", topBarPanel);
+                        uiManager.RegisterPanel("TopBar", topBarPanel);
                         cachedTopBarPanel = topBarPanel; // 캐시 업데이트
                     }
                 }
@@ -558,7 +578,7 @@ namespace InvaderInsider.Managers
                     current.gameObject.SetActive(true);
                     current = current.parent;
                 }
-                UIManager.Instance.RegisterPanel("BottomBar", bottomBarPanel);
+                uiManager.RegisterPanel("BottomBar", bottomBarPanel);
                 cachedBottomBarPanel = bottomBarPanel; // 캐시 업데이트
             }
             else
@@ -569,7 +589,7 @@ namespace InvaderInsider.Managers
                     bottomBarPanel = bottomBarGO.GetComponent<InvaderInsider.UI.BottomBarPanel>();
                     if (bottomBarPanel != null)
                     {
-                        UIManager.Instance.RegisterPanel("BottomBar", bottomBarPanel);
+                        uiManager.RegisterPanel("BottomBar", bottomBarPanel);
                         cachedBottomBarPanel = bottomBarPanel; // 캐시 업데이트
                     }
                 }
@@ -583,39 +603,39 @@ namespace InvaderInsider.Managers
 
             var pausePanel = FindObjectOfType<InvaderInsider.UI.PausePanel>();
             if (pausePanel != null)
-                UIManager.Instance.RegisterPanel("Pause", pausePanel);
+                uiManager.RegisterPanel("Pause", pausePanel);
 
             var settingsPanel = FindObjectOfType<InvaderInsider.UI.SettingsPanel>();
             if (settingsPanel != null)
-                UIManager.Instance.RegisterPanel("Settings", settingsPanel);
+                uiManager.RegisterPanel("Settings", settingsPanel);
 
             var deckPanel = FindObjectOfType<InvaderInsider.UI.DeckPanel>();
             if (deckPanel != null)
-                UIManager.Instance.RegisterPanel("Deck", deckPanel);
+                uiManager.RegisterPanel("Deck", deckPanel);
 
             var achievementsPanel = FindObjectOfType<InvaderInsider.UI.AchievementsPanel>();
             if (achievementsPanel != null)
-                UIManager.Instance.RegisterPanel("Achievements", achievementsPanel);
+                uiManager.RegisterPanel("Achievements", achievementsPanel);
 
             var handDisplayPanel = FindObjectOfType<InvaderInsider.UI.HandDisplayPanel>();
             if (handDisplayPanel != null)
-                UIManager.Instance.RegisterPanel("HandDisplay", handDisplayPanel);
+                uiManager.RegisterPanel("HandDisplay", handDisplayPanel);
 
             var shopPanel = FindObjectOfType<InvaderInsider.UI.ShopPanel>();
             if (shopPanel != null)
-                UIManager.Instance.RegisterPanel("Shop", shopPanel);
+                uiManager.RegisterPanel("Shop", shopPanel);
 
             var stageSelectPanel = FindObjectOfType<InvaderInsider.UI.StageSelectPanel>();
             if (stageSelectPanel != null)
-                UIManager.Instance.RegisterPanel("StageSelect", stageSelectPanel);
+                uiManager.RegisterPanel("StageSelect", stageSelectPanel);
 
             // 나머지 패널 숨기기 (등록된 패널만)
             string[] panelsToHide = { "Pause", "Settings", "Deck", "Achievements", "HandDisplay", "Shop", "StageSelect" };
             foreach (var panelName in panelsToHide)
             {
-                if (UIManager.Instance.IsPanelRegistered(panelName))
+                if (uiManager.IsPanelRegistered(panelName))
                 {
-                    UIManager.Instance.HidePanel(panelName);
+                    uiManager.HidePanel(panelName);
                 }
             }
 
@@ -624,7 +644,7 @@ namespace InvaderInsider.Managers
             {
                 inGamePanel.gameObject.SetActive(true);
                 inGamePanel.Show();
-                UIManager.Instance.ShowPanelConcurrent("InGame");
+                uiManager.ShowPanelConcurrent("InGame");
             }
             #if UNITY_EDITOR
             else
@@ -637,15 +657,15 @@ namespace InvaderInsider.Managers
             {
                 topBarPanel.gameObject.SetActive(true);
                 topBarPanel.Show();
-                UIManager.Instance.ShowPanelConcurrent("TopBar");
+                uiManager.ShowPanelConcurrent("TopBar");
                 
                 // 스테이지 정보 업데이트 (현재/최대 형식)
                 int currentStageIndex = cachedStageManager?.GetCurrentStageIndex() ?? 0;
                 int totalStages = cachedStageManager?.GetStageCount() ?? 1;
-                int spawnedMonsters = 0; // 초기값은 0 (아직 소환되지 않음)
+                int activeMonsters = 0; // 초기값은 0 (아직 활성 몬스터 없음)
                 int maxMonsters = cachedStageManager?.GetStageWaveCount(currentStageIndex) ?? 1;
                 lastStageIndex = currentStageIndex; // 초기값 설정
-                topBarPanel.UpdateStageInfo(currentStageIndex + 1, totalStages, spawnedMonsters, maxMonsters);
+                topBarPanel.UpdateStageInfo(currentStageIndex + 1, totalStages, activeMonsters, maxMonsters);
                 
                 // 실제 저장된 eData 사용 (초기값 0)
                 int currentEData = saveDataManager?.GetCurrentEData() ?? 0;
@@ -663,7 +683,7 @@ namespace InvaderInsider.Managers
             {
                 bottomBarPanel.gameObject.SetActive(true);
                 bottomBarPanel.Show();
-                UIManager.Instance.ShowPanelConcurrent("BottomBar");
+                uiManager.ShowPanelConcurrent("BottomBar");
                 lastActiveEnemyCount = 0; // 초기값 설정
                 bottomBarPanel.UpdateMonsterCountDisplay(0);
             }

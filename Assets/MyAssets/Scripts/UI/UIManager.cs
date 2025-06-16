@@ -114,6 +114,13 @@ namespace InvaderInsider.UI
 
             if (panels.TryGetValue(panelName, out BasePanel panel))
             {
+                // 패널이 파괴되었는지 확인
+                if (panel == null)
+                {
+                    panels.Remove(panelName);
+                    return;
+                }
+                
                 if (currentPanel != null && currentPanel != panel)
                 {
                     currentPanel.Hide();
@@ -170,6 +177,17 @@ namespace InvaderInsider.UI
 
             if (panels.TryGetValue(panelName, out BasePanel panel))
             {
+                // 패널이 파괴되었는지 확인
+                if (panel == null)
+                {
+                    panels.Remove(panelName);
+                    if (currentPanel == panel)
+                    {
+                        currentPanel = null;
+                    }
+                    return;
+                }
+                
                 panel.Hide();
                 
                 if (currentPanel == panel)
@@ -180,7 +198,9 @@ namespace InvaderInsider.UI
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], panelName));
+                string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+                string registeredPanels = string.Join(", ", panels.Keys);
+                Debug.LogError($"{LOG_PREFIX}Panel '{panelName}' not found for hiding. 현재 씬: {currentSceneName}, 등록된 패널: [{registeredPanels}]");
                 #endif
             }
         }
@@ -245,6 +265,22 @@ namespace InvaderInsider.UI
             Debug.Log($"{LOG_PREFIX}Scene unloaded: {sceneName}");
             #endif
 
+            // 파괴된 패널 참조 정리
+            var keysToRemove = new List<string>();
+            foreach (var kvp in panels)
+            {
+                if (kvp.Value == null)
+                {
+                    keysToRemove.Add(kvp.Key);
+                }
+            }
+            
+            // 파괴된 패널 참조 제거
+            foreach (var key in keysToRemove)
+            {
+                panels.Remove(key);
+            }
+
             // 씬별로 적절한 패널 정리
             if (menuScenes.Any(s => s == sceneName))
             {
@@ -278,6 +314,13 @@ namespace InvaderInsider.UI
                     }
                 }
             }
+            
+            #if UNITY_EDITOR
+            if (keysToRemove.Count > 0)
+            {
+                Debug.Log($"{LOG_PREFIX}{keysToRemove.Count}개의 파괴된 패널 참조가 정리되었습니다.");
+            }
+            #endif
         }
 
         // 디버그용 - 개발 중에만 사용
@@ -285,30 +328,63 @@ namespace InvaderInsider.UI
         {
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "=== 등록된 패널 목록 ===");
+            
+            // 파괴된 패널 참조 정리
+            var keysToRemove = new List<string>();
             foreach (var kvp in panels)
             {
-                Debug.Log(string.Format(LOG_PREFIX + "Panel: {0}, Active: {1}", kvp.Key, kvp.Value.gameObject.activeSelf));
+                if (kvp.Value == null)
+                {
+                    keysToRemove.Add(kvp.Key);
+                }
+                else
+                {
+                    Debug.Log(string.Format(LOG_PREFIX + "Panel: {0}, Active: {1}", kvp.Key, kvp.Value.gameObject.activeSelf));
+                }
             }
+            
+            // 파괴된 패널 참조 제거
+            foreach (var key in keysToRemove)
+            {
+                panels.Remove(key);
+            }
+            
             Debug.Log(LOG_PREFIX + string.Format("총 {0}개 패널 등록됨", panels.Count));
             #endif
         }
 
         public void Cleanup()
         {
-            // 모든 패널 숨기기
-            foreach (var panel in panels.Values)
+            // 파괴된 패널 참조 정리
+            var keysToRemove = new List<string>();
+            foreach (var kvp in panels)
             {
-                if (panel != null)
+                if (kvp.Value == null)
                 {
-                    panel.ForceHide();
+                    keysToRemove.Add(kvp.Key);
+                }
+                else
+                {
+                    // 유효한 패널은 숨기기
+                    kvp.Value.ForceHide();
                 }
             }
             
-            // 패널 목록 초기화
-            panels.Clear();
+            // 파괴된 패널 참조 제거
+            foreach (var key in keysToRemove)
+            {
+                panels.Remove(key);
+            }
+            
+            // 현재 패널 참조 정리
+            currentPanel = null;
             
             // 이벤트 정리
             OnPanelShown = null;
+            
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + $"UI 정리 완료 - {keysToRemove.Count}개의 파괴된 패널 참조 제거됨");
+            #endif
         }
     }
 } 

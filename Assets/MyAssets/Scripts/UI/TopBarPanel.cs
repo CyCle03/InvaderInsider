@@ -54,12 +54,12 @@ namespace InvaderInsider.UI
             
             if (waveText != null)
             {
-                waveText.text = "0/20"; // 소환된 몬스터/최대 몬스터
+                waveText.text = "Wave 0/20"; // 소환된 몬스터/최대 몬스터
             }
             
             if (lifeText != null)
             {
-                lifeText.text = "100%";
+                lifeText.text = "HP 100/100";
             }
             
             if (eDataText != null)
@@ -160,7 +160,7 @@ namespace InvaderInsider.UI
             
             if (waveText != null)
             {
-                waveText.text = $"{spawnedMonsters}/{maxMonsters}";
+                waveText.text = $"Wave {spawnedMonsters}/{maxMonsters}";
             }
         }
 
