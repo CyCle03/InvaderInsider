@@ -1,0 +1,20 @@
+{
+  "progressData": {
+    "currentEData": 0,
+    "highestStageCleared": 0,
+    "summonCount": 0
+  },
+  "deckData": {
+    "deckCardIds": [],
+    "ownedCardIds": [],
+    "handCardIds": []
+  },
+  "settings": {
+    "keys": [],
+    "values": []
+  },
+  "stageProgress": {
+    "stageNumbers": [],
+    "stars": []
+  }
+}
