@@ -198,8 +198,21 @@ namespace InvaderInsider.UI
         {
             base.Hide();
             
-            // GameState 변경 제거 - GameManager에서 직접 관리하도록 함
-            // 무한 루프 방지를 위해 SettingsPanel에서는 상태를 변경하지 않음
+            // 설정 패널이 닫힐 때 이전 게임 상태로 복구
+            var gameManager = InvaderInsider.Managers.GameManager.Instance;
+            if (gameManager != null)
+            {
+                // Main 씬에서는 MainMenu로, Game 씬에서는 Playing으로 복구
+                string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+                if (currentScene == "Main")
+                {
+                    gameManager.SetGameState(InvaderInsider.Managers.GameState.MainMenu);
+                }
+                else if (currentScene == "Game")
+                {
+                    gameManager.SetGameState(InvaderInsider.Managers.GameState.Playing);
+                }
+            }
         }
     }
 } 

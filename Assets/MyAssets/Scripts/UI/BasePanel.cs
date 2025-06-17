@@ -27,6 +27,12 @@ namespace InvaderInsider.UI
                 canvasGroup = gameObject.AddComponent<CanvasGroup>();
             }
             
+            // MainMenu 패널을 제외하고는 기본적으로 숨김 상태로 시작
+            if (panelName != "MainMenu")
+            {
+                ForceHide();
+            }
+            
             Initialize();
         }
 

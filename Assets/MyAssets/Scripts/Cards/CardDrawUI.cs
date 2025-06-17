@@ -60,19 +60,8 @@ namespace InvaderInsider.Cards
                 return; // 중복 인스턴스 파괴 후 즉시 종료
             }
 
-            _cardManager = CardManager.Instance;
-            _gameManager = GameManager.Instance;
-
-            if (_cardManager == null)
-            {
-                Debug.LogError("CardManager instance not found!");
-            }
-            if (_gameManager == null)
-            {
-                Debug.LogError("GameManager instance not found!");
-            }
-
-            InitializeCardPool(); // 카드 풀 초기화 추가
+            // 카드 풀만 먼저 초기화
+            InitializeCardPool();
         }
 
         private void InitializeCardPool()
@@ -87,8 +76,25 @@ namespace InvaderInsider.Cards
 
         private void Start()
         {
+            // 매니저들 초기화 (Start에서 안전하게)
+            InitializeManagers();
             InitializeUI();
             SubscribeToEvents();
+        }
+
+        private void InitializeManagers()
+        {
+            _cardManager = CardManager.Instance;
+            _gameManager = GameManager.Instance;
+
+            if (_cardManager == null)
+            {
+                Debug.LogError("CardManager instance not found!");
+            }
+            if (_gameManager == null)
+            {
+                Debug.LogError("GameManager instance not found!");
+            }
         }
 
         private void InitializeUI()

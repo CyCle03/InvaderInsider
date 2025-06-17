@@ -98,7 +98,6 @@ namespace InvaderInsider.Managers
         private StageState currentState;
         private int clearedStageIndex;
         private BottomBarPanel bottomBarPanel;
-        private InvaderInsider.UI.TopBarPanel topBarPanel;
         private readonly List<Tower> activeTowers = new List<Tower>();
         private UIManager uiManager;
         private GameManager gameManager;
@@ -186,17 +185,18 @@ namespace InvaderInsider.Managers
         private void InitializeComponents()
         {
             // Find operations을 한 번에 모아서 처리
-            topBarPanel = topBarPanel ?? FindObjectOfType<TopBarPanel>();
+            gameManager = gameManager ?? GameManager.Instance;
             bottomBarPanel = bottomBarPanel ?? FindObjectOfType<BottomBarPanel>();
             saveDataManager = saveDataManager ?? SaveDataManager.Instance;
             
+            // TopBarPanel은 GameManager를 통해 접근하므로 직접 찾지 않음
             // readonly 필드이므로 이미 초기화되어 있음 - 새로운 할당 불가
 
             #if UNITY_EDITOR
-            string topBarStatus = topBarPanel != null ? "찾음" : "없음";
+            string gameManagerStatus = gameManager != null ? "찾음" : "없음";
             string bottomBarStatus = bottomBarPanel != null ? "찾음" : "없음";
             string saveDataStatus = saveDataManager != null ? "찾음" : "없음";
-            Debug.Log($"[Stage] 컴포넌트 초기화 - TopBarPanel: {topBarStatus}, BottomBarPanel: {bottomBarStatus}, SaveDataManager: {saveDataStatus}");
+            Debug.Log($"[Stage] 컴포넌트 초기화 - GameManager: {gameManagerStatus}, BottomBarPanel: {bottomBarStatus}, SaveDataManager: {saveDataStatus}");
             #endif
 
             activeTowers.Clear();
@@ -373,12 +373,11 @@ namespace InvaderInsider.Managers
             activeEnemyCountValue = 0;
             stageNum = startStageIndex;
             
-            // 스테이지 시작 시 UI 초기화
-            if (topBarPanel != null)
+            // 스테이지 시작 시 UI 초기화 (GameManager를 통해)
+            if (gameManager != null)
             {
-                int totalStages = GetStageCount();
                 int maxMonsters = GetStageWaveCount(startStageIndex);
-                topBarPanel.UpdateStageInfo(startStageIndex + 1, totalStages, 0, maxMonsters);
+                gameManager.UpdateStageWaveUI(startStageIndex + 1, 0, maxMonsters);
             }
             
             if (bottomBarPanel != null)
@@ -449,13 +448,12 @@ namespace InvaderInsider.Managers
             Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[1], stageNum + 1, stageWave));
             #endif
             
-            // TopBar UI 업데이트 (현재/최대 형식) - 캐시된 참조 사용
-            if (topBarPanel != null)
+            // TopBar UI 업데이트 (현재/최대 형식) - GameManager를 통해
+            if (gameManager != null)
             {
-                int totalStages = GetStageCount();
                 int spawnedMonsters = enemyCount; // 현재 소환된 몬스터 수
                 int maxMonsters = stageWave;      // 현재 스테이지의 최대 몬스터 수
-                topBarPanel.UpdateStageInfo(stageNum + 1, totalStages, spawnedMonsters, maxMonsters);
+                gameManager.UpdateStageWaveUI(stageNum + 1, spawnedMonsters, maxMonsters);
             }
             
             // BottomBar UI 업데이트 (초기 적 수)
@@ -524,7 +522,14 @@ namespace InvaderInsider.Managers
 
             if (stageNum >= GetStageCount())
             {
+                // 모든 스테이지 완료 시 Over 상태로 변경하고 스테이지 진행 중단
                 currentState = StageState.Over;
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "모든 스테이지 완료 - 스테이지 진행 종료");
+                #endif
+                
+                yield break; // 코루틴 종료로 더 이상 진행하지 않음
             }
             else
             {
@@ -536,12 +541,11 @@ namespace InvaderInsider.Managers
 
         private IEnumerator HandleWaitState()
         {
-            // 다음 스테이지 시작 전 UI 업데이트
-            if (topBarPanel != null)
+            // 다음 스테이지 시작 전 UI 업데이트 (GameManager를 통해)
+            if (gameManager != null)
             {
-                int totalStages = GetStageCount();
                 int maxMonsters = GetStageWaveCount(stageNum);
-                topBarPanel.UpdateStageInfo(stageNum + 1, totalStages, 0, maxMonsters); // 새 스테이지는 0부터 시작
+                gameManager.UpdateStageWaveUI(stageNum + 1, 0, maxMonsters); // 새 스테이지는 0부터 시작
             }
             
             yield return new WaitForSeconds(STAGE_START_DELAY);
@@ -621,12 +625,11 @@ namespace InvaderInsider.Managers
                 IncrementEnemyCount();
             }
             
-            // Wave 진행상황 UI 업데이트
-            if (topBarPanel != null)
+            // Wave 진행상황 UI 업데이트 (GameManager를 통해)
+            if (gameManager != null)
             {
-                int totalStages = GetStageCount();
                 int maxMonsters = GetStageWaveCount(stageNum);
-                topBarPanel.UpdateStageInfo(stageNum + 1, totalStages, enemyCount, maxMonsters);
+                gameManager.UpdateStageWaveUI(stageNum + 1, enemyCount, maxMonsters);
             }
         }
 
@@ -668,35 +671,17 @@ namespace InvaderInsider.Managers
                 {
                     saveDataManager = FindObjectOfType<SaveDataManager>();
                 }
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"SaveDataManager 재참조: {(saveDataManager != null ? "성공" : "실패")}");
-                #endif
             }
             
-            // 적을 잡을 때는 저장하지 않고 eData만 업데이트
-            if (saveDataManager != null)
+            // eData 업데이트는 GameManager를 통해 처리
+            if (gameManager != null)
             {
-                saveDataManager.UpdateEDataWithoutSave(eDataAmount);
-                
-                // TopBarPanel에 직접 eData 업데이트 (Stage/Wave UI와 동일한 방식)
-                if (topBarPanel != null)
-                {
-                    int currentEData = saveDataManager.GetCurrentEData();
-                    topBarPanel.UpdateEData(currentEData);
-                }
-                
-                // CardDrawUI 버튼 상태도 업데이트
-                var cardDrawUI = FindObjectOfType<CardDrawUI>();
-                if (cardDrawUI != null)
-                {
-                    int currentEData = saveDataManager.GetCurrentEData();
-                    cardDrawUI.UpdateButtonStates(currentEData);
-                }
+                gameManager.AddEData(eDataAmount);
             }
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "SaveDataManager를 찾을 수 없어 eData 업데이트를 건너뜁니다.");
+                Debug.LogError(LOG_PREFIX + "GameManager를 찾을 수 없어 eData 업데이트를 건너뜁니다.");
                 #endif
             }
         }

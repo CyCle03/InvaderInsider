@@ -11,13 +11,6 @@ namespace InvaderInsider.UI
     public class MainMenuPanel : BasePanel
     {
         private const string LOG_PREFIX = "[MainMenu] ";
-        
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "Scene transition initiated", // 0
-            "No save data found", // 1
-            "Loading stage: {0}" // 2
-        };
 
         [Header("Components")]
         [SerializeField] private MainMenuButtonHandler buttonHandler;
@@ -34,7 +27,7 @@ namespace InvaderInsider.UI
         public Text versionText;
 
         private SaveDataManager saveDataManager;
-        private bool isLoadingScene = false; // 씬 로딩 중복 방지 플래그
+        private bool isGameStarting = false; // 게임 시작 중복 방지 플래그
 
         private void Start()
         {
@@ -56,9 +49,28 @@ namespace InvaderInsider.UI
         {
             saveDataManager = SaveDataManager.Instance;
             
-            SetupButtons();
+            // ButtonHandler가 있으면 이벤트 구독, 없으면 직접 버튼 설정
+            if (buttonHandler != null)
+            {
+                SetupButtonHandlerEvents();
+            }
+            else
+            {
+                SetupButtons();
+            }
+            
             UpdateContinueButton();
             UpdateVersionInfo();
+        }
+
+        private void SetupButtonHandlerEvents()
+        {
+            if (buttonHandler != null)
+            {
+                buttonHandler.OnNewGameClicked += StartNewGame;
+                buttonHandler.OnLoadGameClicked += ContinueGame;
+                // 다른 이벤트들은 ButtonHandler에서 직접 처리
+            }
         }
 
         private System.Collections.IEnumerator TryGetSaveDataManager()
@@ -125,23 +137,42 @@ namespace InvaderInsider.UI
 
         private void SetupButtons()
         {
+            // 기존 리스너 제거 후 새로 등록 (중복 방지)
             if (newGameButton != null)
+            {
+                newGameButton.onClick.RemoveListener(OnNewGameClicked);
                 newGameButton.onClick.AddListener(OnNewGameClicked);
+            }
             
             if (continueButton != null)
+            {
+                continueButton.onClick.RemoveListener(OnContinueClicked);
                 continueButton.onClick.AddListener(OnContinueClicked);
+            }
             
             if (settingsButton != null)
+            {
+                settingsButton.onClick.RemoveListener(OnSettingsClicked);
                 settingsButton.onClick.AddListener(OnSettingsClicked);
+            }
             
             if (deckButton != null)
+            {
+                deckButton.onClick.RemoveListener(OnDeckClicked);
                 deckButton.onClick.AddListener(OnDeckClicked);
+            }
             
             if (achievementsButton != null)
+            {
+                achievementsButton.onClick.RemoveListener(OnAchievementsClicked);
                 achievementsButton.onClick.AddListener(OnAchievementsClicked);
+            }
             
             if (exitButton != null)
+            {
+                exitButton.onClick.RemoveListener(OnExitClicked);
                 exitButton.onClick.AddListener(OnExitClicked);
+            }
         }
 
         private void UpdateContinueButton()
@@ -174,6 +205,9 @@ namespace InvaderInsider.UI
         // 버튼 이벤트 핸들러들
         private void OnNewGameClicked()
         {
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "OnNewGameClicked 호출됨");
+            #endif
             StartNewGame();
         }
 
@@ -205,102 +239,66 @@ namespace InvaderInsider.UI
         // 게임 로직 메서드들
         private void StartNewGame()
         {
-            if (saveDataManager != null)
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + $"StartNewGame 호출됨 - isGameStarting: {isGameStarting}");
+            #endif
+            
+            // 이미 게임 시작 중이면 무시
+            if (isGameStarting) 
             {
-                saveDataManager.ResetGameData();
                 #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], 1));
+                Debug.Log(LOG_PREFIX + "이미 게임 시작 중입니다.");
                 #endif
+                return;
             }
             
-            // 새 게임은 항상 첫 번째 스테이지(인덱스 0)부터 시작
-            InvaderInsider.Managers.GameManager.SetRequestedStartStage(0);
+            isGameStarting = true;
             
-            LoadGameScene();
-        }
-
-        private void ContinueGame()
-        {
-            // SaveDataManager가 없다면 즉시 다시 시도
-            if (saveDataManager == null)
-            {
-                saveDataManager = SaveDataManager.Instance;
-            }
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "GameManager.StartNewGame() 호출 시도");
+            #endif
             
-            if (saveDataManager != null && saveDataManager.HasSaveData())
+            // GameManager가 모든 게임 시작 로직을 담당
+            var gameManager = InvaderInsider.Managers.GameManager.Instance;
+            if (gameManager != null)
             {
-                saveDataManager.LoadGameData();
-                var saveData = saveDataManager.CurrentSaveData;
-                if (saveData != null)
-                {
-                    // Continue는 클리어한 최고 스테이지의 다음 스테이지부터 시작
-                    int highestCleared = saveData.progressData.highestStageCleared;
-                    int nextStage = highestCleared + 1; // 클리어한 스테이지의 다음 스테이지
-                    #if UNITY_EDITOR
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], nextStage));
-                    Debug.Log(LOG_PREFIX + $"최고 클리어 스테이지: {highestCleared}, 시작할 스테이지: {nextStage}");
-                    #endif
-                    
-                    // GameManager에 시작할 스테이지 설정 (인덱스는 0부터 시작하므로 nextStage - 1)
-                    InvaderInsider.Managers.GameManager.SetRequestedStartStage(nextStage - 1);
-                }
-                
-                LoadGameScene();
+                gameManager.StartNewGame();
             }
             else
             {
                 #if UNITY_EDITOR
-                if (saveDataManager == null)
-                {
-                    Debug.LogWarning(LOG_PREFIX + "SaveDataManager를 찾을 수 없습니다.");
-                }
-                else
-                {
-                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
-                }
+                Debug.LogError(LOG_PREFIX + "GameManager를 찾을 수 없습니다!");
+                #endif
+                isGameStarting = false; // 실패 시 플래그 리셋
+            }
+        }
+
+        private void ContinueGame()
+        {
+            // 이미 게임 시작 중이면 무시
+            if (isGameStarting) 
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "이미 게임 시작 중입니다.");
                 #endif
                 return;
             }
-        }
-
-        private void LoadGameScene()
-        {
-            if (isLoadingScene) return;
-            isLoadingScene = true;
-
-            Time.timeScale = 1f;
             
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[0]);
-            #endif
-
-            // 간단한 씬 전환으로 변경 (성능 최적화)
-            StartCoroutine(LoadGameSceneOptimized());
-        }
-
-        private System.Collections.IEnumerator LoadGameSceneOptimized()
-        {
-            // UI 정리
-            var uiManager = UIManager.Instance;
-            if (uiManager != null)
+            isGameStarting = true;
+            
+            // GameManager가 모든 게임 계속하기 로직을 담당
+            var gameManager = InvaderInsider.Managers.GameManager.Instance;
+            if (gameManager != null)
             {
-                uiManager.Cleanup();
+                gameManager.StartContinueGame();
             }
-            
-            yield return null; // 한 프레임 대기
-            
-            // 비동기로 Game 씬 로드
-            var asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Game");
-            
-            // 씬 로딩 완료까지 대기
-            while (!asyncLoad.isDone)
+            else
             {
-                yield return null;
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "GameManager를 찾을 수 없습니다!");
+                #endif
+                isGameStarting = false; // 실패 시 플래그 리셋
             }
-
-            yield return new WaitForEndOfFrame(); // 모든 오브젝트 초기화 대기
-            
-            isLoadingScene = false;
         }
 
         private void ExitGame()
@@ -326,6 +324,16 @@ namespace InvaderInsider.UI
             if (deckButton != null) deckButton.interactable = interactable;
             if (achievementsButton != null) achievementsButton.interactable = interactable;
             if (exitButton != null) exitButton.interactable = interactable;
+        }
+
+        private void OnDestroy()
+        {
+            // ButtonHandler 이벤트 구독 해제
+            if (buttonHandler != null)
+            {
+                buttonHandler.OnNewGameClicked -= StartNewGame;
+                buttonHandler.OnLoadGameClicked -= ContinueGame;
+            }
         }
     }
 } 

@@ -114,14 +114,17 @@ namespace InvaderInsider.UI
             Debug.Log(LOG_PREFIX + "메인 메뉴로 이동");
             #endif
             
-            // 순환 참조 방지를 위해 직접 시간 스케일 복구
-            Time.timeScale = 1f;
+            // GameManager가 씬 전환과 상태 관리를 모두 담당
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.SetGameState(InvaderInsider.Managers.GameState.MainMenu);
+                GameManager.Instance.LoadMainMenuScene();
             }
-            
-            UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
+            else
+            {
+                // 만약 GameManager가 없다면 직접 씬 전환
+                Time.timeScale = 1f;
+                UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
+            }
         }
 
         private void OnDestroy()

@@ -1,7 +1,7 @@
 {
   "progressData": {
-    "currentEData": 11,
-    "highestStageCleared": 1,
+    "currentEData": 55,
+    "highestStageCleared": 2,
     "summonCount": 0
   },
   "deckData": {
@@ -15,10 +15,12 @@
   },
   "stageProgress": {
     "stageNumbers": [
+      2,
       1
     ],
     "stars": [
-      3
+      3,
+      1
     ]
   }
 }
