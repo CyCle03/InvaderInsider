@@ -280,6 +280,9 @@ namespace InvaderInsider
                 // 체력 변경 이벤트 호출하여 UI 업데이트
                 InvokeHealthChanged();
             }
+            
+            // 적의 레이어와 태그 설정
+            SetupEnemyLayerAndTag();
 
             var stageWayPoints = stageManager.WayPoints;
             if (stageWayPoints == null || stageWayPoints.Count == 0)
@@ -317,6 +320,45 @@ namespace InvaderInsider
             if (agent != null && gameObject.activeInHierarchy)
             {
                 StartPathUpdateCoroutine();
+            }
+        }
+        
+        private void SetupEnemyLayerAndTag()
+        {
+            // 적의 태그를 "Enemy"로 설정
+            if (!gameObject.CompareTag("Enemy"))
+            {
+                gameObject.tag = "Enemy";
+                if (Application.isPlaying)
+                {
+                    Debug.Log($"[Enemy] 적 태그를 'Enemy'로 설정: {gameObject.name}");
+                }
+            }
+            
+            // 적의 레이어를 확인하고 설정
+            int enemyLayer = LayerMask.NameToLayer("Enemy");
+            if (enemyLayer != -1 && gameObject.layer != enemyLayer)
+            {
+                // Enemy 레이어가 존재하면 해당 레이어로 설정
+                gameObject.layer = enemyLayer;
+                if (Application.isPlaying)
+                {
+                    Debug.Log($"[Enemy] 적 레이어를 'Enemy'({enemyLayer}번)로 설정: {gameObject.name}");
+                }
+            }
+            else if (enemyLayer == -1)
+            {
+                // Enemy 레이어가 없다면 6번 레이어를 기본값으로 사용
+                gameObject.layer = 6;
+                if (Application.isPlaying)
+                {
+                    Debug.LogWarning($"[Enemy] 'Enemy' 레이어가 존재하지 않음. 기본값 6번 레이어로 설정: {gameObject.name}");
+                }
+            }
+            
+            if (Application.isPlaying)
+            {
+                Debug.Log($"[Enemy] 적 설정 완료 - 태그: {gameObject.tag}, 레이어: {LayerMask.LayerToName(gameObject.layer)} ({gameObject.layer})");
             }
         }
 
