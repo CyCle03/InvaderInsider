@@ -12,6 +12,7 @@ namespace InvaderInsider.UI
         
         [Header("Pause Panel UI")]
         public Button resumeButton;
+        public Button restartButton;
         public Button settingsButton;
         public Button mainMenuButton;
 
@@ -26,6 +27,9 @@ namespace InvaderInsider.UI
         {
             if (resumeButton != null)
                 resumeButton.onClick.AddListener(OnResumeClicked);
+            
+            if (restartButton != null)
+                restartButton.onClick.AddListener(OnRestartClicked);
             
             if (settingsButton != null)
                 settingsButton.onClick.AddListener(OnSettingsClicked);
@@ -94,6 +98,29 @@ namespace InvaderInsider.UI
             else
             {
                 Time.timeScale = 1f;
+            }
+        }
+
+        private void OnRestartClicked()
+        {
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "Restart 버튼 클릭됨 - 저장된 상태에서 다시 시작");
+            #endif
+            
+            // GameManager를 통해 Continue Game과 동일한 방식으로 재시작
+            if (GameManager.Instance != null)
+            {
+                // 시간 스케일 복구
+                Time.timeScale = 1f;
+                
+                // Continue Game과 동일한 로직 사용
+                GameManager.Instance.StartContinueGame();
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "GameManager를 찾을 수 없습니다!");
+                #endif
             }
         }
 
