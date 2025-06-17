@@ -329,10 +329,6 @@ namespace InvaderInsider
             if (!gameObject.CompareTag("Enemy"))
             {
                 gameObject.tag = "Enemy";
-                if (Application.isPlaying)
-                {
-                    Debug.Log($"[Enemy] 적 태그를 'Enemy'로 설정: {gameObject.name}");
-                }
             }
             
             // 적의 레이어를 확인하고 설정
@@ -341,10 +337,6 @@ namespace InvaderInsider
             {
                 // Enemy 레이어가 존재하면 해당 레이어로 설정
                 gameObject.layer = enemyLayer;
-                if (Application.isPlaying)
-                {
-                    Debug.Log($"[Enemy] 적 레이어를 'Enemy'({enemyLayer}번)로 설정: {gameObject.name}");
-                }
             }
             else if (enemyLayer == -1)
             {
@@ -352,13 +344,8 @@ namespace InvaderInsider
                 gameObject.layer = 6;
                 if (Application.isPlaying)
                 {
-                    Debug.LogWarning($"[Enemy] 'Enemy' 레이어가 존재하지 않음. 기본값 6번 레이어로 설정: {gameObject.name}");
+                    Debug.LogWarning($"[Enemy] 'Enemy' 레이어가 존재하지 않음. 기본값 6번 레이어로 설정");
                 }
-            }
-            
-            if (Application.isPlaying)
-            {
-                Debug.Log($"[Enemy] 적 설정 완료 - 태그: {gameObject.tag}, 레이어: {LayerMask.LayerToName(gameObject.layer)} ({gameObject.layer})");
             }
         }
 

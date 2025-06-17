@@ -40,9 +40,11 @@ namespace InvaderInsider
             SetupEnemyLayer();
             
             #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
-            Debug.Log($"[Tower] 타워 초기화 - 공격 범위: {towerAttackRange}, 공격력: {attackDamage}, 연사속도: {fireRate}");
-            Debug.Log($"[Tower] Projectile Prefab: {(projectilePrefab != null ? "설정됨" : "NULL!")}, FirePoint: {(firePoint != null ? "설정됨" : "NULL!")}");
-            Debug.Log($"[Tower] Enemy Layer: {enemyLayer.value} (레이어 6: {((enemyLayer.value & (1 << 6)) != 0 ? "포함됨" : "포함 안됨")})");
+            Debug.Log($"[Tower] 타워 초기화 완료 - 공격범위: {towerAttackRange}, 데미지: {attackDamage}, 연사: {fireRate}/s");
+            if (projectilePrefab == null || firePoint == null)
+            {
+                Debug.LogWarning($"[Tower] 누락된 설정 - ProjectilePrefab: {projectilePrefab != null}, FirePoint: {firePoint != null}");
+            }
             #endif
             
             isInitialized = true;
@@ -57,16 +59,13 @@ namespace InvaderInsider
             {
                 // Enemy 레이어가 존재하면 해당 레이어를 사용
                 enemyLayer = 1 << enemyLayerIndex;
-                #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
-                Debug.Log($"[Tower] Enemy 레이어 감지: {enemyLayerIndex}번 레이어, LayerMask 값: {enemyLayer.value}");
-                #endif
             }
             else
             {
                 // Enemy 레이어가 없으면 6번 레이어를 기본값으로 사용
                 enemyLayer = 1 << 6;
                 #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
-                Debug.LogWarning($"[Tower] 'Enemy' 레이어가 존재하지 않음. 기본값 6번 레이어 사용: LayerMask 값: {enemyLayer.value}");
+                Debug.LogWarning($"[Tower] 'Enemy' 레이어가 존재하지 않음. 기본값 6번 레이어 사용");
                 #endif
             }
         }
@@ -93,13 +92,6 @@ namespace InvaderInsider
         {
             Collider[] enemies = Physics.OverlapSphere(transform.position, towerAttackRange, enemyLayer);
             
-            #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
-            if (enemies.Length > 0)
-            {
-                Debug.Log($"[Tower] 감지된 적: {enemies.Length}개");
-            }
-            #endif
-            
             if (enemies.Length > 0)
             {
                 float closestDistance = Mathf.Infinity;
@@ -116,10 +108,6 @@ namespace InvaderInsider
                             closestDistance = distance;
                             closestEnemy = enemyObject;
                         }
-                        
-                        #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
-                        Debug.Log($"[Tower] 유효한 적 발견: {enemy.name}, 거리: {distance:F2}");
-                        #endif
                     }
                 }
                 
@@ -164,20 +152,12 @@ namespace InvaderInsider
                 float currentY = partToRotate.eulerAngles.y;
                 float newY = Mathf.LerpAngle(currentY, targetAngle, Time.deltaTime * 5f);
                 
-                #if DEBUG_TOWER_ROTATION && UNITY_EDITOR
-                Debug.Log($"[Tower] 회전 - 현재: {currentY:F1}°, 목표: {targetAngle:F1}°, 새로운: {newY:F1}°");
-                #endif
-                
                 partToRotate.rotation = Quaternion.Euler(0, newY, 0);
             }
         }
 
         public override void Attack(IDamageable target)
         {
-            #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
-            Debug.Log($"[Tower] 공격 시도 - Target: {(target != null ? "있음" : "NULL")}, FirePoint: {(firePoint != null ? "있음" : "NULL")}, ProjectilePrefab: {(projectilePrefab != null ? "있음" : "NULL")}");
-            #endif
-            
             if (target == null || firePoint == null || projectilePrefab == null) 
             {
                 #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
@@ -195,7 +175,7 @@ namespace InvaderInsider
                 projectile.SetDmg(attackDamage);
                 
                 #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
-                Debug.Log($"[Tower] 발사체 발사 성공! 대상: {(target as MonoBehaviour).name}, 데미지: {attackDamage}");
+                Debug.Log($"[Tower] 발사체 발사! 대상: {(target as MonoBehaviour).name}, 데미지: {attackDamage}");
                 #endif
             }
             else
