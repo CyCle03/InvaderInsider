@@ -27,8 +27,6 @@ namespace InvaderInsider.UI
         private MenuManager menuManager;
 
         // Events for external scripts - 사용하는 이벤트만 유지
-        public event Action OnNewGameClicked;
-        public event Action OnLoadGameClicked;
         public event Action OnSettingsClicked;
         public event Action OnDeckClicked;
         public event Action OnQuitClicked;
@@ -63,20 +61,10 @@ namespace InvaderInsider.UI
 
         private void SetupButtonEvents()
         {
-            if (newGameButton != null)
-                newGameButton.onClick.AddListener(() => {
-                    OnNewGameClicked?.Invoke();
-                    // MainMenuPanel에서 처리하므로 중복 실행 방지
-                    // HandleNewGameClick();
-                });
+            // MainMenuPanel에서 직접 버튼 이벤트를 처리하므로 
+            // NewGame과 Continue 버튼은 여기서 처리하지 않음 (중복 방지)
             
-            if (continueButton != null)
-                continueButton.onClick.AddListener(() => {
-                    OnLoadGameClicked?.Invoke();
-                    // MainMenuPanel에서 처리하므로 중복 실행 방지
-                    // HandleContinueClick();
-                });
-            
+            // Settings, Deck, Exit 버튼만 처리 (MainMenuPanel에 없는 기능들)
             if (settingsButton != null)
                 settingsButton.onClick.AddListener(() => {
                     OnSettingsClicked?.Invoke();

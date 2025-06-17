@@ -28,6 +28,8 @@ namespace InvaderInsider.UI
 
         private SaveDataManager saveDataManager;
         private bool isGameStarting = false; // 게임 시작 중복 방지 플래그
+        private float lastClickTime = 0f; // 마지막 클릭 시간
+        private const float CLICK_COOLDOWN = 0.2f; // 클릭 쿨다운 (0.2초)
 
         private void Start()
         {
@@ -49,29 +51,14 @@ namespace InvaderInsider.UI
         {
             saveDataManager = SaveDataManager.Instance;
             
-            // ButtonHandler가 있으면 이벤트 구독, 없으면 직접 버튼 설정
-            if (buttonHandler != null)
-            {
-                SetupButtonHandlerEvents();
-            }
-            else
-            {
-                SetupButtons();
-            }
+            // MainMenuPanel에서만 버튼 이벤트 처리 (중복 방지)
+            SetupButtons();
             
             UpdateContinueButton();
             UpdateVersionInfo();
         }
 
-        private void SetupButtonHandlerEvents()
-        {
-            if (buttonHandler != null)
-            {
-                buttonHandler.OnNewGameClicked += StartNewGame;
-                buttonHandler.OnLoadGameClicked += ContinueGame;
-                // 다른 이벤트들은 ButtonHandler에서 직접 처리
-            }
-        }
+        // ButtonHandler 이벤트는 더 이상 사용하지 않음 (MainMenuPanel에서 직접 처리)
 
         private System.Collections.IEnumerator TryGetSaveDataManager()
         {
@@ -239,6 +226,16 @@ namespace InvaderInsider.UI
         // 게임 로직 메서드들
         private void StartNewGame()
         {
+            // 쿨다운 체크
+            float currentTime = Time.unscaledTime;
+            if (currentTime - lastClickTime < CLICK_COOLDOWN)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"클릭 쿨다운 중입니다. 남은 시간: {CLICK_COOLDOWN - (currentTime - lastClickTime):F1}초");
+                #endif
+                return;
+            }
+            
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + $"StartNewGame 호출됨 - isGameStarting: {isGameStarting}");
             #endif
@@ -253,6 +250,7 @@ namespace InvaderInsider.UI
             }
             
             isGameStarting = true;
+            lastClickTime = currentTime;
             
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "GameManager.StartNewGame() 호출 시도");
@@ -275,6 +273,16 @@ namespace InvaderInsider.UI
 
         private void ContinueGame()
         {
+            // 쿨다운 체크
+            float currentTime = Time.unscaledTime;
+            if (currentTime - lastClickTime < CLICK_COOLDOWN)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"클릭 쿨다운 중입니다. 남은 시간: {CLICK_COOLDOWN - (currentTime - lastClickTime):F1}초");
+                #endif
+                return;
+            }
+            
             // 이미 게임 시작 중이면 무시
             if (isGameStarting) 
             {
@@ -285,6 +293,7 @@ namespace InvaderInsider.UI
             }
             
             isGameStarting = true;
+            lastClickTime = currentTime;
             
             // GameManager가 모든 게임 계속하기 로직을 담당
             var gameManager = InvaderInsider.Managers.GameManager.Instance;
@@ -328,12 +337,13 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
-            // ButtonHandler 이벤트 구독 해제
-            if (buttonHandler != null)
-            {
-                buttonHandler.OnNewGameClicked -= StartNewGame;
-                buttonHandler.OnLoadGameClicked -= ContinueGame;
-            }
+            // MainMenuPanel에서 직접 버튼 이벤트를 처리하므로 특별한 정리 불필요
+        }
+
+        private void OnDisable()
+        {
+            // 패널이 비활성화될 때 플래그 리셋
+            isGameStarting = false;
         }
     }
 } 
