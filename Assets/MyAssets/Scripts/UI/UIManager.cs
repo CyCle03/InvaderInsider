@@ -373,9 +373,6 @@ namespace InvaderInsider.UI
 
         public void Cleanup()
         {
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "UI 정리 시작...");
-            #endif
             
             // 등록된 패널들만 정리 (FindObjectsOfType 사용 최소화)
             tempKeysToRemove.Clear();
@@ -419,9 +416,7 @@ namespace InvaderInsider.UI
             // 이벤트 정리
             OnPanelShown = null;
             
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"UI 정리 완료 - {tempKeysToRemove.Count}개의 참조 제거됨");
-            #endif
+
         }
     }
 } 

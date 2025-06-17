@@ -315,9 +315,10 @@ namespace InvaderInsider.Managers
         // StageManager에서 호출하여 TopBarPanel의 Stage/Wave UI를 업데이트
         public void UpdateStageWaveUI(int currentStage, int spawnedMonsters, int maxMonsters)
         {
-            if (cachedTopBarPanel != null)
+            if (cachedTopBarPanel != null && cachedStageManager != null)
             {
-                cachedTopBarPanel.UpdateStageInfo(currentStage, 10, spawnedMonsters, maxMonsters);
+                int totalStages = cachedStageManager.GetStageCount();
+                cachedTopBarPanel.UpdateStageInfo(currentStage, totalStages, spawnedMonsters, maxMonsters);
             }
         }
 
@@ -334,7 +335,7 @@ namespace InvaderInsider.Managers
         public void StageCleared(int stageNum, int stars)
         {
             OnStageClearedEvent?.Invoke();
-            saveDataManager?.UpdateStageProgress(stageNum, stars);
+            // UpdateStageProgress는 HandleStageCleared에서만 호출 (중복 방지)
         }
 
         // eData 이벤트 구독 메서드들은 더 이상 사용되지 않음 (직접 호출 방식으로 전환)
@@ -570,6 +571,13 @@ namespace InvaderInsider.Managers
                 uiManager.RegisterPanel("TopBar", topBarPanel);
                 cachedTopBarPanel = topBarPanel; // 캐시 업데이트
                 topBarPanel.Show(); // 패널 보이기
+                
+                // 실제 스테이지 수로 초기화
+                if (cachedStageManager != null)
+                {
+                    int totalStages = cachedStageManager.GetStageCount();
+                    cachedTopBarPanel.UpdateStageInfo(1, totalStages, 0, 0);
+                }
             }
             else
             {
@@ -582,6 +590,13 @@ namespace InvaderInsider.Managers
                         uiManager.RegisterPanel("TopBar", topBarPanel);
                         cachedTopBarPanel = topBarPanel; // 캐시 업데이트
                         topBarPanel.Show(); // 패널 보이기
+                        
+                        // 실제 스테이지 수로 초기화
+                        if (cachedStageManager != null)
+                        {
+                            int totalStages = cachedStageManager.GetStageCount();
+                            cachedTopBarPanel.UpdateStageInfo(1, totalStages, 0, 0);
+                        }
                     }
                 }
                 #if UNITY_EDITOR

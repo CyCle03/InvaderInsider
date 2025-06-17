@@ -24,13 +24,6 @@ namespace InvaderInsider.UI
 
         private void Start()
         {
-            #if UNITY_EDITOR
-            Debug.Log($"[TopBarPanel] Start - stageText: {(stageText != null ? "할당됨" : "없음")}, " +
-                     $"waveText: {(waveText != null ? "할당됨" : "없음")}, " +
-                     $"eDataText: {(eDataText != null ? "할당됨" : "없음")}, " +
-                     $"pauseButton: {(pauseButton != null ? "할당됨" : "없음")}");
-            #endif
-            
             if (stageText == null || waveText == null || eDataText == null || pauseButton == null)
             {
                 #if UNITY_EDITOR
@@ -40,21 +33,19 @@ namespace InvaderInsider.UI
             }
 
             InitializeUI();
-            
-            // eData는 GameManager에서 직접 호출로 업데이트됨 (강제 재로드 제거)
         }
 
         private void InitializeUI()
         {
-            // 기본 텍스트 설정
+            // 기본 텍스트 설정 (실제 값은 GameManager에서 업데이트됨)
             if (stageText != null)
             {
-                stageText.text = "Stage 1/10";
+                stageText.text = "Stage 1/1"; // GameManager에서 실제 스테이지 수로 업데이트됨
             }
             
             if (waveText != null)
             {
-                waveText.text = "Wave 0/20"; // 소환된 몬스터/최대 몬스터
+                waveText.text = "Wave 0/0"; // 소환된 몬스터/최대 몬스터 (GameManager에서 업데이트됨)
             }
             
             // eData는 GameManager에서 직접 호출로 업데이트됨 (Stage/Wave UI와 동일한 방식)
@@ -63,10 +54,6 @@ namespace InvaderInsider.UI
                 eDataText.text = "eData: 0"; // 기본값, GameManager에서 실제 값으로 업데이트
             }
             currentEData = 0;
-            
-            #if UNITY_EDITOR
-            Debug.Log($"[TopBarPanel] InitializeUI - eData 기본값 설정, GameManager에서 실제 값으로 업데이트 예정");
-            #endif
         }
 
         protected override void Initialize()
@@ -110,7 +97,7 @@ namespace InvaderInsider.UI
                 waveText.text = "Wave 0/0";  // 몬스터 소환 수/최대 몬스터 수
             }
             
-            Debug.Log("[TopBarPanel] UI 초기화 완료 - Stage와 Wave 기본값 설정");
+
         }
 
         private void HandlePauseClick()

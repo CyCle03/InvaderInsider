@@ -73,9 +73,7 @@ namespace InvaderInsider.UI
             ConfigureCanvasScaler();
             ValidateEventSystem();
 
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[1]);
-            #endif
+
         }
 
         private void GetCanvasComponents()
@@ -106,10 +104,7 @@ namespace InvaderInsider.UI
                 graphicRaycaster = mainCanvas.gameObject.AddComponent<GraphicRaycaster>();
             }
 
-            #if UNITY_EDITOR
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], mainCanvas.renderMode));
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], mainCanvas.sortingOrder));
-            #endif
+
         }
 
         private void ConfigureCanvasScaler()
@@ -125,9 +120,7 @@ namespace InvaderInsider.UI
                 canvasScaler.referenceResolution = referenceResolution;
                 canvasScaler.matchWidthOrHeight = matchWidthOrHeight;
 
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[5]);
-                #endif
+
             }
         }
 
@@ -140,9 +133,7 @@ namespace InvaderInsider.UI
                 eventSystemGO.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
             }
 
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[4]);
-            #endif
+
         }
 
         public void SetRenderMode(RenderMode renderMode)

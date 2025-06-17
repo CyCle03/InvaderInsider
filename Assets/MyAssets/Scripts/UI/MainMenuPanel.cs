@@ -98,26 +98,37 @@ namespace InvaderInsider.UI
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + "SaveDataManager 연결 실패 - SaveDataManager 생성을 시도합니다");
+                Debug.LogWarning(LOG_PREFIX + "SaveDataManager 연결 실패 - 백업 메커니즘 실행");
                 #endif
                 
-                // SaveDataManager를 강제로 생성
-                var saveDataManagerInstance = SaveDataManager.Instance; // 이것만으로도 인스턴스가 생성됨
-                
-                if (saveDataManagerInstance != null)
+                // Continue 버튼을 일시적으로 비활성화
+                if (continueButton != null)
                 {
-                    saveDataManager = saveDataManagerInstance;
-                    UpdateContinueButton();
+                    continueButton.interactable = false;
+                }
+                
+                // 백업 메커니즘: 1초 후 다시 시도
+                yield return new WaitForSecondsRealtime(1f);
+                
+                // 마지막 시도
+                saveDataManager = SaveDataManager.Instance;
+                if (saveDataManager == null)
+                {
+                    saveDataManager = FindObjectOfType<SaveDataManager>();
+                }
+                
+                if (saveDataManager != null)
+                {
                     #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + "SaveDataManager 생성 후 연결 성공");
+                    Debug.Log(LOG_PREFIX + "SaveDataManager 백업 연결 성공");
                     #endif
+                    UpdateContinueButton();
                 }
                 else
                 {
-                    if (continueButton != null)
-                    {
-                        continueButton.interactable = false;
-                    }
+                    #if UNITY_EDITOR
+                    Debug.LogError(LOG_PREFIX + "SaveDataManager를 찾을 수 없습니다. Continue 버튼이 비활성화됩니다.");
+                    #endif
                 }
             }
         }
