@@ -39,13 +39,13 @@ namespace InvaderInsider
             // Enemy 레이어가 6번인지 확인하고 설정
             SetupEnemyLayer();
             
-            #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
+            /*#if DEBUG_TOWER_ATTACK && UNITY_EDITOR
             Debug.Log($"[Tower] 타워 초기화 완료 - 공격범위: {towerAttackRange}, 데미지: {attackDamage}, 연사: {fireRate}/s");
             if (projectilePrefab == null || firePoint == null)
             {
                 Debug.LogWarning($"[Tower] 누락된 설정 - ProjectilePrefab: {projectilePrefab != null}, FirePoint: {firePoint != null}");
             }
-            #endif
+            #endif*/
             
             isInitialized = true;
         }
@@ -116,21 +116,21 @@ namespace InvaderInsider
                     currentTarget = closestEnemy;
                     hasTarget = currentTarget != null;
                     
-                    #if DEBUG_TOWER_ROTATION && UNITY_EDITOR
+                    /*#if DEBUG_TOWER_ROTATION && UNITY_EDITOR
                     if (hasTarget)
                     {
                         Debug.Log($"[Tower] 새 타겟 발견: {currentTarget.name}");
                     }
-                    #endif
+                    #endif*/
                 }
             }
             else
             {
                 if (hasTarget)
                 {
-                    #if DEBUG_TOWER_ROTATION && UNITY_EDITOR
+                    /*#if DEBUG_TOWER_ROTATION && UNITY_EDITOR
                     Debug.Log("[Tower] 타겟 상실");
-                    #endif
+                    #endif*/
                     
                     currentTarget = null;
                     hasTarget = false;
