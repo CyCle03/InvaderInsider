@@ -274,21 +274,23 @@ namespace InvaderInsider.UI
             Debug.Log(LOG_PREFIX + LOG_MESSAGES[0]);
             #endif
 
+            // 간단한 씬 전환으로 변경 (성능 최적화)
+            StartCoroutine(LoadGameSceneOptimized());
+        }
+
+        private System.Collections.IEnumerator LoadGameSceneOptimized()
+        {
             // UI 정리
             var uiManager = UIManager.Instance;
             if (uiManager != null)
             {
                 uiManager.Cleanup();
             }
-
-            // 비동기 씬 로딩 시작
-            StartCoroutine(LoadGameSceneAsync());
-        }
-
-        private IEnumerator LoadGameSceneAsync()
-        {
+            
+            yield return null; // 한 프레임 대기
+            
             // 비동기로 Game 씬 로드
-            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("Game");
+            var asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Game");
             
             // 씬 로딩 완료까지 대기
             while (!asyncLoad.isDone)
@@ -296,15 +298,8 @@ namespace InvaderInsider.UI
                 yield return null;
             }
 
-            // 씬 로딩 완료 후 게임 매니저 초기화
-            yield return new WaitForEndOfFrame(); // 한 프레임 더 대기하여 모든 오브젝트가 완전히 초기화되도록 함
+            yield return new WaitForEndOfFrame(); // 모든 오브젝트 초기화 대기
             
-            var gameManager = FindObjectOfType<GameManager>();
-            if (gameManager != null)
-            {
-                gameManager.InitializeGame();
-            }
-
             isLoadingScene = false;
         }
 

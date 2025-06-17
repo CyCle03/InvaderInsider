@@ -127,9 +127,6 @@ namespace InvaderInsider.UI
             if (eDataText != null)
             {
                 eDataText.text = $"eData: {amount}";
-                #if UNITY_EDITOR
-                Debug.Log($"[TopBarPanel] UpdateEData 호출됨 - eData: {amount}");
-                #endif
             }
             else
             {

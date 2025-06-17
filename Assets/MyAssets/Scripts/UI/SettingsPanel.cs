@@ -198,13 +198,8 @@ namespace InvaderInsider.UI
         {
             base.Hide();
             
-            // GameManager 상태를 Playing으로 복구
-            var gameManager = InvaderInsider.Managers.GameManager.Instance;
-            if (gameManager != null)
-            {
-                gameManager.SetGameState(InvaderInsider.Managers.GameState.Playing);
-                Time.timeScale = 1f; // 게임 재개
-            }
+            // GameState 변경 제거 - GameManager에서 직접 관리하도록 함
+            // 무한 루프 방지를 위해 SettingsPanel에서는 상태를 변경하지 않음
         }
     }
 } 

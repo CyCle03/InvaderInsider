@@ -185,24 +185,18 @@ namespace InvaderInsider.Managers
 
         private void InitializeComponents()
         {
-            // UI 컴포넌트 초기화
-            topBarPanel = FindObjectOfType<InvaderInsider.UI.TopBarPanel>();
-            bottomBarPanel = FindObjectOfType<BottomBarPanel>();
-            uiManager = FindObjectOfType<UIManager>();
-            gameManager = FindObjectOfType<GameManager>();
+            // Find operations을 한 번에 모아서 처리
+            topBarPanel = topBarPanel ?? FindObjectOfType<TopBarPanel>();
+            bottomBarPanel = bottomBarPanel ?? FindObjectOfType<BottomBarPanel>();
+            saveDataManager = saveDataManager ?? SaveDataManager.Instance;
             
-            // SaveDataManager 참조 설정 (Continue Game 대응)
-            if (saveDataManager == null)
-            {
-                saveDataManager = SaveDataManager.Instance;
-                if (saveDataManager == null)
-                {
-                    saveDataManager = FindObjectOfType<SaveDataManager>();
-                }
-            }
+            // readonly 필드이므로 이미 초기화되어 있음 - 새로운 할당 불가
 
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"컴포넌트 초기화 - TopBarPanel: {(topBarPanel != null ? "찾음" : "없음")}, BottomBarPanel: {(bottomBarPanel != null ? "찾음" : "없음")}, SaveDataManager: {(saveDataManager != null ? "찾음" : "없음")}");
+            string topBarStatus = topBarPanel != null ? "찾음" : "없음";
+            string bottomBarStatus = bottomBarPanel != null ? "찾음" : "없음";
+            string saveDataStatus = saveDataManager != null ? "찾음" : "없음";
+            Debug.Log($"[Stage] 컴포넌트 초기화 - TopBarPanel: {topBarStatus}, BottomBarPanel: {bottomBarStatus}, SaveDataManager: {saveDataStatus}");
             #endif
 
             activeTowers.Clear();
@@ -684,10 +678,6 @@ namespace InvaderInsider.Managers
             {
                 saveDataManager.UpdateEDataWithoutSave(eDataAmount);
                 
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"적 처치로 eData +{eDataAmount}, 현재 총 eData: {saveDataManager.GetCurrentEData()}");
-                #endif
-                
                 // TopBarPanel에 직접 eData 업데이트 (Stage/Wave UI와 동일한 방식)
                 if (topBarPanel != null)
                 {
@@ -864,6 +854,31 @@ namespace InvaderInsider.Managers
             }
 
             return true;
+        }
+
+        // 타워 등록/해제를 위한 최적화된 메서드들
+        public void RegisterTower(Tower tower)
+        {
+            if (tower != null && !activeTowers.Contains(tower))
+            {
+                activeTowers.Add(tower);
+            }
+        }
+
+        public void UnregisterTower(Tower tower)
+        {
+            if (tower != null)
+            {
+                activeTowers.Remove(tower);
+            }
+        }
+
+        // 필요시에만 타워를 다시 찾는 메서드
+        public void RefreshTowers()
+        {
+            activeTowers.Clear();
+            var towers = FindObjectsOfType<Tower>();
+            activeTowers.AddRange(towers);
         }
     }
 } 

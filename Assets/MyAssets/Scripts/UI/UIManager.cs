@@ -62,6 +62,10 @@ namespace InvaderInsider.UI
         private readonly string[] menuScenes = { "Main" }; // 메인 메뉴 씬
         private readonly string[] gameScenes = { "Game" }; // 게임 씬
 
+        // 메모리 할당 최적화를 위한 정적 리스트들
+        private static readonly List<string> tempKeysToRemove = new List<string>();
+        private static readonly List<BasePanel> tempPanelList = new List<BasePanel>();
+
         private void Awake()
         {
             // 에디터 모드에서는 초기화하지 않음
@@ -265,60 +269,74 @@ namespace InvaderInsider.UI
             Debug.Log($"{LOG_PREFIX}Scene unloaded: {sceneName}");
             #endif
 
-            // 파괴된 패널 참조 정리
-            var keysToRemove = new List<string>();
+            // 파괴된 패널 참조 정리 (재사용 가능한 리스트 사용)
+            tempKeysToRemove.Clear();
             foreach (var kvp in panels)
             {
                 if (kvp.Value == null)
                 {
-                    keysToRemove.Add(kvp.Key);
+                    tempKeysToRemove.Add(kvp.Key);
                 }
             }
             
             // 파괴된 패널 참조 제거
-            foreach (var key in keysToRemove)
+            for (int i = 0; i < tempKeysToRemove.Count; i++)
             {
-                panels.Remove(key);
+                panels.Remove(tempKeysToRemove[i]);
             }
 
-            // 씬별로 적절한 패널 정리
-            if (menuScenes.Any(s => s == sceneName))
+            // 씬별로 적절한 패널 정리 (LINQ 사용 최소화)
+            bool isMenuScene = false;
+            bool isGameScene = false;
+            
+            for (int i = 0; i < menuScenes.Length; i++)
+            {
+                if (menuScenes[i] == sceneName)
+                {
+                    isMenuScene = true;
+                    break;
+                }
+            }
+            
+            if (!isMenuScene)
+            {
+                for (int i = 0; i < gameScenes.Length; i++)
+                {
+                    if (gameScenes[i] == sceneName)
+                    {
+                        isGameScene = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (isMenuScene)
             {
                 // 메뉴 씬이 언로드될 때 메뉴 관련 패널만 정리
                 #if UNITY_EDITOR
                 Debug.Log($"{LOG_PREFIX}메뉴 씬 언로드 - 메뉴 관련 패널 정리");
                 #endif
                 
-                var menuPanels = new List<string> { "MainMenu", "Settings" };
-                foreach (var panelName in menuPanels)
-                {
-                    if (panels.ContainsKey(panelName))
-                    {
-                        panels.Remove(panelName);
-                    }
-                }
+                panels.Remove("MainMenu");
+                panels.Remove("Settings");
             }
-            else if (gameScenes.Any(s => s == sceneName))
+            else if (isGameScene)
             {
                 // 게임 씬이 언로드될 때 게임 관련 패널만 정리
                 #if UNITY_EDITOR
                 Debug.Log($"{LOG_PREFIX}게임 씬 언로드 - 게임 관련 패널 정리");
                 #endif
                 
-                var gamePanels = new List<string> { "InGame", "Pause", "Deck", "SummonChoice" };
-                foreach (var panelName in gamePanels)
-                {
-                    if (panels.ContainsKey(panelName))
-                    {
-                        panels.Remove(panelName);
-                    }
-                }
+                panels.Remove("InGame");
+                panels.Remove("Pause");
+                panels.Remove("Deck");
+                panels.Remove("SummonChoice");
             }
             
             #if UNITY_EDITOR
-            if (keysToRemove.Count > 0)
+            if (tempKeysToRemove.Count > 0)
             {
-                Debug.Log($"{LOG_PREFIX}{keysToRemove.Count}개의 파괴된 패널 참조가 정리되었습니다.");
+                Debug.Log($"{LOG_PREFIX}{tempKeysToRemove.Count}개의 파괴된 패널 참조가 정리되었습니다.");
             }
             #endif
         }
@@ -355,35 +373,54 @@ namespace InvaderInsider.UI
 
         public void Cleanup()
         {
-            // 파괴된 패널 참조 정리
-            var keysToRemove = new List<string>();
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "UI 정리 시작...");
+            #endif
+            
+            // 등록된 패널들만 정리 (FindObjectsOfType 사용 최소화)
+            tempKeysToRemove.Clear();
+            
             foreach (var kvp in panels)
             {
                 if (kvp.Value == null)
                 {
-                    keysToRemove.Add(kvp.Key);
+                    tempKeysToRemove.Add(kvp.Key);
                 }
                 else
                 {
                     // 유효한 패널은 숨기기
-                    kvp.Value.ForceHide();
+                    try
+                    {
+                        kvp.Value.gameObject.SetActive(false);
+                        kvp.Value.ForceHide();
+                    }
+                    catch (System.Exception ex)
+                    {
+                        #if UNITY_EDITOR
+                        Debug.LogWarning(LOG_PREFIX + $"등록된 패널 {kvp.Key} 정리 중 오류: {ex.Message}");
+                        #endif
+                        tempKeysToRemove.Add(kvp.Key); // 오류가 난 패널은 제거
+                    }
                 }
             }
             
             // 파괴된 패널 참조 제거
-            foreach (var key in keysToRemove)
+            for (int i = 0; i < tempKeysToRemove.Count; i++)
             {
-                panels.Remove(key);
+                panels.Remove(tempKeysToRemove[i]);
             }
             
             // 현재 패널 참조 정리
             currentPanel = null;
             
+            // 패널 히스토리 정리
+            panelHistory.Clear();
+            
             // 이벤트 정리
             OnPanelShown = null;
             
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"UI 정리 완료 - {keysToRemove.Count}개의 파괴된 패널 참조 제거됨");
+            Debug.Log(LOG_PREFIX + $"UI 정리 완료 - {tempKeysToRemove.Count}개의 참조 제거됨");
             #endif
         }
     }

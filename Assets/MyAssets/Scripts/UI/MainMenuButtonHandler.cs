@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
 using InvaderInsider.Data;
+using System.Collections;
 
 namespace InvaderInsider.UI
 {
@@ -65,13 +66,15 @@ namespace InvaderInsider.UI
             if (newGameButton != null)
                 newGameButton.onClick.AddListener(() => {
                     OnNewGameClicked?.Invoke();
-                    HandleNewGameClick();
+                    // MainMenuPanel에서 처리하므로 중복 실행 방지
+                    // HandleNewGameClick();
                 });
             
             if (continueButton != null)
                 continueButton.onClick.AddListener(() => {
                     OnLoadGameClicked?.Invoke();
-                    HandleContinueClick();
+                    // MainMenuPanel에서 처리하므로 중복 실행 방지
+                    // HandleContinueClick();
                 });
             
             if (settingsButton != null)
@@ -199,13 +202,7 @@ namespace InvaderInsider.UI
                 menuManager.HideMainMenu();
             }
             
-            var uiManager = FindObjectOfType<UIManager>();
-            if (uiManager != null)
-            {
-                uiManager.Cleanup();
-            }
-            
-            UnityEngine.SceneManagement.SceneManager.LoadScene("Game");
+            StartCoroutine(LoadGameSceneAsync(false));
         }
 
         private void HandleContinueClick()
@@ -217,15 +214,31 @@ namespace InvaderInsider.UI
                     menuManager.HideMainMenu();
                 }
                 
-                var uiManager = FindObjectOfType<UIManager>();
-                if (uiManager != null)
-                {
-                    uiManager.Cleanup();
-                }
-                
                 SaveDataManager.Instance.LoadGameData();
-                UnityEngine.SceneManagement.SceneManager.LoadScene("Game");
+                StartCoroutine(LoadGameSceneAsync(true));
             }
+        }
+        
+        private System.Collections.IEnumerator LoadGameSceneAsync(bool isContinue)
+        {
+            var uiManager = FindObjectOfType<UIManager>();
+            if (uiManager != null)
+            {
+                uiManager.Cleanup();
+            }
+            
+            yield return null; // 한 프레임 대기
+            
+            // 비동기로 Game 씬 로드
+            var asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Game");
+            
+            // 씬 로딩 완료까지 대기
+            while (!asyncLoad.isDone)
+            {
+                yield return null;
+            }
+            
+            yield return new WaitForEndOfFrame(); // 모든 오브젝트 초기화 대기
         }
 
         private void HandleSettingsClick()
