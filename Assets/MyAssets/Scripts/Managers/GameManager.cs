@@ -37,6 +37,7 @@ namespace InvaderInsider.Managers
         private static GameManager instance;
         private static readonly object _lock = new object();
         private static bool isQuitting = false;
+        private static int requestedStartStage = -1; // 메인 메뉴에서 요청한 시작 스테이지
 
         public static GameManager Instance
         {
@@ -92,6 +93,12 @@ namespace InvaderInsider.Managers
         private TopBarPanel cachedTopBarPanel;
 
         public event System.Action OnStageClearedEvent;
+        
+        // 메인 메뉴에서 호출할 스테이지 설정 메서드
+        public static void SetRequestedStartStage(int stageIndex)
+        {
+            requestedStartStage = stageIndex;
+        }
 
         private void Awake()
         {
@@ -286,6 +293,22 @@ namespace InvaderInsider.Managers
             {
                 // eData 소모 시에는 저장하지 않음 (스테이지 클리어 시 저장됨)
                 saveDataManager.UpdateEDataWithoutSave(-amount);
+                
+                // TopBarPanel에 직접 eData 업데이트 (Stage/Wave UI와 동일한 방식)
+                if (cachedTopBarPanel != null)
+                {
+                    int currentEData = saveDataManager.GetCurrentEData();
+                    cachedTopBarPanel.UpdateEData(currentEData);
+                }
+                
+                // CardDrawUI 버튼 상태도 업데이트
+                var cardDrawUI = FindObjectOfType<CardDrawUI>();
+                if (cardDrawUI != null)
+                {
+                    int currentEData = saveDataManager.GetCurrentEData();
+                    cardDrawUI.UpdateButtonStates(currentEData);
+                }
+                
                 #if UNITY_EDITOR
                 Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[6], amount));
                 #endif
@@ -300,6 +323,22 @@ namespace InvaderInsider.Managers
 
             // eData 추가 시에는 저장하지 않음 (스테이지 클리어 시 저장됨)
             saveDataManager?.UpdateEDataWithoutSave(amount);
+            
+            // TopBarPanel에 직접 eData 업데이트 (Stage/Wave UI와 동일한 방식)
+            if (cachedTopBarPanel != null)
+            {
+                int currentEData = saveDataManager.GetCurrentEData();
+                cachedTopBarPanel.UpdateEData(currentEData);
+            }
+            
+            // CardDrawUI 버튼 상태도 업데이트
+            var cardDrawUI = FindObjectOfType<CardDrawUI>();
+            if (cardDrawUI != null)
+            {
+                int currentEData = saveDataManager.GetCurrentEData();
+                cardDrawUI.UpdateButtonStates(currentEData);
+            }
+            
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[6], amount));
             #endif
@@ -311,45 +350,26 @@ namespace InvaderInsider.Managers
             saveDataManager?.UpdateStageProgress(stageNum, stars);
         }
 
+        // eData 이벤트 구독 메서드들은 더 이상 사용되지 않음 (직접 호출 방식으로 전환)
+        [System.Obsolete("eData는 이제 직접 호출 방식으로 업데이트됩니다.")]
         public void AddResourcePointsListener(Action<int> listener)
         {
-            if (listener != null && saveDataManager != null)
-            {
-                saveDataManager.OnEDataChanged += listener;
-            }
+            // 더 이상 사용되지 않음
         }
 
+        [System.Obsolete("eData는 이제 직접 호출 방식으로 업데이트됩니다.")]
         public void RemoveResourcePointsListener(Action<int> listener)
         {
-            if (listener != null && saveDataManager != null)
-            {
-                saveDataManager.OnEDataChanged -= listener;
-            }
+            // 더 이상 사용되지 않음
         }
 
-        private int lastEData = -1;
-        private int lastActiveEnemyCount = -1;
-        private float lastPlayerHealth = -1f;
-        private int lastStageIndex = -1;
         private bool stageClearedProcessed = false; // 스테이지 클리어 중복 처리 방지
-        
-        // UI 업데이트 최적화
-        private float lastUIUpdateTime = 0f;
-        private const float UI_UPDATE_INTERVAL = 0.2f; // 0.2초마다 UI 업데이트 (메모리 할당 최적화)
 
         private void Update()
         {
             if (CurrentGameState == GameState.Playing)
             {
-                // UI 업데이트 제한 (0.2초마다만 업데이트)
-                float currentTime = Time.unscaledTime;
-                if (currentTime - lastUIUpdateTime >= UI_UPDATE_INTERVAL)
-                {
-                    UpdateUIOnChange();
-                    lastUIUpdateTime = currentTime;
-                }
-                
-                // 스테이지 클리어 체크 최적화
+                // 스테이지 클리어 체크만 유지 (UI 자동 업데이트 제거)
                 if (cachedStageManager != null)
                 {
                     bool allEnemiesSpawned = AllEnemiesSpawned();
@@ -372,83 +392,7 @@ namespace InvaderInsider.Managers
             }
         }
 
-        private void UpdateUIOnChange()
-        {
-            // EData 업데이트
-            if (saveDataManager != null)
-            {
-                int currentEData = saveDataManager.GetCurrentEData();
-                if (currentEData != lastEData)
-                {
-                    if (cachedTopBarPanel != null)
-                    {
-                        cachedTopBarPanel.UpdateEData(currentEData);
-                    }
-                    lastEData = currentEData;
-                }
-            }
 
-            // 스테이지 정보 및 활성 적 수 업데이트 (메모리 할당 최적화)
-            if (cachedStageManager != null)
-            {
-                // 한 번에 모든 필요한 값들을 가져와서 캐시하여 메모리 할당 최소화
-                int currentStageIndex = cachedStageManager.GetCurrentStageIndex();
-                int currentActiveEnemyCount = cachedStageManager.ActiveEnemyCount;
-                
-                bool stageChanged = currentStageIndex != lastStageIndex;
-                bool enemyCountChanged = currentActiveEnemyCount != lastActiveEnemyCount;
-                
-                // 활성 적 수 업데이트
-                if (enemyCountChanged)
-                {
-                    if (cachedBottomBarPanel != null)
-                    {
-                        cachedBottomBarPanel.UpdateMonsterCountDisplay(currentActiveEnemyCount);
-                    }
-                    lastActiveEnemyCount = currentActiveEnemyCount;
-                }
-
-                // TopBar 업데이트 (스테이지 변경 또는 적 수 변경 시에만)
-                if ((stageChanged || enemyCountChanged) && cachedTopBarPanel != null)
-                {
-                    int totalStages = cachedStageManager.GetStageCount();
-                    int maxMonsters = cachedStageManager.GetStageWaveCount(currentStageIndex);
-                    
-                    // TopBar의 Wave에는 활성 적 수/총 적 수 표시
-                    cachedTopBarPanel.UpdateStageInfo(currentStageIndex + 1, totalStages, currentActiveEnemyCount, maxMonsters);
-                }
-                
-                // 스테이지 인덱스 캐시 업데이트
-                if (stageChanged)
-                {
-                    lastStageIndex = currentStageIndex;
-                }
-            }
-
-            // 플레이어 체력 업데이트
-            if (cachedPlayer != null)
-            {
-                float currentHealth = cachedPlayer.CurrentHealth;
-                if (Mathf.Abs(currentHealth - lastPlayerHealth) > 0.01f)
-                {
-                    UpdatePlayerHealthUI(currentHealth, cachedPlayer.MaxHealth);
-                    lastPlayerHealth = currentHealth;
-                }
-            }
-        }
-
-        private void UpdatePlayerHealthUI(float currentHealth, float maxHealth)
-        {
-            if (cachedTopBarPanel != null)
-            {
-                cachedTopBarPanel.UpdateHealth(currentHealth, maxHealth);
-            }
-
-            if (cachedBottomBarPanel != null)
-            {
-                cachedBottomBarPanel.UpdateHealthDisplay(currentHealth / maxHealth);
-            }
-        }
 
         private bool AllEnemiesSpawned()
         {
@@ -662,20 +606,28 @@ namespace InvaderInsider.Managers
                 // 스테이지 정보 업데이트 (현재/최대 형식)
                 int currentStageIndex = cachedStageManager?.GetCurrentStageIndex() ?? 0;
                 int totalStages = cachedStageManager?.GetStageCount() ?? 1;
-                int activeMonsters = 0; // 초기값은 0 (아직 활성 몬스터 없음)
+                int spawnedMonsters = cachedStageManager?.GetSpawnedEnemyCount() ?? 0; // 소환된 적 수 (초기값 0)
                 int maxMonsters = cachedStageManager?.GetStageWaveCount(currentStageIndex) ?? 1;
-                lastStageIndex = currentStageIndex; // 초기값 설정
-                topBarPanel.UpdateStageInfo(currentStageIndex + 1, totalStages, activeMonsters, maxMonsters);
+                topBarPanel.UpdateStageInfo(currentStageIndex + 1, totalStages, spawnedMonsters, maxMonsters);
                 
                 // 실제 저장된 eData 사용 (초기값 0)
                 int currentEData = saveDataManager?.GetCurrentEData() ?? 0;
-                lastEData = currentEData; // 초기값 설정
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"InitializeGame - eData 초기화: {currentEData}");
+                #endif
                 topBarPanel.UpdateEData(currentEData);
                 
-                // HP 초기화
-                if (cachedPlayer != null)
+                // CardDrawUI 버튼 상태도 초기화
+                var cardDrawUI = FindObjectOfType<CardDrawUI>();
+                if (cardDrawUI != null)
                 {
-                    topBarPanel.UpdateHealth(cachedPlayer.CurrentHealth, cachedPlayer.MaxHealth);
+                    cardDrawUI.UpdateButtonStates(currentEData);
+                }
+                
+                // HP 초기화
+                if (cachedPlayer != null && bottomBarPanel != null)
+                {
+                    bottomBarPanel.UpdateHealth(cachedPlayer.CurrentHealth, cachedPlayer.MaxHealth);
                 }
             }
             
@@ -684,7 +636,6 @@ namespace InvaderInsider.Managers
                 bottomBarPanel.gameObject.SetActive(true);
                 bottomBarPanel.Show();
                 uiManager.ShowPanelConcurrent("BottomBar");
-                lastActiveEnemyCount = 0; // 초기값 설정
                 bottomBarPanel.UpdateMonsterCountDisplay(0);
             }
 
@@ -692,26 +643,108 @@ namespace InvaderInsider.Managers
             if (cachedPlayer != null)
             {
                 cachedPlayer.ResetHealth(); // HP를 최대값으로 리셋
-                lastPlayerHealth = cachedPlayer.CurrentHealth; // 초기값 설정
-                UpdatePlayerHealthUI(cachedPlayer.CurrentHealth, cachedPlayer.MaxHealth);
+                if (cachedBottomBarPanel != null)
+                {
+                    cachedBottomBarPanel.UpdateHealth(cachedPlayer.CurrentHealth, cachedPlayer.MaxHealth);
+                    cachedBottomBarPanel.UpdateHealthDisplay(cachedPlayer.CurrentHealth / cachedPlayer.MaxHealth);
+                }
             }
 
             // 카드 매니저 초기화
             if (cardManager != null)
                 cardManager.LoadSummonData();
+            
+            // Continue Game 감지 (requestedStartStage 초기화 전에 확인)
+            bool isContinueGame = requestedStartStage > 0;
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + $"Continue Game 체크: requestedStartStage={requestedStartStage}, isContinueGame={isContinueGame}");
+            Debug.Log(LOG_PREFIX + $"SaveDataManager 상태: saveDataManager != null = {saveDataManager != null}");
+            #endif
+            
+            // Continue Game 시 SaveDataManager에서 eData 로드 및 UI 업데이트
+            // SaveDataManager가 null이면 다시 찾기 시도 (여러 번 시도)
+            if (saveDataManager == null)
+            {
+                saveDataManager = SaveDataManager.Instance;
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"SaveDataManager 재참조 시도: saveDataManager != null = {saveDataManager != null}");
+                #endif
+                
+                // 첫 번째 시도가 실패하면 FindObjectOfType으로 직접 찾기
+                if (saveDataManager == null)
+                {
+                    saveDataManager = FindObjectOfType<SaveDataManager>();
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + $"SaveDataManager FindObjectOfType 시도: saveDataManager != null = {saveDataManager != null}");
+                    #endif
+                }
+            }
+            
+            if (saveDataManager != null && isContinueGame)
+            {
+                // Continue Game인 경우 SaveDataManager에서 실제 eData 값을 가져와서 UI에 반영
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "Continue Game 감지 - SaveDataManager에서 eData 로드");
+                #endif
+                
+                // 현재 SaveDataManager에 로드된 eData 값을 가져옴
+                int savedEData = saveDataManager.GetCurrentEData();
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"SaveDataManager에서 로드한 eData: {savedEData}");
+                #endif
+                
+                // TopBarPanel에 올바른 eData 값 업데이트
+                if (topBarPanel != null)
+                {
+                    topBarPanel.UpdateEData(savedEData);
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + $"Continue Game - TopBarPanel eData 업데이트: {savedEData}");
+                    #endif
+                }
+                
+                // CardDrawUI도 업데이트
+                var cardDrawUI = FindObjectOfType<CardDrawUI>();
+                if (cardDrawUI != null)
+                {
+                    cardDrawUI.UpdateButtonStates(savedEData);
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + $"Continue Game - CardDrawUI 버튼 상태 업데이트: {savedEData}");
+                    #endif
+                }
+            }
+            else if (saveDataManager != null)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "New Game - 기본 eData 값 사용");
+                #endif
+            }
 
             // StageManager 초기화 및 스테이지 시작
             if (cachedStageManager != null)
             {
-                // 저장된 진행상황이 있는지 확인하여 적절한 스테이지부터 시작
                 int startingStage = 0; // 기본값은 0 (첫 번째 스테이지)
-                if (saveDataManager != null && saveDataManager.HasSaveData())
+                
+                // 메인 메뉴에서 요청한 스테이지가 있다면 우선 사용
+                if (requestedStartStage >= 0)
+                {
+                    startingStage = requestedStartStage;
+                    requestedStartStage = -1; // 사용 후 초기화
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + $"메인 메뉴에서 요청한 스테이지 {startingStage}부터 시작");
+                    #endif
+                }
+                // 그렇지 않으면 저장된 진행상황 확인
+                else if (saveDataManager != null && saveDataManager.HasSaveData())
                 {
                     var saveData = saveDataManager.CurrentSaveData;
                     if (saveData != null)
                     {
                         // 클리어한 최고 스테이지의 다음 스테이지부터 시작
-                        startingStage = saveData.progressData.highestStageCleared;
+                        int highestCleared = saveData.progressData.highestStageCleared;
+                        startingStage = highestCleared; // 이미 클리어한 스테이지부터 다시 시작 (플레이어 선택권 제공)
+                        #if UNITY_EDITOR
+                        Debug.Log(LOG_PREFIX + $"저장된 데이터에서 스테이지 {startingStage + 1} (인덱스 {startingStage})부터 시작");
+                        #endif
                     }
                 }
                 
@@ -748,8 +781,7 @@ namespace InvaderInsider.Managers
             Time.timeScale = 0f;
             CurrentGameState = GameState.Paused;
             
-            // 일시정지 시 현재 진행상황 저장
-            saveDataManager?.ForceSave();
+            // 스테이지 클리어 시에만 저장하므로 일시정지 시 저장 제거
             
             uiManager?.ShowPanel("Pause");
         }
@@ -776,8 +808,7 @@ namespace InvaderInsider.Managers
         {
             Time.timeScale = 0f;
             
-            // 게임 종료 시 현재 진행상황 저장
-            saveDataManager?.ForceSave();
+            // 스테이지 클리어 시에만 저장하므로 게임 종료 시 저장 제거
             
             // 게임 종료 로직
         }

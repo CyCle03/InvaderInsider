@@ -191,6 +191,23 @@ namespace InvaderInsider.Cards
             {
                 // 소환 시에는 저장하지 않고 eData만 감소 (스테이지 클리어 시 저장됨)
                 SaveDataManager.Instance.UpdateEDataWithoutSave(-currentSummonCost);
+                
+                // TopBarPanel에 직접 eData 업데이트 (Stage/Wave UI와 동일한 방식)
+                var topBarPanel = FindObjectOfType<InvaderInsider.UI.TopBarPanel>();
+                if (topBarPanel != null)
+                {
+                    int currentEData = SaveDataManager.Instance.GetCurrentEData();
+                    topBarPanel.UpdateEData(currentEData);
+                }
+                
+                // CardDrawUI 버튼 상태도 업데이트
+                var cardDrawUI = FindObjectOfType<CardDrawUI>();
+                if (cardDrawUI != null)
+                {
+                    int currentEData = SaveDataManager.Instance.GetCurrentEData();
+                    cardDrawUI.UpdateButtonStates(currentEData);
+                }
+                
                 summonCount++;
                 currentSummonCost = initialSummonCost + summonCount * summonCostIncrease;
                 #if UNITY_EDITOR

@@ -12,7 +12,6 @@ namespace InvaderInsider.UI
         [SerializeField] private TextMeshProUGUI stageText;
         [SerializeField] private TextMeshProUGUI eDataText;
         [SerializeField] private TextMeshProUGUI waveText;
-        [SerializeField] private TextMeshProUGUI lifeText;
         [SerializeField] private Button pauseButton;
 
         private static readonly string[] LOG_MESSAGES = new string[]
@@ -28,12 +27,11 @@ namespace InvaderInsider.UI
             #if UNITY_EDITOR
             Debug.Log($"[TopBarPanel] Start - stageText: {(stageText != null ? "할당됨" : "없음")}, " +
                      $"waveText: {(waveText != null ? "할당됨" : "없음")}, " +
-                     $"lifeText: {(lifeText != null ? "할당됨" : "없음")}, " +
                      $"eDataText: {(eDataText != null ? "할당됨" : "없음")}, " +
                      $"pauseButton: {(pauseButton != null ? "할당됨" : "없음")}");
             #endif
             
-            if (stageText == null || waveText == null || lifeText == null || eDataText == null || pauseButton == null)
+            if (stageText == null || waveText == null || eDataText == null || pauseButton == null)
             {
                 #if UNITY_EDITOR
                 Debug.LogError(LOG_MESSAGES[0]);
@@ -42,6 +40,8 @@ namespace InvaderInsider.UI
             }
 
             InitializeUI();
+            
+            // eData는 GameManager에서 직접 호출로 업데이트됨 (강제 재로드 제거)
         }
 
         private void InitializeUI()
@@ -57,15 +57,16 @@ namespace InvaderInsider.UI
                 waveText.text = "Wave 0/20"; // 소환된 몬스터/최대 몬스터
             }
             
-            if (lifeText != null)
-            {
-                lifeText.text = "HP 100/100";
-            }
-            
+            // eData는 GameManager에서 직접 호출로 업데이트됨 (Stage/Wave UI와 동일한 방식)
             if (eDataText != null)
             {
-                eDataText.text = "0";
+                eDataText.text = "eData: 0"; // 기본값, GameManager에서 실제 값으로 업데이트
             }
+            currentEData = 0;
+            
+            #if UNITY_EDITOR
+            Debug.Log($"[TopBarPanel] InitializeUI - eData 기본값 설정, GameManager에서 실제 값으로 업데이트 예정");
+            #endif
         }
 
         protected override void Initialize()
@@ -77,13 +78,16 @@ namespace InvaderInsider.UI
 
             uiManager = UIManager.Instance;
             pauseButton.onClick.AddListener(HandlePauseClick);
+            
+            // eData는 이제 GameManager에서 직접 호출로 업데이트됨 (이벤트 구독 제거)
+            
             UpdateUI();
         }
 
         private bool ValidateReferences()
         {
             if (stageText == null || eDataText == null || 
-                waveText == null || lifeText == null || pauseButton == null)
+                waveText == null || pauseButton == null)
             {
                 Debug.LogError(LOG_MESSAGES[0]);
                 return false;
@@ -93,10 +97,7 @@ namespace InvaderInsider.UI
 
         private void UpdateUI()
         {
-            // SaveDataManager에서 실제 eData 값 가져오기
-            var saveDataManager = SaveDataManager.Instance;
-            currentEData = saveDataManager != null ? saveDataManager.GetCurrentEData() : 0;
-            UpdateEData(currentEData);
+            // eData는 GameManager에서 직접 호출로 업데이트됨
             
             // 초기 스테이지 정보 표시 (기본값)
             if (stageText != null)
@@ -126,6 +127,15 @@ namespace InvaderInsider.UI
             if (eDataText != null)
             {
                 eDataText.text = $"eData: {amount}";
+                #if UNITY_EDITOR
+                Debug.Log($"[TopBarPanel] UpdateEData 호출됨 - eData: {amount}");
+                #endif
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogError("[TopBarPanel] UpdateEData 호출됨 - eDataText가 null!");
+                #endif
             }
         }
 
@@ -164,13 +174,7 @@ namespace InvaderInsider.UI
             }
         }
 
-        public void UpdateHealth(float currentHealth, float maxHealth)
-        {
-            if (lifeText != null)
-            {
-                lifeText.text = $"HP: {currentHealth:F0}/{maxHealth:F0}";
-            }
-        }
+
 
         public int GetCurrentEData()
         {
@@ -192,15 +196,16 @@ namespace InvaderInsider.UI
             return false;
         }
 
+        private void OnDestroy()
+        {
+            // eData 이벤트 구독 해제 불필요 (직접 호출 방식으로 전환)
+        }
+
         protected override void OnShow()
         {
             base.OnShow();
             
-            var saveDataManager = SaveDataManager.Instance;
-            if (saveDataManager != null)
-            {
-                UpdateEData(saveDataManager.GetCurrentEData());
-            }
+            // eData는 GameManager에서 직접 호출로 업데이트됨 (이벤트 재구독 제거)
         }
 
         protected override void OnHide()

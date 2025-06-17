@@ -213,6 +213,9 @@ namespace InvaderInsider.UI
                 #endif
             }
             
+            // 새 게임은 항상 첫 번째 스테이지(인덱스 0)부터 시작
+            InvaderInsider.Managers.GameManager.SetRequestedStartStage(0);
+            
             LoadGameScene();
         }
 
@@ -230,10 +233,16 @@ namespace InvaderInsider.UI
                 var saveData = saveDataManager.CurrentSaveData;
                 if (saveData != null)
                 {
-                    int nextStage = saveData.progressData.highestStageCleared + 1;
+                    // Continue는 클리어한 최고 스테이지의 다음 스테이지부터 시작
+                    int highestCleared = saveData.progressData.highestStageCleared;
+                    int nextStage = highestCleared + 1; // 클리어한 스테이지의 다음 스테이지
                     #if UNITY_EDITOR
                     Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], nextStage));
+                    Debug.Log(LOG_PREFIX + $"최고 클리어 스테이지: {highestCleared}, 시작할 스테이지: {nextStage}");
                     #endif
+                    
+                    // GameManager에 시작할 스테이지 설정 (인덱스는 0부터 시작하므로 nextStage - 1)
+                    InvaderInsider.Managers.GameManager.SetRequestedStartStage(nextStage - 1);
                 }
                 
                 LoadGameScene();

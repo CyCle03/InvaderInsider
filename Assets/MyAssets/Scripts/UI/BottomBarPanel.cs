@@ -19,6 +19,7 @@ namespace InvaderInsider.UI
         [Header("UI References")]
         [SerializeField] private TextMeshProUGUI enemyRemainText;
         [SerializeField] private Slider healthSlider;
+        [SerializeField] private TextMeshProUGUI lifeText;
 
         private Player player;
         private bool isInitialized = false;
@@ -41,6 +42,7 @@ namespace InvaderInsider.UI
 
             SetupEventListeners();
             UpdateHealthDisplayFromPlayer(player.CurrentHealth / player.MaxHealth);
+            UpdateHealth(player.CurrentHealth, player.MaxHealth);
 
             isInitialized = true;
         }
@@ -110,6 +112,7 @@ namespace InvaderInsider.UI
             if (!isInitialized || player == null) return;
 
             UpdateHealthDisplayFromPlayer(healthRatio);
+            UpdateHealth(player.CurrentHealth, player.MaxHealth);
         }
 
         public void UpdateHealthDisplay(float healthRatio)
@@ -118,6 +121,20 @@ namespace InvaderInsider.UI
             {
                 healthSlider.maxValue = 1.0f; // 0-1 사이의 비율로 설정
                 healthSlider.value = healthRatio;
+            }
+        }
+
+        public void UpdateHealth(float currentHealth, float maxHealth)
+        {
+            if (lifeText != null)
+            {
+                lifeText.text = $"HP: {currentHealth:F0}/{maxHealth:F0}";
+            }
+            
+            if (healthSlider != null)
+            {
+                healthSlider.maxValue = maxHealth;
+                healthSlider.value = currentHealth;
             }
         }
 

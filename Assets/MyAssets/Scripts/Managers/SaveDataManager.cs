@@ -362,26 +362,6 @@ namespace InvaderInsider.Data
 
         public SaveData CurrentSaveData => currentSaveData?.Clone();
 
-        private event Action<int> onEDataChanged;
-        public event Action<int> OnEDataChanged
-        {
-            add
-            {
-                if (!isQuitting)
-                {
-                    onEDataChanged -= value;
-                    onEDataChanged += value;
-                }
-            }
-            remove
-            {
-                if (!isQuitting)
-                {
-                    onEDataChanged -= value;
-                }
-            }
-        }
-
         private event Action<List<int>> onHandDataChanged;
         public event Action<List<int>> OnHandDataChanged
         {
@@ -425,12 +405,19 @@ namespace InvaderInsider.Data
             else if (instance != this)
             {
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "중복 SaveDataManager 인스턴스 파괴됨");
+                Debug.Log(LOG_PREFIX + "중복 SaveDataManager 인스턴스 감지 - 기존 인스턴스 유지, 새 인스턴스 파괴");
                 #endif
                 
                 // 기존 인스턴스가 있다면 새로운 인스턴스는 파괴
                 Destroy(gameObject);
                 return;
+            }
+            else
+            {
+                // 동일한 인스턴스인 경우 (씬 전환 후 재활성화)
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "기존 SaveDataManager 인스턴스 재활성화됨");
+                #endif
             }
         }
 
@@ -458,7 +445,6 @@ namespace InvaderInsider.Data
 
         private void CleanupEventListeners()
         {
-            onEDataChanged = null;
             onHandDataChanged = null;
         }
 
@@ -540,14 +526,19 @@ namespace InvaderInsider.Data
                 {
                     string json = File.ReadAllText(SAVE_KEY);
                     currentSaveData = JsonConvert.DeserializeObject<SaveData>(json);
+                    
+                    // eData UI는 이제 GameManager/StageManager에서 직접 호출로 업데이트됨
+                    
                     #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + $"게임 데이터 로드 성공 - 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}");
+                    Debug.Log(LOG_PREFIX + $"게임 데이터 로드 성공 - 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}, eData: {currentSaveData.progressData.currentEData}");
                     #endif
                 }
                 else
                 {
                     currentSaveData = new SaveData();
                     SaveGameData();
+                    
+                    // eData UI는 이제 GameManager/StageManager에서 직접 호출로 업데이트됨
                 }
             }
             catch (Exception e)
@@ -556,6 +547,8 @@ namespace InvaderInsider.Data
                 Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], e.Message));
                 #endif
                 currentSaveData = new SaveData();
+                
+                // eData UI는 이제 GameManager/StageManager에서 직접 호출로 업데이트됨
             }
         }
 
@@ -582,7 +575,7 @@ namespace InvaderInsider.Data
             if (amount == 0) return;
 
             currentSaveData.progressData.currentEData += amount;
-            onEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
+            // eData UI는 이제 GameManager/StageManager에서 직접 호출로 업데이트됨
             SaveGameData();
         }
 
@@ -592,7 +585,7 @@ namespace InvaderInsider.Data
             if (amount == 0) return;
 
             currentSaveData.progressData.currentEData += amount;
-            onEDataChanged?.Invoke(currentSaveData.progressData.currentEData);
+            // eData UI는 이제 GameManager/StageManager에서 직접 호출로 업데이트됨
         }
 
         // 강제 저장 (스테이지 클리어, 게임 종료 등 중요한 이벤트 시 사용)

@@ -4,6 +4,7 @@ using UnityEngine;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
 using InvaderInsider.Managers;
+using InvaderInsider.Cards;
 using System.Threading.Tasks;
 using System;
 
@@ -184,16 +185,25 @@ namespace InvaderInsider.Managers
 
         private void InitializeComponents()
         {
-            bottomBarPanel = FindObjectOfType<BottomBarPanel>();
+            // UI 컴포넌트 초기화
             topBarPanel = FindObjectOfType<InvaderInsider.UI.TopBarPanel>();
+            bottomBarPanel = FindObjectOfType<BottomBarPanel>();
+            uiManager = FindObjectOfType<UIManager>();
+            gameManager = FindObjectOfType<GameManager>();
             
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"컴포넌트 초기화 - TopBarPanel: {(topBarPanel != null ? "찾음" : "없음")}, BottomBarPanel: {(bottomBarPanel != null ? "찾음" : "없음")}");
-            #endif
+            // SaveDataManager 참조 설정 (Continue Game 대응)
+            if (saveDataManager == null)
+            {
+                saveDataManager = SaveDataManager.Instance;
+                if (saveDataManager == null)
+                {
+                    saveDataManager = FindObjectOfType<SaveDataManager>();
+                }
+            }
 
-            uiManager = UIManager.Instance;
-            gameManager = GameManager.Instance;
-            saveDataManager = SaveDataManager.Instance;
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + $"컴포넌트 초기화 - TopBarPanel: {(topBarPanel != null ? "찾음" : "없음")}, BottomBarPanel: {(bottomBarPanel != null ? "찾음" : "없음")}, SaveDataManager: {(saveDataManager != null ? "찾음" : "없음")}");
+            #endif
 
             activeTowers.Clear();
             activeTowers.AddRange(FindObjectsOfType<Tower>());
@@ -352,7 +362,6 @@ namespace InvaderInsider.Managers
 
             ResetStageState(startStageIndex);
             CleanupActiveEnemies();
-            ResetAllTowersRotation();
 
             currentState = StageState.Ready;
 
@@ -369,6 +378,19 @@ namespace InvaderInsider.Managers
             enemyCount = 0;
             activeEnemyCountValue = 0;
             stageNum = startStageIndex;
+            
+            // 스테이지 시작 시 UI 초기화
+            if (topBarPanel != null)
+            {
+                int totalStages = GetStageCount();
+                int maxMonsters = GetStageWaveCount(startStageIndex);
+                topBarPanel.UpdateStageInfo(startStageIndex + 1, totalStages, 0, maxMonsters);
+            }
+            
+            if (bottomBarPanel != null)
+            {
+                bottomBarPanel.UpdateMonsterCountDisplay(0);
+            }
         }
 
         private void CleanupActiveEnemies()
@@ -520,6 +542,14 @@ namespace InvaderInsider.Managers
 
         private IEnumerator HandleWaitState()
         {
+            // 다음 스테이지 시작 전 UI 업데이트
+            if (topBarPanel != null)
+            {
+                int totalStages = GetStageCount();
+                int maxMonsters = GetStageWaveCount(stageNum);
+                topBarPanel.UpdateStageInfo(stageNum + 1, totalStages, 0, maxMonsters); // 새 스테이지는 0부터 시작
+            }
+            
             yield return new WaitForSeconds(STAGE_START_DELAY);
             StartStageInternal(stageNum);
         }
@@ -535,16 +565,11 @@ namespace InvaderInsider.Managers
             if (!ValidateWaypoints())
             {
                 #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "웨이포인트 검증에 실패했습니다. 스테이지를 강제 종료합니다.");
+                Debug.LogWarning(LOG_PREFIX + "웨이포인트 검증에 실패했지만 기본 위치에서 적을 소환합니다.");
                 #endif
                 
-                // 웨이포인트가 없는 경우 적 스폰을 완료로 처리하여 스테이지 종료
-                enemyCount = stageWave;
-                if (activeEnemyCountValue <= 0)
-                {
-                    currentState = StageState.End;
-                }
-                return;
+                // 웨이포인트가 없어도 기본 위치에서 적 소환 시도
+                // 완전히 스테이지를 중단하지 않고 몇 마리라도 소환해서 플레이어가 게임을 진행할 수 있도록 함
             }
 
             // StageData에서 적 프리팹 가져오기
@@ -572,7 +597,20 @@ namespace InvaderInsider.Managers
                 return;
             }
 
-            Vector3 spawnPosition = wayPointsList[0].position;
+            // 웨이포인트가 있으면 첫 번째 웨이포인트 위치, 없으면 기본 위치 사용
+            Vector3 spawnPosition = Vector3.zero;
+            if (wayPointsList != null && wayPointsList.Count > 0 && wayPointsList[0] != null)
+            {
+                spawnPosition = wayPointsList[0].position;
+            }
+            else
+            {
+                // 기본 스폰 위치 (원점 또는 적절한 기본 위치)
+                spawnPosition = new Vector3(-10f, 0f, 0f);
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + $"웨이포인트가 없어 기본 위치 {spawnPosition}에서 적을 소환합니다.");
+                #endif
+            }
             GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
             
             enemyCount++;
@@ -589,8 +627,13 @@ namespace InvaderInsider.Managers
                 IncrementEnemyCount();
             }
             
-            // UI 업데이트는 GameManager에서 담당하므로 여기서는 제거
-            // TopBar와 BottomBar UI 업데이트는 GameManager.UpdateUIOnChange()에서 처리됨
+            // Wave 진행상황 UI 업데이트
+            if (topBarPanel != null)
+            {
+                int totalStages = GetStageCount();
+                int maxMonsters = GetStageWaveCount(stageNum);
+                topBarPanel.UpdateStageInfo(stageNum + 1, totalStages, enemyCount, maxMonsters);
+            }
         }
 
         public int GetStageCount()
@@ -617,13 +660,54 @@ namespace InvaderInsider.Managers
 
             DecreaseActiveEnemyCount();
             
-            // UI 업데이트는 GameManager에서 담당하므로 여기서는 제거
-            // BottomBar UI 업데이트는 GameManager.UpdateUIOnChange()에서 처리됨
+            // Active Enemy 카운트 UI 업데이트
+            if (bottomBarPanel != null)
+            {
+                bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCountValue);
+            }
+            
+            // SaveDataManager 참조 확인 및 재참조 (Continue Game 후 안전장치)
+            if (saveDataManager == null)
+            {
+                saveDataManager = SaveDataManager.Instance;
+                if (saveDataManager == null)
+                {
+                    saveDataManager = FindObjectOfType<SaveDataManager>();
+                }
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"SaveDataManager 재참조: {(saveDataManager != null ? "성공" : "실패")}");
+                #endif
+            }
             
             // 적을 잡을 때는 저장하지 않고 eData만 업데이트
             if (saveDataManager != null)
             {
                 saveDataManager.UpdateEDataWithoutSave(eDataAmount);
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"적 처치로 eData +{eDataAmount}, 현재 총 eData: {saveDataManager.GetCurrentEData()}");
+                #endif
+                
+                // TopBarPanel에 직접 eData 업데이트 (Stage/Wave UI와 동일한 방식)
+                if (topBarPanel != null)
+                {
+                    int currentEData = saveDataManager.GetCurrentEData();
+                    topBarPanel.UpdateEData(currentEData);
+                }
+                
+                // CardDrawUI 버튼 상태도 업데이트
+                var cardDrawUI = FindObjectOfType<CardDrawUI>();
+                if (cardDrawUI != null)
+                {
+                    int currentEData = saveDataManager.GetCurrentEData();
+                    cardDrawUI.UpdateButtonStates(currentEData);
+                }
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "SaveDataManager를 찾을 수 없어 eData 업데이트를 건너뜁니다.");
+                #endif
             }
         }
 
@@ -632,6 +716,12 @@ namespace InvaderInsider.Managers
             if (!isInitialized) return;
 
             DecreaseActiveEnemyCount();
+            
+            // Active Enemy 카운트 UI 업데이트
+            if (bottomBarPanel != null)
+            {
+                bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCountValue);
+            }
         }
 
         public void InitializeStageFromLoadedData(int stageIndex)
@@ -645,17 +735,6 @@ namespace InvaderInsider.Managers
             else
             {
                 StartStageFrom(0);
-            }
-        }
-
-        private void ResetAllTowersRotation()
-        {
-            foreach (var tower in activeTowers)
-            {
-                if (tower != null)
-                {
-                    tower.ResetRotation();
-                }
             }
         }
 
@@ -714,6 +793,12 @@ namespace InvaderInsider.Managers
         public void IncrementEnemyCount()
         {
             activeEnemyCountValue++;
+            
+            // Active Enemy 카운트 UI 업데이트
+            if (bottomBarPanel != null)
+            {
+                bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCountValue);
+            }
         }
 
         public void DecrementEnemyCount()

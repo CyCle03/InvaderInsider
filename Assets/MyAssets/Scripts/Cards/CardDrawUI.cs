@@ -102,6 +102,9 @@ namespace InvaderInsider.Cards
 
             // 초기에는 결과 패널 숨기기
             drawResultPanel.SetActive(false);
+            
+            // 초기 버튼 상태 설정
+            RefreshButtonStates();
         }
 
         private void SubscribeToEvents()
@@ -110,8 +113,8 @@ namespace InvaderInsider.Cards
             _cardManager.OnCardDrawn.AddListener(new UnityEngine.Events.UnityAction<InvaderInsider.Data.CardDBObject>(ShowSingleCardResult));
             _cardManager.OnMultipleCardsDrawn.AddListener(new UnityEngine.Events.UnityAction<System.Collections.Generic.List<InvaderInsider.Data.CardDBObject>>(ShowMultipleCardResults));
 
-            // 리소스 변경 이벤트 구독
-            _gameManager.AddResourcePointsListener(UpdateButtonStates);
+            // eData는 이제 직접 호출 방식으로 업데이트됨 (이벤트 구독 제거)
+            // UpdateButtonStates는 필요시 직접 호출
         }
 
         private void UpdateCostTexts()
@@ -120,10 +123,21 @@ namespace InvaderInsider.Cards
             multiDrawCostText.text = $"Draw 5 ({_cardManager.GetMultiDrawCost()} eData)";
         }
 
-        private void UpdateButtonStates(int currentEData)
+        public void UpdateButtonStates(int currentEData)
         {
             singleDrawButton.interactable = currentEData >= _cardManager.GetSingleDrawCost();
             multiDrawButton.interactable = currentEData >= _cardManager.GetMultiDrawCost();
+        }
+        
+        // eData 변경 없이도 버튼 상태를 업데이트하는 메서드
+        public void RefreshButtonStates()
+        {
+            var saveDataManager = SaveDataManager.Instance;
+            if (saveDataManager != null)
+            {
+                int currentEData = saveDataManager.GetCurrentEData();
+                UpdateButtonStates(currentEData);
+            }
         }
 
         private void ShowSingleCardResult(CardDBObject card)
@@ -210,10 +224,7 @@ namespace InvaderInsider.Cards
                 _cardManager.OnMultipleCardsDrawn.RemoveListener(new UnityEngine.Events.UnityAction<System.Collections.Generic.List<InvaderInsider.Data.CardDBObject>>(ShowMultipleCardResults));
             }
 
-            if (_gameManager != null)
-            {
-                _gameManager.RemoveResourcePointsListener(UpdateButtonStates);
-            }
+            // eData 이벤트 구독 해제 불필요 (직접 호출 방식으로 전환)
         }
     }
 } 
