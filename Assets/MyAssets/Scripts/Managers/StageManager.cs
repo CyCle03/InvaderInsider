@@ -675,7 +675,7 @@ namespace InvaderInsider.Managers
             
             // eData 업데이트는 GameManager를 통해 처리
             if (gameManager != null)
-            {
+                {
                 gameManager.AddEData(eDataAmount);
             }
             else

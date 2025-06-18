@@ -150,7 +150,7 @@ namespace InvaderInsider.UI
             {
                 // 만약 GameManager가 없다면 직접 씬 전환
                 Time.timeScale = 1f;
-                UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
             }
         }
 

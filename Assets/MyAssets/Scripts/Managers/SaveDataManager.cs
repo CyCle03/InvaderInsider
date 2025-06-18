@@ -304,19 +304,34 @@ namespace InvaderInsider.Data
         }
     }
 
+    /// <summary>
+    /// 게임 데이터 저장/로드를 담당하는 싱글턴 매니저
+    /// DontDestroyOnLoad로 씬 전환과 무관하게 유지됨
+    /// </summary>
     public class SaveDataManager : MonoBehaviour
     {
         private const string LOG_PREFIX = "[SaveData] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
-            "Error saving game data: {0}", // 0
-            "Error loading game data: {0}" // 1
+            "게임 데이터 저장 실패: {0}",
+            "게임 데이터 로드 실패: {0}"
         };
 
         private const string SAVE_KEY = "GameSaveData.json";
-        private static SaveDataManager instance;
-        private static readonly object _lock = new object();
-        private static bool isQuitting = false;
+        
+        // 싱글턴 인스턴스 - 단순하고 확실한 방식
+        private static SaveDataManager _instance;
+        public static SaveDataManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    CreateInstance();
+                }
+                return _instance;
+            }
+        }
 
         private SaveData currentSaveData;
         
@@ -325,40 +340,47 @@ namespace InvaderInsider.Data
         private float saveDelay = 1f; // 1초 대기 후 저장
         private Coroutine saveCoroutine = null;
 
-        public static SaveDataManager Instance
+        // 게임 시작 시 자동으로 SaveDataManager 인스턴스 생성
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Initialize()
         {
-            get
+            if (Application.isPlaying)
             {
-                if (isQuitting) return null;
-                
-                // 에디터에서 플레이 모드가 아닐 때는 인스턴스 생성하지 않음
-                #if UNITY_EDITOR
-                if (!UnityEngine.Application.isPlaying) return null;
-                #endif
-
-                lock (_lock)
-                {
-                    if (instance == null)
-                    {
-                        // 먼저 씬에서 기존 인스턴스 찾기
-                        instance = FindObjectOfType<SaveDataManager>();
-                        
-                        // 찾지 못했다면 새로 생성
-                        if (instance == null && !isQuitting)
-                        {
-                            GameObject go = new GameObject("SaveDataManager");
-                            instance = go.AddComponent<SaveDataManager>();
-                            DontDestroyOnLoad(go);
-                            
-                            #if UNITY_EDITOR
-                            Debug.Log("[SaveData] SaveDataManager 인스턴스가 동적으로 생성되었습니다.");
-                            #endif
-                        }
-                    }
-                    return instance;
-                }
+                CreateInstance();
             }
         }
+
+        private static void CreateInstance()
+        {
+            if (_instance != null) return;
+
+            // 기존 인스턴스가 있는지 확인
+            _instance = FindObjectOfType<SaveDataManager>();
+            
+            if (_instance == null)
+            {
+                // 새 인스턴스 생성
+                GameObject go = new GameObject("[SaveDataManager]");
+                _instance = go.AddComponent<SaveDataManager>();
+                DontDestroyOnLoad(go);
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "SaveDataManager 싱글턴 인스턴스 생성됨");
+                #endif
+            }
+            else
+            {
+                // 기존 인스턴스 발견
+                DontDestroyOnLoad(_instance.gameObject);
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "기존 SaveDataManager 인스턴스 발견 및 설정됨");
+                #endif
+            }
+        }
+
+        // 인스턴스 존재 여부 확인 (null 체크 없이)
+        public static bool HasInstance => _instance != null;
 
         public SaveData CurrentSaveData => currentSaveData?.Clone();
 
@@ -367,7 +389,7 @@ namespace InvaderInsider.Data
         {
             add
             {
-                if (!isQuitting)
+                if (_instance != null && Application.isPlaying)
                 {
                     onHandDataChanged -= value;
                     onHandDataChanged += value;
@@ -375,7 +397,7 @@ namespace InvaderInsider.Data
             }
             remove
             {
-                if (!isQuitting)
+                if (_instance != null && Application.isPlaying)
                 {
                     onHandDataChanged -= value;
                 }
@@ -384,60 +406,62 @@ namespace InvaderInsider.Data
 
         private void Awake()
         {
-            // 에디터 모드에서는 초기화하지 않음
-            #if UNITY_EDITOR
-            if (!Application.isPlaying) return;
-            #endif
-            
-            // 싱글톤 패턴 적용
-            if (instance == null)
-            {
-                instance = this;
-                DontDestroyOnLoad(gameObject);
-                
-                // 게임 데이터 로드
-                LoadGameData();
-                
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "SaveDataManager 인스턴스 생성 및 초기화 완료");
-                #endif
-            }
-            else if (instance != this)
+            // 싱글턴 패턴 - 이미 인스턴스가 있으면 자신을 파괴
+            if (_instance != null && _instance != this)
             {
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "중복 SaveDataManager 인스턴스 감지 - 기존 인스턴스 유지, 새 인스턴스 파괴");
+                Debug.Log(LOG_PREFIX + "중복 SaveDataManager 감지 - 파괴됨");
                 #endif
-                
-                // 기존 인스턴스가 있다면 새로운 인스턴스는 파괴
                 Destroy(gameObject);
                 return;
             }
-            else
+
+            // 첫 번째 인스턴스라면 설정
+            if (_instance == null)
             {
-                // 동일한 인스턴스인 경우 (씬 전환 후 재활성화)
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                
+                // 게임 데이터 초기화
+                InitializeData();
+                
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "기존 SaveDataManager 인스턴스 재활성화됨");
+                Debug.Log(LOG_PREFIX + "SaveDataManager 초기화 완료");
                 #endif
             }
         }
 
+        private void InitializeData()
+        {
+            LoadGameData();
+        }
+
         private void OnDestroy()
         {
-            // 지연 저장 코루틴 정리
+            // 코루틴 정리
             if (saveCoroutine != null)
             {
                 StopCoroutine(saveCoroutine);
                 saveCoroutine = null;
             }
             
+            // 이벤트 정리
             CleanupEventListeners();
-            isQuitting = true;
+            
+            // 주 인스턴스가 파괴되는 경우에만 null로 설정
+            if (_instance == this)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "SaveDataManager 인스턴스 파괴됨");
+                #endif
+                _instance = null;
+            }
         }
 
         private void OnApplicationQuit()
         {
             // 애플리케이션 종료 시 즉시 저장
-            if (pendingSave)
+            if (pendingSave && _instance == this)
             {
                 SaveGameDataImmediate();
             }

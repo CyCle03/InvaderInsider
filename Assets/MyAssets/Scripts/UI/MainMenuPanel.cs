@@ -11,7 +11,7 @@ namespace InvaderInsider.UI
     public class MainMenuPanel : BasePanel
     {
         private const string LOG_PREFIX = "[MainMenu] ";
-
+        
         [Header("Components")]
         [SerializeField] private MainMenuButtonHandler buttonHandler;
 
@@ -263,10 +263,10 @@ namespace InvaderInsider.UI
             isGameStarting = true;
             lastClickTime = currentTime;
             
-            #if UNITY_EDITOR
+                    #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "GameManager.StartNewGame() 호출 시도");
-            #endif
-            
+                    #endif
+                    
             // GameManager가 모든 게임 시작 로직을 담당
             var gameManager = InvaderInsider.Managers.GameManager.Instance;
             if (gameManager != null)
@@ -288,9 +288,9 @@ namespace InvaderInsider.UI
             float currentTime = Time.unscaledTime;
             if (currentTime - lastClickTime < CLICK_COOLDOWN)
             {
-                #if UNITY_EDITOR
+            #if UNITY_EDITOR
                 Debug.Log(LOG_PREFIX + $"클릭 쿨다운 중입니다. 남은 시간: {CLICK_COOLDOWN - (currentTime - lastClickTime):F1}초");
-                #endif
+            #endif
                 return;
             }
             
@@ -301,8 +301,8 @@ namespace InvaderInsider.UI
                 Debug.Log(LOG_PREFIX + "이미 게임 시작 중입니다.");
                 #endif
                 return;
-            }
-            
+        }
+
             isGameStarting = true;
             lastClickTime = currentTime;
             

@@ -77,6 +77,12 @@ namespace InvaderInsider.UI
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
+                
+                // HideFlags 명시적 설정 (에디터에서 편집 가능하도록)
+                #if UNITY_EDITOR
+                gameObject.hideFlags = HideFlags.None;
+                #endif
+                
                 SceneManager.sceneLoaded += OnSceneLoaded;
                 SceneManager.sceneUnloaded += OnSceneUnloaded;
             }
@@ -217,6 +223,23 @@ namespace InvaderInsider.UI
         public bool IsPanelRegistered(string panelName)
         {
             return panels.ContainsKey(panelName);
+        }
+
+        public BasePanel GetPanel(string panelName)
+        {
+            if (string.IsNullOrEmpty(panelName)) return null;
+            
+            if (panels.TryGetValue(panelName, out BasePanel panel))
+            {
+                // 패널이 파괴되었는지 확인
+                if (panel == null)
+                {
+                    panels.Remove(panelName);
+                    return null;
+                }
+                return panel;
+            }
+            return null;
         }
 
         public bool IsCurrentPanel(string panelName)

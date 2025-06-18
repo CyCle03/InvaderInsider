@@ -210,10 +210,10 @@ namespace InvaderInsider.Managers
             {
                 switch (newState)
                 {
-                                    case GameState.MainMenu:
+                    case GameState.MainMenu:
                     // MainMenu 패널은 Main 씬에만 존재하므로 직접 패널을 찾지 않음
                     // 씬 전환은 호출하는 곳(PausePanel 등)에서 직접 처리
-                    break;
+                        break;
 
                     case GameState.Playing:
                         Time.timeScale = 1f;
@@ -423,9 +423,9 @@ namespace InvaderInsider.Managers
             
             if (allStagesCompleted)
             {
-                #if UNITY_EDITOR
+            #if UNITY_EDITOR
                 Debug.Log(LOG_PREFIX + "모든 스테이지 완료! 일시정지 패널을 활성화합니다.");
-                #endif
+            #endif
                 
                 // 게임을 일시정지 상태로 변경하고 일시정지 패널 표시
                 SetGameState(GameState.Paused);

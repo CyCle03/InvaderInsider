@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.Events;
@@ -85,6 +86,12 @@ namespace InvaderInsider.Cards
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
+                
+                // HideFlags 명시적 설정 (에디터에서 편집 가능하도록)
+                #if UNITY_EDITOR
+                gameObject.hideFlags = HideFlags.None;
+                #endif
+                
                 PerformInitialization();
                 LoadSummonData();
             }
@@ -260,6 +267,44 @@ namespace InvaderInsider.Cards
 
         private void DisplaySummonChoices(List<CardDBObject> choices)
         {
+            // UIManager를 통해 등록된 SummonChoice 패널 사용
+            if (InvaderInsider.UI.UIManager.Instance != null && InvaderInsider.UI.UIManager.Instance.IsPanelRegistered("SummonChoice"))
+            {
+                // 등록된 패널을 직접 가져와서 사용
+                var summonChoicePanel = InvaderInsider.UI.UIManager.Instance.GetPanel("SummonChoice") as SummonChoicePanel;
+                if (summonChoicePanel != null)
+                {
+                    currentSummonChoicePanel = summonChoicePanel;
+                    currentSummonChoicePanel.SetupCards(choices);
+                    InvaderInsider.UI.UIManager.Instance.ShowPanel("SummonChoice");
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + "UIManager를 통해 SummonChoice 패널을 표시했습니다.");
+                    #endif
+                    return;
+                }
+            }
+            
+            // 백업: UIManager에 등록되지 않은 경우 씬에서 직접 찾기
+            if (currentSummonChoicePanel == null)
+            {
+                currentSummonChoicePanel = FindObjectOfType<SummonChoicePanel>(true);
+            }
+            
+            if (currentSummonChoicePanel != null)
+            {
+                currentSummonChoicePanel.SetupCards(choices);
+                currentSummonChoicePanel.Show();
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "씬에서 SummonChoice 패널을 찾아 표시했습니다.");
+                #endif
+                return;
+            }
+            
+            // 최후의 백업: 동적 생성
+            #if UNITY_EDITOR
+            Debug.LogWarning(LOG_PREFIX + "SummonChoice 패널을 찾을 수 없어 동적 생성을 시도합니다.");
+            #endif
+            
             if (summonChoicePanelPrefab == null)
             {
                 #if UNITY_EDITOR
@@ -268,32 +313,76 @@ namespace InvaderInsider.Cards
                 return;
             }
 
-            if (currentSummonChoicePanel != null)
+            // 적절한 Canvas 찾기
+            Canvas targetCanvas = null;
+            Canvas[] allCanvases = FindObjectsOfType<Canvas>();
+            
+            foreach (Canvas canvas in allCanvases)
             {
-                Destroy(currentSummonChoicePanel.gameObject);
+                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+                {
+                    string canvasName = canvas.name.ToLower();
+                    if (!canvasName.Contains("topbar") && !canvasName.Contains("bottombar"))
+                    {
+                        targetCanvas = canvas;
+                        break;
+                    }
+                }
             }
-
-            GameObject panelObj = Instantiate(summonChoicePanelPrefab);
-            currentSummonChoicePanel = panelObj.GetComponent<SummonChoicePanel>();
-            if (currentSummonChoicePanel != null)
+            
+            if (targetCanvas != null)
             {
-                currentSummonChoicePanel.Initialize(choices);
+                GameObject panelObj = Instantiate(summonChoicePanelPrefab, targetCanvas.transform);
+                currentSummonChoicePanel = panelObj.GetComponent<SummonChoicePanel>();
+                if (currentSummonChoicePanel != null)
+                {
+                    currentSummonChoicePanel.SetupCards(choices);
+                    currentSummonChoicePanel.Show();
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + $"Canvas({targetCanvas.name})에 소환 선택 패널을 동적 생성했습니다.");
+                    #endif
+                }
             }
         }
 
         public void OnCardChoiceSelected(CardDBObject selectedCard)
         {
-            if (currentSummonChoicePanel != null)
+            // UIManager를 통해 패널 숨기기
+            if (InvaderInsider.UI.UIManager.Instance != null && InvaderInsider.UI.UIManager.Instance.IsPanelRegistered("SummonChoice"))
             {
+                InvaderInsider.UI.UIManager.Instance.HidePanel("SummonChoice");
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "UIManager를 통해 SummonChoice 패널을 숨겼습니다.");
+                #endif
+            }
+            else if (currentSummonChoicePanel != null)
+            {
+                // 백업: 동적 생성된 패널 제거
+                currentSummonChoicePanel.Hide();
                 Destroy(currentSummonChoicePanel.gameObject);
                 currentSummonChoicePanel = null;
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "동적 생성된 소환 선택 패널을 제거했습니다.");
+                #endif
             }
             
+            // 패널 참조 정리
+            currentSummonChoicePanel = null;
+            
             // 선택된 카드를 이벤트로 전달
-            OnCardDrawn?.Invoke(selectedCard);
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"플레이어가 카드를 선택했습니다: {selectedCard.cardName}");
-            #endif
+            if (selectedCard != null)
+            {
+                OnCardDrawn?.Invoke(selectedCard);
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"플레이어가 카드를 선택했습니다: {selectedCard.cardName}");
+                #endif
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "카드 선택이 취소되었습니다.");
+                #endif
+            }
             
             SaveSummonData();
         }

@@ -226,7 +226,13 @@
 
                 float4 shadowCoord = mul(_AdditionalShadowsBuffer[lightIndex].worldToShadowMatrix, float4(positionWS, 1.0));
 #else
-                float4 shadowCoord = mul(_AdditionalLightsWorldToShadow[lightIndex], float4(positionWS, 1.0));
+                // URP 14.x 호환성: _AdditionalLightsWorldToShadow가 제거되어 대체 방법 사용
+                #if defined(_ADDITIONAL_LIGHT_SHADOWS) && defined(USE_STRUCTURED_BUFFER_FOR_LIGHT_DATA)
+                    float4 shadowCoord = mul(_AdditionalShadowsBuffer[lightIndex].worldToShadowMatrix, float4(positionWS, 1.0));
+                #else
+                    // 그림자 없이 처리
+                    float4 shadowCoord = float4(0, 0, 0, 0);
+                #endif
 #endif
 
                 half4 shadowParams = GetAdditionalLightShadowParams(lightIndex);
