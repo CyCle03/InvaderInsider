@@ -224,16 +224,9 @@
                     if (lightIndex < 0)
                         return 1.0;
 
-                float4 shadowCoord = mul(_AdditionalShadowsBuffer[lightIndex].worldToShadowMatrix, float4(positionWS, 1.0));
-#else
-                // URP 14.x 호환성: _AdditionalLightsWorldToShadow가 제거되어 대체 방법 사용
-                #if defined(_ADDITIONAL_LIGHT_SHADOWS) && defined(USE_STRUCTURED_BUFFER_FOR_LIGHT_DATA)
-                    float4 shadowCoord = mul(_AdditionalShadowsBuffer[lightIndex].worldToShadowMatrix, float4(positionWS, 1.0));
-                #else
-                    // 그림자 없이 처리
-                    float4 shadowCoord = float4(0, 0, 0, 0);
-                #endif
-#endif
+                // URP 14.x 호환성: Additional Light Shadows는 지원하지 않음
+                // 이 버전의 셰이더에서는 추가 조명 그림자를 비활성화
+                float4 shadowCoord = float4(0, 0, 0, 0);
 
                 half4 shadowParams = GetAdditionalLightShadowParams(lightIndex);
                 return SampleShadowmap(TEXTURE2D_ARGS(_AdditionalLightsShadowmapTexture, sampler_AdditionalLightsShadowmapTexture), shadowCoord, shadowSamplingData, shadowParams, true);
