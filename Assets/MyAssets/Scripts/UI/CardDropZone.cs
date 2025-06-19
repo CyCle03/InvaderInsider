@@ -46,6 +46,7 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
+            // C# 이벤트는 메모리 누수 방지를 위해 수동 해제
             OnCardSuccessfullyPlayed.RemoveAllListeners();
             OnCardSuccessfullyUpgraded.RemoveAllListeners();
             placedCards.Clear();

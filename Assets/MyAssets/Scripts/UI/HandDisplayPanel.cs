@@ -72,7 +72,6 @@ namespace InvaderInsider.UI
 
             if (fullViewButton != null)
             {
-                fullViewButton.onClick.RemoveAllListeners();
                 fullViewButton.onClick.AddListener(ShowFullHandView);
             }
 
@@ -118,11 +117,6 @@ namespace InvaderInsider.UI
             if (saveManager != null)
             {
                 saveManager.OnHandDataChanged -= UpdateHandUI;
-            }
-
-            if (fullViewButton != null)
-            {
-                fullViewButton.onClick.RemoveAllListeners();
             }
 
             foreach (var item in currentHandItems)

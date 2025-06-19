@@ -135,40 +135,34 @@ namespace InvaderInsider.UI
 
         private void SetupButtons()
         {
-            // 기존 리스너 제거 후 새로 등록 (중복 방지)
+            // 버튼 이벤트 등록 (Initialize에서 한 번만 호출)
             if (newGameButton != null)
             {
-                newGameButton.onClick.RemoveListener(OnNewGameClicked);
                 newGameButton.onClick.AddListener(OnNewGameClicked);
             }
             
             if (continueButton != null)
             {
-                continueButton.onClick.RemoveListener(OnContinueClicked);
                 continueButton.onClick.AddListener(OnContinueClicked);
             }
             
             if (settingsButton != null)
             {
-                settingsButton.onClick.RemoveListener(OnSettingsClicked);
                 settingsButton.onClick.AddListener(OnSettingsClicked);
             }
             
             if (deckButton != null)
             {
-                deckButton.onClick.RemoveListener(OnDeckClicked);
                 deckButton.onClick.AddListener(OnDeckClicked);
             }
             
             if (achievementsButton != null)
             {
-                achievementsButton.onClick.RemoveListener(OnAchievementsClicked);
                 achievementsButton.onClick.AddListener(OnAchievementsClicked);
             }
             
             if (exitButton != null)
             {
-                exitButton.onClick.RemoveListener(OnExitClicked);
                 exitButton.onClick.AddListener(OnExitClicked);
             }
         }

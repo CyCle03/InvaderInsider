@@ -33,6 +33,7 @@ namespace InvaderInsider.UI
         private SaveDataManager saveManager;
         private CardManager cardManager;
         private readonly string[] cachedStrings = new string[7];
+        private bool isInitialized = false;
 
         protected override void Awake()
         {
@@ -47,10 +48,21 @@ namespace InvaderInsider.UI
 
         protected override void Initialize()
         {
+            if (isInitialized)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "Deck 패널이 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
+                #endif
+                return;
+            }
+
             if (backButton != null)
             {
+                backButton.onClick.RemoveAllListeners();
                 backButton.onClick.AddListener(OnBackButtonClicked);
             }
+            
+            isInitialized = true;
         }
 
         private void OnBackButtonClicked()
@@ -188,11 +200,6 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
-            if (backButton != null)
-            {
-                backButton.onClick.RemoveAllListeners();
-            }
-            
             foreach (var cardUI in cardUIDict.Values)
             {
                 if (cardUI != null)

@@ -3,6 +3,10 @@ using UnityEngine.UI;
 using InvaderInsider.Managers;
 using InvaderInsider.UI;
 using InvaderInsider.Cards;
+using InvaderInsider.Data;
+using TMPro;
+using System.Collections.Generic;
+using System.Collections;
 
 namespace InvaderInsider.UI
 {
@@ -30,7 +34,18 @@ namespace InvaderInsider.UI
         [SerializeField] private Button hideSummonPanelButton;
         [SerializeField] private Button showSummonPanelButton;
 
+        [Header("Hand Display Controls")]
+        [SerializeField] private Button showHandButton;
+        [SerializeField] private Button clearHandButton; // 테스트용 핸드 초기화 버튼
+        [SerializeField] private TextMeshProUGUI handCardCountText; // 핸드 카드 수 표시
+
         private UIManager uiManager;
+        private CardManager cardManager;
+        private bool lastSummonPanelState = false; // 이전 프레임의 SummonChoice 패널 상태
+        private float lastSummonClickTime = 0f;
+        private const float SUMMON_CLICK_COOLDOWN = 1.0f; // 1초 쿨다운
+        private bool isSummonButtonProcessing = false; // 소환 버튼 처리 중 플래그
+        private bool isInitialized = false; // 초기화 중복 방지 플래그
 
         protected override void Awake()
         {
@@ -38,24 +53,39 @@ namespace InvaderInsider.UI
             
             uiManager = UIManager.Instance;
             
-            Initialize();
+            // BasePanel.Awake()에서 이미 Initialize()가 호출되므로 중복 호출 제거
         }
 
         protected override void Initialize()
         {
-            if (pauseButton == null)
+            // 중복 초기화 방지
+            if (isInitialized)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "InGame 패널이 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
+                #endif
+                return;
+            }
+
+            uiManager = UIManager.Instance;
+            cardManager = CardManager.Instance;
+
+            // 기존 이벤트 리스너 제거 후 등록 (중복 방지)
+            if (pauseButton != null)
+            {
+                pauseButton.onClick.RemoveAllListeners();
+                pauseButton.onClick.AddListener(OnPauseButtonClicked);
+            }
+            else
             {
                 #if UNITY_EDITOR
                 Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[0]);
                 #endif
             }
-            else
-            {
-                pauseButton.onClick.AddListener(OnPauseButtonClicked);
-            }
 
             if (summonButton != null)
             {
+                summonButton.onClick.RemoveAllListeners();
                 summonButton.onClick.AddListener(OnSummonButtonClicked);
             }
             else
@@ -65,18 +95,40 @@ namespace InvaderInsider.UI
                 #endif
             }
 
-            // Hide/Show 버튼 초기화
             if (hideSummonPanelButton != null)
             {
-                hideSummonPanelButton.onClick.AddListener(OnHideSummonPanelClicked);
-                hideSummonPanelButton.gameObject.SetActive(false); // 처음에는 숨김
+                hideSummonPanelButton.onClick.RemoveAllListeners();
+                hideSummonPanelButton.onClick.AddListener(OnHideSummonPanelButtonClicked);
             }
 
             if (showSummonPanelButton != null)
             {
-                showSummonPanelButton.onClick.AddListener(OnShowSummonPanelClicked);
-                showSummonPanelButton.gameObject.SetActive(false); // 처음에는 숨김
+                showSummonPanelButton.onClick.RemoveAllListeners();
+                showSummonPanelButton.onClick.AddListener(OnShowSummonPanelButtonClicked);
             }
+
+            if (showHandButton != null)
+            {
+                showHandButton.onClick.RemoveAllListeners();
+                showHandButton.onClick.AddListener(OnShowHandButtonClicked);
+            }
+
+            if (clearHandButton != null)
+            {
+                clearHandButton.onClick.RemoveAllListeners();
+                clearHandButton.onClick.AddListener(OnClearHandButtonClicked);
+            }
+
+            // SaveDataManager 이벤트 중복 구독 방지
+            if (SaveDataManager.Instance != null)
+            {
+                SaveDataManager.Instance.OnHandDataChanged -= UpdateHandCardCount; // 기존 구독 해제
+                SaveDataManager.Instance.OnHandDataChanged += UpdateHandCardCount; // 새로 구독
+            }
+
+            UpdateHandCardCount();
+            
+            isInitialized = true;
 
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "InGame 패널 초기화 완료");
@@ -85,8 +137,16 @@ namespace InvaderInsider.UI
 
         private void Update()
         {
-            // SummonChoice 패널 상태에 따라 Hide/Show 버튼 활성화 상태 업데이트
-            UpdateSummonPanelButtons();
+            // SummonChoice 패널 상태 변화가 있을 때만 업데이트
+            if (CardManager.Instance != null)
+            {
+                bool currentSummonPanelState = CardManager.Instance.IsSummonChoicePanelActive();
+                if (currentSummonPanelState != lastSummonPanelState)
+                {
+                    UpdateSummonPanelButtons();
+                    lastSummonPanelState = currentSummonPanelState;
+                }
+            }
         }
 
         private void UpdateSummonPanelButtons()
@@ -150,24 +210,96 @@ namespace InvaderInsider.UI
             }
         }
 
-        private void OnSummonButtonClicked()
+        private void OnResumeButtonClicked()
         {
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[3]);
+            Debug.Log("[InGame] Resume 버튼이 클릭되었습니다.");
             #endif
-            if (CardManager.Instance != null)
+            if (GameManager.Instance != null)
             {
-                CardManager.Instance.Summon();
+                GameManager.Instance.ResumeGame();
             }
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[4]);
+                Debug.LogError(LOG_PREFIX + "GameManager를 찾을 수 없습니다");
                 #endif
             }
         }
 
-        private void OnHideSummonPanelClicked()
+        private void OnSummonButtonClicked()
+        {
+            // 이미 처리 중인 경우 즉시 반환
+            if (isSummonButtonProcessing)
+            {
+                #if UNITY_EDITOR
+                Debug.Log($"{LOG_PREFIX}소환 버튼이 이미 처리 중입니다. 무시됩니다.");
+                #endif
+                return;
+            }
+            
+            // 쿨다운 체크
+            float currentTime = Time.unscaledTime;
+            if (currentTime - lastSummonClickTime < SUMMON_CLICK_COOLDOWN)
+            {
+                #if UNITY_EDITOR
+                Debug.Log($"{LOG_PREFIX}소환 버튼 쿨다운 중입니다. 남은 시간: {SUMMON_CLICK_COOLDOWN - (currentTime - lastSummonClickTime):F1}초");
+                #endif
+                return;
+            }
+            
+            // 처리 시작
+            isSummonButtonProcessing = true;
+            lastSummonClickTime = currentTime;
+            
+            // 버튼 일시적 비활성화 (UI 레벨 보호)
+            if (summonButton != null)
+            {
+                summonButton.interactable = false;
+            }
+            
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + LOG_MESSAGES[3]);
+            #endif
+            
+            try
+            {
+                if (CardManager.Instance != null)
+                {
+                    CardManager.Instance.Summon();
+                }
+                else
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogError(LOG_PREFIX + LOG_MESSAGES[4]);
+                    #endif
+                }
+            }
+            finally
+            {
+                // 처리 완료 (일정 시간 후 버튼 다시 활성화)
+                StartCoroutine(ResetSummonButtonAfterDelay());
+            }
+        }
+        
+        private System.Collections.IEnumerator ResetSummonButtonAfterDelay()
+        {
+            // 0.5초 후 버튼 다시 활성화 (쿨다운보다 짧게)
+            yield return new WaitForSecondsRealtime(0.5f);
+            
+            isSummonButtonProcessing = false;
+            
+            if (summonButton != null)
+            {
+                summonButton.interactable = true;
+            }
+            
+            #if UNITY_EDITOR
+            Debug.Log($"{LOG_PREFIX}소환 버튼이 다시 활성화되었습니다.");
+            #endif
+        }
+
+        private void OnHideSummonPanelButtonClicked()
         {
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + LOG_MESSAGES[7]);
@@ -189,7 +321,7 @@ namespace InvaderInsider.UI
             }
         }
 
-        private void OnShowSummonPanelClicked()
+        private void OnShowSummonPanelButtonClicked()
         {
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + LOG_MESSAGES[8]);
@@ -211,6 +343,70 @@ namespace InvaderInsider.UI
             }
         }
 
+        private void OnShowHandButtonClicked()
+        {
+            #if UNITY_EDITOR
+            Debug.Log("[InGame] 핸드 보기 버튼이 클릭되었습니다.");
+            #endif
+
+            if (uiManager != null && uiManager.IsPanelRegistered("HandDisplay"))
+            {
+                uiManager.ShowPanel("HandDisplay");
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning("[InGame] HandDisplay 패널이 UIManager에 등록되지 않았습니다.");
+                #endif
+            }
+
+            // 현재 핸드 카드 목록 로깅
+            if (cardManager != null)
+            {
+                var handCards = cardManager.GetHandCards();
+                #if UNITY_EDITOR
+                Debug.Log($"[InGame] 현재 핸드에 있는 카드 수: {handCards.Count}");
+                foreach (var card in handCards)
+                {
+                    Debug.Log($"[InGame] 핸드 카드: {card.cardName} (ID: {card.cardId})");
+                }
+                #endif
+            }
+        }
+
+        private void OnClearHandButtonClicked()
+        {
+            #if UNITY_EDITOR
+            Debug.Log("[InGame] 핸드 초기화 버튼이 클릭되었습니다.");
+            #endif
+
+            if (cardManager != null && SaveDataManager.Instance != null)
+            {
+                var handCardIds = cardManager.GetHandCardIds();
+                foreach (int cardId in handCardIds)
+                {
+                    SaveDataManager.Instance.RemoveCardFromHand(cardId);
+                }
+                
+                #if UNITY_EDITOR
+                Debug.Log($"[InGame] {handCardIds.Count}개의 카드가 핸드에서 제거되었습니다.");
+                #endif
+            }
+        }
+
+        private void UpdateHandCardCount(List<int> handCardIds = null)
+        {
+            if (handCardCountText != null && cardManager != null)
+            {
+                int handCount = cardManager.GetHandCardCount();
+                handCardCountText.text = $"핸드: {handCount}";
+                
+                #if UNITY_EDITOR
+                Debug.Log($"[InGame] 핸드 카드 수 업데이트: {handCount}");
+                #endif
+            }
+        }
+
         protected override void OnShow()
         {
             base.OnShow();
@@ -223,25 +419,22 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
-            if (pauseButton != null)
+            // SaveDataManager 이벤트만 명시적으로 해제 (메모리 누수 방지)
+            if (SaveDataManager.Instance != null)
             {
-                pauseButton.onClick.RemoveAllListeners();
+                SaveDataManager.Instance.OnHandDataChanged -= UpdateHandCardCount;
             }
             
-            if (summonButton != null)
-            {
-                summonButton.onClick.RemoveAllListeners();
-            }
-            
-            if (hideSummonPanelButton != null)
-            {
-                hideSummonPanelButton.onClick.RemoveAllListeners();
-            }
-            
-            if (showSummonPanelButton != null)
-            {
-                showSummonPanelButton.onClick.RemoveAllListeners();
-            }
+            // 버튼 이벤트는 GameObject 파괴 시 자동으로 해제되므로 생략 가능
+            /*
+            if (pauseButton != null) pauseButton.onClick.RemoveAllListeners();
+            if (resumeButton != null) resumeButton.onClick.RemoveAllListeners();
+            if (summonButton != null) summonButton.onClick.RemoveAllListeners();
+            if (hideSummonPanelButton != null) hideSummonPanelButton.onClick.RemoveAllListeners();
+            if (showSummonPanelButton != null) showSummonPanelButton.onClick.RemoveAllListeners();
+            if (showHandButton != null) showHandButton.onClick.RemoveAllListeners();
+            if (clearHandButton != null) clearHandButton.onClick.RemoveAllListeners();
+            */
         }
     }
 } 

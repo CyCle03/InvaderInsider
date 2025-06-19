@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using InvaderInsider.Data;
-using InvaderInsider.Cards;
-using InvaderInsider.Managers;
 using TMPro;
+using InvaderInsider.Cards;
+using InvaderInsider.Data;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
@@ -35,6 +35,13 @@ namespace InvaderInsider.UI
         [SerializeField] private Button hideButton;
         [SerializeField] private Button showButton;
 
+        [Header("Debugging")]
+        [SerializeField] private Button debugButton;
+        [SerializeField] private Button demoButton;
+
+        [Header("Hand Information")]
+        [SerializeField] private TextMeshProUGUI handInfoText; // 핸드 정보 표시용 텍스트
+
         private List<CardDBObject> availableCards;
         private List<Button> cardButtons = new List<Button>();
         private List<CardButton> cardButtonComponents = new List<CardButton>();
@@ -43,6 +50,7 @@ namespace InvaderInsider.UI
         private GameManager gameManager;
         private bool wasGamePaused = false; // 원래 게임이 일시정지 상태였는지 추적
         private bool isPanelTemporarilyHidden = false; // 일시적으로 숨겨진 상태인지 추적
+        private bool isInitialized = false; // 초기화 중복 방지 플래그
 
         protected override void Awake()
         {
@@ -52,11 +60,20 @@ namespace InvaderInsider.UI
             cardManager = CardManager.Instance;
             gameManager = GameManager.Instance;
             
-            Initialize();
+            // BasePanel.Awake()에서 이미 Initialize()가 호출되므로 중복 호출 제거
         }
 
         protected override void Initialize()
         {
+            // 중복 초기화 방지
+            if (isInitialized)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "SummonChoice 패널이 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
+                #endif
+                return;
+            }
+
             if (cardContainer == null || closeButton == null)
             {
                 #if UNITY_EDITOR
@@ -65,19 +82,25 @@ namespace InvaderInsider.UI
                 return;
             }
 
+            // 기존 이벤트 리스너 제거 후 등록 (중복 방지)
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(HandleCloseClick);
             
             // Hide/Show 버튼 이벤트 연결
             if (hideButton != null)
             {
+                hideButton.onClick.RemoveAllListeners();
                 hideButton.onClick.AddListener(HandleHideClick);
             }
             
             if (showButton != null)
             {
+                showButton.onClick.RemoveAllListeners();
                 showButton.onClick.AddListener(HandleShowClick);
                 showButton.gameObject.SetActive(false); // 처음에는 숨김
             }
+            
+            isInitialized = true;
         }
 
         public void SetupCards(List<CardDBObject> cards)
@@ -289,48 +312,22 @@ namespace InvaderInsider.UI
         protected override void OnShow()
         {
             base.OnShow();
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[4]);
-            #endif
             
-            // 게임 일시정지
-            if (gameManager != null && gameManager.CurrentGameState == GameState.Playing)
+            // 게임 일시정지 (기존 상태 저장)
+            if (GameManager.Instance != null)
             {
-                wasGamePaused = false;
-                gameManager.PauseGame();
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[9]);
-                #endif
-            }
-            else
-            {
-                wasGamePaused = true; // 이미 일시정지 상태였음
-            }
-            
-            // 일시적으로 숨겨진 상태가 아닌 경우에만 UI 초기화
-            if (!isPanelTemporarilyHidden)
-            {
-                // UI 요소들 초기 상태로 설정
-                if (cardContainer != null)
+                wasGamePaused = GameManager.Instance.CurrentGameState == GameState.Paused;
+                if (!wasGamePaused)
                 {
-                    cardContainer.gameObject.SetActive(true);
-                }
-                
-                if (closeButton != null)
-                {
-                    closeButton.gameObject.SetActive(true);
-                }
-                
-                if (hideButton != null)
-                {
-                    hideButton.gameObject.SetActive(true);
-                }
-                
-                if (showButton != null)
-                {
-                    showButton.gameObject.SetActive(false);
+                    GameManager.Instance.PauseGame();
+                    Debug.Log("[SummonChoice] 게임을 일시정지했습니다.");
                 }
             }
+
+            // 핸드 정보 업데이트
+            UpdateHandInfo();
+
+            Debug.Log("[SummonChoice] 패널이 표시되었습니다.");
         }
 
         protected override void OnHide()
@@ -379,21 +376,6 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
-            if (closeButton != null)
-            {
-                closeButton.onClick.RemoveAllListeners();
-            }
-            
-            if (hideButton != null)
-            {
-                hideButton.onClick.RemoveAllListeners();
-            }
-            
-            if (showButton != null)
-            {
-                showButton.onClick.RemoveAllListeners();
-            }
-
             ClearCardButtons();
         }
 
@@ -683,6 +665,40 @@ namespace InvaderInsider.UI
             
             Debug.Log(LOG_PREFIX + "=== 카드 데이터 변경 데모 완료 ===");
             #endif
+        }
+
+        private void UpdateHandInfo()
+        {
+            if (handInfoText == null) return;
+
+            if (CardManager.Instance != null)
+            {
+                var handCards = CardManager.Instance.GetHandCards();
+                int handCount = handCards.Count;
+                
+                string handInfo = $"핸드: {handCount}장";
+                if (handCount > 0)
+                {
+                    handInfo += "\n카드 목록:";
+                    for (int i = 0; i < Mathf.Min(handCount, 3); i++) // 최대 3개까지만 표시
+                    {
+                        handInfo += $"\n• {handCards[i].cardName}";
+                    }
+                    if (handCount > 3)
+                    {
+                        handInfo += $"\n• ... (+{handCount - 3}장 더)";
+                    }
+                }
+
+                handInfoText.text = handInfo;
+                
+                Debug.Log($"[SummonChoice] 핸드 정보 업데이트: {handCount}장의 카드가 있습니다.");
+            }
+            else
+            {
+                handInfoText.text = "핸드: 정보 없음";
+                Debug.LogWarning("[SummonChoice] CardManager 인스턴스를 찾을 수 없습니다.");
+            }
         }
     }
 } 

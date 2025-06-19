@@ -75,6 +75,7 @@ namespace InvaderInsider.Cards
         private int currentSummonCost;
         private int summonCount = 0;
         private SummonChoicePanel currentSummonChoicePanel;
+        private bool isSummonInProgress = false; // 소환 진행 중 플래그
 
         // Events
         public UnityEvent<CardDBObject> OnCardDrawn = new UnityEvent<CardDBObject>();
@@ -186,6 +187,15 @@ namespace InvaderInsider.Cards
 
         public void Summon()
         {
+            // 중복 호출 방지
+            if (isSummonInProgress)
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + "소환이 이미 진행 중입니다. 중복 호출을 무시합니다.");
+                #endif
+                return;
+            }
+
             if (SaveDataManager.Instance == null)
             {
                 #if UNITY_EDITOR
@@ -196,40 +206,30 @@ namespace InvaderInsider.Cards
 
             if (SaveDataManager.Instance.CurrentSaveData.progressData.currentEData >= currentSummonCost)
             {
+                isSummonInProgress = true; // 소환 시작
+                
                 // 소환 시에는 저장하지 않고 eData만 감소 (스테이지 클리어 시 저장됨)
                 SaveDataManager.Instance.UpdateEDataWithoutSave(-currentSummonCost);
-                
-                // TopBarPanel에 직접 eData 업데이트 (Stage/Wave UI와 동일한 방식)
-                var topBarPanel = FindObjectOfType<InvaderInsider.UI.TopBarPanel>();
-                if (topBarPanel != null)
-                {
-                    int currentEData = SaveDataManager.Instance.GetCurrentEData();
-                    topBarPanel.UpdateEData(currentEData);
-                }
-                
-                // CardDrawUI 버튼 상태도 업데이트
-                var cardDrawUI = FindObjectOfType<CardDrawUI>();
-                if (cardDrawUI != null)
-                {
-                    int currentEData = SaveDataManager.Instance.GetCurrentEData();
-                    cardDrawUI.UpdateButtonStates(currentEData);
-                }
-                
+
+                // 소환 횟수 증가 및 다음 비용 계산
                 summonCount++;
                 currentSummonCost = initialSummonCost + summonCount * summonCostIncrease;
+
                 #if UNITY_EDITOR
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[7], summonCount, currentSummonCost));
                 #endif
 
-                List<CardDBObject> selectedCards = SelectRandomCards(3);
-                DisplaySummonChoices(selectedCards);
+                // 랜덤 카드 3장 선택
+                List<CardDBObject> randomCards = SelectRandomCards(3);
+                
+                // 카드 선택 UI 표시
+                DisplaySummonChoices(randomCards);
             }
             else
             {
                 #if UNITY_EDITOR
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[6], 
-                    SaveDataManager.Instance.CurrentSaveData.progressData.currentEData, 
-                    currentSummonCost));
+                    SaveDataManager.Instance.CurrentSaveData.progressData.currentEData, currentSummonCost));
                 #endif
             }
         }
@@ -347,6 +347,9 @@ namespace InvaderInsider.Cards
 
         public void OnCardChoiceSelected(CardDBObject selectedCard)
         {
+            // 소환 진행 플래그 해제
+            isSummonInProgress = false;
+
             // UIManager를 통해 패널 숨기기
             if (InvaderInsider.UI.UIManager.Instance != null && InvaderInsider.UI.UIManager.Instance.IsPanelRegistered("SummonChoice"))
             {
@@ -551,6 +554,88 @@ namespace InvaderInsider.Cards
         public int GetSingleDrawCost() => singleDrawCost;
         public int GetMultiDrawCost() => multiDrawCost;
         public int GetCurrentSummonCost() => currentSummonCost;
+
+        // 핸드 관련 편의 메서드들
+        public List<int> GetHandCardIds()
+        {
+            if (SaveDataManager.Instance?.CurrentSaveData != null)
+            {
+                return SaveDataManager.Instance.CurrentSaveData.deckData.handCardIds;
+            }
+            return new List<int>();
+        }
+
+        public List<CardDBObject> GetHandCards()
+        {
+            var handCardIds = GetHandCardIds();
+            var handCards = new List<CardDBObject>();
+            
+            foreach (int cardId in handCardIds)
+            {
+                var cardData = GetCardById(cardId);
+                if (cardData != null)
+                {
+                    handCards.Add(cardData);
+                }
+            }
+            return handCards;
+        }
+
+        public void RemoveCardFromHand(int cardId)
+        {
+            if (SaveDataManager.Instance != null)
+            {
+                SaveDataManager.Instance.RemoveCardFromHand(cardId);
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"카드가 핸드에서 제거되었습니다: ID {cardId}");
+                #endif
+            }
+        }
+
+        public bool IsCardInHand(int cardId)
+        {
+            if (SaveDataManager.Instance?.CurrentSaveData != null)
+            {
+                return SaveDataManager.Instance.CurrentSaveData.deckData.IsInHand(cardId);
+            }
+            return false;
+        }
+
+        public int GetHandCardCount()
+        {
+            return GetHandCardIds().Count;
+        }
         #endregion
+
+        // 디모/테스트 메서드들
+        public void DemoAddRandomCardToHand()
+        {
+            if (cardDatabase != null && cardDatabase.cards.Count > 0)
+            {
+                var randomCard = cardDatabase.cards[UnityEngine.Random.Range(0, cardDatabase.cards.Count)];
+                if (SaveDataManager.Instance != null)
+                {
+                    SaveDataManager.Instance.AddCardToHandAndOwned(randomCard.cardId);
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + $"디모: 랜덤 카드를 핸드에 추가했습니다: {randomCard.cardName} (ID: {randomCard.cardId})");
+                    #endif
+                }
+            }
+        }
+
+        public void DemoShowHandStatus()
+        {
+            if (SaveDataManager.Instance != null)
+            {
+                var handCards = GetHandCards();
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"현재 핸드 상태: {handCards.Count}장의 카드");
+                foreach (var card in handCards)
+                {
+                    Debug.Log(LOG_PREFIX + $"- {card.cardName} (ID: {card.cardId}, 타입: {card.type}, 등급: {card.rarity})");
+                }
+                #endif
+            }
+        }
     }
 } 
