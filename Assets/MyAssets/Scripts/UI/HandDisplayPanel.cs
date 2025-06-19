@@ -50,6 +50,7 @@ namespace InvaderInsider.UI
 
         private readonly List<GameObject> currentHandItems = new List<GameObject>(); // 현재 표시된 카드들
         private SaveDataManager saveManager;
+        private CardManager cardManager;
         private CardDrawUI cardDrawUI;
         private bool isInitialized = false;
         private bool isPopupOpen = false;
@@ -72,11 +73,17 @@ namespace InvaderInsider.UI
             if (isInitialized) return;
 
             saveManager = SaveDataManager.Instance;
+            cardManager = CardManager.Instance;
             cardDrawUI = CardDrawUI.Instance;
 
             if (saveManager == null)
             {
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+                return;
+            }
+            if (cardManager == null)
+            {
+                Debug.LogError(LOG_PREFIX + "Hand: CardManager instance not found");
                 return;
             }
             if (cardDrawUI == null)
@@ -152,9 +159,9 @@ namespace InvaderInsider.UI
             isPopupOpen = true;
 
             // 현재 핸드 데이터로 팝업 업데이트
-            if (saveManager != null)
+            if (cardManager != null)
             {
-                var handCardIds = saveManager.GetHandCardIds();
+                var handCardIds = cardManager.GetHandCardIds();
                 UpdatePopupContent(handCardIds);
             }
 
@@ -163,7 +170,7 @@ namespace InvaderInsider.UI
 
             if (Application.isPlaying)
             {
-                var cardCount = saveManager?.GetHandCardIds()?.Count ?? 0;
+                var cardCount = cardManager?.GetHandCardIds()?.Count ?? 0;
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], cardCount));
             }
         }
@@ -271,9 +278,9 @@ namespace InvaderInsider.UI
         {
             currentSortType = sortType;
 
-            if (isPopupOpen && saveManager != null)
+            if (isPopupOpen && cardManager != null)
             {
-                var handCardIds = saveManager.GetHandCardIds();
+                var handCardIds = cardManager.GetHandCardIds();
                 UpdatePopupContent(handCardIds);
             }
 
@@ -381,7 +388,7 @@ namespace InvaderInsider.UI
         // 카드 상호작용 완료 처리
         private void HandleCardPlayInteractionCompleted(CardDisplay playedCardDisplay, CardPlacementResult result)
         {
-            if (!isInitialized || saveManager == null) return;
+            if (!isInitialized || cardManager == null) return;
 
             var playedCardData = playedCardDisplay.GetCardData();
             if (playedCardData == null) return;
@@ -392,7 +399,7 @@ namespace InvaderInsider.UI
                 {
                     Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], playedCardData.cardName));
                 }
-                saveManager.RemoveCardFromHand(playedCardData.cardId);
+                cardManager.RemoveCardFromHand(playedCardData.cardId);
             }
             else if (Application.isPlaying)
             {

@@ -180,8 +180,7 @@ namespace InvaderInsider.UI
             
             if (cardButtonComponent != null)
             {
-                // CardButton의 UI 할당 상태 확인
-                cardButtonComponent.DebugUIAssignmentStatus();
+                Debug.Log(LOG_PREFIX + $"CardButton 컴포넌트 초기화 준비 완료: {card.cardName}");
             }
             #endif
             
