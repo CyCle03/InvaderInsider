@@ -369,9 +369,24 @@ namespace InvaderInsider.Cards
             // 패널 참조 정리
             currentSummonChoicePanel = null;
             
-            // 선택된 카드를 이벤트로 전달
+            // 선택된 카드를 이벤트로 전달 및 핸드에 추가
             if (selectedCard != null)
             {
+                // 핸드에 카드 추가 (SaveDataManager를 통해)
+                if (SaveDataManager.Instance != null)
+                {
+                    SaveDataManager.Instance.AddCardToHandAndOwned(selectedCard.cardId);
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + $"카드가 핸드에 추가되었습니다: {selectedCard.cardName} (ID: {selectedCard.cardId})");
+                    #endif
+                }
+                else
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogError(LOG_PREFIX + "SaveDataManager 인스턴스가 없어 카드를 핸드에 추가할 수 없습니다.");
+                    #endif
+                }
+
                 OnCardDrawn?.Invoke(selectedCard);
                 #if UNITY_EDITOR
                 Debug.Log(LOG_PREFIX + $"플레이어가 카드를 선택했습니다: {selectedCard.cardName}");
@@ -385,6 +400,62 @@ namespace InvaderInsider.Cards
             }
             
             SaveSummonData();
+        }
+
+        public void ShowSummonChoicePanel()
+        {
+            if (currentSummonChoicePanel != null)
+            {
+                // UIManager를 통해 패널 보이기
+                if (InvaderInsider.UI.UIManager.Instance != null && InvaderInsider.UI.UIManager.Instance.IsPanelRegistered("SummonChoice"))
+                {
+                    InvaderInsider.UI.UIManager.Instance.ShowPanel("SummonChoice");
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + "UIManager를 통해 SummonChoice 패널을 다시 표시했습니다.");
+                    #endif
+                }
+                else
+                {
+                    currentSummonChoicePanel.Show();
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + "SummonChoice 패널을 다시 표시했습니다.");
+                    #endif
+                }
+            }
+        }
+
+        public void HideSummonChoicePanel()
+        {
+            if (currentSummonChoicePanel != null)
+            {
+                // UIManager를 통해 패널 숨기기
+                if (InvaderInsider.UI.UIManager.Instance != null && InvaderInsider.UI.UIManager.Instance.IsPanelRegistered("SummonChoice"))
+                {
+                    InvaderInsider.UI.UIManager.Instance.HidePanel("SummonChoice");
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + "UIManager를 통해 SummonChoice 패널을 임시로 숨겼습니다.");
+                    #endif
+                }
+                else
+                {
+                    currentSummonChoicePanel.Hide();
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + "SummonChoice 패널을 임시로 숨겼습니다.");
+                    #endif
+                }
+            }
+        }
+
+        public bool IsSummonChoicePanelActive()
+        {
+            if (currentSummonChoicePanel == null) return false;
+            
+            if (InvaderInsider.UI.UIManager.Instance != null && InvaderInsider.UI.UIManager.Instance.IsPanelRegistered("SummonChoice"))
+            {
+                return InvaderInsider.UI.UIManager.Instance.IsPanelActive("SummonChoice");
+            }
+            
+            return currentSummonChoicePanel.gameObject.activeInHierarchy;
         }
         #endregion
 
