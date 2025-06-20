@@ -204,12 +204,35 @@ namespace InvaderInsider.Cards
                 return;
             }
 
-            if (SaveDataManager.Instance.CurrentSaveData.progressData.currentEData >= currentSummonCost)
+            // ResourceManager 우선 사용, 없으면 SaveDataManager 사용
+            var resourceManager = ResourceManager.Instance;
+            int currentEData = resourceManager?.GetCurrentEData() ?? 
+                              SaveDataManager.Instance?.GetCurrentEData() ?? 0;
+            
+            if (currentEData >= currentSummonCost)
             {
                 isSummonInProgress = true; // 소환 시작
                 
-                // 소환 시에는 저장하지 않고 eData만 감소 (스테이지 클리어 시 저장됨)
-                SaveDataManager.Instance.UpdateEDataWithoutSave(-currentSummonCost);
+                // ResourceManager를 통한 EData 소모
+                bool success = false;
+                if (resourceManager != null)
+                {
+                    success = resourceManager.TrySpendEData(currentSummonCost);
+                }
+                else if (SaveDataManager.Instance != null)
+                {
+                    SaveDataManager.Instance.UpdateEDataWithoutSave(-currentSummonCost);
+                    success = true;
+                }
+                
+                if (!success)
+                {
+#if UNITY_EDITOR
+                    Debug.LogError(LOG_PREFIX + "EData 소모에 실패했습니다.");
+#endif
+                    isSummonInProgress = false;
+                    return;
+                }
 
                 // 소환 횟수 증가 및 다음 비용 계산
                 summonCount++;
@@ -229,7 +252,7 @@ namespace InvaderInsider.Cards
             {
                 #if UNITY_EDITOR
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[6], 
-                    SaveDataManager.Instance.CurrentSaveData.progressData.currentEData, currentSummonCost));
+                    currentEData, currentSummonCost));
                 #endif
             }
         }

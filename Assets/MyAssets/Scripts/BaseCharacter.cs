@@ -105,10 +105,12 @@ namespace InvaderInsider
 
             if (equipmentCard.type != CardType.Equipment)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (Application.isPlaying)
                 {
                     Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[1], equipmentCard.cardName, gameObject.name));
                 }
+#endif
                 return;
             }
 
@@ -118,11 +120,13 @@ namespace InvaderInsider
 
             InvokeHealthChanged();
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Application.isPlaying)
             {
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], 
                     equipmentCard.cardName, gameObject.name, attackDamage, maxHealth));
             }
+#endif
         }
     }
 } 

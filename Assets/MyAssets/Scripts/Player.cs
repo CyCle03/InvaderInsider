@@ -44,21 +44,30 @@ namespace InvaderInsider
         {
             if (isInitialized) return;
 
-            bottomBarPanel = FindObjectOfType<BottomBarPanel>();
-            if (bottomBarPanel == null && Application.isPlaying)
+            // UIManager를 통해 UI 참조 가져오기 (FindObjectOfType 대신)
+            uiManager = UIManager.Instance;
+            if (uiManager != null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
-                #endif
+                bottomBarPanel = uiManager.GetComponent<BottomBarPanel>() ?? 
+                               GameObject.FindWithTag("BottomBarPanel")?.GetComponent<BottomBarPanel>();
+            }
+            else
+            {
+                // UIManager가 없을 경우 태그로 찾기
+                bottomBarPanel = GameObject.FindWithTag("BottomBarPanel")?.GetComponent<BottomBarPanel>();
             }
 
-            uiManager = UIManager.Instance;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (bottomBarPanel == null && Application.isPlaying)
+            {
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
+            }
+
             if (uiManager == null && Application.isPlaying)
             {
-                #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[3]);
-                #endif
             }
+#endif
 
             ResetHealth();
             isInitialized = true;

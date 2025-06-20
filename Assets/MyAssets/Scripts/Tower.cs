@@ -66,7 +66,20 @@ namespace InvaderInsider
         {
             if (!isInitialized) return;
 
-            FindTarget();
+            // 적이 없고 타겟도 없을 때는 탐지 빈도를 줄임
+            if (!hasTarget)
+            {
+                // 타겟이 없을 때는 0.1초마다 한 번씩만 탐지
+                if (Time.time % 0.1f < Time.deltaTime)
+                {
+                    FindTarget();
+                }
+            }
+            else
+            {
+                // 타겟이 있을 때는 매 프레임 탐지
+                FindTarget();
+            }
             
             if (currentTarget != null && hasTarget)
             {

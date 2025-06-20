@@ -83,7 +83,7 @@ namespace InvaderInsider
         {
             base.Awake();
             stageManager = StageManager.Instance;
-            player = FindObjectOfType<Player>();
+            // Player 참조는 GameManager를 통해 가져오도록 변경
             agent = GetComponent<NavMeshAgent>();
             pathUpdateWait = new WaitForSeconds(0.1f);
         }
@@ -94,6 +94,16 @@ namespace InvaderInsider
             if (stageManager == null)
             {
                 stageManager = StageManager.Instance;
+            }
+            
+            // Player 참조를 GameManager를 통해 안전하게 가져오기
+            if (player == null)
+            {
+                var gameManager = GameManager.Instance;
+                if (gameManager != null)
+                {
+                    player = gameManager.GetComponent<Player>() ?? GameObject.FindWithTag("Player")?.GetComponent<Player>();
+                }
             }
         }
 
@@ -197,7 +207,9 @@ namespace InvaderInsider
             
             if (waypoints.Count == 0 && Application.isPlaying)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
+#endif
             }
         }
 
@@ -249,10 +261,12 @@ namespace InvaderInsider
         {
             if (!IsInitialized || target == null) return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Application.isPlaying)
             {
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], target));
             }
+#endif
         }
 
         public override void TakeDamage(float damage)
@@ -287,7 +301,9 @@ namespace InvaderInsider
             var stageWayPoints = stageManager.WayPoints;
             if (stageWayPoints == null || stageWayPoints.Count == 0)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
+#endif
                 return;
             }
 
@@ -342,10 +358,12 @@ namespace InvaderInsider
             {
                 // Enemy 레이어가 없다면 6번 레이어를 기본값으로 사용
                 gameObject.layer = 6;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (Application.isPlaying)
                 {
                     Debug.LogWarning($"[Enemy] 'Enemy' 레이어가 존재하지 않음. 기본값 6번 레이어로 설정");
                 }
+#endif
             }
         }
 
@@ -390,10 +408,12 @@ namespace InvaderInsider
                 stageManager.DecrementEnemyCount();
             }
             
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Application.isPlaying)
             {
                 Debug.Log($"[Enemy] 적이 목적지에 도달 - 스테이지: {stageNum}, 적 번호: {enemyCount}");
             }
+#endif
             
             gameObject.SetActive(false);
         }

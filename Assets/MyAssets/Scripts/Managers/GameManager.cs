@@ -131,6 +131,15 @@ namespace InvaderInsider.Managers
             saveDataManager = SaveDataManager.Instance;
             uiManager = UIManager.Instance;
             cardManager = FindObjectOfType<CardManager>();
+            
+            // ResourceManager 이벤트 구독
+            var resourceManager = ResourceManager.Instance;
+            if (resourceManager != null)
+            {
+                resourceManager.OnEDataChanged -= OnEDataChanged; // 중복 구독 방지
+                resourceManager.OnEDataChanged += OnEDataChanged;
+            }
+            
             UpdateCachedComponents();
         }
 
@@ -172,6 +181,13 @@ namespace InvaderInsider.Managers
         private void CleanupEventListeners()
         {
             OnGameStateChanged -= HandleGameStateChanged;
+            
+            // ResourceManager 이벤트 구독 해제
+            var resourceManager = ResourceManager.Instance;
+            if (resourceManager != null)
+            {
+                resourceManager.OnEDataChanged -= OnEDataChanged;
+            }
         }
 
         private void OnEnable()
@@ -263,27 +279,26 @@ namespace InvaderInsider.Managers
 
         public bool TrySpendEData(int amount)
         {
+            // ResourceManager로 위임
+            var resourceManager = ResourceManager.Instance;
+            if (resourceManager != null)
+            {
+                bool success = resourceManager.TrySpendEData(amount);
+                if (success)
+                {
+                    // UI 업데이트
+                    UpdateEDataUI();
+                }
+                return success;
+            }
+            
+            // ResourceManager가 없으면 기존 방식 사용
             if (amount <= 0) return false;
 
             if (saveDataManager?.GetCurrentEData() >= amount)
             {
-                // eData 소모 시에는 저장하지 않음 (스테이지 클리어 시 저장됨)
                 saveDataManager.UpdateEDataWithoutSave(-amount);
-                
-                // TopBarPanel에 직접 eData 업데이트 (Stage/Wave UI와 동일한 방식)
-                if (cachedTopBarPanel != null)
-                {
-                    int currentEData = saveDataManager.GetCurrentEData();
-                    cachedTopBarPanel.UpdateEData(currentEData);
-                }
-                
-                // CardDrawUI 버튼 상태도 업데이트
-                var cardDrawUI = FindObjectOfType<CardDrawUI>();
-                if (cardDrawUI != null)
-                {
-                    int currentEData = saveDataManager.GetCurrentEData();
-                    cardDrawUI.UpdateButtonStates(currentEData);
-                }
+                UpdateEDataUI();
                 return true;
             }
             return false;
@@ -291,25 +306,20 @@ namespace InvaderInsider.Managers
 
         public void AddEData(int amount)
         {
+            // ResourceManager로 위임
+            var resourceManager = ResourceManager.Instance;
+            if (resourceManager != null)
+            {
+                resourceManager.AddEData(amount);
+                UpdateEDataUI();
+                return;
+            }
+            
+            // ResourceManager가 없으면 기존 방식 사용
             if (amount <= 0) return;
 
-            // eData 추가 시에는 저장하지 않음 (스테이지 클리어 시 저장됨)
             saveDataManager?.UpdateEDataWithoutSave(amount);
-            
-            // TopBarPanel에 직접 eData 업데이트 (Stage/Wave UI와 동일한 방식)
-            if (cachedTopBarPanel != null)
-            {
-                int currentEData = saveDataManager.GetCurrentEData();
-                cachedTopBarPanel.UpdateEData(currentEData);
-            }
-            
-            // CardDrawUI 버튼 상태도 업데이트
-            var cardDrawUI = FindObjectOfType<CardDrawUI>();
-            if (cardDrawUI != null)
-            {
-                int currentEData = saveDataManager.GetCurrentEData();
-                cardDrawUI.UpdateButtonStates(currentEData);
-            }
+            UpdateEDataUI();
         }
 
         // StageManager에서 호출하여 TopBarPanel의 Stage/Wave UI를 업데이트
@@ -325,10 +335,40 @@ namespace InvaderInsider.Managers
         // New Game 시작 시 초기 eData를 TopBarPanel에 설정
         public void InitializeEDataDisplay()
         {
-            if (cachedTopBarPanel != null && saveDataManager != null)
+            UpdateEDataUI();
+        }
+
+        // ResourceManager 이벤트 핸들러
+        private void OnEDataChanged(int newEDataAmount)
+        {
+            UpdateEDataUI(newEDataAmount);
+        }
+
+        // UI 업데이트 헬퍼 메서드
+        private void UpdateEDataUI()
+        {
+            // ResourceManager에서 현재 EData 가져오기
+            var resourceManager = ResourceManager.Instance;
+            int currentEData = resourceManager?.GetCurrentEData() ?? 
+                              saveDataManager?.GetCurrentEData() ?? 0;
+            
+            UpdateEDataUI(currentEData);
+        }
+
+        // UI 업데이트 헬퍼 메서드 (오버로드)
+        private void UpdateEDataUI(int currentEData)
+        {
+            // TopBarPanel 업데이트
+            if (cachedTopBarPanel != null)
             {
-                int currentEData = saveDataManager.GetCurrentEData();
                 cachedTopBarPanel.UpdateEData(currentEData);
+            }
+            
+            // CardDrawUI 버튼 상태 업데이트 (FindObjectOfType 제거)
+            var cardDrawUI = CardDrawUI.Instance;
+            if (cardDrawUI != null)
+            {
+                cardDrawUI.UpdateButtonStates(currentEData);
             }
         }
 

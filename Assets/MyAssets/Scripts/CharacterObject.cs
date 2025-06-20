@@ -139,11 +139,13 @@ namespace InvaderInsider
             // 레벨업으로 체력이 변경되었으므로 BaseCharacter의 OnHealthChanged 이벤트 발생
             InvokeHealthChanged(); // BaseCharacter의 InvokeHealthChanged 메서드 호출
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Application.isPlaying)
             {
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], 
                     gameObject.name, level, currentHealth, attackDamage));
             }
+#endif
         }
 
         protected override void Die()

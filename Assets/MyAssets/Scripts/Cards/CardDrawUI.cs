@@ -138,11 +138,21 @@ namespace InvaderInsider.Cards
         // eData 변경 없이도 버튼 상태를 업데이트하는 메서드
         public void RefreshButtonStates()
         {
-            var saveDataManager = SaveDataManager.Instance;
-            if (saveDataManager != null)
+            // ResourceManager 우선 사용, 없으면 SaveDataManager 사용
+            var resourceManager = ResourceManager.Instance;
+            if (resourceManager != null)
             {
-                int currentEData = saveDataManager.GetCurrentEData();
+                int currentEData = resourceManager.GetCurrentEData();
                 UpdateButtonStates(currentEData);
+            }
+            else
+            {
+                var saveDataManager = SaveDataManager.Instance;
+                if (saveDataManager != null)
+                {
+                    int currentEData = saveDataManager.GetCurrentEData();
+                    UpdateButtonStates(currentEData);
+                }
             }
         }
 
