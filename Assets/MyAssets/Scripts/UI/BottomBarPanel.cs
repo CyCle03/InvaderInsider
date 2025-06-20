@@ -40,6 +40,9 @@ namespace InvaderInsider.UI
                 return;
             }
 
+            // Canvas Sorting Order 설정 (다른 UI보다 낮게)
+            SetupCanvasSortingOrder();
+
             SetupEventListeners();
             UpdateHealthDisplayFromPlayer(player.CurrentHealth / player.MaxHealth);
             UpdateHealth(player.CurrentHealth, player.MaxHealth);
@@ -56,6 +59,8 @@ namespace InvaderInsider.UI
             }
             return true;
         }
+
+
 
         private void OnEnable()
         {
@@ -154,6 +159,39 @@ namespace InvaderInsider.UI
             if (!isInitialized) return;
 
             // TODO: 게임 오버 UI 표시 등 추가적인 사망 처리 로직
+        }
+
+        private void SetupCanvasSortingOrder()
+        {
+            // BottomBar의 Canvas를 확인하고 없으면 추가
+            Canvas bottomBarCanvas = GetComponent<Canvas>();
+            if (bottomBarCanvas == null)
+            {
+                bottomBarCanvas = gameObject.AddComponent<Canvas>();
+                
+                // GraphicRaycaster도 필요
+                if (GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+                {
+                    gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+                }
+            }
+            
+            // Sorting Order를 낮게 설정하여 다른 UI 아래에 표시
+            bottomBarCanvas.overrideSorting = true;
+            bottomBarCanvas.sortingOrder = 10; // 기본보다 낮은 값 (SummonChoice는 100)
+            
+            // GraphicRaycaster의 우선순위를 낮춰서 다른 UI가 우선되도록 설정
+            UnityEngine.UI.GraphicRaycaster graphicRaycaster = GetComponent<UnityEngine.UI.GraphicRaycaster>();
+            if (graphicRaycaster != null)
+            {
+                // Raycast Priority를 낮게 설정 (기본값 0보다 낮음)
+                // 이렇게 하면 다른 UI 요소들이 우선적으로 클릭 이벤트를 받습니다
+                graphicRaycaster.blockingObjects = UnityEngine.UI.GraphicRaycaster.BlockingObjects.None;
+            }
+            
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "BottomBar Canvas Sorting Order 설정 완료: " + bottomBarCanvas.sortingOrder);
+            #endif
         }
     }
 } 

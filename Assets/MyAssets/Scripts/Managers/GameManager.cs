@@ -237,10 +237,7 @@ namespace InvaderInsider.Managers
 
                     case GameState.Paused:
                         Time.timeScale = 0f;
-                        if (uiManager != null && uiManager.IsPanelRegistered("Pause"))
-                        {
-                            uiManager.ShowPanel("Pause");
-                        }
+                        // Pause 패널 표시는 PauseGame() 메서드에서 제어
                         break;
 
                     case GameState.GameOver:
@@ -306,11 +303,16 @@ namespace InvaderInsider.Managers
 
         public void AddEData(int amount)
         {
+            AddEData(amount, true); // 기본적으로 저장
+        }
+        
+        public void AddEData(int amount, bool saveImmediately)
+        {
             // ResourceManager로 위임
             var resourceManager = ResourceManager.Instance;
             if (resourceManager != null)
             {
-                resourceManager.AddEData(amount);
+                resourceManager.AddEData(amount, saveImmediately);
                 UpdateEDataUI();
                 return;
             }
@@ -318,7 +320,14 @@ namespace InvaderInsider.Managers
             // ResourceManager가 없으면 기존 방식 사용
             if (amount <= 0) return;
 
-            saveDataManager?.UpdateEDataWithoutSave(amount);
+            if (saveImmediately)
+            {
+                saveDataManager?.UpdateEData(amount);
+            }
+            else
+            {
+                saveDataManager?.UpdateEDataWithoutSave(amount);
+            }
             UpdateEDataUI();
         }
 
@@ -364,12 +373,8 @@ namespace InvaderInsider.Managers
                 cachedTopBarPanel.UpdateEData(currentEData);
             }
             
-            // CardDrawUI 버튼 상태 업데이트 (FindObjectOfType 제거)
-            var cardDrawUI = CardDrawUI.Instance;
-            if (cardDrawUI != null)
-            {
-                cardDrawUI.UpdateButtonStates(currentEData);
-            }
+            // 카드 뽑기 UI는 제거됨 (단순화)
+            // 필요시 단일 카드 뽑기 버튼을 다른 UI에 통합 가능
         }
 
         public void StageCleared(int stageNum, int stars)
@@ -442,7 +447,7 @@ namespace InvaderInsider.Managers
             int clearedStageIndex = cachedStageManager.GetCurrentStageIndex();
             int stars = CalculateStageStars(); // 별점 계산 로직
             
-            // 스테이지 진행 저장 (UpdateStageProgress에서 저장됨)
+            // 스테이지 클리어 시 축적된 EData와 스테이지 진행을 한 번에 저장
             saveDataManager?.UpdateStageProgress(clearedStageIndex + 1, stars);
             
             // 스테이지 클리어 이벤트 호출
@@ -722,23 +727,33 @@ namespace InvaderInsider.Managers
                 // Continue Game인 경우 SaveDataManager에서 실제 eData 값을 가져와서 UI에 반영
                 int savedEData = saveDataManager.GetCurrentEData();
                 
+                // ResourceManager에도 eData 값 동기화
+                var resourceManager = ResourceManager.Instance;
+                if (resourceManager != null)
+                {
+                    resourceManager.SetEData(savedEData);
+                }
+                
                 // TopBarPanel에 올바른 eData 값 업데이트
                 if (cachedTopBarPanel != null)
                 {
                     cachedTopBarPanel.UpdateEData(savedEData);
                 }
                 
-                // CardDrawUI도 업데이트
-                var cardDrawUI = FindObjectOfType<CardDrawUI>();
-                if (cardDrawUI != null)
-                {
-                    cardDrawUI.UpdateButtonStates(savedEData);
-                }
+                            // CardDrawUI 제거로 인한 업데이트 코드 제거
             }
             else if (saveDataManager != null)
             {
                 // New Game 시에도 초기 eData 값을 TopBarPanel에 설정
                 InitializeEDataDisplay();
+                
+                // ResourceManager에도 초기 eData 값 동기화
+                var resourceManager = ResourceManager.Instance;
+                if (resourceManager != null)
+                {
+                    int currentEData = saveDataManager.GetCurrentEData();
+                    resourceManager.SetEData(currentEData);
+                }
             }
 
             // StageManager 초기화 및 스테이지 시작
@@ -791,7 +806,7 @@ namespace InvaderInsider.Managers
                 return 1;
         }
 
-        public void PauseGame()
+        public void PauseGame(bool showPauseUI = true)
         {
             // 로그 제거 - 메모리 할당 최적화
             Time.timeScale = 0f;
@@ -799,7 +814,10 @@ namespace InvaderInsider.Managers
             
             // 스테이지 클리어 시에만 저장하므로 일시정지 시 저장 제거
             
-            uiManager?.ShowPanel("Pause");
+            if (showPauseUI)
+            {
+                uiManager?.ShowPanel("Pause");
+            }
         }
 
         public void ResumeGame()

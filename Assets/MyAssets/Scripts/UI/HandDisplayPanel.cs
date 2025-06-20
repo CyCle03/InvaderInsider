@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using InvaderInsider.Data; // CardDBObject, CardDatabase 사용을 위해 추가
 using InvaderInsider.Managers; // SaveDataManager 사용을 위해 추가
 using TMPro; // TextMeshPro 사용 시 추가
-using InvaderInsider.Cards; // CardDrawUI, CardInteractionHandler 참조를 위해 추가
+using InvaderInsider.Cards; // CardInteractionHandler 참조를 위해 추가
 
 namespace InvaderInsider.UI
 {
@@ -15,10 +15,9 @@ namespace InvaderInsider.UI
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "Hand: SaveDataManager instance not found",
-            "Hand: CardDrawUI instance not found",
             "Hand: Card Database not assigned",
             "Hand: Popup opened with {0} cards",
-            "Hand: Card {0} ({1}) added to popup",
+            "Hand: Card {0} ({1}) added to popup", 
             "Hand: Card data not found for ID: {0}",
             "Hand: Popup closed",
             "Hand: Sort applied - {0}",
@@ -51,10 +50,14 @@ namespace InvaderInsider.UI
         private readonly List<GameObject> currentHandItems = new List<GameObject>(); // 현재 표시된 카드들
         private SaveDataManager saveManager;
         private CardManager cardManager;
-        private CardDrawUI cardDrawUI;
         private bool isInitialized = false;
+        
+        // Object Pool for card display (CardDrawUI 제거로 인한 독립 풀링)
+        private Queue<GameObject> cardDisplayPool = new Queue<GameObject>();
+        private int initialPoolSize = 10;
         private bool isPopupOpen = false;
         private HandSortType currentSortType = HandSortType.None;
+        private bool buttonsSetup = false; // 버튼 이벤트 등록 완료 플래그
 
         [Header("Data References")]
         [SerializeField] private CardDatabase cardDatabase;
@@ -74,7 +77,6 @@ namespace InvaderInsider.UI
 
             saveManager = SaveDataManager.Instance;
             cardManager = CardManager.Instance;
-            cardDrawUI = CardDrawUI.Instance;
 
             if (saveManager == null)
             {
@@ -86,16 +88,14 @@ namespace InvaderInsider.UI
                 Debug.LogError(LOG_PREFIX + "Hand: CardManager instance not found");
                 return;
             }
-            if (cardDrawUI == null)
+            if (cardDatabase == null)
             {
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[1]);
                 return;
             }
-            if (cardDatabase == null)
-            {
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
-                return;
-            }
+
+            // 카드 표시용 Object Pool 초기화 (CardDrawUI 대신)
+            InitializeCardDisplayPool();
 
             // 이벤트 구독
             if (saveManager != null)
@@ -103,7 +103,13 @@ namespace InvaderInsider.UI
                 saveManager.OnHandDataChanged += OnHandDataChanged;
             }
 
-            SetupButtons();
+            // 버튼 이벤트를 한 번만 등록
+            if (!buttonsSetup)
+            {
+                SetupButtons();
+                buttonsSetup = true;
+            }
+            
             SetupInitialState();
 
             isInitialized = true;
@@ -171,7 +177,7 @@ namespace InvaderInsider.UI
             if (Application.isPlaying)
             {
                 var cardCount = cardManager?.GetHandCardIds()?.Count ?? 0;
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], cardCount));
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], cardCount));
             }
         }
 
@@ -190,7 +196,7 @@ namespace InvaderInsider.UI
 
                 if (Application.isPlaying)
                 {
-                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[6]);
+                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[5]);
                 }
             });
         }
@@ -213,7 +219,7 @@ namespace InvaderInsider.UI
             ClearHandItems();
             UpdateTitle(handCardIds.Count);
 
-            if (handContainer == null || cardPrefab == null || cardDatabase == null || cardDrawUI == null) return;
+            if (handContainer == null || cardPrefab == null || cardDatabase == null) return;
 
             // 정렬 적용
             var sortedCardIds = SortCardIds(handCardIds, currentSortType);
@@ -225,12 +231,12 @@ namespace InvaderInsider.UI
                 {
                     if (Application.isPlaying)
                     {
-                        Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[5], cardId));
+                        Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[4], cardId));
                     }
                     continue;
                 }
 
-                var cardObj = cardDrawUI.GetPooledCard();
+                var cardObj = GetPooledCard();
                 if (cardObj == null) continue;
 
                 cardObj.transform.SetParent(handContainer);
@@ -251,14 +257,14 @@ namespace InvaderInsider.UI
                 }
                 else if (Application.isPlaying)
                 {
-                    Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[10], cardData.cardName));
+                    Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[9], cardData.cardName));
                 }
 
                 currentHandItems.Add(cardObj);
 
                 if (Application.isPlaying)
                 {
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[4], cardData.cardName, cardId));
+                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], cardData.cardName, cardId));
                 }
             }
         }
@@ -286,7 +292,7 @@ namespace InvaderInsider.UI
 
             if (Application.isPlaying)
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[7], sortType.ToString()));
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[6], sortType.ToString()));
             }
         }
 
@@ -397,13 +403,13 @@ namespace InvaderInsider.UI
             {
                 if (Application.isPlaying)
                 {
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], playedCardData.cardName));
+                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[7], playedCardData.cardName));
                 }
                 cardManager.RemoveCardFromHand(playedCardData.cardId);
             }
             else if (Application.isPlaying)
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[9], playedCardData.cardName, result));
+                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], playedCardData.cardName, result));
             }
         }
 
@@ -411,14 +417,14 @@ namespace InvaderInsider.UI
         {
             foreach (var item in currentHandItems)
             {
-                if (item != null && cardDrawUI != null)
+                if (item != null)
                 {
                     var handler = item.GetComponent<CardInteractionHandler>();
                     if (handler != null)
                     {
                         handler.OnCardPlayInteractionCompleted.RemoveListener(HandleCardPlayInteractionCompleted);
                     }
-                    cardDrawUI.ReturnPooledCard(item);
+                    ReturnPooledCard(item);
                 }
             }
             currentHandItems.Clear();
@@ -445,8 +451,36 @@ namespace InvaderInsider.UI
             CleanupEventListeners();
         }
 
+        private void CleanupButtonEvents()
+        {
+            if (buttonsSetup)
+            {
+                if (closeButton != null)
+                    closeButton.onClick.RemoveListener(ClosePopup);
+                if (sortByTypeButton != null)
+                    sortByTypeButton.onClick.RemoveAllListeners();
+                if (sortByCostButton != null)
+                    sortByCostButton.onClick.RemoveAllListeners();
+                if (sortByRarityButton != null)
+                    sortByRarityButton.onClick.RemoveAllListeners();
+                if (sortByNameButton != null)
+                    sortByNameButton.onClick.RemoveAllListeners();
+                
+                // 동적으로 생성된 배경 버튼 처리
+                if (darkBackground != null)
+                {
+                    var backgroundButton = darkBackground.GetComponent<Button>();
+                    if (backgroundButton != null)
+                        backgroundButton.onClick.RemoveListener(ClosePopup);
+                }
+                
+                buttonsSetup = false;
+            }
+        }
+
         private void OnDestroy()
         {
+            CleanupButtonEvents();
             CleanupEventListeners();
             ClearHandItems();
         }
@@ -461,6 +495,52 @@ namespace InvaderInsider.UI
         {
             base.OnHide();
             ClosePopup();
+        }
+
+        // ==================== Object Pool 메서드들 (CardDrawUI 대신) ====================
+        
+        private void InitializeCardDisplayPool()
+        {
+            if (cardPrefab == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning(LOG_PREFIX + "cardPrefab이 할당되지 않아 카드 풀 초기화를 건너뜁니다.");
+#endif
+                return;
+            }
+
+            for (int i = 0; i < initialPoolSize; i++)
+            {
+                GameObject cardObj = Instantiate(cardPrefab);
+                cardObj.SetActive(false);
+                cardDisplayPool.Enqueue(cardObj);
+            }
+        }
+
+        private GameObject GetPooledCard()
+        {
+            if (cardDisplayPool.Count > 0)
+            {
+                var cardObj = cardDisplayPool.Dequeue();
+                cardObj.SetActive(true);
+                return cardObj;
+            }
+            else if (cardPrefab != null)
+            {
+                // 풀이 비어있으면 새로 생성
+                return Instantiate(cardPrefab);
+            }
+            return null;
+        }
+
+        private void ReturnPooledCard(GameObject cardObj)
+        {
+            if (cardObj != null)
+            {
+                cardObj.SetActive(false);
+                cardObj.transform.SetParent(null);
+                cardDisplayPool.Enqueue(cardObj);
+            }
         }
     }
 

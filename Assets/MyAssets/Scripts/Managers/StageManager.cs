@@ -673,10 +673,10 @@ namespace InvaderInsider.Managers
                 }
             }
             
-            // eData 업데이트는 GameManager를 통해 처리
+            // eData 업데이트는 GameManager를 통해 처리 (적 처치 시에는 저장하지 않음)
             if (gameManager != null)
                 {
-                gameManager.AddEData(eDataAmount);
+                gameManager.AddEData(eDataAmount, false); // 저장하지 않음
             }
             else
             {

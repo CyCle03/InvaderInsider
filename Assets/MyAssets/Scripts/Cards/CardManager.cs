@@ -172,7 +172,7 @@ namespace InvaderInsider.Cards
             if (SaveDataManager.Instance != null && SaveDataManager.Instance.CurrentSaveData != null)
             {
                 SaveDataManager.Instance.CurrentSaveData.progressData.summonCount = summonCount;
-                SaveDataManager.Instance.SaveGameData();
+                // 메모리에만 업데이트, 저장하지 않음 (스테이지 클리어/게임 종료 시에만 저장)
                 #if UNITY_EDITOR
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], summonCount));
                 #endif
@@ -425,7 +425,7 @@ namespace InvaderInsider.Cards
                 #endif
             }
             
-            SaveSummonData();
+
         }
 
         public void ShowSummonChoicePanel()
@@ -485,7 +485,11 @@ namespace InvaderInsider.Cards
         }
         #endregion
 
-        #region Gacha System
+        #region Gacha System (Legacy - CardDrawUI 제거로 사용 안함)
+        // 기존 CardDrawUI에서 사용하던 메서드들 (현재 미사용)
+        // Summon() 메서드가 카드 획득을 담당함
+        
+        [System.Obsolete("CardDrawUI 제거로 사용 안함. Summon() 메서드 사용 권장")]
         public bool DrawSingleCard()
         {
             if (!GameManager.Instance.TrySpendEData(singleDrawCost))
@@ -501,6 +505,7 @@ namespace InvaderInsider.Cards
             return true;
         }
 
+        [System.Obsolete("CardDrawUI 제거로 사용 안함. Summon() 메서드 사용 권장")]
         public bool DrawMultipleCards(int count = 5)
         {
             if (!GameManager.Instance.TrySpendEData(multiDrawCost))

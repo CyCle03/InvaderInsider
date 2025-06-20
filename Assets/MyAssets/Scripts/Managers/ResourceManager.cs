@@ -80,9 +80,23 @@ namespace InvaderInsider.Managers
 
         public void AddEData(int amount)
         {
+            AddEData(amount, true); // 기본적으로 저장
+        }
+        
+        public void AddEData(int amount, bool saveImmediately)
+        {
             if (saveDataManager == null || amount <= 0) return;
 
-            saveDataManager.UpdateEData(amount);
+            if (saveImmediately)
+            {
+                saveDataManager.UpdateEData(amount);
+            }
+            else
+            {
+                // 저장하지 않고 EData만 업데이트 (적 처치 시 사용)
+                saveDataManager.UpdateEDataWithoutSave(amount);
+            }
+            
             OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
         }
 

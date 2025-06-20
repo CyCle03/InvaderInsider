@@ -17,10 +17,15 @@ namespace InvaderInsider.UI
         public Button mainMenuButton;
 
         private bool wasPaused = false;
+        private bool buttonsSetup = false; // 버튼 이벤트 등록 완료 플래그
 
         private void Start()
         {
-            SetupButtons();
+            if (!buttonsSetup)
+            {
+                SetupButtons();
+                buttonsSetup = true;
+            }
         }
 
         private void SetupButtons()
@@ -156,10 +161,30 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
+            // 버튼 이벤트 정리
+            CleanupButtonEvents();
+            
             // 게임이 종료될 때 시간 스케일 복구
             if (Time.timeScale == 0f)
             {
                 Time.timeScale = 1f;
+            }
+        }
+        
+        private void CleanupButtonEvents()
+        {
+            if (buttonsSetup)
+            {
+                if (resumeButton != null)
+                    resumeButton.onClick.RemoveListener(OnResumeClicked);
+                if (restartButton != null)
+                    restartButton.onClick.RemoveListener(OnRestartClicked);
+                if (settingsButton != null)
+                    settingsButton.onClick.RemoveListener(OnSettingsClicked);
+                if (mainMenuButton != null)
+                    mainMenuButton.onClick.RemoveListener(OnMainMenuClicked);
+                
+                buttonsSetup = false;
             }
         }
     }

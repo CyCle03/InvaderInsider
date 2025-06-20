@@ -30,6 +30,7 @@ namespace InvaderInsider.UI
         private bool isGameStarting = false; // 게임 시작 중복 방지 플래그
         private float lastClickTime = 0f; // 마지막 클릭 시간
         private const float CLICK_COOLDOWN = 0.2f; // 클릭 쿨다운 (0.2초)
+        private bool buttonsSetup = false; // 버튼 이벤트 등록 완료 플래그
 
         private void Start()
         {
@@ -51,8 +52,12 @@ namespace InvaderInsider.UI
         {
             saveDataManager = SaveDataManager.Instance;
             
-            // MainMenuPanel에서만 버튼 이벤트 처리 (중복 방지)
-            SetupButtons();
+            // 버튼 이벤트를 한 번만 등록
+            if (!buttonsSetup)
+            {
+                SetupButtons();
+                buttonsSetup = true;
+            }
             
             UpdateContinueButton();
             UpdateVersionInfo();
@@ -135,7 +140,7 @@ namespace InvaderInsider.UI
 
         private void SetupButtons()
         {
-            // 버튼 이벤트 등록 (Initialize에서 한 번만 호출)
+            // 이벤트를 한 번만 등록 (RemoveAllListeners 제거)
             if (newGameButton != null)
             {
                 newGameButton.onClick.AddListener(OnNewGameClicked);
@@ -200,11 +205,44 @@ namespace InvaderInsider.UI
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "OnNewGameClicked 호출됨");
             #endif
+            
+            // 즉시 중복 클릭 방지
+            if (isGameStarting)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "OnNewGameClicked 무시됨 - 이미 게임 시작 중");
+                #endif
+                return;
+            }
+            
+            // 버튼 일시 비활성화로 물리적 중복 클릭 방지
+            if (newGameButton != null)
+            {
+                newGameButton.interactable = false;
+                StartCoroutine(ReEnableButtonAfterDelay(newGameButton, 1f));
+            }
+            
             StartNewGame();
         }
 
         private void OnContinueClicked()
         {
+            // 즉시 중복 클릭 방지
+            if (isGameStarting)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "OnContinueClicked 무시됨 - 이미 게임 시작 중");
+                #endif
+                return;
+            }
+            
+            // 버튼 일시 비활성화로 물리적 중복 클릭 방지
+            if (continueButton != null)
+            {
+                continueButton.interactable = false;
+                StartCoroutine(ReEnableButtonAfterDelay(continueButton, 1f));
+            }
+            
             ContinueGame();
         }
 
@@ -342,13 +380,45 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
-            // MainMenuPanel에서 직접 버튼 이벤트를 처리하므로 특별한 정리 불필요
+            // 버튼 이벤트 정리
+            CleanupButtonEvents();
         }
 
         private void OnDisable()
         {
             // 패널이 비활성화될 때 플래그 리셋
             isGameStarting = false;
+        }
+        
+        private void CleanupButtonEvents()
+        {
+            if (buttonsSetup)
+            {
+                if (newGameButton != null)
+                    newGameButton.onClick.RemoveListener(OnNewGameClicked);
+                if (continueButton != null)
+                    continueButton.onClick.RemoveListener(OnContinueClicked);
+                if (settingsButton != null)
+                    settingsButton.onClick.RemoveListener(OnSettingsClicked);
+                if (deckButton != null)
+                    deckButton.onClick.RemoveListener(OnDeckClicked);
+                if (achievementsButton != null)
+                    achievementsButton.onClick.RemoveListener(OnAchievementsClicked);
+                if (exitButton != null)
+                    exitButton.onClick.RemoveListener(OnExitClicked);
+                
+                buttonsSetup = false;
+            }
+        }
+        
+        // 버튼 재활성화 코루틴
+        private System.Collections.IEnumerator ReEnableButtonAfterDelay(Button button, float delay)
+        {
+            yield return new WaitForSecondsRealtime(delay);
+            if (button != null)
+            {
+                button.interactable = true;
+            }
         }
     }
 } 

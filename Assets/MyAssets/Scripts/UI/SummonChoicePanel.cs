@@ -34,6 +34,7 @@ namespace InvaderInsider.UI
         [SerializeField] private Button closeButton;
         [SerializeField] private Button hideButton;
         [SerializeField] private Button showButton;
+        [SerializeField] private GameObject backgroundOverlay; // 회색 배경 오버레이
 
         [Header("Debugging")]
         [SerializeField] private Button debugButton;
@@ -51,6 +52,7 @@ namespace InvaderInsider.UI
         private bool wasGamePaused = false; // 원래 게임이 일시정지 상태였는지 추적
         private bool isPanelTemporarilyHidden = false; // 일시적으로 숨겨진 상태인지 추적
         private bool isInitialized = false; // 초기화 중복 방지 플래그
+        private bool buttonsSetup = false; // 버튼 이벤트 등록 완료 플래그
 
         protected override void Awake()
         {
@@ -82,23 +84,33 @@ namespace InvaderInsider.UI
                 return;
             }
 
-            // 기존 이벤트 리스너 제거 후 등록 (중복 방지)
-            closeButton.onClick.RemoveAllListeners();
-            closeButton.onClick.AddListener(HandleCloseClick);
-            
-            // Hide/Show 버튼 이벤트 연결
-            if (hideButton != null)
+            // 버튼 이벤트를 한 번만 등록
+            if (!buttonsSetup)
             {
-                hideButton.onClick.RemoveAllListeners();
-                hideButton.onClick.AddListener(HandleHideClick);
+                SetupButtons();
+                buttonsSetup = true;
             }
             
-            if (showButton != null)
+            // backgroundOverlay가 설정되지 않은 경우 자동으로 찾기
+            if (backgroundOverlay == null)
             {
-                showButton.onClick.RemoveAllListeners();
-                showButton.onClick.AddListener(HandleShowClick);
-                showButton.gameObject.SetActive(false); // 처음에는 숨김
+                // 패널의 첫 번째 Image 컴포넌트를 배경으로 추정
+                var backgroundImage = GetComponent<UnityEngine.UI.Image>();
+                if (backgroundImage != null)
+                {
+                    backgroundOverlay = backgroundImage.gameObject;
+                }
+                // 또는 "Background", "Overlay" 등의 이름을 가진 자식 오브젝트 찾기
+                else
+                {
+                    backgroundOverlay = FindChildByName("Background") ?? 
+                                      FindChildByName("Overlay") ?? 
+                                      FindChildByName("Panel");
+                }
             }
+            
+            // Canvas Sorting Order 설정 (다른 UI 요소들보다 위에 표시)
+            SetupCanvasSortingOrder();
             
             isInitialized = true;
         }
@@ -270,6 +282,12 @@ namespace InvaderInsider.UI
                 hideButton.gameObject.SetActive(false);
             }
             
+            // 배경 오버레이 숨기기 (필드를 클릭할 수 있도록)
+            if (backgroundOverlay != null)
+            {
+                backgroundOverlay.SetActive(false);
+            }
+            
             // Show 버튼 활성화
             if (showButton != null)
             {
@@ -301,6 +319,12 @@ namespace InvaderInsider.UI
                 hideButton.gameObject.SetActive(true);
             }
             
+            // 배경 오버레이 다시 보이기
+            if (backgroundOverlay != null)
+            {
+                backgroundOverlay.SetActive(true);
+            }
+            
             // Show 버튼 숨기기
             if (showButton != null)
             {
@@ -312,13 +336,13 @@ namespace InvaderInsider.UI
         {
             base.OnShow();
             
-            // 게임 일시정지 (기존 상태 저장)
+            // 게임 일시정지 (기존 상태 저장) - Pause UI 표시하지 않음
             if (GameManager.Instance != null)
             {
                 wasGamePaused = GameManager.Instance.CurrentGameState == GameState.Paused;
                 if (!wasGamePaused)
                 {
-                    GameManager.Instance.PauseGame();
+                    GameManager.Instance.PauseGame(false); // Pause UI 표시하지 않음
                     Debug.Log("[SummonChoice] 게임을 일시정지했습니다.");
                 }
             }
@@ -349,6 +373,12 @@ namespace InvaderInsider.UI
             isPanelTemporarilyHidden = false;
             wasGamePaused = false;
             
+            // 배경 오버레이 상태 복구
+            if (backgroundOverlay != null)
+            {
+                backgroundOverlay.SetActive(true);
+            }
+            
             ClearCardButtons();
         }
 
@@ -373,8 +403,47 @@ namespace InvaderInsider.UI
             return availableCards != null && availableCards.Count > 0;
         }
 
+        private void SetupButtons()
+        {
+            if (closeButton != null)
+            {
+                closeButton.onClick.AddListener(HandleCloseClick);
+            }
+            
+            // Hide/Show 버튼 이벤트 연결
+            if (hideButton != null)
+            {
+                hideButton.onClick.AddListener(HandleHideClick);
+            }
+            
+            if (showButton != null)
+            {
+                showButton.onClick.AddListener(HandleShowClick);
+                showButton.gameObject.SetActive(false); // 처음에는 숨김
+            }
+        }
+        
+        private void CleanupButtonEvents()
+        {
+            if (buttonsSetup)
+            {
+                if (closeButton != null)
+                    closeButton.onClick.RemoveListener(HandleCloseClick);
+                if (hideButton != null)
+                    hideButton.onClick.RemoveListener(HandleHideClick);
+                if (showButton != null)
+                    showButton.onClick.RemoveListener(HandleShowClick);
+                
+                buttonsSetup = false;
+            }
+        }
+
         private void OnDestroy()
         {
+            // 버튼 이벤트 정리
+            CleanupButtonEvents();
+            
+            // 기존 카드 버튼 정리
             ClearCardButtons();
         }
 
@@ -698,6 +767,36 @@ namespace InvaderInsider.UI
                 handInfoText.text = "핸드: 정보 없음";
                 Debug.LogWarning("[SummonChoice] CardManager 인스턴스를 찾을 수 없습니다.");
             }
+        }
+
+        private GameObject FindChildByName(string childName)
+        {
+            Transform found = FindChildRecursive(transform, childName);
+            return found != null ? found.gameObject : null;
+        }
+        
+        private void SetupCanvasSortingOrder()
+        {
+            // 패널 자체의 Canvas를 확인하고 없으면 추가
+            Canvas panelCanvas = GetComponent<Canvas>();
+            if (panelCanvas == null)
+            {
+                panelCanvas = gameObject.AddComponent<Canvas>();
+                
+                // GraphicRaycaster도 필요
+                if (GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+                {
+                    gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+                }
+            }
+            
+            // Sorting Order를 높게 설정하여 다른 UI보다 위에 표시
+            panelCanvas.overrideSorting = true;
+            panelCanvas.sortingOrder = 100; // HealthSlider보다 높은 값
+            
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "패널 Canvas Sorting Order 설정 완료: " + panelCanvas.sortingOrder);
+            #endif
         }
     }
 } 

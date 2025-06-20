@@ -1,17 +1,13 @@
 {
   "progressData": {
-    "currentEData": 7,
+    "currentEData": 11,
     "highestStageCleared": 1,
     "summonCount": 0
   },
   "deckData": {
     "deckCardIds": [],
-    "ownedCardIds": [
-      3
-    ],
-    "handCardIds": [
-      3
-    ]
+    "ownedCardIds": [],
+    "handCardIds": []
   },
   "settings": {
     "keys": [],

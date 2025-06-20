@@ -318,6 +318,7 @@ namespace InvaderInsider.Data
         };
 
         private const string SAVE_KEY = "GameSaveData.json";
+        private const string SETTINGS_SAVE_KEY = "GameSettings.json";
         
         // 싱글턴 인스턴스 - 단순하고 확실한 방식
         private static SaveDataManager _instance;
@@ -336,9 +337,7 @@ namespace InvaderInsider.Data
         private SaveData currentSaveData;
         
         // 지연 저장 시스템
-        private bool pendingSave = false;
-        private float saveDelay = 1f; // 1초 대기 후 저장
-        private Coroutine saveCoroutine = null;
+        // 지연 저장 관련 변수들 제거됨
 
         // 게임 시작 시 자동으로 SaveDataManager 인스턴스 생성
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -433,18 +432,15 @@ namespace InvaderInsider.Data
 
         private void InitializeData()
         {
+            // 설정값을 먼저 독립적으로 로드
+            LoadSettingsIndependently();
+            
+            // 게임 데이터 로드
             LoadGameData();
         }
 
         private void OnDestroy()
         {
-            // 코루틴 정리
-            if (saveCoroutine != null)
-            {
-                StopCoroutine(saveCoroutine);
-                saveCoroutine = null;
-            }
-            
             // 이벤트 정리
             CleanupEventListeners();
             
@@ -460,11 +456,11 @@ namespace InvaderInsider.Data
 
         private void OnApplicationQuit()
         {
-            // 애플리케이션 종료 시 즉시 저장
-            if (pendingSave && _instance == this)
-            {
-                SaveGameDataImmediate();
-            }
+            // 게임 종료 시에는 저장하지 않음
+            // 스테이지 클리어 시에만 저장됨
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "게임 종료 - 저장하지 않음");
+            #endif
         }
 
         private void CleanupEventListeners()
@@ -494,23 +490,11 @@ namespace InvaderInsider.Data
             if (!Application.isPlaying) return;
             #endif
             
-            if (!pendingSave)
-            {
-                pendingSave = true;
-                if (saveCoroutine != null)
-                {
-                    StopCoroutine(saveCoroutine);
-                }
-                saveCoroutine = StartCoroutine(SaveGameDataDelayed());
-            }
-        }
-        
-        // 코루틴을 통한 지연 저장
-        private System.Collections.IEnumerator SaveGameDataDelayed()
-        {
-            yield return new WaitForSecondsRealtime(saveDelay);
+            // 지연 저장 제거하고 즉시 저장으로 변경
             SaveGameDataImmediate();
         }
+        
+        // 지연 저장 제거됨 - 즉시 저장으로 변경
         
         // 즉시 저장 (동기식)
         private void SaveGameDataImmediate()
@@ -519,8 +503,6 @@ namespace InvaderInsider.Data
             {
                 string json = JsonConvert.SerializeObject(currentSaveData, Formatting.Indented);
                 File.WriteAllText(SAVE_KEY, json);
-                pendingSave = false;
-                saveCoroutine = null;
                 
                 #if UNITY_EDITOR
                 Debug.Log(LOG_PREFIX + "게임 데이터 저장 성공");
@@ -528,9 +510,6 @@ namespace InvaderInsider.Data
             }
             catch (Exception e)
             {
-                pendingSave = false;
-                saveCoroutine = null;
-                
                 #if UNITY_EDITOR
                 Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[0], e.Message));
                 #endif
@@ -560,7 +539,7 @@ namespace InvaderInsider.Data
                 else
                 {
                     currentSaveData = new SaveData();
-                    SaveGameData();
+                    // 새 게임 시작 시에는 저장하지 않음
                     
                     // eData UI는 이제 GameManager/StageManager에서 직접 호출로 업데이트됨
                 }
@@ -578,6 +557,11 @@ namespace InvaderInsider.Data
 
         public void UpdateStageProgress(int stageNum, int stars)
         {
+            UpdateStageProgress(stageNum, stars, true);
+        }
+
+        public void UpdateStageProgress(int stageNum, int stars, bool saveImmediately)
+        {
             if (stageNum <= 0 || stars < 0 || stars > 3) return;
 
             currentSaveData.stageProgress.Set(stageNum, stars);
@@ -591,16 +575,28 @@ namespace InvaderInsider.Data
             Debug.Log(LOG_PREFIX + $"스테이지 진행 업데이트: 스테이지 {stageNum}, 별 {stars}개, 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}");
             #endif
 
-            SaveGameData();
+            if (saveImmediately)
+            {
+                SaveGameData();
+            }
         }
 
         public void UpdateEData(int amount)
+        {
+            UpdateEData(amount, false);
+        }
+
+        public void UpdateEData(int amount, bool saveImmediately)
         {
             if (amount == 0) return;
 
             currentSaveData.progressData.currentEData += amount;
             // eData UI는 이제 GameManager/StageManager에서 직접 호출로 업데이트됨
-            SaveGameData();
+            
+            if (saveImmediately)
+            {
+                SaveGameData();
+            }
         }
 
         // 저장하지 않고 eData만 업데이트 (적을 잡을 때 사용)
@@ -612,7 +608,7 @@ namespace InvaderInsider.Data
             // eData UI는 이제 GameManager/StageManager에서 직접 호출로 업데이트됨
         }
 
-        // 강제 저장 (스테이지 클리어, 게임 종료 등 중요한 이벤트 시 사용)
+        // 강제 저장 (스테이지 클리어 등 중요한 이벤트 시 사용)
         public void ForceSave()
         {
             SaveGameData();
@@ -624,7 +620,8 @@ namespace InvaderInsider.Data
 
             if (currentSaveData.deckData.AddToDeck(cardId))
             {
-                SaveGameData();
+                // 덱 구성 변경 시에는 저장하지 않고 메모리에만 업데이트
+                // 스테이지 클리어/게임 종료 시에만 저장됨
             }
         }
 
@@ -634,7 +631,8 @@ namespace InvaderInsider.Data
 
             if (currentSaveData.deckData.RemoveFromDeck(cardId))
             {
-                SaveGameData();
+                // 덱 구성 변경 시에는 저장하지 않고 메모리에만 업데이트
+                // 스테이지 클리어/게임 종료 시에만 저장됨
             }
         }
 
@@ -644,7 +642,8 @@ namespace InvaderInsider.Data
 
             if (currentSaveData.deckData.AddToOwned(cardId))
             {
-                SaveGameData();
+                // 카드 획득 시에는 저장하지 않고 메모리에만 업데이트
+                // 스테이지 클리어/게임 종료 시에만 저장됨
             }
         }
 
@@ -652,21 +651,14 @@ namespace InvaderInsider.Data
         {
             if (cardId <= 0) return;
 
-            bool added = false;
-            if (currentSaveData.deckData.AddToOwned(cardId))
-            {
-                added = true;
-            }
+            currentSaveData.deckData.AddToOwned(cardId);
             if (currentSaveData.deckData.AddToHand(cardId))
             {
-                added = true;
                 onHandDataChanged?.Invoke(currentSaveData.deckData.handCardIds);
             }
 
-            if (added)
-            {
-                SaveGameData();
-            }
+            // 카드 획득 시에는 저장하지 않고 메모리에만 업데이트
+            // 스테이지 클리어/게임 종료 시에만 저장됨
         }
 
         public void RemoveCardFromHand(int cardId)
@@ -676,7 +668,8 @@ namespace InvaderInsider.Data
             if (currentSaveData.deckData.RemoveFromHand(cardId))
             {
                 onHandDataChanged?.Invoke(currentSaveData.deckData.handCardIds);
-                SaveGameData();
+                // 핸드 변경 시에는 저장하지 않고 메모리에만 업데이트
+                // 스테이지 클리어/게임 종료 시에만 저장됨
             }
         }
 
@@ -696,7 +689,103 @@ namespace InvaderInsider.Data
             if (string.IsNullOrEmpty(key)) return;
 
             currentSaveData.settings.Set(key, value);
-            SaveGameData();
+            // 설정값만 별도 파일에 저장
+            SaveSettingsOnly();
+        }
+        
+        // 설정값만 별도로 저장하는 메서드
+        private void SaveSettingsOnly()
+        {
+            // 설정은 에디터 모드에서도 저장됨 (사용자 설정이므로)
+            try
+            {
+                string json = JsonConvert.SerializeObject(currentSaveData.settings, Formatting.Indented);
+                File.WriteAllText(SETTINGS_SAVE_KEY, json);
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "설정 데이터만 저장 성공");
+                #endif
+            }
+            catch (Exception e)
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + $"설정 저장 실패: {e.Message}");
+                #endif
+            }
+        }
+        
+        // 게임 시작 시 설정값을 독립적으로 로드하는 메서드
+        private void LoadSettingsIndependently()
+        {
+            // 에디터 모드에서도 설정은 로드
+            try
+            {
+                if (File.Exists(SETTINGS_SAVE_KEY))
+                {
+                    string json = File.ReadAllText(SETTINGS_SAVE_KEY);
+                    var loadedSettings = JsonConvert.DeserializeObject<SerializableSettings>(json);
+                    if (loadedSettings != null)
+                    {
+                        // currentSaveData가 없으면 임시로 생성
+                        if (currentSaveData == null)
+                        {
+                            currentSaveData = new SaveData();
+                        }
+                        currentSaveData.settings = loadedSettings;
+                        #if UNITY_EDITOR
+                        Debug.Log(LOG_PREFIX + "설정 데이터 독립 로드 성공");
+                        #endif
+                    }
+                }
+                else
+                {
+                    // 설정 파일이 없으면 기본 설정으로 초기화
+                    if (currentSaveData == null)
+                    {
+                        currentSaveData = new SaveData();
+                    }
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + "설정 파일 없음 - 기본 설정 사용");
+                    #endif
+                }
+            }
+            catch (Exception e)
+            {
+                // 설정 로드 실패 시 기본 설정 사용
+                if (currentSaveData == null)
+                {
+                    currentSaveData = new SaveData();
+                }
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + $"설정 독립 로드 실패 (기본값 사용): {e.Message}");
+                #endif
+            }
+        }
+
+        // 설정값만 별도로 로드하는 메서드 (기존 게임데이터 로드 중 사용)
+        private void LoadSettingsOnly()
+        {
+            try
+            {
+                if (File.Exists(SETTINGS_SAVE_KEY))
+                {
+                    string json = File.ReadAllText(SETTINGS_SAVE_KEY);
+                    var loadedSettings = JsonConvert.DeserializeObject<SerializableSettings>(json);
+                    if (loadedSettings != null)
+                    {
+                        currentSaveData.settings = loadedSettings;
+                        #if UNITY_EDITOR
+                        Debug.Log(LOG_PREFIX + "설정 데이터 로드 성공");
+                        #endif
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + $"설정 로드 실패 (기본값 사용): {e.Message}");
+                #endif
+            }
         }
 
         public int GetStageStars(int stageNum)

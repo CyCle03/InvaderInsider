@@ -46,6 +46,7 @@ namespace InvaderInsider.UI
         private const float SUMMON_CLICK_COOLDOWN = 1.0f; // 1초 쿨다운
         private bool isSummonButtonProcessing = false; // 소환 버튼 처리 중 플래그
         private bool isInitialized = false; // 초기화 중복 방지 플래그
+        private bool buttonsSetup = false; // 버튼 이벤트 등록 완료 플래그
 
         protected override void Awake()
         {
@@ -70,53 +71,11 @@ namespace InvaderInsider.UI
             uiManager = UIManager.Instance;
             cardManager = CardManager.Instance;
 
-            // 기존 이벤트 리스너 제거 후 등록 (중복 방지)
-            if (pauseButton != null)
+            // 버튼 이벤트를 한 번만 등록
+            if (!buttonsSetup)
             {
-                pauseButton.onClick.RemoveAllListeners();
-                pauseButton.onClick.AddListener(OnPauseButtonClicked);
-            }
-            else
-            {
-                #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[0]);
-                #endif
-            }
-
-            if (summonButton != null)
-            {
-                summonButton.onClick.RemoveAllListeners();
-                summonButton.onClick.AddListener(OnSummonButtonClicked);
-            }
-            else
-            {
-                #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[1]);
-                #endif
-            }
-
-            if (hideSummonPanelButton != null)
-            {
-                hideSummonPanelButton.onClick.RemoveAllListeners();
-                hideSummonPanelButton.onClick.AddListener(OnHideSummonPanelButtonClicked);
-            }
-
-            if (showSummonPanelButton != null)
-            {
-                showSummonPanelButton.onClick.RemoveAllListeners();
-                showSummonPanelButton.onClick.AddListener(OnShowSummonPanelButtonClicked);
-            }
-
-            if (showHandButton != null)
-            {
-                showHandButton.onClick.RemoveAllListeners();
-                showHandButton.onClick.AddListener(OnShowHandButtonClicked);
-            }
-
-            if (clearHandButton != null)
-            {
-                clearHandButton.onClick.RemoveAllListeners();
-                clearHandButton.onClick.AddListener(OnClearHandButtonClicked);
+                SetupButtons();
+                buttonsSetup = true;
             }
 
             // SaveDataManager 이벤트 중복 구독 방지
@@ -417,24 +376,82 @@ namespace InvaderInsider.UI
             base.OnHide();
         }
 
+        private void SetupButtons()
+        {
+            if (pauseButton != null)
+            {
+                pauseButton.onClick.AddListener(OnPauseButtonClicked);
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[0]);
+                #endif
+            }
+
+            if (summonButton != null)
+            {
+                summonButton.onClick.AddListener(OnSummonButtonClicked);
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[1]);
+                #endif
+            }
+
+            if (hideSummonPanelButton != null)
+            {
+                hideSummonPanelButton.onClick.AddListener(OnHideSummonPanelButtonClicked);
+            }
+
+            if (showSummonPanelButton != null)
+            {
+                showSummonPanelButton.onClick.AddListener(OnShowSummonPanelButtonClicked);
+            }
+
+            if (showHandButton != null)
+            {
+                showHandButton.onClick.AddListener(OnShowHandButtonClicked);
+            }
+
+            if (clearHandButton != null)
+            {
+                clearHandButton.onClick.AddListener(OnClearHandButtonClicked);
+            }
+        }
+        
+        private void CleanupButtonEvents()
+        {
+            if (buttonsSetup)
+            {
+                if (pauseButton != null)
+                    pauseButton.onClick.RemoveListener(OnPauseButtonClicked);
+                if (summonButton != null)
+                    summonButton.onClick.RemoveListener(OnSummonButtonClicked);
+                if (hideSummonPanelButton != null)
+                    hideSummonPanelButton.onClick.RemoveListener(OnHideSummonPanelButtonClicked);
+                if (showSummonPanelButton != null)
+                    showSummonPanelButton.onClick.RemoveListener(OnShowSummonPanelButtonClicked);
+                if (showHandButton != null)
+                    showHandButton.onClick.RemoveListener(OnShowHandButtonClicked);
+                if (clearHandButton != null)
+                    clearHandButton.onClick.RemoveListener(OnClearHandButtonClicked);
+                
+                buttonsSetup = false;
+            }
+        }
+
         private void OnDestroy()
         {
-            // SaveDataManager 이벤트만 명시적으로 해제 (메모리 누수 방지)
+            // 버튼 이벤트 정리
+            CleanupButtonEvents();
+            
+            // SaveDataManager 이벤트 구독 해제
             if (SaveDataManager.Instance != null)
             {
                 SaveDataManager.Instance.OnHandDataChanged -= UpdateHandCardCount;
             }
-            
-            // 버튼 이벤트는 GameObject 파괴 시 자동으로 해제되므로 생략 가능
-            /*
-            if (pauseButton != null) pauseButton.onClick.RemoveAllListeners();
-            if (resumeButton != null) resumeButton.onClick.RemoveAllListeners();
-            if (summonButton != null) summonButton.onClick.RemoveAllListeners();
-            if (hideSummonPanelButton != null) hideSummonPanelButton.onClick.RemoveAllListeners();
-            if (showSummonPanelButton != null) showSummonPanelButton.onClick.RemoveAllListeners();
-            if (showHandButton != null) showHandButton.onClick.RemoveAllListeners();
-            if (clearHandButton != null) clearHandButton.onClick.RemoveAllListeners();
-            */
         }
     }
 } 

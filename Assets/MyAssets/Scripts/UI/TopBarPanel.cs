@@ -66,6 +66,9 @@ namespace InvaderInsider.UI
             uiManager = UIManager.Instance;
             pauseButton.onClick.AddListener(HandlePauseClick);
             
+            // Canvas Sorting Order 설정 (다른 UI보다 낮게)
+            SetupCanvasSortingOrder();
+            
             // eData는 이제 GameManager에서 직접 호출로 업데이트됨 (이벤트 구독 제거)
             
             UpdateUI();
@@ -195,6 +198,30 @@ namespace InvaderInsider.UI
         protected override void OnHide()
         {
             base.OnHide();
+        }
+
+        private void SetupCanvasSortingOrder()
+        {
+            // TopBar의 Canvas를 확인하고 없으면 추가
+            Canvas topBarCanvas = GetComponent<Canvas>();
+            if (topBarCanvas == null)
+            {
+                topBarCanvas = gameObject.AddComponent<Canvas>();
+                
+                // GraphicRaycaster도 필요
+                if (GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+                {
+                    gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+                }
+            }
+            
+            // Sorting Order를 낮게 설정하여 다른 UI 아래에 표시
+            topBarCanvas.overrideSorting = true;
+            topBarCanvas.sortingOrder = 10; // 기본보다 낮은 값 (SummonChoice는 100)
+            
+            #if UNITY_EDITOR
+            Debug.Log("[TopBar] TopBar Canvas Sorting Order 설정 완료: " + topBarCanvas.sortingOrder);
+            #endif
         }
     }
 } 

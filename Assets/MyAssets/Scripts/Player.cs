@@ -44,17 +44,18 @@ namespace InvaderInsider
         {
             if (isInitialized) return;
 
-            // UIManager를 통해 UI 참조 가져오기 (FindObjectOfType 대신)
+            // UIManager를 통해 UI 참조 가져오기 (태그 의존성 제거)
             uiManager = UIManager.Instance;
             if (uiManager != null)
             {
-                bottomBarPanel = uiManager.GetComponent<BottomBarPanel>() ?? 
-                               GameObject.FindWithTag("BottomBarPanel")?.GetComponent<BottomBarPanel>();
+                // UIManager를 통해 BottomBarPanel 찾기 시도
+                var panels = FindObjectsOfType<BottomBarPanel>(true);
+                bottomBarPanel = panels.Length > 0 ? panels[0] : null;
             }
             else
             {
-                // UIManager가 없을 경우 태그로 찾기
-                bottomBarPanel = GameObject.FindWithTag("BottomBarPanel")?.GetComponent<BottomBarPanel>();
+                // UIManager가 없을 경우 직접 찾기
+                bottomBarPanel = FindObjectOfType<BottomBarPanel>(true);
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
