@@ -48,32 +48,29 @@ namespace InvaderInsider.UI
             if (card == null)
             {
                 #if UNITY_EDITOR
-                Debug.LogError("CardButton: 초기화에 전달된 CardDBObject가 null입니다.");
+                Debug.LogError("CardButton: 초기화할 카드 데이터가 null입니다.");
                 #endif
                 return;
             }
 
             cardData = card;
-            
-            // 필수 요소 검증
-            bool hasRequiredElements = ValidateRequiredReferences();
-            
-            // 필수 요소가 없어도 기본 동작은 수행 (에러 방지)
-            if (hasRequiredElements)
+
+            // UI 요소 유효성 검사 (경고만 출력, 계속 진행)
+            ValidateRequiredReferences();
+
+            // UI 업데이트 실행 (필수 요소가 없어도 가능한 부분만 업데이트)
+            UpdateUIWithNullCheck();
+
+            #if UNITY_EDITOR
+            if (HasMissingRequiredElements())
             {
-                UpdateUI();
-                #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_MESSAGES[1], card.cardName));
-                #endif
+                Debug.LogWarning($"CardButton: 필수 요소 누락으로 제한된 초기화를 수행했습니다. 카드: {card.cardName}");
             }
             else
             {
-                // 필수 요소가 없는 경우에도 가능한 업데이트 수행
-                UpdateUIWithNullCheck();
-                #if UNITY_EDITOR
-                Debug.LogWarning($"CardButton: 필수 요소 누락으로 제한된 초기화를 수행했습니다. 카드: {card.cardName}");
-                #endif
+                Debug.Log($"CardButton: 초기화 완료 - {card.cardName}");
             }
+            #endif
         }
 
         /// <summary>
@@ -146,34 +143,34 @@ namespace InvaderInsider.UI
 
         private bool ValidateRequiredReferences()
         {
-            // 필수 UI 요소들을 개별적으로 체크하고 누락된 요소 알려주기
             bool isValid = true;
             string missingElements = "";
 
+            // 기본 UI 요소들 검증
             if (cardImage == null)
             {
                 missingElements += "cardImage, ";
                 isValid = false;
             }
-            
+
             if (cardNameText == null)
             {
                 missingElements += "cardNameText, ";
                 isValid = false;
             }
-            
+
             if (cardDescriptionText == null)
             {
                 missingElements += "cardDescriptionText, ";
                 isValid = false;
             }
-            
+
             if (cardCostText == null)
             {
                 missingElements += "cardCostText, ";
                 isValid = false;
             }
-            
+
             if (rarityFrame == null)
             {
                 missingElements += "rarityFrame, ";
@@ -183,8 +180,10 @@ namespace InvaderInsider.UI
             if (!isValid)
             {
                 missingElements = missingElements.TrimEnd(' ', ',');
-                Debug.LogError($"CardButton: 다음 필수 UI 요소들이 할당되지 않았습니다: {missingElements}");
-                Debug.LogError($"CardButton: 프리팹 경로를 확인하세요. GameObject 이름: {gameObject.name}");
+                #if UNITY_EDITOR
+                Debug.LogWarning($"CardButton: 다음 필수 UI 요소들이 할당되지 않았습니다: {missingElements}");
+                Debug.LogWarning($"CardButton: 프리팹 경로를 확인하세요. GameObject 이름: {gameObject.name}");
+                #endif
             }
             
             // 선택적 UI 요소들에 대한 경고 (새로 추가된 요소들)
@@ -211,6 +210,12 @@ namespace InvaderInsider.UI
             #endif
             
             return isValid;
+        }
+
+        private bool HasMissingRequiredElements()
+        {
+            return cardImage == null || cardNameText == null || cardDescriptionText == null || 
+                   cardCostText == null || rarityFrame == null;
         }
 
         private void UpdateUI()

@@ -36,7 +36,7 @@ namespace InvaderInsider.UI
 
         [Header("Hand Display Controls")]
         [SerializeField] private Button showHandButton;
-        [SerializeField] private Button clearHandButton; // 테스트용 핸드 초기화 버튼
+
         [SerializeField] private TextMeshProUGUI handCardCountText; // 핸드 카드 수 표시
 
         private UIManager uiManager;
@@ -96,10 +96,12 @@ namespace InvaderInsider.UI
 
         private void Update()
         {
-            // SummonChoice 패널 상태 변화가 있을 때만 업데이트
-            if (CardManager.Instance != null)
+            if (!isInitialized) return;
+            
+            // SummonChoice 패널 상태 변화 감지 (UIManager를 통해)
+            if (uiManager != null && uiManager.IsPanelRegistered("SummonChoice"))
             {
-                bool currentSummonPanelState = CardManager.Instance.IsSummonChoicePanelActive();
+                bool currentSummonPanelState = uiManager.IsPanelActive("SummonChoice");
                 if (currentSummonPanelState != lastSummonPanelState)
                 {
                     UpdateSummonPanelButtons();
@@ -110,29 +112,26 @@ namespace InvaderInsider.UI
 
         private void UpdateSummonPanelButtons()
         {
-            if (CardManager.Instance != null)
+            if (uiManager != null && uiManager.IsPanelRegistered("SummonChoice"))
             {
-                bool isSummonPanelActive = CardManager.Instance.IsSummonChoicePanelActive();
+                bool isSummonPanelActive = uiManager.IsPanelActive("SummonChoice");
                 
                 if (isSummonPanelActive)
                 {
                     // SummonChoice 패널이 활성화된 경우
-                    if (uiManager != null && uiManager.IsPanelRegistered("SummonChoice"))
+                    var summonChoicePanel = uiManager.GetPanel("SummonChoice") as SummonChoicePanel;
+                    if (summonChoicePanel != null)
                     {
-                        var summonChoicePanel = uiManager.GetPanel("SummonChoice") as SummonChoicePanel;
-                        if (summonChoicePanel != null)
+                        bool isTemporarilyHidden = summonChoicePanel.IsPanelTemporarilyHidden();
+                        
+                        if (hideSummonPanelButton != null)
                         {
-                            bool isTemporarilyHidden = summonChoicePanel.IsPanelTemporarilyHidden();
-                            
-                            if (hideSummonPanelButton != null)
-                            {
-                                hideSummonPanelButton.gameObject.SetActive(!isTemporarilyHidden);
-                            }
-                            
-                            if (showSummonPanelButton != null)
-                            {
-                                showSummonPanelButton.gameObject.SetActive(isTemporarilyHidden);
-                            }
+                            hideSummonPanelButton.gameObject.SetActive(!isTemporarilyHidden);
+                        }
+                        
+                        if (showSummonPanelButton != null)
+                        {
+                            showSummonPanelButton.gameObject.SetActive(isTemporarilyHidden);
                         }
                     }
                 }
@@ -148,6 +147,19 @@ namespace InvaderInsider.UI
                     {
                         showSummonPanelButton.gameObject.SetActive(false);
                     }
+                }
+            }
+            else
+            {
+                // SummonChoice 패널이 등록되지 않은 경우 버튼들 숨김
+                if (hideSummonPanelButton != null)
+                {
+                    hideSummonPanelButton.gameObject.SetActive(false);
+                }
+                
+                if (showSummonPanelButton != null)
+                {
+                    showSummonPanelButton.gameObject.SetActive(false);
                 }
             }
         }
@@ -339,7 +351,7 @@ namespace InvaderInsider.UI
             Debug.Log("[InGame] 핸드 초기화 버튼이 클릭되었습니다.");
             #endif
 
-            if (cardManager != null && SaveDataManager.Instance != null)
+            if (cardManager != null && SaveDataManager.HasInstance && SaveDataManager.Instance != null)
             {
                 var handCardIds = cardManager.GetHandCardIds();
                 foreach (int cardId in handCardIds)
@@ -415,10 +427,11 @@ namespace InvaderInsider.UI
                 showHandButton.onClick.AddListener(OnShowHandButtonClicked);
             }
 
-            if (clearHandButton != null)
-            {
-                clearHandButton.onClick.AddListener(OnClearHandButtonClicked);
-            }
+            // clearHandButton은 선언되지 않았으므로 주석 처리
+            // if (clearHandButton != null)
+            // {
+            //     clearHandButton.onClick.AddListener(OnClearHandButtonClicked);
+            // }
         }
         
         private void CleanupButtonEvents()
@@ -435,8 +448,8 @@ namespace InvaderInsider.UI
                     showSummonPanelButton.onClick.RemoveListener(OnShowSummonPanelButtonClicked);
                 if (showHandButton != null)
                     showHandButton.onClick.RemoveListener(OnShowHandButtonClicked);
-                if (clearHandButton != null)
-                    clearHandButton.onClick.RemoveListener(OnClearHandButtonClicked);
+                // if (clearHandButton != null)
+                //     clearHandButton.onClick.RemoveListener(OnClearHandButtonClicked);
                 
                 buttonsSetup = false;
             }
@@ -447,8 +460,8 @@ namespace InvaderInsider.UI
             // 버튼 이벤트 정리
             CleanupButtonEvents();
             
-            // SaveDataManager 이벤트 구독 해제
-            if (SaveDataManager.Instance != null)
+            // SaveDataManager 이벤트 구독 해제 (인스턴스가 존재할 때만)
+            if (SaveDataManager.HasInstance && SaveDataManager.Instance != null)
             {
                 SaveDataManager.Instance.OnHandDataChanged -= UpdateHandCardCount;
             }

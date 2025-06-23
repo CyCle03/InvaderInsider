@@ -1,7 +1,3 @@
-// 타워 회전 디버깅을 위한 플래그 (필요시 활성화)
-#define DEBUG_TOWER_ROTATION
-#define DEBUG_TOWER_ATTACK // 공격 디버깅 추가
-
 using UnityEngine;
 using InvaderInsider.Data;
 using InvaderInsider.Cards;
@@ -13,17 +9,33 @@ namespace InvaderInsider
 {
     public class Tower : BaseCharacter
     {
-        [SerializeField] private Transform partToRotate;
-        [SerializeField] private Transform firePoint;
-        [SerializeField] private GameObject projectilePrefab;
-        [SerializeField] private float fireRate = 1f;
-        [SerializeField] private float towerAttackRange = 5f;
-        [SerializeField] private LayerMask enemyLayer = 1 << 6; // 기본값: 6번 레이어 (Enemy)
+        // 성능 최적화 상수들
+        private const float TARGET_SEARCH_INTERVAL = 0.15f; // 적 탐지 주기
+        private const float PROJECTILE_SPEED = 15f;
+        private const int MAX_DETECTION_COLLIDERS = 30; // 감지 가능한 최대 적 수
+        private const float TARGET_LOST_DISTANCE_MULTIPLIER = 1.2f; // 타겟 놓치는 거리 (사거리의 120%)
 
+        [Header("Tower Specific")]
+        [SerializeField] private GameObject projectilePrefab;
+        [SerializeField] private Transform firePoint;
+        [SerializeField] private float projectileSpeed = PROJECTILE_SPEED;
+        [SerializeField] private Transform partToRotate; // 회전할 포탑 파트
+        [SerializeField] private float towerAttackRange = 5f; // 타워 공격 사거리
+        [SerializeField] private LayerMask enemyLayer = 1 << 6; // Enemy 레이어 마스크
+        
+        [Header("Visual Effects")]
+        [SerializeField] private ParticleSystem muzzleFlash;
+        [SerializeField] private AudioSource fireSound;
+
+        // 성능 최적화용 캐시된 변수들
         private EnemyObject currentTarget;
-        private float towerNextAttackTime = 0f;
-        private bool isInitialized = false;
-        private bool hasTarget = false; // 타겟 상태 추적
+        private float nextTargetSearchTime = 0f;
+        private float targetLostDistance;
+        private int enemyLayerMask = -1;
+        
+        // 메모리 할당 최적화
+        private readonly Collider[] detectionBuffer = new Collider[MAX_DETECTION_COLLIDERS];
+        private readonly List<EnemyObject> validTargets = new List<EnemyObject>(MAX_DETECTION_COLLIDERS);
 
         public override float AttackRange => towerAttackRange;
 
@@ -39,7 +51,9 @@ namespace InvaderInsider
             // Enemy 레이어가 6번인지 확인하고 설정
             SetupEnemyLayer();
             
-            isInitialized = true;
+            // 레이어 마스크 캐싱
+            enemyLayerMask = LayerMask.GetMask("Enemy");
+            targetLostDistance = AttackRange * TARGET_LOST_DISTANCE_MULTIPLIER;
         }
         
         private void SetupEnemyLayer()
@@ -56,80 +70,89 @@ namespace InvaderInsider
             {
                 // Enemy 레이어가 없으면 6번 레이어를 기본값으로 사용
                 enemyLayer = 1 << 6;
-                #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
+#if UNITY_EDITOR
                 Debug.LogWarning($"[Tower] 'Enemy' 레이어가 존재하지 않음. 기본값 6번 레이어 사용");
-                #endif
+#endif
             }
         }
 
         private void Update()
         {
-            if (!isInitialized) return;
-
-            // 적이 없고 타겟도 없을 때는 탐지 빈도를 줄임
-            if (!hasTarget)
+            if (Time.time >= nextTargetSearchTime)
             {
-                // 타겟이 없을 때는 0.1초마다 한 번씩만 탐지
-                if (Time.time % 0.1f < Time.deltaTime)
+                if (currentTarget == null || !IsValidTarget(currentTarget))
                 {
-                    FindTarget();
+                    FindNewTarget();
                 }
-            }
-            else
-            {
-                // 타겟이 있을 때는 매 프레임 탐지
-                FindTarget();
-            }
-            
-            if (currentTarget != null && hasTarget)
-            {
-                RotateTowardsTarget();
+                else if (Time.time >= nextAttackTime)
+                {
+                    Attack(currentTarget);
+                }
                 
-                // 공격 쿨다운 확인 후 공격
-                if (Time.time >= towerNextAttackTime)
-                {
-                    Attack(currentTarget as IDamageable);
-                }
+                nextTargetSearchTime = Time.time + TARGET_SEARCH_INTERVAL;
             }
         }
 
-        private void FindTarget()
+        private bool IsValidTarget(EnemyObject target)
         {
-            Collider[] enemies = Physics.OverlapSphere(transform.position, towerAttackRange, enemyLayer);
+            if (target == null || target.gameObject == null) return false;
             
-            if (enemies.Length > 0)
+            // 거리 체크 (사거리보다 조금 더 여유롭게)
+            float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
+            return distanceToTarget <= targetLostDistance && target.CurrentHealth > 0;
+        }
+
+        private void FindNewTarget()
+        {
+            currentTarget = null;
+            validTargets.Clear();
+
+            // 물리 기반 적 탐지 (메모리 할당 최적화)
+            int hitCount = Physics.OverlapSphereNonAlloc(
+                transform.position, 
+                AttackRange, 
+                detectionBuffer, 
+                enemyLayerMask
+            );
+
+            // 유효한 적들을 리스트에 추가
+            for (int i = 0; i < hitCount; i++)
             {
-                float closestDistance = Mathf.Infinity;
-                EnemyObject closestEnemy = null;
-                
-                foreach (Collider enemy in enemies)
+                if (detectionBuffer[i].TryGetComponent<EnemyObject>(out var enemy))
                 {
-                    EnemyObject enemyObject = enemy.GetComponent<EnemyObject>();
-                    if (enemyObject != null && enemyObject.gameObject.activeInHierarchy)
+                    if (enemy.CurrentHealth > 0)
                     {
-                        float distance = Vector3.Distance(transform.position, enemy.transform.position);
-                        if (distance < closestDistance)
-                        {
-                            closestDistance = distance;
-                            closestEnemy = enemyObject;
-                        }
+                        validTargets.Add(enemy);
                     }
                 }
-                
-                if (closestEnemy != currentTarget)
-                {
-                    currentTarget = closestEnemy;
-                    hasTarget = currentTarget != null;
-                }
             }
-            else
+
+            // 가장 가까운 적을 타겟으로 선택
+            if (validTargets.Count > 0)
             {
-                if (hasTarget)
+                currentTarget = GetNearestTarget(validTargets);
+            }
+        }
+
+        private EnemyObject GetNearestTarget(List<EnemyObject> targets)
+        {
+            if (targets.Count == 0) return null;
+
+            EnemyObject nearestEnemy = null;
+            float nearestDistance = float.MaxValue;
+            Vector3 towerPosition = transform.position;
+
+            foreach (var enemy in targets)
+            {
+                float distance = Vector3.SqrMagnitude(enemy.transform.position - towerPosition);
+                if (distance < nearestDistance)
                 {
-                    currentTarget = null;
-                    hasTarget = false;
+                    nearestDistance = distance;
+                    nearestEnemy = enemy;
                 }
             }
+
+            return nearestEnemy;
         }
 
         private void RotateTowardsTarget()
@@ -152,30 +175,55 @@ namespace InvaderInsider
 
         public override void Attack(IDamageable target)
         {
-            if (target == null || firePoint == null || projectilePrefab == null) 
+            if (target == null || projectilePrefab == null) return;
+
+            Transform targetTransform = null;
+            
+            // 타겟이 EnemyObject인 경우 Transform 가져오기
+            if (target is EnemyObject enemyTarget)
             {
-                #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
-                Debug.LogWarning($"[Tower] 공격 실패 - Target: {target != null}, FirePoint: {firePoint != null}, ProjectilePrefab: {projectilePrefab != null}");
-                #endif
-                return;
+                targetTransform = enemyTarget.transform;
+            }
+            // 타겟이 Component인 경우
+            else if (target is Component component)
+            {
+                targetTransform = component.transform;
             }
 
-            GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+            if (targetTransform == null) return;
+
+            // 발사 위치 설정
+            Vector3 spawnPosition = firePoint != null ? firePoint.position : transform.position;
+            
+            // 투사체 생성 및 초기화
+            GameObject projectileObj = Instantiate(projectilePrefab, spawnPosition, Quaternion.identity);
             Projectile projectile = projectileObj.GetComponent<Projectile>();
             
             if (projectile != null)
             {
-                projectile.SetTarget((target as MonoBehaviour).transform);
-                projectile.SetDmg(attackDamage);
-            }
-            else
-            {
-                #if DEBUG_TOWER_ATTACK && UNITY_EDITOR
-                Debug.LogError($"[Tower] Projectile 컴포넌트가 없습니다!");
-                #endif
+                projectile.Initialize(target, AttackDamage, projectileSpeed);
             }
 
-            towerNextAttackTime = Time.time + 1f / fireRate;
+            // 시각/오디오 효과
+            PlayAttackEffects();
+
+            // 다음 공격 시간 설정
+            nextAttackTime = Time.time + attackRate;
+        }
+
+        private void PlayAttackEffects()
+        {
+            // 머즐 플래시 효과
+            if (muzzleFlash != null)
+            {
+                muzzleFlash.Play();
+            }
+
+            // 발사 사운드
+            if (fireSound != null && !fireSound.isPlaying)
+            {
+                fireSound.Play();
+            }
         }
 
         public override void ApplyEquipment(CardDBObject cardData)
@@ -193,16 +241,27 @@ namespace InvaderInsider
         // 디버깅을 위한 Gizmo 그리기
         private void OnDrawGizmosSelected()
         {
-            // 공격 범위 표시
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, towerAttackRange);
-            
-            // 현재 타겟에 대한 선 그리기
-            if (hasTarget && currentTarget != null)
+            if (!Application.isPlaying) return;
+
+            // 사거리 표시
+            Gizmos.color = new Color(0f, 1f, 0f, 0.3f); // 반투명 초록색
+            Gizmos.DrawWireSphere(transform.position, AttackRange);
+
+            // 현재 타겟 표시
+            if (currentTarget != null)
             {
-                Gizmos.color = Color.yellow;
+                Gizmos.color = Color.red;
                 Gizmos.DrawLine(transform.position, currentTarget.transform.position);
+                Gizmos.DrawWireSphere(currentTarget.transform.position, 1f);
             }
+        }
+
+        // 타워 업그레이드 시 사거리 재계산
+        public override void LevelUp()
+        {
+            base.LevelUp(); // 기본 레벨업 로직 호출
+            // Tower만의 레벨업 로직
+            targetLostDistance = AttackRange * TARGET_LOST_DISTANCE_MULTIPLIER;
         }
     }
 }

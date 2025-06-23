@@ -8,6 +8,7 @@ using InvaderInsider.Data;
 using InvaderInsider.Managers;
 using InvaderInsider;
 using System.Linq;
+using System.Text;
 
 namespace InvaderInsider
 {
@@ -39,20 +40,23 @@ namespace InvaderInsider
 
     public class EnemyObject : BaseCharacter
     {
+        // 성능 최적화 상수들
+        private const float WAYPOINT_CHECK_INTERVAL = 0.1f; // 웨이포인트 체크 주기
+        private const float DESTINATION_THRESHOLD = 0.5f; // 목적지 도달 임계값
+        
         private const string LOG_PREFIX = "[Enemy] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
-            "StageManager not found in the scene!",
-            "Player not found in the scene!",
-            "No waypoints available for enemy path!",
-            "Enemy {0} attacked",
-            "Enemy {0} died",
-            "Enemy {0} reached end",
-            "Enemy using NavMeshAgent movement",
-            "Enemy using Transform movement",
-            "Enemy initialized with {0} waypoints"
+            "초기화 에러: GameObject가 null입니다.",
+            "이동 중...",
+            "웨이포인트 초기화 실패",
+            "이동 대상: {0}",
+            "다음 웨이포인트 설정: {0}"
         };
 
+        // 메모리 할당 최적화 - StringBuilder 재사용
+        private static readonly StringBuilder stringBuilder = new StringBuilder(256);
+        
         [Header("Enemy Data")]
         [SerializeField] private EnemyData enemyData;
         
@@ -78,6 +82,7 @@ namespace InvaderInsider
         private int enemyCount;
         private bool isInitialized = false;
         private float moveSpeed = 5f;
+        // private float nextWaypointCheckTime = 0f; // 사용되지 않으므로 주석 처리 // 웨이포인트 체크 최적화용
 
         protected override void Awake()
         {
@@ -90,21 +95,31 @@ namespace InvaderInsider
 
         protected override void Initialize()
         {
+            if (isInitialized) return;
+
             base.Initialize();
-            if (stageManager == null)
+
+            agent = GetComponent<NavMeshAgent>();
+            if (agent == null)
             {
-                stageManager = StageManager.Instance;
+#if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+#endif
+                return;
             }
-            
-            // Player 참조를 GameManager를 통해 안전하게 가져오기
-            if (player == null)
+
+            // 성능 최적화: 한 번만 설정
+            agent.speed = moveSpeed;
+            agent.stoppingDistance = 0.1f;
+            agent.autoBraking = false;
+
+            stageManager = StageManager.Instance;
+            if (stageManager != null)
             {
-                var gameManager = GameManager.Instance;
-                if (gameManager != null)
-                {
-                    player = gameManager.GetComponent<Player>() ?? GameObject.FindWithTag("Player")?.GetComponent<Player>();
-                }
+                player = GameManager.Instance.GetComponent<Player>() ?? GameObject.FindWithTag("Player")?.GetComponent<Player>();
             }
+
+            isInitialized = true;
         }
 
         protected override void OnEnable()
@@ -215,6 +230,12 @@ namespace InvaderInsider
 
         private void MoveToNextWaypoint()
         {
+            if (waypoints.Count == 0)
+            {
+                ReachFinalDestination();
+                return;
+            }
+
             currentWaypoint = waypoints.Dequeue();
             if (currentWaypoint != null && agent != null)
             {

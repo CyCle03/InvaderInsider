@@ -99,6 +99,11 @@ namespace InvaderInsider
             OnHealthChanged?.Invoke(currentHealth / maxHealth);
         }
 
+        public virtual void LevelUp()
+        {
+            // 기본 레벨업 로직 - 상속 클래스에서 오버라이드 가능
+        }
+
         public virtual void ApplyEquipment(CardDBObject equipmentCard)
         {
             if (!_isInitialized || equipmentCard == null) return;

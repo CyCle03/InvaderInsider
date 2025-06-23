@@ -30,7 +30,7 @@ namespace InvaderInsider.Managers
             "게임 일시정지", // 4
             "게임 재개", // 5
             "EData changed: {0}", // 6
-            "스테이지 {0} 클리어 완료 (별 {1}개)" // 7
+            "스테이지 {0} 클리어 완료" // 7
         };
         
         
@@ -99,6 +99,12 @@ namespace InvaderInsider.Managers
         // 게임 시작 상태 플래그들
         private bool isStartingGame = false;
         private bool isLoadingScene = false;
+
+        // 성능 최적화: Update 체크 주기 조정
+        private const float STATE_CHECK_INTERVAL = 0.2f; // 0.2초마다 상태 체크
+        private float nextStateCheckTime = 0f;
+        
+        private bool stageClearedProcessed = false; // 스테이지 클리어 중복 처리 방지
 
         // 메인 메뉴에서 호출할 스테이지 설정 메서드
         public static void SetRequestedStartStage(int stageIndex)
@@ -377,55 +383,45 @@ namespace InvaderInsider.Managers
             // 필요시 단일 카드 뽑기 버튼을 다른 UI에 통합 가능
         }
 
-        public void StageCleared(int stageNum, int stars)
+        public void StageCleared(int stageNum)
         {
             OnStageClearedEvent?.Invoke();
             // UpdateStageProgress는 HandleStageCleared에서만 호출 (중복 방지)
         }
 
-        // eData 이벤트 구독 메서드들은 더 이상 사용되지 않음 (직접 호출 방식으로 전환)
-        [System.Obsolete("eData는 이제 직접 호출 방식으로 업데이트됩니다.")]
-        public void AddResourcePointsListener(Action<int> listener)
-        {
-            // 더 이상 사용되지 않음
-        }
-
-        [System.Obsolete("eData는 이제 직접 호출 방식으로 업데이트됩니다.")]
-        public void RemoveResourcePointsListener(Action<int> listener)
-        {
-            // 더 이상 사용되지 않음
-        }
-
-        private bool stageClearedProcessed = false; // 스테이지 클리어 중복 처리 방지
-
         private void Update()
         {
-            if (CurrentGameState == GameState.Playing)
+            if (CurrentGameState != GameState.Playing) return;
+
+            // 상태 체크 주기 최적화
+            if (Time.time >= nextStateCheckTime)
             {
-                // 스테이지 클리어 체크만 유지 (UI 자동 업데이트 제거)
-                if (cachedStageManager != null)
-                {
-                    bool allEnemiesSpawned = AllEnemiesSpawned();
-                    int activeEnemyCount = cachedStageManager.ActiveEnemyCount;
-                    
-                    if (allEnemiesSpawned && activeEnemyCount == 0)
-                    {
-                        if (!stageClearedProcessed)
-                        {
-                            HandleStageCleared();
-                            stageClearedProcessed = true;
-                        }
-                    }
-                    else if (activeEnemyCount > 0)
-                    {
-                        // 적이 다시 생기면 플래그 리셋 (다음 스테이지를 위해)
-                        stageClearedProcessed = false;
-                    }
-                }
+                CheckStageCompletion();
+                nextStateCheckTime = Time.time + STATE_CHECK_INTERVAL;
             }
         }
 
+        private void CheckStageCompletion()
+        {
+            if (cachedStageManager == null) return;
 
+            bool allEnemiesSpawned = AllEnemiesSpawned();
+            int activeEnemyCount = cachedStageManager.ActiveEnemyCount;
+            
+            if (allEnemiesSpawned && activeEnemyCount == 0)
+            {
+                if (!stageClearedProcessed)
+                {
+                    HandleStageCleared();
+                    stageClearedProcessed = true;
+                }
+            }
+            else if (activeEnemyCount > 0)
+            {
+                // 적이 다시 생기면 플래그 리셋 (다음 스테이지를 위해)
+                stageClearedProcessed = false;
+            }
+        }
 
         private bool AllEnemiesSpawned()
         {
@@ -445,13 +441,12 @@ namespace InvaderInsider.Managers
 
             // 스테이지 클리어 처리
             int clearedStageIndex = cachedStageManager.GetCurrentStageIndex();
-            int stars = CalculateStageStars(); // 별점 계산 로직
             
             // 스테이지 클리어 시 축적된 EData와 스테이지 진행을 한 번에 저장
-            saveDataManager?.UpdateStageProgress(clearedStageIndex + 1, stars);
+            saveDataManager?.UpdateStageProgress(clearedStageIndex + 1);
             
             // 스테이지 클리어 이벤트 호출
-            StageCleared(clearedStageIndex + 1, stars);
+            StageCleared(clearedStageIndex + 1);
             OnStageClearedEvent?.Invoke();
             
             // 모든 스테이지 완료 체크
@@ -509,49 +504,86 @@ namespace InvaderInsider.Managers
 
             // InGame, TopBar, BottomBar만 표시
             SetupGameplayPanels();
+            
+            // 스테이지 시작 (요청된 스테이지가 있으면 해당 스테이지, 없으면 첫 번째 스테이지)
+            var stageManager = StageManager.Instance;
+            if (stageManager != null)
+            {
+                if (requestedStartStage >= 0)
+                {
+                    stageManager.StartStageFrom(requestedStartStage);
+                    requestedStartStage = -1; // 사용한 후 리셋
+                }
+                else
+                {
+                    stageManager.InitializeStage(); // 기본적으로 첫 번째 스테이지 시작
+                }
+                
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "StageManager를 통해 스테이지를 시작했습니다.");
+                #endif
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "StageManager를 찾을 수 없습니다!");
+                #endif
+                
+                // StageManager가 없어도 게임 상태는 Playing으로 설정
+                Time.timeScale = 1f;
+                CurrentGameState = GameState.Playing;
+            }
+            
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "게임 초기화 완료. 게임 상태를 Playing으로 설정했습니다.");
+            #endif
         }
 
+        // 성능 최적화: FindObjectOfType 호출을 한 번에 처리
         private void CacheAndRegisterAllPanels()
         {
-            // 한 번에 모든 패널을 찾아서 캐싱
+            // 모든 BasePanel을 한 번에 찾아서 처리
             var allPanels = FindObjectsOfType<BasePanel>(true);
+            
+            // 딕셔너리로 빠른 검색을 위한 임시 매핑
+            var panelsByType = new System.Collections.Generic.Dictionary<System.Type, BasePanel>();
+            
             foreach (var panel in allPanels)
             {
                 if (panel != null && panel.gameObject != null)
                 {
                     panel.gameObject.SetActive(false);
                     panel.ForceHide();
+                    panelsByType[panel.GetType()] = panel;
                 }
             }
 
-            // UI 패널 등록
-            var pausePanel = FindObjectOfType<InvaderInsider.UI.PausePanel>(true);
-            if (pausePanel != null)
-                uiManager.RegisterPanel("Pause", pausePanel);
-            
-            var settingsPanel = FindObjectOfType<InvaderInsider.UI.SettingsPanel>(true);
-            if (settingsPanel != null)
-                uiManager.RegisterPanel("Settings", settingsPanel);
+            // 타입별로 등록 (FindObjectOfType 제거)
+            RegisterPanelByType<InvaderInsider.UI.PausePanel>("Pause", panelsByType);
+            RegisterPanelByType<InvaderInsider.UI.SettingsPanel>("Settings", panelsByType);
+            RegisterPanelByType<InvaderInsider.UI.DeckPanel>("Deck", panelsByType);
+            RegisterPanelByType<InvaderInsider.UI.SummonChoicePanel>("SummonChoice", panelsByType);
+            RegisterPanelByType<InvaderInsider.UI.HandDisplayPanel>("HandDisplay", panelsByType);
+            RegisterPanelByType<InvaderInsider.UI.ShopPanel>("Shop", panelsByType);
+            RegisterPanelByType<InvaderInsider.UI.StageSelectPanel>("StageSelect", panelsByType);
+        }
 
-            var deckPanel = FindObjectOfType<InvaderInsider.UI.DeckPanel>(true);
-            if (deckPanel != null)
-                uiManager.RegisterPanel("Deck", deckPanel);
-
-            var summonChoicePanel = FindObjectOfType<InvaderInsider.UI.SummonChoicePanel>(true);
-            if (summonChoicePanel != null)
-                uiManager.RegisterPanel("SummonChoice", summonChoicePanel);
-
-            var handDisplayPanel = FindObjectOfType<InvaderInsider.UI.HandDisplayPanel>(true);
-            if (handDisplayPanel != null)
-                uiManager.RegisterPanel("HandDisplay", handDisplayPanel);
-
-            var shopPanel = FindObjectOfType<InvaderInsider.UI.ShopPanel>(true);
-            if (shopPanel != null)
-                uiManager.RegisterPanel("Shop", shopPanel);
-
-            var stageSelectPanel = FindObjectOfType<InvaderInsider.UI.StageSelectPanel>(true);
-            if (stageSelectPanel != null)
-                uiManager.RegisterPanel("StageSelect", stageSelectPanel);
+        private void RegisterPanelByType<T>(string panelName, System.Collections.Generic.Dictionary<System.Type, BasePanel> panelsByType) where T : BasePanel
+        {
+            if (panelsByType.TryGetValue(typeof(T), out BasePanel panel))
+            {
+                uiManager.RegisterPanel(panelName, panel);
+                
+                #if UNITY_EDITOR
+                Debug.Log($"{LOG_PREFIX}패널 등록 성공: {panelName} ({typeof(T).Name})");
+                #endif
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning($"{LOG_PREFIX}패널을 찾을 수 없습니다: {panelName} ({typeof(T).Name})");
+                #endif
+            }
         }
 
         private void HideNonGameplayPanels()
@@ -569,254 +601,98 @@ namespace InvaderInsider.Managers
 
         private void SetupGameplayPanels()
         {
-            // InGame, TopBar, BottomBar만 표시
-            var inGamePanel = FindObjectOfType<InvaderInsider.UI.InGamePanel>(true);
+            // InGame 패널 설정
+            var inGamePanel = FindCachedOrNewPanel<InvaderInsider.UI.InGamePanel>("InGame", "InGamePanel");
             if (inGamePanel != null)
             {
-                // Canvas나 부모 오브젝트도 활성화
-                Transform current = inGamePanel.transform;
-                while (current != null)
-                {
-                    current.gameObject.SetActive(true);
-                    current = current.parent;
-                }
+                ActivatePanelHierarchy(inGamePanel.transform);
                 uiManager.RegisterPanel("InGame", inGamePanel);
-                inGamePanel.Show(); // 패널 보이기
+                inGamePanel.Show();
             }
-            else
-            {
-                var inGameGO = GameObject.Find("InGame") ?? GameObject.Find("InGamePanel");
-                if (inGameGO != null)
-                {
-                    inGamePanel = inGameGO.GetComponent<InvaderInsider.UI.InGamePanel>();
-                    if (inGamePanel != null)
-                    {
-                        uiManager.RegisterPanel("InGame", inGamePanel);
-                        inGamePanel.Show(); // 패널 보이기
-                    }
-                }
-                #if UNITY_EDITOR
-                else
-                {
-                    Debug.LogError(LOG_PREFIX + "InGame 패널을 전혀 찾을 수 없습니다!");
-                }
-                #endif
-            }
-            
-            var topBarPanel = FindObjectOfType<InvaderInsider.UI.TopBarPanel>(true);
+
+            // TopBar 패널 설정  
+            var topBarPanel = FindCachedOrNewPanel<InvaderInsider.UI.TopBarPanel>("TopBar", "TopBarPanel");
             if (topBarPanel != null)
             {
-                // Canvas나 부모 오브젝트도 활성화
-                Transform current = topBarPanel.transform;
-                while (current != null)
-                {
-                    current.gameObject.SetActive(true);
-                    current = current.parent;
-                }
+                ActivatePanelHierarchy(topBarPanel.transform);
                 uiManager.RegisterPanel("TopBar", topBarPanel);
-                cachedTopBarPanel = topBarPanel; // 캐시 업데이트
-                topBarPanel.Show(); // 패널 보이기
-                
-                // 실제 스테이지 수로 초기화
-                if (cachedStageManager != null)
-                {
-                    int totalStages = cachedStageManager.GetStageCount();
-                    cachedTopBarPanel.UpdateStageInfo(1, totalStages, 0, 0);
-                }
-            }
-            else
-            {
-                var topBarGO = GameObject.Find("TopBar") ?? GameObject.Find("TopBarPanel");
-                if (topBarGO != null)
-                {
-                    topBarPanel = topBarGO.GetComponent<InvaderInsider.UI.TopBarPanel>();
-                    if (topBarPanel != null)
-                    {
-                        uiManager.RegisterPanel("TopBar", topBarPanel);
-                        cachedTopBarPanel = topBarPanel; // 캐시 업데이트
-                        topBarPanel.Show(); // 패널 보이기
-                        
-                        // 실제 스테이지 수로 초기화
-                        if (cachedStageManager != null)
-                        {
-                            int totalStages = cachedStageManager.GetStageCount();
-                            cachedTopBarPanel.UpdateStageInfo(1, totalStages, 0, 0);
-                        }
-                    }
-                }
-                #if UNITY_EDITOR
-                else
-                {
-                    Debug.LogError(LOG_PREFIX + "TopBar 패널을 전혀 찾을 수 없습니다!");
-                }
-                #endif
+                topBarPanel.Show();
             }
 
-            var bottomBarPanel = FindObjectOfType<InvaderInsider.UI.BottomBarPanel>(true);
+            // BottomBar 패널 설정
+            var bottomBarPanel = FindCachedOrNewPanel<InvaderInsider.UI.BottomBarPanel>("BottomBar", "BottomBarPanel");
             if (bottomBarPanel != null)
             {
-                // Canvas나 부모 오브젝트도 활성화
-                Transform current = bottomBarPanel.transform;
-                while (current != null)
-                {
-                    current.gameObject.SetActive(true);
-                    current = current.parent;
-                }
+                ActivatePanelHierarchy(bottomBarPanel.transform);
                 uiManager.RegisterPanel("BottomBar", bottomBarPanel);
-                cachedBottomBarPanel = bottomBarPanel; // 캐시 업데이트
-                bottomBarPanel.Show(); // 패널 보이기
+                bottomBarPanel.Show();
             }
-            else
-            {
-                var bottomBarGO = GameObject.Find("BottomBar") ?? GameObject.Find("BottomBarPanel");
-                if (bottomBarGO != null)
-                {
-                    bottomBarPanel = bottomBarGO.GetComponent<InvaderInsider.UI.BottomBarPanel>();
-                    if (bottomBarPanel != null)
-                    {
-                        uiManager.RegisterPanel("BottomBar", bottomBarPanel);
-                        cachedBottomBarPanel = bottomBarPanel; // 캐시 업데이트
-                        bottomBarPanel.Show(); // 패널 보이기
-                    }
-                }
-                #if UNITY_EDITOR
-                else
-                {
-                    Debug.LogError(LOG_PREFIX + "BottomBar 패널을 전혀 찾을 수 없습니다!");
-                }
-                #endif
-            }
-
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "게임플레이 패널들 표시 완료 - InGame, TopBar, BottomBar");
-            #endif
-
-            // Player HP 초기화 (100%로 설정)
-            if (cachedPlayer != null)
-            {
-                cachedPlayer.ResetHealth(); // HP를 최대값으로 리셋
-                if (cachedBottomBarPanel != null)
-                {
-                    cachedBottomBarPanel.UpdateHealth(cachedPlayer.CurrentHealth, cachedPlayer.MaxHealth);
-                    cachedBottomBarPanel.UpdateHealthDisplay(cachedPlayer.CurrentHealth / cachedPlayer.MaxHealth);
-                }
-            }
-
-            // 카드 매니저 초기화
-            if (cardManager != null)
-                cardManager.LoadSummonData();
-            
-            // Continue Game 감지 (requestedStartStage 초기화 전에 확인)
-            bool isContinueGame = requestedStartStage > 0;
-            
-            // Continue Game 시 SaveDataManager에서 eData 로드 및 UI 업데이트
-            // SaveDataManager가 null이면 다시 찾기 시도 (여러 번 시도)
-            if (saveDataManager == null)
-            {
-                saveDataManager = SaveDataManager.Instance;
-                
-                // 첫 번째 시도가 실패하면 FindObjectOfType으로 직접 찾기
-                if (saveDataManager == null)
-                {
-                    saveDataManager = FindObjectOfType<SaveDataManager>();
-                }
-            }
-            
-            if (saveDataManager != null && isContinueGame)
-            {
-                // Continue Game인 경우 SaveDataManager에서 실제 eData 값을 가져와서 UI에 반영
-                int savedEData = saveDataManager.GetCurrentEData();
-                
-                // ResourceManager에도 eData 값 동기화
-                var resourceManager = ResourceManager.Instance;
-                if (resourceManager != null)
-                {
-                    resourceManager.SetEData(savedEData);
-                }
-                
-                // TopBarPanel에 올바른 eData 값 업데이트
-                if (cachedTopBarPanel != null)
-                {
-                    cachedTopBarPanel.UpdateEData(savedEData);
-                }
-                
-                            // CardDrawUI 제거로 인한 업데이트 코드 제거
-            }
-            else if (saveDataManager != null)
-            {
-                // New Game 시에도 초기 eData 값을 TopBarPanel에 설정
-                InitializeEDataDisplay();
-                
-                // ResourceManager에도 초기 eData 값 동기화
-                var resourceManager = ResourceManager.Instance;
-                if (resourceManager != null)
-                {
-                    int currentEData = saveDataManager.GetCurrentEData();
-                    resourceManager.SetEData(currentEData);
-                }
-            }
-
-            // StageManager 초기화 및 스테이지 시작
-            if (cachedStageManager != null)
-            {
-                int startingStage = 0; // 기본값은 0 (첫 번째 스테이지)
-                
-                // 메인 메뉴에서 요청한 스테이지가 있다면 우선 사용
-                if (requestedStartStage >= 0)
-                {
-                    startingStage = requestedStartStage;
-                    requestedStartStage = -1; // 사용 후 초기화
-                }
-                // 그렇지 않으면 저장된 진행상황 확인
-                else if (saveDataManager != null && saveDataManager.HasSaveData())
-                {
-                    var saveData = saveDataManager.CurrentSaveData;
-                    if (saveData != null)
-                    {
-                        // 클리어한 최고 스테이지의 다음 스테이지부터 시작
-                        int highestCleared = saveData.progressData.highestStageCleared;
-                        startingStage = highestCleared; // 이미 클리어한 스테이지부터 다시 시작 (플레이어 선택권 제공)
-                    }
-                }
-                
-                // InitializeStage() 대신 StartStageFrom()만 호출 (중복 방지)
-                cachedStageManager.StartStageFrom(startingStage);
-            }
-
-            // 게임 상태를 Playing으로 설정
-            CurrentGameState = GameState.Playing;
-            Time.timeScale = 1f;
-            
-            // 스테이지 클리어 플래그 초기화
-            stageClearedProcessed = false;
         }
 
-        // 별점 계산 로직 (임시)
-        private int CalculateStageStars()
+        // 중복 코드 제거: 패널 찾기 로직 통합
+        private T FindCachedOrNewPanel<T>(params string[] possibleNames) where T : BasePanel
         {
-            if (cachedPlayer == null) return 1;
-            
-            float healthPercent = cachedPlayer.CurrentHealth / cachedPlayer.MaxHealth;
-            
-            if (healthPercent >= 0.8f)
-                return 3;
-            else if (healthPercent >= 0.5f)
-                return 2;
-            else
-                return 1;
+            // 먼저 FindObjectOfType으로 찾기
+            T panel = FindObjectOfType<T>(true);
+            if (panel != null) return panel;
+
+            // 이름으로 GameObject 찾아서 컴포넌트 가져오기
+            foreach (string name in possibleNames)
+            {
+                var gameObject = GameObject.Find(name);
+                if (gameObject != null)
+                {
+                    panel = gameObject.GetComponent<T>();
+                    if (panel != null) return panel;
+                }
+            }
+
+            return null;
+        }
+
+        private void ActivatePanelHierarchy(Transform panel)
+        {
+            Transform current = panel;
+            while (current != null)
+            {
+                current.gameObject.SetActive(true);
+                current = current.parent;
+            }
         }
 
         public void PauseGame(bool showPauseUI = true)
         {
-            // 로그 제거 - 메모리 할당 최적화
+            #if UNITY_EDITOR
+            Debug.Log($"{LOG_PREFIX}게임 일시정지 요청 - showPauseUI: {showPauseUI}");
+            #endif
+            
             Time.timeScale = 0f;
             CurrentGameState = GameState.Paused;
             
-            // 스테이지 클리어 시에만 저장하므로 일시정지 시 저장 제거
-            
             if (showPauseUI)
             {
-                uiManager?.ShowPanel("Pause");
+                if (uiManager != null)
+                {
+                    if (uiManager.IsPanelRegistered("Pause"))
+                    {
+                        uiManager.ShowPanel("Pause");
+                        #if UNITY_EDITOR
+                        Debug.Log($"{LOG_PREFIX}Pause 패널을 표시했습니다.");
+                        #endif
+                    }
+                    else
+                    {
+                        #if UNITY_EDITOR
+                        Debug.LogWarning($"{LOG_PREFIX}Pause 패널이 UIManager에 등록되지 않았습니다.");
+                        #endif
+                    }
+                }
+                else
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogError($"{LOG_PREFIX}UIManager가 없습니다.");
+                    #endif
+                }
             }
         }
 

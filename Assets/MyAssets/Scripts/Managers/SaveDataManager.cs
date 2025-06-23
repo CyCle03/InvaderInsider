@@ -239,13 +239,11 @@ namespace InvaderInsider.Data
     [Serializable]
     public class SerializableStageProgress
     {
-        private Dictionary<int, int> stageStars = new Dictionary<int, int>();
+        private HashSet<int> clearedStages = new HashSet<int>();
         
-        // 캐시된 리스트들 (메모리 할당 최소화)
+        // 캐시된 리스트 (메모리 할당 최소화)
         [System.NonSerialized] private List<int> cachedStageNumbers = null;
-        [System.NonSerialized] private List<int> cachedStars = null;
         [System.NonSerialized] private bool stageNumbersCacheDirty = true;
-        [System.NonSerialized] private bool starsCacheDirty = true;
 
         public List<int> stageNumbers
         {
@@ -253,7 +251,7 @@ namespace InvaderInsider.Data
             {
                 if (stageNumbersCacheDirty || cachedStageNumbers == null)
                 {
-                    cachedStageNumbers = new List<int>(stageStars.Keys);
+                    cachedStageNumbers = new List<int>(clearedStages);
                     stageNumbersCacheDirty = false;
                 }
                 return cachedStageNumbers;
@@ -261,44 +259,24 @@ namespace InvaderInsider.Data
             set { } // 직렬화를 위해 필요
         }
 
-        public List<int> stars
-        {
-            get 
-            {
-                if (starsCacheDirty || cachedStars == null)
-                {
-                    cachedStars = new List<int>(stageStars.Values);
-                    starsCacheDirty = false;
-                }
-                return cachedStars;
-            }
-            set { } // 직렬화를 위해 필요
-        }
-
-        public void Set(int stageNum, int starCount)
+        public void Set(int stageNum)
         {
             if (stageNum <= 0) return;
-            stageStars[stageNum] = Mathf.Clamp(starCount, 0, 3);
+            clearedStages.Add(stageNum);
             stageNumbersCacheDirty = true;
-            starsCacheDirty = true;
-        }
-
-        public bool TryGetValue(int stageNum, out int starCount)
-        {
-            return stageStars.TryGetValue(stageNum, out starCount);
         }
 
         public bool ContainsKey(int stageNum)
         {
-            return stageStars.ContainsKey(stageNum);
+            return clearedStages.Contains(stageNum);
         }
 
         public SerializableStageProgress Clone()
         {
             var clone = new SerializableStageProgress();
-            foreach (var kvp in stageStars)
+            foreach (var stage in clearedStages)
             {
-                clone.stageStars[kvp.Key] = kvp.Value;
+                clone.clearedStages.Add(stage);
             }
             return clone;
         }
@@ -461,7 +439,41 @@ namespace InvaderInsider.Data
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "게임 종료 - 저장하지 않음");
             #endif
+            
+            // 인스턴스 정리
+            if (_instance == this)
+            {
+                CleanupEventListeners();
+                _instance = null;
+            }
         }
+
+        #if UNITY_EDITOR
+        // 에디터에서 플레이 모드 종료 시 정리
+        [UnityEditor.InitializeOnEnterPlayMode]
+        static void OnEnterPlayModeInEditor(UnityEditor.EnterPlayModeOptions options)
+        {
+            _instance = null;
+        }
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            // 에디터에서 플레이 모드 종료 시 호출될 수 있음
+            if (!Application.isPlaying && _instance == this)
+            {
+                CleanupEventListeners();
+                _instance = null;
+            }
+        }
+
+        // 에디터에서 플레이 모드가 종료될 때 호출되는 정리 메서드
+        [UnityEditor.Callbacks.DidReloadScripts]
+        private static void OnScriptsReloaded()
+        {
+            // 스크립트 리로드 시 정적 인스턴스 정리
+            _instance = null;
+        }
+        #endif
 
         private void CleanupEventListeners()
         {
@@ -555,24 +567,21 @@ namespace InvaderInsider.Data
             }
         }
 
-        public void UpdateStageProgress(int stageNum, int stars)
+        public void UpdateStageProgress(int stageNum)
         {
-            UpdateStageProgress(stageNum, stars, true);
+            UpdateStageProgress(stageNum, true);
         }
 
-        public void UpdateStageProgress(int stageNum, int stars, bool saveImmediately)
+        public void UpdateStageProgress(int stageNum, bool saveImmediately)
         {
-            if (stageNum <= 0 || stars < 0 || stars > 3) return;
+            if (stageNum <= 0) return;
 
-            currentSaveData.stageProgress.Set(stageNum, stars);
-            if (stars > 0)
-            {
-                currentSaveData.progressData.highestStageCleared = 
-                    Mathf.Max(currentSaveData.progressData.highestStageCleared, stageNum);
-            }
+            currentSaveData.stageProgress.Set(stageNum);
+            currentSaveData.progressData.highestStageCleared = 
+                Mathf.Max(currentSaveData.progressData.highestStageCleared, stageNum);
 
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"스테이지 진행 업데이트: 스테이지 {stageNum}, 별 {stars}개, 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}");
+            Debug.Log(LOG_PREFIX + $"스테이지 진행 업데이트: 스테이지 {stageNum} 클리어, 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}");
             #endif
 
             if (saveImmediately)
@@ -788,11 +797,6 @@ namespace InvaderInsider.Data
             }
         }
 
-        public int GetStageStars(int stageNum)
-        {
-            return currentSaveData.stageProgress.TryGetValue(stageNum, out int stars) ? stars : 0;
-        }
-
         public bool IsStageUnlocked(int stageNum)
         {
             return stageNum <= 1 || currentSaveData.progressData.highestStageCleared >= stageNum - 1;
@@ -801,6 +805,33 @@ namespace InvaderInsider.Data
         public int GetCurrentEData()
         {
             return currentSaveData.progressData.currentEData;
+        }
+
+        /// <summary>
+        /// SaveDataManager를 강제로 정리합니다. (디버그/테스트 목적)
+        /// </summary>
+        public static void ForceDestroy()
+        {
+            if (_instance != null)
+            {
+                _instance.CleanupEventListeners();
+                if (_instance.gameObject != null)
+                {
+                    #if UNITY_EDITOR
+                    if (Application.isPlaying)
+                    {
+                        Destroy(_instance.gameObject);
+                    }
+                    else
+                    {
+                        DestroyImmediate(_instance.gameObject);
+                    }
+                    #else
+                    Destroy(_instance.gameObject);
+                    #endif
+                }
+                _instance = null;
+            }
         }
     }
 }

@@ -5,28 +5,35 @@ using TMPro;
 using InvaderInsider.Cards;
 using InvaderInsider.Data;
 using InvaderInsider.Managers;
+using System.Linq;
+using System.Text;
 
 namespace InvaderInsider.UI
 {
     public class SummonChoicePanel : BasePanel
     {
+        // 성능 최적화 상수들
+        private const int INITIAL_CARD_CAPACITY = 8;
+        private const float CARD_COST_MULTIPLIER = 2f;
+        
         private const string LOG_PREFIX = "[SummonChoice] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
-            "카드 선택 UI 초기화 실패: 카드 목록이 비어있습니다.",
-            "카드 선택 UI 초기화: {0}개의 카드",
-            "카드 선택: {0}",
-            "카드 선택 UI 닫기",
-            "Panel shown",
-            "Panel hidden",
-            "필수 UI 요소가 할당되지 않았습니다.",
-            "cardContainer가 할당되지 않았습니다.",
-            "cardButtonPrefab이 할당되지 않았습니다.",
-            "게임 일시정지됨",
-            "게임 재개됨",
-            "Panel temporarily hidden",
-            "Panel shown again"
+            "카드 매니저가 null입니다.",
+            "{0}개의 카드를 표시합니다.",
+            "카드 비용 {0}로 변경됨",
+            "카드 클릭됨: {0}",
+            "카드를 소환했습니다: {0}",
+            "패널이 숨겨짐",
+            "카드 버튼 프리팹이 null입니다.",
+            "카드 데이터가 null입니다.",
+            "카드 버튼 생성 실패",
+            "게임을 일시정지했습니다.",
+            "게임을 재개했습니다."
         };
+
+        // 메모리 할당 최적화 - StringBuilder 재사용
+        private static readonly StringBuilder stringBuilder = new StringBuilder(256);
 
         [Header("UI References")]
         [SerializeField] private Transform cardContainer;
@@ -43,9 +50,12 @@ namespace InvaderInsider.UI
         [Header("Hand Information")]
         [SerializeField] private TextMeshProUGUI handInfoText; // 핸드 정보 표시용 텍스트
 
+        [Header("Card Settings")]
+        // [SerializeField] private int maxDisplayCards = 3; // 사용되지 않으므로 주석 처리
+
         private List<CardDBObject> availableCards;
-        private List<Button> cardButtons = new List<Button>();
-        private List<CardButton> cardButtonComponents = new List<CardButton>();
+        private List<Button> cardButtons = new List<Button>(INITIAL_CARD_CAPACITY);
+        private List<CardButton> cardButtonComponents = new List<CardButton>(INITIAL_CARD_CAPACITY);
         private UIManager uiManager;
         private CardManager cardManager;
         private GameManager gameManager;
@@ -54,9 +64,21 @@ namespace InvaderInsider.UI
         private bool isInitialized = false; // 초기화 중복 방지 플래그
         private bool buttonsSetup = false; // 버튼 이벤트 등록 완료 플래그
 
+        // 컴포넌트 캐싱 (BasePanel.canvasGroup 사용)
+        private Canvas panelCanvas;
+
         protected override void Awake()
         {
             base.Awake();
+            
+            // 패널을 즉시 숨김 상태로 설정
+            gameObject.SetActive(false);
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
             
             uiManager = UIManager.Instance;
             cardManager = CardManager.Instance;
@@ -67,52 +89,41 @@ namespace InvaderInsider.UI
 
         protected override void Initialize()
         {
-            // 중복 초기화 방지
             if (isInitialized)
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "SummonChoice 패널이 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
-                #endif
                 return;
             }
 
-            if (cardContainer == null || closeButton == null)
+            base.Initialize();
+
+            // 컴포넌트 캐싱
+            panelCanvas = GetComponent<Canvas>();
+
+            // 매니저 참조 캐싱
+            cardManager = FindObjectOfType<CardManager>();
+            gameManager = GameManager.Instance;
+            uiManager = UIManager.Instance;
+
+            if (cardManager == null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[6]);
-                #endif
+#if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+#endif
                 return;
             }
 
-            // 버튼 이벤트를 한 번만 등록
-            if (!buttonsSetup)
-            {
-                SetupButtons();
-                buttonsSetup = true;
-            }
-            
-            // backgroundOverlay가 설정되지 않은 경우 자동으로 찾기
-            if (backgroundOverlay == null)
-            {
-                // 패널의 첫 번째 Image 컴포넌트를 배경으로 추정
-                var backgroundImage = GetComponent<UnityEngine.UI.Image>();
-                if (backgroundImage != null)
-                {
-                    backgroundOverlay = backgroundImage.gameObject;
-                }
-                // 또는 "Background", "Overlay" 등의 이름을 가진 자식 오브젝트 찾기
-                else
-                {
-                    backgroundOverlay = FindChildByName("Background") ?? 
-                                      FindChildByName("Overlay") ?? 
-                                      FindChildByName("Panel");
-                }
-            }
-            
-            // Canvas Sorting Order 설정 (다른 UI 요소들보다 위에 표시)
-            SetupCanvasSortingOrder();
-            
+            // SetupEventListeners(); // 메서드가 없으므로 주석 처리
+            SetupCanvasProperties();
             isInitialized = true;
+        }
+
+        private void SetupCanvasProperties()
+        {
+            if (panelCanvas != null)
+            {
+                panelCanvas.sortingOrder = 10;
+                panelCanvas.overrideSorting = true;
+            }
         }
 
         public void SetupCards(List<CardDBObject> cards)
@@ -120,7 +131,7 @@ namespace InvaderInsider.UI
             if (cards == null || cards.Count == 0)
             {
                 #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[7]);
                 #endif
                 return;
             }
@@ -167,7 +178,7 @@ namespace InvaderInsider.UI
             if (cardButtonPrefab == null)
             {
                 #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[8]);
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[6]);
                 #endif
                 return;
             }
@@ -182,19 +193,7 @@ namespace InvaderInsider.UI
             Button cardButton = buttonObj.GetComponent<Button>();
             CardButton cardButtonComponent = buttonObj.GetComponent<CardButton>();
             
-            #if UNITY_EDITOR
-            // 프리팹 구조 진단
-            Debug.Log(LOG_PREFIX + $"카드 버튼 생성 시도 - 카드: {card.cardName}");
-            Debug.Log(LOG_PREFIX + $"프리팹 이름: {cardButtonPrefab.name}");
-            Debug.Log(LOG_PREFIX + $"생성된 오브젝트 이름: {buttonObj.name}");
-            Debug.Log(LOG_PREFIX + $"Button 컴포넌트 존재: {cardButton != null}");
-            Debug.Log(LOG_PREFIX + $"CardButton 컴포넌트 존재: {cardButtonComponent != null}");
-            
-            if (cardButtonComponent != null)
-            {
-                Debug.Log(LOG_PREFIX + $"CardButton 컴포넌트 초기화 준비 완료: {card.cardName}");
-            }
-            #endif
+
             
             if (cardButton != null && cardButtonComponent != null)
             {
@@ -208,9 +207,7 @@ namespace InvaderInsider.UI
                 cardButtons.Add(cardButton);
                 cardButtonComponents.Add(cardButtonComponent);
                 
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"카드 버튼 생성 완료: {card.cardName}");
-                #endif
+
             }
             else
             {
@@ -238,9 +235,6 @@ namespace InvaderInsider.UI
 
         private void HandleCardSelect(CardDBObject selectedCard)
         {
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[2], selectedCard.cardName));
-            #endif
             if (cardManager != null)
             {
                 cardManager.OnCardChoiceSelected(selectedCard);
@@ -249,9 +243,6 @@ namespace InvaderInsider.UI
 
         private void HandleCloseClick()
         {
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[3]);
-            #endif
             if (cardManager != null)
             {
                 cardManager.OnCardChoiceSelected(null);
@@ -260,10 +251,6 @@ namespace InvaderInsider.UI
 
         private void HandleHideClick()
         {
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[11]);
-            #endif
-            
             isPanelTemporarilyHidden = true;
             
             // 패널 UI 숨기기 (카드 컨테이너와 다른 UI 요소들)
@@ -297,10 +284,6 @@ namespace InvaderInsider.UI
 
         private void HandleShowClick()
         {
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[12]);
-            #endif
-            
             isPanelTemporarilyHidden = false;
             
             // 패널 UI 다시 보이기
@@ -440,11 +423,10 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
-            // 버튼 이벤트 정리
-            CleanupButtonEvents();
-            
-            // 기존 카드 버튼 정리
-            ClearCardButtons();
+            // 명시적으로 리스트 정리
+            cardButtons?.Clear();
+            cardButtonComponents?.Clear();
+            availableCards?.Clear();
         }
 
         /// <summary>
@@ -697,43 +679,7 @@ namespace InvaderInsider.UI
         }
         #endif
 
-        // ============= 사용 예시 및 데모 기능 =============
-        
-        /// <summary>
-        /// 데모: 카드 데이터 실시간 변경 예시
-        /// </summary>
-        [System.Obsolete("데모용 메서드입니다. 프로덕션에서는 제거하세요.")]
-        public void DemoCardDataChange()
-        {
-            if (cardButtonComponents.Count == 0) return;
 
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "=== 카드 데이터 변경 데모 시작 ===");
-            
-            // 예시 1: 첫 번째 카드의 비용을 999로 변경
-            if (cardButtonComponents.Count > 0)
-            {
-                cardButtonComponents[0].UpdateCardCost(999);
-                Debug.Log(LOG_PREFIX + "첫 번째 카드 비용을 999로 변경");
-            }
-            
-            // 예시 2: 두 번째 카드의 설명을 변경
-            if (cardButtonComponents.Count > 1)
-            {
-                UpdateCardDescription(1, "동적으로 변경된 설명입니다!");
-                Debug.Log(LOG_PREFIX + "두 번째 카드 설명 변경");
-            }
-            
-            // 예시 3: 세 번째 카드를 비활성화
-            if (cardButtonComponents.Count > 2)
-            {
-                SetCardInteractable(2, false);
-                Debug.Log(LOG_PREFIX + "세 번째 카드 비활성화");
-            }
-            
-            Debug.Log(LOG_PREFIX + "=== 카드 데이터 변경 데모 완료 ===");
-            #endif
-        }
 
         private void UpdateHandInfo()
         {
@@ -760,12 +706,10 @@ namespace InvaderInsider.UI
 
                 handInfoText.text = handInfo;
                 
-                Debug.Log($"[SummonChoice] 핸드 정보 업데이트: {handCount}장의 카드가 있습니다.");
             }
             else
             {
                 handInfoText.text = "핸드: 정보 없음";
-                Debug.LogWarning("[SummonChoice] CardManager 인스턴스를 찾을 수 없습니다.");
             }
         }
 

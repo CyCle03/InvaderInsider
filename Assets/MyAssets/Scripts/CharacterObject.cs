@@ -13,6 +13,17 @@ namespace InvaderInsider
             "Character {0} leveled up to {1}. Health: {2}, Damage: {3}"
         };
 
+        // 성능 최적화 상수들
+        private const float ATTACK_CHECK_INTERVAL = 0.1f; // 0.1초마다 공격 체크
+        private const int MAX_HIT_COLLIDERS = 20;
+        
+        // 레벨업 관련 상수들 
+        private const float LEVEL_UP_HEALTH_MULTIPLIER = 0.1f; // 10% 체력 증가
+        private const float LEVEL_UP_DAMAGE_MULTIPLIER = 0.1f; // 10% 데미지 증가
+        
+        // 기즈모 관련 상수
+        private const float GIZMO_ALPHA = 0.3f;
+
         [Header("Character Specific")]
         [SerializeField] private bool isDestinationPoint = true;
         [SerializeField] private ParticleSystem attackEffect;
@@ -23,7 +34,9 @@ namespace InvaderInsider
         // public new event Action<float> OnHealthChanged; // BaseCharacter의 이벤트를 사용하므로 제거
         
         private bool isInitialized = false;
-        private readonly Collider[] hitColliders = new Collider[20];
+        private readonly Collider[] hitColliders = new Collider[MAX_HIT_COLLIDERS];
+        private float nextAttackCheckTime = 0f; // 공격 체크 최적화용
+        private int enemyLayerMask = -1; // 캐싱된 레이어 마스크
 
         protected override void Awake()
         {
@@ -36,6 +49,9 @@ namespace InvaderInsider
             if (isInitialized) return;
 
             base.Initialize();
+
+            // 레이어 마스크 캐싱
+            enemyLayerMask = LayerMask.GetMask("Enemy");
 
             if (attackEffect != null)
             {
@@ -79,15 +95,20 @@ namespace InvaderInsider
         {
             if (!isInitialized) return;
 
-            if (Time.time >= nextAttackTime)
+            // 공격 체크 주기 최적화 (매 프레임이 아닌 0.1초마다)
+            if (Time.time >= nextAttackCheckTime)
             {
                 DetectAndAttackEnemies();
+                nextAttackCheckTime = Time.time + ATTACK_CHECK_INTERVAL;
             }
         }
 
         private void DetectAndAttackEnemies()
         {
-            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, AttackRange, hitColliders, LayerMask.GetMask("Enemy"));
+            // 공격 준비가 되었을 때만 적 감지
+            if (Time.time < nextAttackTime) return;
+
+            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, AttackRange, hitColliders, enemyLayerMask);
             
             for (int i = 0; i < hitCount; i++)
             {
@@ -123,13 +144,15 @@ namespace InvaderInsider
             // OnHealthChanged?.Invoke(base.currentHealth); // BaseCharacter에서 이미 처리하므로 제거
         }
 
-        public void LevelUp()
+        public override void LevelUp()
         {
             if (!isInitialized) return;
 
             level++;
-            float healthIncrease = MaxHealth * 0.1f;
-            float damageIncrease = AttackDamage * 0.1f;
+            
+            // 성능 최적화: 한 번에 계산
+            float healthIncrease = MaxHealth * LEVEL_UP_HEALTH_MULTIPLIER;
+            float damageIncrease = AttackDamage * LEVEL_UP_DAMAGE_MULTIPLIER;
 
             maxHealth += healthIncrease;
             currentHealth += healthIncrease; // 체력 증가 반영
@@ -160,7 +183,7 @@ namespace InvaderInsider
         {
             if (!Application.isPlaying) return;
             
-            Gizmos.color = Color.red;
+            Gizmos.color = new Color(1f, 0f, 0f, GIZMO_ALPHA); // 반투명 빨간색
             Gizmos.DrawWireSphere(transform.position, AttackRange);
         }
 
