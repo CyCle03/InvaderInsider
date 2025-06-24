@@ -112,7 +112,8 @@ namespace InvaderInsider.UI
                 return;
             }
 
-            // SetupEventListeners(); // 메서드가 없으므로 주석 처리
+            // 버튼 이벤트 설정
+            SetupButtons();
             SetupCanvasProperties();
             isInitialized = true;
         }

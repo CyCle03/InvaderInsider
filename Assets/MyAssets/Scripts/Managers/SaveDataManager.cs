@@ -288,7 +288,31 @@ namespace InvaderInsider.Data
     /// </summary>
     public class SaveDataManager : MonoBehaviour
     {
+        // 로그 출력 제어 플래그
+        private const bool ENABLE_LOGS = false; // 로그 완전 비활성화
+        
         private const string LOG_PREFIX = "[SaveData] ";
+        
+        // 로그 헬퍼 메서드
+        private static void LogOnly(string message)
+        {
+#if UNITY_EDITOR && !DISABLE_LOGS
+            if (ENABLE_LOGS) Debug.Log(LOG_PREFIX + message);
+#endif
+        }
+        
+        private static void LogWarningOnly(string message)
+        {
+#if UNITY_EDITOR && !DISABLE_LOGS
+            if (ENABLE_LOGS) Debug.LogWarning(LOG_PREFIX + message);
+#endif
+        }
+        
+        private static void LogErrorOnly(string message)
+        {
+            Debug.LogError(LOG_PREFIX + message); // Error는 항상 출력
+        }
+        
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "게임 데이터 저장 실패: {0}",
@@ -342,7 +366,9 @@ namespace InvaderInsider.Data
                 DontDestroyOnLoad(go);
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "SaveDataManager 싱글턴 인스턴스 생성됨");
+        #if !DISABLE_LOGS
+        Debug.Log(LOG_PREFIX + "SaveDataManager 싱글턴 인스턴스 생성됨");
+#endif
                 #endif
             }
             else
@@ -351,7 +377,7 @@ namespace InvaderInsider.Data
                 DontDestroyOnLoad(_instance.gameObject);
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "기존 SaveDataManager 인스턴스 발견 및 설정됨");
+                LogOnly("기존 SaveDataManager 인스턴스 발견 및 설정됨");
                 #endif
             }
         }
@@ -387,7 +413,7 @@ namespace InvaderInsider.Data
             if (_instance != null && _instance != this)
             {
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "중복 SaveDataManager 감지 - 파괴됨");
+                LogOnly("중복 SaveDataManager 감지 - 파괴됨");
                 #endif
                 Destroy(gameObject);
                 return;
@@ -400,14 +426,14 @@ namespace InvaderInsider.Data
                 DontDestroyOnLoad(gameObject);
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "SaveDataManager 새 인스턴스 생성됨");
+                LogOnly("SaveDataManager 새 인스턴스 생성됨");
                 #endif
                 
                 // 게임 데이터 초기화
                 InitializeData();
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "SaveDataManager 초기화 완료");
+                LogOnly("SaveDataManager 초기화 완료");
                 #endif
             }
         }
@@ -488,7 +514,7 @@ namespace InvaderInsider.Data
         {
             bool exists = File.Exists(SAVE_KEY);
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"HasSaveData 확인 - 파일 경로: {Path.GetFullPath(SAVE_KEY)}, 존재 여부: {exists}");
+            LogOnly($"HasSaveData 확인 - 파일 경로: {Path.GetFullPath(SAVE_KEY)}, 존재 여부: {exists}");
             #endif
             return exists;
         }
@@ -523,7 +549,7 @@ namespace InvaderInsider.Data
                 File.WriteAllText(SAVE_KEY, json);
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"게임 데이터 저장 성공 - 파일: {SAVE_KEY}, 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared}");
+                LogOnly($"게임 데이터 저장 성공 - 파일: {SAVE_KEY}, 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared}");
                 #endif
             }
             catch (Exception e)
@@ -540,7 +566,7 @@ namespace InvaderInsider.Data
             if (!Application.isPlaying) return;
             
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"게임 데이터 로드 시도 - 파일 경로: {SAVE_KEY}");
+            LogOnly($"게임 데이터 로드 시도 - 파일 경로: {SAVE_KEY}");
             #endif
             
             try
@@ -560,7 +586,7 @@ namespace InvaderInsider.Data
                     else
                     {
                         #if UNITY_EDITOR
-                        Debug.Log(LOG_PREFIX + $"게임 데이터 로드 성공 - 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}, eData: {currentSaveData.progressData.currentEData}");
+                        LogOnly($"게임 데이터 로드 성공 - 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}, eData: {currentSaveData.progressData.currentEData}");
                         #endif
                     }
                 }
@@ -609,13 +635,13 @@ namespace InvaderInsider.Data
                 Mathf.Max(currentSaveData.progressData.highestStageCleared, stageNum);
 
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"스테이지 진행 업데이트: 스테이지 {stageNum} 클리어, 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}, saveImmediately: {saveImmediately}");
+            LogOnly($"스테이지 진행 업데이트: 스테이지 {stageNum} 클리어, 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}, saveImmediately: {saveImmediately}");
             #endif
 
             if (saveImmediately)
             {
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "즉시 저장 호출");
+                LogOnly("즉시 저장 호출");
                 #endif
                 SaveGameData();
             }
@@ -785,7 +811,7 @@ namespace InvaderInsider.Data
                         currentSaveData = new SaveData();
                     }
                     #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + "설정 파일 없음 - 기본 설정 사용");
+                    LogOnly("설정 파일 없음 - 기본 설정 사용");
                     #endif
                 }
             }
