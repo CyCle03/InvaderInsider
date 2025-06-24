@@ -3,20 +3,14 @@ using UnityEngine.UI; // UI 관련 기능을 사용하기 위해 추가
 using TMPro; // TextMeshPro 기능을 사용하기 위해 추가
 using InvaderInsider.UI; // Changed from InvaderInsider.Managers
 using InvaderInsider; // IDamageable 인터페이스 사용을 위해 추가
+using InvaderInsider.Managers; // LogManager 사용을 위해 추가
 using System; // Action 델리게이트 사용을 위해 추가
 
 namespace InvaderInsider
 {
     public class Player : MonoBehaviour, IDamageable
     {
-        private const string LOG_PREFIX = "[Player] ";
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "Player health reset",
-            "Player Died!",
-            "BottomBarPanel instance not found",
-            "UIManager instance not found"
-        };
+        private const string LOG_TAG = "Player";
 
         [Header("Health Settings")]
         [SerializeField] private float maxHealth = 100f;
@@ -37,15 +31,9 @@ namespace InvaderInsider
 
         private void Awake()
         {
-            #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}Player Awake 시작");
-            #endif
-            
+            LogManager.Info(LOG_TAG, "Awake 시작");
             Initialize();
-            
-            #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}Player Awake 완료");
-            #endif
+            LogManager.Info(LOG_TAG, "Awake 완료");
         }
 
         private void Initialize()
@@ -66,17 +54,15 @@ namespace InvaderInsider
                 bottomBarPanel = FindObjectOfType<BottomBarPanel>(true);
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (bottomBarPanel == null && Application.isPlaying)
             {
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
+                LogManager.Error(LOG_TAG, "BottomBarPanel instance not found");
             }
 
             if (uiManager == null && Application.isPlaying)
             {
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[3]);
+                LogManager.Error(LOG_TAG, "UIManager instance not found");
             }
-#endif
 
             ResetHealth();
             isInitialized = true;
@@ -96,9 +82,7 @@ namespace InvaderInsider
             if (isInitialized)
             {
                 ResetHealth();
-                #if UNITY_EDITOR
-                Debug.Log($"{LOG_PREFIX}Start에서 체력 재설정 완료");
-                #endif
+                LogManager.Info(LOG_TAG, "Start에서 체력 재설정 완료");
             }
         }
 
@@ -121,10 +105,7 @@ namespace InvaderInsider
         public void ResetHealth()
         {
             currentHealth = maxHealth;
-            
-            #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}체력 초기화: {currentHealth}/{maxHealth}");
-            #endif
+            LogManager.Info(LOG_TAG, "체력 초기화: {0}/{1}", currentHealth, maxHealth);
             
             // 이벤트 발생 (초기화 상태와 무관하게)
             OnHealthChanged?.Invoke(currentHealth / maxHealth);
@@ -163,14 +144,14 @@ namespace InvaderInsider
             {
                 // H 키로 체력 10 감소 테스트
                 TakeDamage(10f);
-                Debug.Log($"{LOG_PREFIX}테스트: 체력 10 감소 - 현재 체력: {currentHealth}/{maxHealth}");
+                LogManager.DebugLog(LOG_TAG, "테스트: 체력 10 감소 - 현재 체력: {0}/{1}", currentHealth, maxHealth);
             }
             
             if (Input.GetKeyDown(KeyCode.R))
             {
                 // R 키로 체력 완전 회복 테스트
                 ResetHealth();
-                Debug.Log($"{LOG_PREFIX}테스트: 체력 완전 회복 - 현재 체력: {currentHealth}/{maxHealth}");
+                LogManager.DebugLog(LOG_TAG, "테스트: 체력 완전 회복 - 현재 체력: {0}/{1}", currentHealth, maxHealth);
             }
         }
         #endif

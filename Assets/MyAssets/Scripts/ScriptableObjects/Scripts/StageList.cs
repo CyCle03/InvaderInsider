@@ -1,4 +1,5 @@
 using UnityEngine;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider
 {
@@ -19,7 +20,7 @@ namespace InvaderInsider
                     stages[i] = stageContainers[i] as IStageContainer;
                     if (stages[i] == null)
                     {
-                        Debug.LogError($"Stage container at index {i} does not implement IStageContainer interface!");
+                        LogManager.Error("StageList", "Stage container at index {0} does not implement IStageContainer interface!", i);
                     }
                 }
             }

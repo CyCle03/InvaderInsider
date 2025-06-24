@@ -11,21 +11,7 @@ namespace InvaderInsider.Cards
 {
     public class CardManager : MonoBehaviour
     {
-        private const string LOG_PREFIX = "[CardManager] ";
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "카드 매니저 초기화 완료",
-            "소환 진행 중입니다. 잠시 후 다시 시도하세요.",
-            "리소스가 부족합니다. 필요 리소스: {0}, 현재 리소스: {1}",
-            "소환 성공! 3장의 카드 중 선택하세요.",
-            "소환 비용이 {0}으로 증가했습니다.",
-            "카드가 핸드에 추가되었습니다: {0}",
-            "카드 데이터베이스가 설정되지 않았습니다.",
-            "카드 데이터베이스에 카드가 없습니다.",
-            "소환 데이터 로드 완료. 소환 횟수: {0}, 현재 비용: {1}",
-            "소환 데이터 저장 완료. 소환 횟수: {0}",
-            "SaveDataManager가 없습니다."
-        };
+        private const string LOG_TAG = "CardManager";
 
         private static CardManager instance;
         private static readonly object _lock = new object();
@@ -92,19 +78,15 @@ namespace InvaderInsider.Cards
                 DontDestroyOnLoad(gameObject);
                 
                 // HideFlags 명시적 설정 (에디터에서 편집 가능하도록)
-                #if UNITY_EDITOR
                 gameObject.hideFlags = HideFlags.None;
-                Debug.Log(LOG_PREFIX + "CardManager 인스턴스 생성됨");
-                #endif
+                LogManager.Info(LOG_TAG, "인스턴스 생성됨");
                 
                 PerformInitialization();
                 LoadSummonData();
             }
             else if (instance != this)
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "중복 CardManager 인스턴스 파괴됨");
-                #endif
+                LogManager.Info(LOG_TAG, "중복 인스턴스 파괴됨");
                 Destroy(gameObject);
                 return;
             }
@@ -120,13 +102,9 @@ namespace InvaderInsider.Cards
                     cardDatabase = Resources.Load<CardDatabase>("ScriptableObjects/CardSystem/CardDatabase");
                     if (cardDatabase == null)
                     {
-                        #if UNITY_EDITOR
-                        Debug.LogError(LOG_PREFIX + LOG_MESSAGES[6]);
-                        #endif
+                        LogManager.Error(LOG_TAG, "카드 데이터베이스가 설정되지 않았습니다.");
                         cardDatabase = ScriptableObject.CreateInstance<CardDatabase>();
-                        #if UNITY_EDITOR
-                        Debug.LogWarning(LOG_PREFIX + "빈 CardDatabase를 생성했습니다. Inspector에서 올바른 CardDatabase를 할당하세요.");
-                        #endif
+                        LogManager.Warning(LOG_TAG, "빈 CardDatabase를 생성했습니다. Inspector에서 올바른 CardDatabase를 할당하세요.");
                     }
                 }
             }
@@ -155,17 +133,13 @@ namespace InvaderInsider.Cards
             {
                 summonCount = SaveDataManager.Instance.CurrentSaveData.progressData.summonCount;
                 currentSummonCost = initialSummonCost + summonCount * summonCostIncrease;
-                #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], summonCount, currentSummonCost));
-                #endif
+                LogManager.Info(LOG_TAG, "소환 데이터 로드 완료. 소환 횟수: {0}, 현재 비용: {1}", summonCount, currentSummonCost);
             }
             else
             {
                 summonCount = 0;
                 currentSummonCost = initialSummonCost;
-                #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], summonCount, currentSummonCost));
-                #endif
+                LogManager.Info(LOG_TAG, "소환 데이터 로드 완료. 소환 횟수: {0}, 현재 비용: {1}", summonCount, currentSummonCost);
             }
         }
 
@@ -175,15 +149,11 @@ namespace InvaderInsider.Cards
             {
                 SaveDataManager.Instance.CurrentSaveData.progressData.summonCount = summonCount;
                 // 메모리에만 업데이트, 저장하지 않음 (스테이지 클리어/게임 종료 시에만 저장)
-                #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[9], summonCount));
-                #endif
+                LogManager.Info(LOG_TAG, "소환 데이터 저장 완료. 소환 횟수: {0}", summonCount);
             }
             else
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[10]);
-                #endif
+                LogManager.Error(LOG_TAG, "SaveDataManager가 없습니다.");
             }
         }
 
@@ -192,17 +162,13 @@ namespace InvaderInsider.Cards
             // 중복 호출 방지
             if (isSummonInProgress)
             {
-                #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[1]);
-                #endif
+                LogManager.Warning(LOG_TAG, "소환 진행 중입니다. 잠시 후 다시 시도하세요.");
                 return;
             }
 
             if (SaveDataManager.Instance == null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[10]);
-                #endif
+                LogManager.Error(LOG_TAG, "SaveDataManager가 없습니다.");
                 return;
             }
 
@@ -229,9 +195,7 @@ namespace InvaderInsider.Cards
                 
                 if (!success)
                 {
-#if UNITY_EDITOR
-                    Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
-#endif
+                    LogManager.Error(LOG_TAG, "리소스가 부족합니다. 필요 리소스: {0}, 현재 리소스: {1}", currentSummonCost, currentEData);
                     isSummonInProgress = false;
                     return;
                 }
@@ -240,9 +204,7 @@ namespace InvaderInsider.Cards
                 summonCount++;
                 currentSummonCost = initialSummonCost + summonCount * summonCostIncrease;
 
-                #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[4], currentSummonCost));
-                #endif
+                LogManager.Info(LOG_TAG, "소환 비용이 {0}으로 증가했습니다.", currentSummonCost);
 
                 // 랜덤 카드 3장 선택
                 List<CardDBObject> randomCards = SelectRandomCards(3);
@@ -252,10 +214,7 @@ namespace InvaderInsider.Cards
             }
             else
             {
-                #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], 
-                    currentEData, currentSummonCost));
-                #endif
+                LogManager.Warning(LOG_TAG, "리소스가 부족합니다. 현재 리소스: {0}, 필요 리소스: {1}", currentEData, currentSummonCost);
             }
         }
 
@@ -301,16 +260,12 @@ namespace InvaderInsider.Cards
                 {
                     summonChoicePanel.SetupCards(choices);
                     InvaderInsider.UI.UIManager.Instance.ShowPanel("SummonChoice");
-                    #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + "UIManager를 통해 SummonChoice 패널을 표시했습니다.");
-                    #endif
+                    LogManager.Info(LOG_TAG, "UIManager를 통해 SummonChoice 패널을 표시했습니다.");
                     return;
                 }
             }
 
-            #if UNITY_EDITOR
-            Debug.LogError(LOG_PREFIX + LOG_MESSAGES[7]);
-            #endif
+            LogManager.Error(LOG_TAG, "카드 데이터베이스에 카드가 없습니다.");
         }
 
         public void OnCardChoiceSelected(CardDBObject selectedCard)
@@ -322,24 +277,23 @@ namespace InvaderInsider.Cards
             if (InvaderInsider.UI.UIManager.Instance != null && InvaderInsider.UI.UIManager.Instance.IsPanelRegistered("SummonChoice"))
             {
                 InvaderInsider.UI.UIManager.Instance.HidePanel("SummonChoice");
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "UIManager를 통해 SummonChoice 패널을 숨겼습니다.");
-                #endif
+                LogManager.Info(LOG_TAG, "UIManager를 통해 SummonChoice 패널을 숨겼습니다.");
             }
             
-            if (SaveDataManager.Instance != null && selectedCard != null)
+            // null 체크 추가
+            if (selectedCard == null)
+            {
+                LogManager.Info(LOG_TAG, "카드 선택이 취소되었습니다 (Close 버튼 클릭).");
+                return;
+            }
+            
+            if (SaveDataManager.Instance != null)
             {
                 SaveDataManager.Instance.AddCardToHandAndOwned(selectedCard.cardId);
-                
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[5] + $" '{selectedCard.cardName}'");
-                #endif
+                LogManager.Info(LOG_TAG, "카드가 핸드에 추가되었습니다: '{0}'", selectedCard.cardName);
             }
             
             OnCardDrawn?.Invoke(selectedCard);
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[5] + $" '{selectedCard.cardName}'");
-            #endif
         }
         #endregion
 
@@ -426,9 +380,7 @@ namespace InvaderInsider.Cards
             if (SaveDataManager.Instance != null)
             {
                 SaveDataManager.Instance.RemoveCardFromHand(cardId);
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"카드가 핸드에서 제거되었습니다: ID {cardId}");
-                #endif
+                LogManager.Info(LOG_TAG, "카드가 핸드에서 제거되었습니다: ID {0}", cardId);
             }
         }
 
@@ -456,9 +408,7 @@ namespace InvaderInsider.Cards
                 if (SaveDataManager.Instance != null)
                 {
                     SaveDataManager.Instance.AddCardToHandAndOwned(randomCard.cardId);
-                    #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[5] + $" '{randomCard.cardName}' (ID: {randomCard.cardId})");
-                    #endif
+                    LogManager.Info(LOG_TAG, "카드가 핸드에 추가되었습니다: '{0}' (ID: {1})", randomCard.cardName, randomCard.cardId);
                 }
             }
         }
@@ -468,13 +418,11 @@ namespace InvaderInsider.Cards
             if (SaveDataManager.Instance != null)
             {
                 var handCards = GetHandCards();
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"현재 핸드 상태: {handCards.Count}장의 카드");
+                LogManager.Info(LOG_TAG, "현재 핸드 상태: {0}장의 카드", handCards.Count);
                 foreach (var card in handCards)
                 {
-                    Debug.Log(LOG_PREFIX + $"- {card.cardName} (ID: {card.cardId}, 타입: {card.type}, 등급: {card.rarity})");
+                    LogManager.Info(LOG_TAG, "- {0} (ID: {1}, 타입: {2}, 등급: {3})", card.cardName, card.cardId, card.type, card.rarity);
                 }
-                #endif
             }
         }
     }

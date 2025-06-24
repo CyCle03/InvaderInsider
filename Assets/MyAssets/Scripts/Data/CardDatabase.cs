@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using InvaderInsider.Managers;
 using InvaderInsider.Cards; // CardType enum 사용을 위해 추가
 
 namespace InvaderInsider.Data
@@ -139,15 +140,11 @@ namespace InvaderInsider.Data
             // 검증 결과 출력
             if (validationErrors.Count > 0)
             {
-#if UNITY_EDITOR
-                Debug.LogError($"[CardDatabase] 유효성 검사 실패:\n{string.Join("\n", validationErrors)}");
-#endif
+                LogManager.Error("CardDatabase", "유효성 검사 실패:\n{0}", string.Join("\n", validationErrors));
             }
             else
             {
-#if UNITY_EDITOR && DEVELOPMENT_BUILD
-                Debug.Log($"[CardDatabase] 유효성 검사 통과: {allCards.Count}개 카드");
-#endif
+                LogManager.Info("CardDatabase", "유효성 검사 통과: {0}개 카드", allCards.Count);
                 isValidated = true;
             }
 
@@ -207,9 +204,7 @@ namespace InvaderInsider.Data
                 return;
             }
 
-#if UNITY_EDITOR && DEVELOPMENT_BUILD
-            Debug.Log($"[CardDatabase] 카드 타입 분포: {string.Join(", ", typeDistribution.Select(kvp => $"{kvp.Key}: {kvp.Value}개"))}");
-#endif
+            LogManager.Info("CardDatabase", "카드 타입 분포: {0}", string.Join(", ", typeDistribution.Select(kvp => $"{kvp.Key}: {kvp.Value}개")));
         }
 
         private void BuildLookupTables()
@@ -238,9 +233,7 @@ namespace InvaderInsider.Data
                 cardsByType[card.type].Add(card);
             }
 
-#if UNITY_EDITOR && DEVELOPMENT_BUILD
-            Debug.Log($"[CardDatabase] 룩업 테이블 구축 완료: {cardLookup.Count}개 카드, {cardsByType.Count}개 타입");
-#endif
+            LogManager.Info("CardDatabase", "룩업 테이블 구축 완료: {0}개 카드, {1}개 타입", cardLookup.Count, cardsByType.Count);
             isLookupTableBuilt = true;
         }
 
@@ -313,7 +306,7 @@ namespace InvaderInsider.Data
                 stats.AppendLine($"{kvp.Key}: {kvp.Value.Count}개");
             }
 
-            Debug.Log(stats.ToString());
+            LogManager.Info("CardDatabase", "{0}", stats.ToString());
         }
 
         // 캐시 무효화 메서드 (데이터 수정 시 호출)

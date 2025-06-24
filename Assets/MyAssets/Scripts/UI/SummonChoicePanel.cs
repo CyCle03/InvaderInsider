@@ -112,7 +112,8 @@ namespace InvaderInsider.UI
                 return;
             }
 
-            // SetupEventListeners(); // 메서드가 없으므로 주석 처리
+            // 버튼 이벤트 설정
+            SetupButtons();
             SetupCanvasProperties();
             isInitialized = true;
         }
@@ -388,6 +389,12 @@ namespace InvaderInsider.UI
 
         private void SetupButtons()
         {
+            // 이미 설정되었으면 중복 설정 방지
+            if (buttonsSetup)
+            {
+                return;
+            }
+
             if (closeButton != null)
             {
                 closeButton.onClick.AddListener(HandleCloseClick);
@@ -404,6 +411,8 @@ namespace InvaderInsider.UI
                 showButton.onClick.AddListener(HandleShowClick);
                 showButton.gameObject.SetActive(false); // 처음에는 숨김
             }
+            
+            buttonsSetup = true;
         }
         
         private void CleanupButtonEvents()
@@ -423,6 +432,9 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
+            // 버튼 이벤트 정리
+            CleanupButtonEvents();
+            
             // 명시적으로 리스트 정리
             cardButtons?.Clear();
             cardButtonComponents?.Clear();
