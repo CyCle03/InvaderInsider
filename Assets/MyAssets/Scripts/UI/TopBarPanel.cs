@@ -24,13 +24,11 @@ namespace InvaderInsider.UI
 
         private void Start()
         {
-            if (stageText == null || waveText == null || eDataText == null || pauseButton == null)
-            {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_MESSAGES[0]);
-                #endif
-                return;
-            }
+                    if (stageText == null || waveText == null || eDataText == null || pauseButton == null)
+        {
+            LogManager.Error("TopBarPanel", "UI 요소가 할당되지 않았습니다.");
+            return;
+        }
 
             InitializeUI();
         }

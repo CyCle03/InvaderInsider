@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using InvaderInsider.Data;
 using InvaderInsider.Cards;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
@@ -50,9 +51,7 @@ namespace InvaderInsider.UI
         {
             if (isInitialized)
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "Deck 패널이 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
-                #endif
+                LogManager.Info("DeckPanel", "Deck 패널이 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
                 return;
             }
 

@@ -80,17 +80,17 @@ namespace InvaderInsider.UI
 
             if (saveManager == null)
             {
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
+                LogManager.Error("HandDisplay", "SaveDataManager instance not found");
                 return;
             }
             if (cardManager == null)
             {
-                Debug.LogError(LOG_PREFIX + "Hand: CardManager instance not found");
+                LogManager.Error("HandDisplay", "CardManager instance not found");
                 return;
             }
             if (cardDatabase == null)
             {
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[1]);
+                LogManager.Error("HandDisplay", "Card Database not assigned");
                 return;
             }
 

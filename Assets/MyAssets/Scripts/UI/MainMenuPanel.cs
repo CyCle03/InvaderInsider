@@ -85,12 +85,10 @@ namespace InvaderInsider.UI
                 
                 attempts++;
                 
-                #if UNITY_EDITOR
                 if (saveDataManager == null)
                 {
-                    Debug.Log(LOG_PREFIX + $"SaveDataManager 찾기 시도 {attempts}/{maxAttempts}");
+                    LogManager.Info("MainMenu", $"SaveDataManager 찾기 시도 {attempts}/{maxAttempts}");
                 }
-                #endif
             }
             
             if (saveDataManager != null)
