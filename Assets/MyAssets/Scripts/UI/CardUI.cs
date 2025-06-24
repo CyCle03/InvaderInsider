@@ -19,7 +19,7 @@ namespace InvaderInsider.UI
             "Card: Card data set - ID {0}"
         };
 
-        // [Header("Card Interaction")] // Button 필드를 제거했으므로 주석 처리하거나 제거
+
         // [SerializeField] private Button cardButton; // 제거
         private CardDisplay cardDisplay; // CardDisplay 컴포넌트 참조
         private CardInteractionHandler cardInteractionHandler; // CardInteractionHandler 컴포넌트 참조

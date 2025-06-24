@@ -24,7 +24,7 @@ namespace InvaderInsider.UI
         {
             // Initialize buttons and other UI elements
             // Example:
-            // stage1Button?.onClick.AddListener(() => Debug.Log("Stage 1 Selected"));
+
             // backButton?.onClick.AddListener(() => UIManager.Instance.GoBack());
         }
 

@@ -24,7 +24,7 @@ namespace InvaderInsider.UI
         {
             // Initialize buttons and other UI elements
             // Example:
-            // buyGemsButton?.onClick.AddListener(() => Debug.Log("Buy Gems Clicked"));
+
             // backButton?.onClick.AddListener(() => UIManager.Instance.GoBack());
         }
 

@@ -37,28 +37,46 @@ namespace InvaderInsider
 
         private void Awake()
         {
+            #if UNITY_EDITOR
+            Debug.Log($"{LOG_PREFIX}Player Awake 시작");
+            #endif
+            
             Initialize();
+            
+            #if UNITY_EDITOR
+            Debug.Log($"{LOG_PREFIX}Player Awake 완료");
+            #endif
         }
 
         private void Initialize()
         {
             if (isInitialized) return;
 
-            bottomBarPanel = FindObjectOfType<BottomBarPanel>();
-            if (bottomBarPanel == null && Application.isPlaying)
+            // UIManager를 통해 UI 참조 가져오기 (태그 의존성 제거)
+            uiManager = UIManager.Instance;
+            if (uiManager != null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
-                #endif
+                // UIManager를 통해 BottomBarPanel 찾기 시도
+                var panels = FindObjectsOfType<BottomBarPanel>(true);
+                bottomBarPanel = panels.Length > 0 ? panels[0] : null;
+            }
+            else
+            {
+                // UIManager가 없을 경우 직접 찾기
+                bottomBarPanel = FindObjectOfType<BottomBarPanel>(true);
             }
 
-            uiManager = UIManager.Instance;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (bottomBarPanel == null && Application.isPlaying)
+            {
+                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[2]);
+            }
+
             if (uiManager == null && Application.isPlaying)
             {
-                #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + LOG_MESSAGES[3]);
-                #endif
             }
+#endif
 
             ResetHealth();
             isInitialized = true;
@@ -69,6 +87,18 @@ namespace InvaderInsider
             if (!isInitialized)
             {
                 Initialize();
+            }
+        }
+
+        private void Start()
+        {
+            // 게임 씬 시작 시 체력 재설정 (다른 컴포넌트들이 준비된 후)
+            if (isInitialized)
+            {
+                ResetHealth();
+                #if UNITY_EDITOR
+                Debug.Log($"{LOG_PREFIX}Start에서 체력 재설정 완료");
+                #endif
             }
         }
 
@@ -90,9 +120,13 @@ namespace InvaderInsider
 
         public void ResetHealth()
         {
-            if (!isInitialized) return;
-
             currentHealth = maxHealth;
+            
+            #if UNITY_EDITOR
+            Debug.Log($"{LOG_PREFIX}체력 초기화: {currentHealth}/{maxHealth}");
+            #endif
+            
+            // 이벤트 발생 (초기화 상태와 무관하게)
             OnHealthChanged?.Invoke(currentHealth / maxHealth);
         }
 
@@ -120,5 +154,25 @@ namespace InvaderInsider
                 uiManager.ShowPanel("MainMenu");
             }
         }
+
+        #if UNITY_EDITOR
+        private void Update()
+        {
+            // 에디터에서만 작동하는 테스트 키
+            if (Input.GetKeyDown(KeyCode.H))
+            {
+                // H 키로 체력 10 감소 테스트
+                TakeDamage(10f);
+                Debug.Log($"{LOG_PREFIX}테스트: 체력 10 감소 - 현재 체력: {currentHealth}/{maxHealth}");
+            }
+            
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                // R 키로 체력 완전 회복 테스트
+                ResetHealth();
+                Debug.Log($"{LOG_PREFIX}테스트: 체력 완전 회복 - 현재 체력: {currentHealth}/{maxHealth}");
+            }
+        }
+        #endif
     }
 } 

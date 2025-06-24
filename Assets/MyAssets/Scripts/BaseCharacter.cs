@@ -99,16 +99,23 @@ namespace InvaderInsider
             OnHealthChanged?.Invoke(currentHealth / maxHealth);
         }
 
+        public virtual void LevelUp()
+        {
+            // 기본 레벨업 로직 - 상속 클래스에서 오버라이드 가능
+        }
+
         public virtual void ApplyEquipment(CardDBObject equipmentCard)
         {
             if (!_isInitialized || equipmentCard == null) return;
 
             if (equipmentCard.type != CardType.Equipment)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (Application.isPlaying)
                 {
                     Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[1], equipmentCard.cardName, gameObject.name));
                 }
+#endif
                 return;
             }
 
@@ -118,11 +125,13 @@ namespace InvaderInsider
 
             InvokeHealthChanged();
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Application.isPlaying)
             {
                 Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[0], 
                     equipmentCard.cardName, gameObject.name, attackDamage, maxHealth));
             }
+#endif
         }
     }
 } 

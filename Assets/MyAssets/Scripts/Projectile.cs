@@ -70,6 +70,28 @@ namespace InvaderInsider
             damage = dmg;
         }
 
+        // Tower에서 호출하는 새로운 Initialize 메서드
+        public void Initialize(IDamageable targetDamageable, float dmg, float projectileSpeed)
+        {
+            if (!isInitialized) 
+            {
+                Initialize(); // 기본 초기화 먼저 수행
+            }
+
+            damage = dmg;
+            speed = projectileSpeed;
+
+            // IDamageable이 Component인 경우 Transform 가져오기
+            if (targetDamageable is Component component)
+            {
+                target = component.transform;
+            }
+            else if (targetDamageable is MonoBehaviour monoBehaviour)
+            {
+                target = monoBehaviour.transform;
+            }
+        }
+
         private void Update()
         {
             if (target == null)

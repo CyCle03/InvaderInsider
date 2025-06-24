@@ -338,12 +338,6 @@ namespace InvaderInsider.Managers
                 return;
             }
 
-            // 게임 상태를 Loading으로 변경
-            if (gameManager != null)
-            {
-                gameManager.SetGameState(GameState.Loading);
-            }
-
             // 스테이지 데이터에서 실제 wave 수 가져오기
             if (stageData != null)
             {
@@ -467,12 +461,6 @@ namespace InvaderInsider.Managers
                 uiManager.UpdateStage(stageNum, GetStageCount());
             }
 
-            // 스테이지가 준비되었으므로 게임 상태를 Playing으로 변경
-            if (gameManager != null)
-            {
-                gameManager.SetGameState(GameState.Playing);
-            }
-
             yield return new WaitForSeconds(STAGE_START_DELAY);
             currentState = StageState.Run;
             #if UNITY_EDITOR
@@ -513,8 +501,7 @@ namespace InvaderInsider.Managers
         {
             if (gameManager != null)
             {
-                int stars = CalculateStageStars();
-                gameManager.StageCleared(clearedStageIndex, stars);
+                gameManager.StageCleared(clearedStageIndex);
             }
 
             stageNum++;
@@ -550,12 +537,6 @@ namespace InvaderInsider.Managers
             
             yield return new WaitForSeconds(STAGE_START_DELAY);
             StartStageInternal(stageNum);
-        }
-
-        private int CalculateStageStars()
-        {
-            // TODO: Implement star calculation logic based on performance
-            return 1;
         }
 
         public void SpawnEnemy()
@@ -673,10 +654,10 @@ namespace InvaderInsider.Managers
                 }
             }
             
-            // eData 업데이트는 GameManager를 통해 처리
+            // eData 업데이트는 GameManager를 통해 처리 (적 처치 시에는 저장하지 않음)
             if (gameManager != null)
                 {
-                gameManager.AddEData(eDataAmount);
+                gameManager.AddEData(eDataAmount, false); // 저장하지 않음
             }
             else
             {
