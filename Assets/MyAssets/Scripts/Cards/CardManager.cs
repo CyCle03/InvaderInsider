@@ -81,6 +81,11 @@ namespace InvaderInsider.Cards
 
         private void Awake()
         {
+            // 에디터 모드에서는 초기화하지 않음
+            #if UNITY_EDITOR
+            if (!Application.isPlaying) return;
+            #endif
+            
             if (instance == null)
             {
                 instance = this;
@@ -89,6 +94,7 @@ namespace InvaderInsider.Cards
                 // HideFlags 명시적 설정 (에디터에서 편집 가능하도록)
                 #if UNITY_EDITOR
                 gameObject.hideFlags = HideFlags.None;
+                Debug.Log(LOG_PREFIX + "CardManager 인스턴스 생성됨");
                 #endif
                 
                 PerformInitialization();
@@ -96,6 +102,9 @@ namespace InvaderInsider.Cards
             }
             else if (instance != this)
             {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "중복 CardManager 인스턴스 파괴됨");
+                #endif
                 Destroy(gameObject);
                 return;
             }

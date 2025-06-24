@@ -53,11 +53,18 @@ namespace InvaderInsider.Managers
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "ResourceManager 인스턴스 생성됨");
+                #endif
                 InitializeManager();
             }
             else if (instance != this)
             {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "중복 ResourceManager 인스턴스 파괴됨");
+                #endif
                 Destroy(gameObject);
+                return;
             }
         }
 

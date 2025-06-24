@@ -385,8 +385,29 @@ namespace InvaderInsider.Managers
 
         public void StageCleared(int stageNum)
         {
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + $"StageCleared 호출됨 - 스테이지 인덱스 {stageNum}");
+            #endif
+            
+            // 스테이지 인덱스를 스테이지 번호로 변환 (0-based -> 1-based)
+            int actualStageNumber = stageNum + 1;
+            
+            // 스테이지 클리어 시 즉시 저장
+            if (saveDataManager != null)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"스테이지 클리어로 인한 즉시 저장 - 스테이지 번호 {actualStageNumber}");
+                #endif
+                saveDataManager.UpdateStageProgress(actualStageNumber);
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "SaveDataManager를 찾을 수 없어 스테이지 진행을 저장할 수 없습니다!");
+                #endif
+            }
+            
             OnStageClearedEvent?.Invoke();
-            // UpdateStageProgress는 HandleStageCleared에서만 호출 (중복 방지)
         }
 
         private void Update()
@@ -412,6 +433,9 @@ namespace InvaderInsider.Managers
             {
                 if (!stageClearedProcessed)
                 {
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + $"스테이지 클리어 조건 만족 - 모든 적 스폰됨: {allEnemiesSpawned}, 활성 적 수: {activeEnemyCount}");
+                    #endif
                     HandleStageCleared();
                     stageClearedProcessed = true;
                 }
@@ -442,8 +466,24 @@ namespace InvaderInsider.Managers
             // 스테이지 클리어 처리
             int clearedStageIndex = cachedStageManager.GetCurrentStageIndex();
             
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + $"HandleStageCleared 호출됨 - 스테이지 {clearedStageIndex} 클리어 처리 시작");
+            #endif
+            
             // 스테이지 클리어 시 축적된 EData와 스테이지 진행을 한 번에 저장
-            saveDataManager?.UpdateStageProgress(clearedStageIndex + 1);
+            if (saveDataManager != null)
+            {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + $"UpdateStageProgress 호출 - 스테이지 {clearedStageIndex + 1}");
+                #endif
+                saveDataManager.UpdateStageProgress(clearedStageIndex + 1);
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "SaveDataManager를 찾을 수 없어 스테이지 진행을 저장할 수 없습니다!");
+                #endif
+            }
             
             // 스테이지 클리어 이벤트 호출
             StageCleared(clearedStageIndex + 1);
