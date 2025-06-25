@@ -45,6 +45,8 @@ namespace InvaderInsider.UI
 
         private void OnEnable()
         {
+            // 씬 전환 후 플래그 리셋
+            isGameStarting = false;
             UpdateContinueButton();
         }
 
@@ -178,7 +180,9 @@ namespace InvaderInsider.UI
                 continueButton.interactable = hasSaveData;
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"Continue 버튼 업데이트: HasSaveData = {hasSaveData}, 버튼 활성화 = {continueButton.interactable}");
+                var saveData = saveDataManager.CurrentSaveData;
+                int highestCleared = saveData?.progressData?.highestStageCleared ?? 0;
+                Debug.Log(LOG_PREFIX + $"Continue 버튼 업데이트: HasSaveData = {hasSaveData}, 버튼 활성화 = {continueButton.interactable}, 최고 클리어 스테이지 = {highestCleared}");
                 #endif
             }
             #if UNITY_EDITOR

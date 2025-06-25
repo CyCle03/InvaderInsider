@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4f93bef32140624596eb03720c65a5c, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: 
+  targetSearchInterval: 0.15
+  projectileSpeed: 15
+  maxDetectionColliders: 30
+  targetLostDistanceMultiplier: 1.2
+  towerRotationSpeed: 5
+  defaultMoveSpeed: 5
+  defaultStoppingDistance: 0.1
+  waypointReachDistance: 0.1
+  pathUpdateInterval: 0.1
+  destinationThreshold: 0.5
+  defaultMaxHealth: 100
+  defaultAttackDamage: 10
+  defaultAttackRange: 5
+  defaultAttackRate: 1
+  stateCheckInterval: 0.2
+  defaultTimeScale: 1
+  pausedTimeScale: 0
+  enemyLayerName: Enemy
+  enemyTag: Enemy
+  defaultEnemyLayerIndex: 6
+  gameSceneName: Game
+  mainSceneName: Main
+  invalidStageIndex: -1
+  minHealthValue: 0
+  minMaxHealthValue: 1

@@ -214,7 +214,7 @@ namespace InvaderInsider.UI
         {
             if (enemyRemainText == null) return;
 
-            enemyRemainText.text = $"Enemy: {activeCount}/{totalCount}";
+            enemyRemainText.text = $"Active Enemy: {activeCount}";
         }
         
         // 기존 메서드와의 호환성을 위한 오버로드
@@ -222,7 +222,7 @@ namespace InvaderInsider.UI
         {
             if (enemyRemainText == null) return;
 
-            enemyRemainText.text = $"Enemy: {count}";
+            enemyRemainText.text = $"Active Enemy: {count}";
         }
 
         private void InitializeHealthDisplay()

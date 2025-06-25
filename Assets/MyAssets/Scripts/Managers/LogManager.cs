@@ -26,10 +26,10 @@ namespace InvaderInsider.Managers
         private static readonly StringBuilder _stringBuilder = new StringBuilder();
         
         // 극도로 엄격한 로그 필터링 설정
-        public static LogLevel MinimumLogLevel = LogLevel.Error; // Error만 출력
-        public static bool EnablePerformanceLogs = false; // 성능 로그 완전 비활성화
-        public static bool EnableGameplayLogs = false; // 게임플레이 로그 비활성화
-        public static bool EnableSystemLogs = false; // 시스템 로그 비활성화
+        public static LogLevel MinimumLogLevel = LogLevel.Warning; // Warning 이상만 출력
+        public static bool EnablePerformanceLogs = false; // 성능 로그 비활성화
+        public static bool EnableGameplayLogs = false; // 게임플레이 로그 비활성화 (핵심 로그만)
+        public static bool EnableSystemLogs = true; // 시스템 로그 활성화 (에러 추적용)
         public static bool EnableUILogs = false; // UI 로그 비활성화
         
         // 전역 로그 필터링 활성화
@@ -102,11 +102,11 @@ namespace InvaderInsider.Managers
         static LogManager()
         {
 #if UNITY_EDITOR
-            // 에디터에서 즉시 로그 필터링 적용
+            // 에디터에서 최소 로그만 활성화
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             EnableMinimalLogs();
             
-            // Define Symbol 설정으로 로그 제거
+            // Define Symbol에서 DISABLE_LOGS 제거
             SetupDefineSymbols();
 #endif
         }
@@ -114,31 +114,61 @@ namespace InvaderInsider.Managers
 #if UNITY_EDITOR
         private static void SetupDefineSymbols()
         {
-            // DISABLE_LOGS 심볼 추가하여 Debug.Log 호출 완전 제거
+            // DISABLE_LOGS 심볼 제거하여 Debug.Log 호출 활성화
             var target = EditorUserBuildSettings.selectedBuildTargetGroup;
             var defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(target);
             
-            if (!defines.Contains("DISABLE_LOGS"))
+            if (defines.Contains("DISABLE_LOGS"))
             {
-                if (!string.IsNullOrEmpty(defines))
-                {
-                    defines += ";DISABLE_LOGS";
-                }
-                else
-                {
-                    defines = "DISABLE_LOGS";
-                }
+                defines = defines.Replace("DISABLE_LOGS;", "").Replace(";DISABLE_LOGS", "").Replace("DISABLE_LOGS", "");
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(target, defines);
+                Debug.Log("[LogManager] DISABLE_LOGS 심볼을 제거했습니다. 스크립트 재컴파일이 필요할 수 있습니다.");
             }
         }
         
         private static void OnPlayModeStateChanged(PlayModeStateChange state)
         {
-            // 플레이 모드 진입 시 로그 필터링 다시 적용
+            // 플레이 모드 진입 시 최소 로그만 활성화
             if (state == PlayModeStateChange.EnteredPlayMode)
             {
                 EnableMinimalLogs();
             }
+        }
+        
+        // 수동으로 DISABLE_LOGS 심볼 제거하는 메서드
+        [MenuItem("Tools/LogManager/Enable All Logs")]
+        public static void ForceEnableAllLogs()
+        {
+            SetupDefineSymbols();
+            EnableAllLogs();
+            Debug.Log("[LogManager] 모든 로그가 강제로 활성화되었습니다.");
+        }
+        
+        [MenuItem("Tools/LogManager/Enable Minimal Logs (Default)")]
+        public static void ForceEnableMinimalLogs()
+        {
+            EnableMinimalLogs();
+            Debug.LogWarning("[LogManager] 최소 로그 모드로 설정되었습니다. (Warning/Error만 출력)");
+        }
+        
+        [MenuItem("Tools/LogManager/Enable Error Only")]
+        public static void EnableErrorOnly()
+        {
+            Debug.unityLogger.logEnabled = true;
+            Debug.unityLogger.filterLogType = LogType.Error;
+            MinimumLogLevel = LogLevel.Error;
+            EnablePerformanceLogs = false;
+            EnableGameplayLogs = false;
+            EnableSystemLogs = false;
+            EnableUILogs = false;
+            Debug.LogError("[LogManager] 에러 로그만 활성화되었습니다.");
+        }
+        
+        [MenuItem("Tools/LogManager/Disable All Logs")]
+        public static void ForceDisableAllLogs()
+        {
+            DisableAllLogs();
+            // 로그가 비활성화되어 있으므로 콘솔에 출력되지 않음
         }
 #endif
 
@@ -146,10 +176,10 @@ namespace InvaderInsider.Managers
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            // 게임 시작 시 즉시 로그 필터링 적용
+            // 게임 시작 시 최소 로그만 활성화
             EnableMinimalLogs();
             
-            // Unity 에디터에서 로그 필터링 설정
+            // Unity 에디터에서 로그 필터링 설정 - 활성화
             if (GlobalFilterEnabled)
             {
                 Application.logMessageReceived += OnLogReceived;
@@ -213,22 +243,22 @@ namespace InvaderInsider.Managers
         {
             Debug.unityLogger.logEnabled = true;
             Debug.unityLogger.filterLogType = LogType.Log;
-            MinimumLogLevel = LogLevel.Info;
-            EnablePerformanceLogs = true;
-            EnableGameplayLogs = true;
+            MinimumLogLevel = LogLevel.Warning;
+            EnablePerformanceLogs = false;
+            EnableGameplayLogs = false;
             EnableSystemLogs = true;
-            EnableUILogs = true;
+            EnableUILogs = false;
         }
         
         // 최소 로그만 활성화 (기본값)
         public static void EnableMinimalLogs()
         {
             Debug.unityLogger.logEnabled = true;
-            Debug.unityLogger.filterLogType = LogType.Error;
-            MinimumLogLevel = LogLevel.Error;
+            Debug.unityLogger.filterLogType = LogType.Warning; // Warning 이상만 출력
+            MinimumLogLevel = LogLevel.Warning; // Warning 이상만 출력
             EnablePerformanceLogs = false;
             EnableGameplayLogs = false;
-            EnableSystemLogs = false;
+            EnableSystemLogs = true; // 시스템 로그는 유지 (에러 추적용)
             EnableUILogs = false;
         }
 
@@ -237,7 +267,7 @@ namespace InvaderInsider.Managers
         {
             if (!ShouldLog) return;
             
-            // 로그 레벨 필터링
+            // 로그 레벨 필터링 - Error와 Warning만 허용
             if (level < MinimumLogLevel) return;
             
             // 태그별 필터링
@@ -250,8 +280,8 @@ namespace InvaderInsider.Managers
             switch (level)
             {
                 case LogLevel.Info:
-                    Debug.Log(formattedMessage);
-                    break;
+                    // Info 레벨은 출력하지 않음 (핵심 로그만)
+                    return;
                 case LogLevel.Warning:
                     Debug.LogWarning(formattedMessage);
                     break;
@@ -259,8 +289,8 @@ namespace InvaderInsider.Managers
                     Debug.LogError(formattedMessage);
                     break;
                 case LogLevel.Debug:
-                    Debug.Log($"[DEBUG] {formattedMessage}");
-                    break;
+                    // Debug 레벨은 출력하지 않음
+                    return;
             }
         }
         

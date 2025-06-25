@@ -438,15 +438,18 @@ namespace InvaderInsider.Managers
 
         private IEnumerator HandleReadyState()
         {
+            // 동적으로 현재 스테이지의 웨이브 카운트 가져오기
+            int currentStageWaveCount = GetStageWaveCount(stageNum);
+            
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[1], stageNum + 1, stageWave));
+            Debug.Log(LOG_PREFIX + $"스테이지 {stageNum + 1} 준비 중... (총 적: {currentStageWaveCount})");
             #endif
             
             // TopBar UI 업데이트 (현재/최대 형식) - GameManager를 통해
             if (gameManager != null)
             {
                 int spawnedMonsters = enemyCount; // 현재 소환된 몬스터 수
-                int maxMonsters = stageWave;      // 현재 스테이지의 최대 몬스터 수
+                int maxMonsters = currentStageWaveCount; // 현재 스테이지의 최대 몬스터 수
                 gameManager.UpdateStageWaveUI(stageNum + 1, spawnedMonsters, maxMonsters);
             }
             
@@ -474,7 +477,10 @@ namespace InvaderInsider.Managers
             {
                 currentTime += Time.deltaTime;
 
-                if (enemyCount < stageWave && activeEnemyCountValue < MAX_ACTIVE_ENEMIES)
+                // 동적으로 현재 스테이지의 웨이브 카운트 가져오기
+                int currentStageWaveCount = GetStageWaveCount(stageNum);
+
+                if (enemyCount < currentStageWaveCount && activeEnemyCountValue < MAX_ACTIVE_ENEMIES)
                 {
                     if (currentTime >= createTime)
                     {
@@ -483,10 +489,10 @@ namespace InvaderInsider.Managers
                     }
                 }
 
-                if (enemyCount >= stageWave && activeEnemyCountValue <= 0)
+                if (enemyCount >= currentStageWaveCount && activeEnemyCountValue <= 0)
                 {
                     #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[5], stageNum, enemyCount, stageWave));
+                    Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[5], stageNum, enemyCount, currentStageWaveCount));
                     #endif
                     clearedStageIndex = stageNum;
                     currentState = StageState.End;
@@ -630,6 +636,15 @@ namespace InvaderInsider.Managers
             {
                 activeEnemyCountValue--;
             }
+            
+            // Wave 정보를 포함한 UI 업데이트 (TopBar)
+            UpdateWaveProgressUI();
+            
+            // Active Enemy 카운트 UI 업데이트 (BottomBar)
+            if (bottomBarPanel != null)
+            {
+                bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCountValue);
+            }
         }
 
         public void OnEnemyDied(int eDataAmount)
@@ -637,12 +652,6 @@ namespace InvaderInsider.Managers
             if (!isInitialized) return;
 
             DecreaseActiveEnemyCount();
-            
-            // Active Enemy 카운트 UI 업데이트
-            if (bottomBarPanel != null)
-            {
-                bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCountValue);
-            }
             
             // SaveDataManager 참조 확인 및 재참조 (Continue Game 후 안전장치)
             if (saveDataManager == null)
@@ -672,12 +681,6 @@ namespace InvaderInsider.Managers
             if (!isInitialized) return;
 
             DecreaseActiveEnemyCount();
-            
-            // Active Enemy 카운트 UI 업데이트
-            if (bottomBarPanel != null)
-            {
-                bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCountValue);
-            }
         }
 
         public void InitializeStageFromLoadedData(int stageIndex)
@@ -750,7 +753,10 @@ namespace InvaderInsider.Managers
         {
             activeEnemyCountValue++;
             
-            // Active Enemy 카운트 UI 업데이트
+            // Wave 정보를 포함한 UI 업데이트 (TopBar)
+            UpdateWaveProgressUI();
+            
+            // Active Enemy 카운트 UI 업데이트 (BottomBar)
             if (bottomBarPanel != null)
             {
                 bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCountValue);
@@ -760,6 +766,25 @@ namespace InvaderInsider.Managers
         public void DecrementEnemyCount()
         {
             activeEnemyCountValue = Mathf.Max(0, activeEnemyCountValue - 1);
+            
+            // Wave 정보를 포함한 UI 업데이트 (TopBar)
+            UpdateWaveProgressUI();
+            
+            // Active Enemy 카운트 UI 업데이트 (BottomBar)
+            if (bottomBarPanel != null)
+            {
+                bottomBarPanel.UpdateMonsterCountDisplay(activeEnemyCountValue);
+            }
+        }
+        
+        private void UpdateWaveProgressUI()
+        {
+            // GameManager를 통해 Wave 진행상황 UI 업데이트
+            if (gameManager != null)
+            {
+                int maxMonsters = GetStageWaveCount(stageNum);
+                gameManager.UpdateStageWaveUI(stageNum + 1, enemyCount, maxMonsters);
+            }
         }
 
         public int GetCurrentStageIndex()
