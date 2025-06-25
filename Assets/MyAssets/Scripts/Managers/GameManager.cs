@@ -480,38 +480,35 @@ namespace InvaderInsider.Managers
 
         public void StageCleared(int stageNum)
         {
+            // 추가 유효성 검사
+            if (stageNum <= 0) 
+            {
+                LogManager.Error("GameManager", $"StageCleared 호출 시 잘못된 스테이지 번호: {stageNum}");
+                return;
+            }
+
             if (stageClearedProcessed && gameConfig.enableStageClearDuplicatePrevention)
             {
-                // 중복 처리 방지 - 조용히 return (로그 제거)
+                // 중복 처리 방지 - 조용히 return
                 return;
             }
 
             stageClearedProcessed = true;
-
-            #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}{string.Format(LOG_MESSAGES[7], stageNum)}");
-            #endif
             
-            // [FIX] SaveDataManager를 통해 스테이지 진행 저장
+            // SaveDataManager를 통해 스테이지 진행 저장
             if (saveDataManager != null)
             {
-                Debug.Log($"[FORCE LOG] StageCleared에서 UpdateStageProgress 호출 - 스테이지 번호: {stageNum}");
                 saveDataManager.UpdateStageProgress(stageNum); // stageNum은 이미 1-based
-                
-                var afterSaveData = saveDataManager.CurrentSaveData;
-                Debug.Log($"[FORCE LOG] StageCleared 저장 후 - 최고 클리어 스테이지: {afterSaveData?.progressData?.highestStageCleared}");
             }
             else
             {
-                Debug.LogError($"[FORCE LOG] SaveDataManager를 찾을 수 없어 스테이지 {stageNum} 진행을 저장할 수 없습니다!");
+                LogManager.Error("GameManager", $"SaveDataManager를 찾을 수 없어 스테이지 {stageNum} 진행을 저장할 수 없습니다!");
             }
 
-            // StageManager에는 OnStageCleared 메서드가 없으므로 다른 방식으로 처리
+            // StageManager 상태 확인
             if (cachedStageManager == null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError($"{LOG_PREFIX}StageManager가 null입니다. 스테이지 클리어 처리를 완료할 수 없습니다.");
-                #endif
+                LogManager.Error("GameManager", "StageManager가 null입니다. 스테이지 클리어 처리를 완료할 수 없습니다.");
             }
 
             OnStageClearedEvent?.Invoke();
@@ -570,43 +567,35 @@ namespace InvaderInsider.Managers
         {
             if (cachedStageManager == null) 
             {
-                #if UNITY_EDITOR
-                Debug.LogError("[GameManager] cachedStageManager가 null입니다!");
-                #endif
+                LogManager.Error("GameManager", "cachedStageManager가 null입니다!");
                 return;
             }
 
             // 스테이지 클리어 처리
             int clearedStageIndex = cachedStageManager.GetCurrentStageIndex(); // 0-based 인덱스
             
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"HandleStageCleared 호출됨 - 스테이지 인덱스 {clearedStageIndex} (스테이지 번호: {clearedStageIndex + 1}) 클리어 처리 시작");
-            #endif
+            // 방어 코드: 잘못된 스테이지 인덱스 체크
+            if (clearedStageIndex < 0)
+            {
+                LogManager.Error("GameManager", $"잘못된 스테이지 인덱스: {clearedStageIndex}. 스테이지 클리어 처리를 중단합니다.");
+                return;
+            }
+            
+            int stageNumber = clearedStageIndex + 1; // 1-based 스테이지 번호
             
             // 스테이지 클리어 시 축적된 EData와 스테이지 진행을 한 번에 저장
             if (saveDataManager != null)
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"UpdateStageProgress 호출 - 스테이지 번호 {clearedStageIndex + 1} (0-based 인덱스 {clearedStageIndex}를 1-based 번호로 변환)");
-                #endif
-                
-                // SaveDataManager는 1-based 스테이지 번호를 기대하므로 +1
-                saveDataManager.UpdateStageProgress(clearedStageIndex + 1);
-                
-                #if UNITY_EDITOR
-                var afterSaveData = saveDataManager.CurrentSaveData;
-                Debug.Log(LOG_PREFIX + $"저장 후 - 최고 클리어 스테이지: {afterSaveData?.progressData?.highestStageCleared}");
-                #endif
+                // SaveDataManager는 1-based 스테이지 번호를 기대함
+                saveDataManager.UpdateStageProgress(stageNumber);
             }
             else
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "SaveDataManager를 찾을 수 없어 스테이지 진행을 저장할 수 없습니다!");
-                #endif
+                LogManager.Error("GameManager", "SaveDataManager를 찾을 수 없어 스테이지 진행을 저장할 수 없습니다!");
             }
             
             // 스테이지 클리어 이벤트 호출 (1-based 스테이지 번호로)
-            StageCleared(clearedStageIndex + 1);
+            StageCleared(stageNumber);
             OnStageClearedEvent?.Invoke();
             
             // 모든 스테이지 완료 체크 (0-based 인덱스로)

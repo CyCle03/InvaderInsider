@@ -61,17 +61,11 @@ namespace InvaderInsider.UI
             // SaveDataManager가 있으면 강제로 데이터 재로드
             if (saveDataManager != null)
             {
-                Debug.Log("[FORCE LOG] OnEnable에서 SaveDataManager 발견됨 - 데이터 강제 재로드 시작");
                 saveDataManager.LoadGameData();
-                Debug.Log("[FORCE LOG] OnEnable에서 데이터 재로드 완료");
             }
             
             // Continue 버튼 상태 업데이트
             UpdateContinueButton();
-            
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"OnEnable - SaveDataManager: {(saveDataManager != null ? "존재" : "null")}");
-            #endif
         }
 
         protected override void Initialize()
@@ -198,34 +192,12 @@ namespace InvaderInsider.UI
 
         private void UpdateContinueButton()
         {
-            Debug.Log("[FORCE LOG] UpdateContinueButton 시작");
-            
             if (continueButton != null && saveDataManager != null)
             {
                 // 저장 데이터 상태 확인
-                var saveData = saveDataManager.CurrentSaveData;
-                int highestCleared = saveData?.progressData?.highestStageCleared ?? 0;
                 bool hasSaveData = saveDataManager.HasSaveData();
-                
-                Debug.Log($"[FORCE LOG] Continue 버튼 상태 체크:");
-                Debug.Log($"[FORCE LOG] - saveData 존재: {saveData != null}");
-                Debug.Log($"[FORCE LOG] - highestStageCleared: {highestCleared}");
-                Debug.Log($"[FORCE LOG] - HasSaveData() 결과: {hasSaveData}");
-                
                 continueButton.interactable = hasSaveData;
-                
-                Debug.Log($"[FORCE LOG] Continue 버튼 최종 상태: {continueButton.interactable}");
-                
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"Continue 버튼 업데이트: HasSaveData = {hasSaveData}, 버튼 활성화 = {continueButton.interactable}, 최고 클리어 스테이지 = {highestCleared}");
-                #endif
             }
-            #if UNITY_EDITOR
-            else
-            {
-                Debug.LogWarning(LOG_PREFIX + $"Continue 버튼 업데이트 실패 - continueButton: {continueButton != null}, saveDataManager: {saveDataManager != null}");
-            }
-            #endif
         }
 
         private void UpdateVersionInfo()

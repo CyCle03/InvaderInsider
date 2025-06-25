@@ -43,19 +43,34 @@ namespace InvaderInsider.Managers
             @"McpUnity\.",
             @"WebSocket server",
             
+            // FORCE LOG 완전 차단
+            @"\[FORCE LOG\]",
+            @"FORCE LOG",
+            
+            // SaveData 관련 로그 차단 (에러는 제외)
+            @"\[SaveData\].*(?!실패|오류|에러|Error|Exception)",
+            @"SaveDataManager.*(?!실패|오류|에러|Error|Exception)",
+            @"저장.*완료",
+            @"로드.*완료",
+            @"데이터.*초기화.*완료",
+            @"인스턴스.*생성",
+            @"파일.*존재.*확인",
+            
             // 일반 UI 관련 (FORCE LOG는 제외)
             @"Canvas Sorting Order",
             @"체력 업데이트",
             
             // 기타 시스템 (중요하지 않은 것들만)
             @"인스턴스 생성됨",
-            @"초기화 완료"
+            @"초기화 완료",
+            @"연결 성공",
+            @"찾기 시도"
         };
         
-        // 중복 로그 방지 시스템
+        // 중복 로그 방지 시스템 - 더 엄격하게
         private static readonly Dictionary<string, int> _logCounts = new Dictionary<string, int>();
         private static readonly HashSet<string> _suppressedLogs = new HashSet<string>();
-        private const int MAX_DUPLICATE_LOGS = 3; // 같은 로그 최대 3번까지만 출력
+        private const int MAX_DUPLICATE_LOGS = 1; // 같은 로그 최대 1번만 출력으로 변경
         
         // 개발/에디터 모드에서만 로그 출력
         private static bool ShouldLog =>
@@ -243,12 +258,12 @@ namespace InvaderInsider.Managers
         public static void EnableMinimalLogs()
         {
             Debug.unityLogger.logEnabled = true;
-            Debug.unityLogger.filterLogType = LogType.Log; // 모든 로그 출력으로 변경
-            MinimumLogLevel = LogLevel.Info; // Info 로그부터 출력
+            Debug.unityLogger.filterLogType = LogType.Warning; // Warning 이상만 출력으로 변경
+            MinimumLogLevel = LogLevel.Warning; // Warning 로그부터 출력
             EnablePerformanceLogs = false;
-            EnableGameplayLogs = true; // 게임플레이 로그 활성화
+            EnableGameplayLogs = false; // 게임플레이 로그 비활성화
             EnableSystemLogs = true; // 시스템 로그는 유지 (에러 추적용)
-            EnableUILogs = true; // UI 로그도 활성화
+            EnableUILogs = false; // UI 로그 비활성화
         }
 
         // 통합 로그 메서드
@@ -256,7 +271,7 @@ namespace InvaderInsider.Managers
         {
             if (!ShouldLog) return;
             
-            // 로그 레벨 필터링 - Error와 Warning만 허용
+            // 로그 레벨 필터링 - Warning 이상만 허용
             if (level < MinimumLogLevel) return;
             
             // 태그별 필터링
@@ -265,6 +280,15 @@ namespace InvaderInsider.Managers
             if (!EnableSystemLogs && IsSystemTag(tag)) return;
 
             var formattedMessage = FormatMessage(tag, message, args);
+            
+            // 차단 패턴 확인
+            foreach (var pattern in _blockedPatterns)
+            {
+                if (Regex.IsMatch(formattedMessage, pattern, RegexOptions.IgnoreCase))
+                {
+                    return; // 차단된 패턴이므로 로그 출력 중단
+                }
+            }
             
             // 중복 로그 체크
             if (IsDuplicateLog(formattedMessage))
@@ -275,9 +299,8 @@ namespace InvaderInsider.Managers
             switch (level)
             {
                 case LogLevel.Info:
-                    // Info 레벨도 출력하도록 변경 (FORCE LOG 보기 위해)
-                    Debug.Log(formattedMessage);
-                    break;
+                    // Info 레벨은 출력하지 않음
+                    return;
                 case LogLevel.Warning:
                     Debug.LogWarning(formattedMessage);
                     break;
@@ -413,6 +436,48 @@ namespace InvaderInsider.Managers
             }
             
             return false;
+        }
+
+        // 저장 관련 로그 전용 메서드 (중앙화)
+        public static void LogSave(string operation, string detail = null, bool isError = false)
+        {
+            if (!ShouldLog) return;
+            
+            string message = string.IsNullOrEmpty(detail) 
+                ? $"저장 작업: {operation}" 
+                : $"저장 작업: {operation} - {detail}";
+            
+            // 저장 관련 로그는 에러가 아닌 경우 완전 차단
+            if (!isError) return;
+            
+            // 에러인 경우만 출력
+            if (isError)
+            {
+                Debug.LogError($"[SaveSystem] {message}");
+            }
+        }
+        
+        // 시스템 상태 요약 로그 (한 번만 출력)
+        private static bool _systemInfoLogged = false;
+        public static void LogSystemInfo()
+        {
+            if (!ShouldLog || _systemInfoLogged) return;
+            _systemInfoLogged = true;
+            
+            Debug.Log($"[LogManager] 시스템 설정 - 최소 레벨: {MinimumLogLevel}, " +
+                     $"UI: {EnableUILogs}, 게임플레이: {EnableGameplayLogs}, 시스템: {EnableSystemLogs}");
+        }
+        
+        // 개발자용: 강제로 한 번만 중요 정보 출력
+        public static void ForceLogOnce(string tag, string message)
+        {
+            if (!ShouldLog) return;
+            
+            string key = $"{tag}:{message}";
+            if (_suppressedLogs.Contains(key)) return;
+            
+            _suppressedLogs.Add(key);
+            Debug.LogWarning($"[ONCE] [{tag}] {message}");
         }
     }
 } 
