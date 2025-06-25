@@ -512,12 +512,45 @@ namespace InvaderInsider.Data
 
         public bool HasSaveData()
         {
-            bool exists = File.Exists(SAVE_KEY);
-            Debug.Log($"[FORCE LOG] HasSaveData 체크 - 파일 경로: {SAVE_KEY}, 존재: {exists}");
-            #if UNITY_EDITOR
-            LogOnly($"HasSaveData 확인 - 파일 경로: {Path.GetFullPath(SAVE_KEY)}, 존재 여부: {exists}");
-            #endif
-            return exists;
+            bool fileExists = File.Exists(SAVE_KEY);
+            Debug.Log($"[FORCE LOG] HasSaveData 체크 - 파일 경로: {SAVE_KEY}, 파일 존재: {fileExists}");
+            
+            if (!fileExists)
+            {
+                #if UNITY_EDITOR
+                LogOnly($"HasSaveData 확인 - 파일이 존재하지 않음: {Path.GetFullPath(SAVE_KEY)}");
+                #endif
+                return false;
+            }
+
+            // 파일이 존재하면 내용도 확인
+            try
+            {
+                if (currentSaveData == null)
+                {
+                    // 저장 데이터가 메모리에 로드되지 않았으면 로드 시도
+                    LoadGameData();
+                }
+
+                // 실제 진행 상황이 있는지 확인 (스테이지를 하나라도 클리어했는지)
+                bool hasProgress = currentSaveData != null && currentSaveData.progressData.highestStageCleared > 0;
+                
+                Debug.Log($"[FORCE LOG] HasSaveData 상세 체크 - 파일 존재: {fileExists}, 진행 상황: {hasProgress}, 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared ?? 0}");
+                
+                #if UNITY_EDITOR
+                LogOnly($"HasSaveData 확인 - 파일 존재: {fileExists}, 진행 상황 존재: {hasProgress}, 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared ?? 0}");
+                #endif
+                
+                return hasProgress;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[FORCE LOG] HasSaveData 확인 중 오류: {e.Message}");
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + $"저장 데이터 확인 중 오류: {e.Message}");
+                #endif
+                return false;
+            }
         }
 
         public void ResetGameData()

@@ -47,7 +47,23 @@ namespace InvaderInsider.UI
         {
             // 씬 전환 후 플래그 리셋
             isGameStarting = false;
+            
+            // Main 씬으로 돌아올 때 SaveDataManager 재확인
+            if (saveDataManager == null)
+            {
+                saveDataManager = SaveDataManager.Instance;
+                if (saveDataManager == null)
+                {
+                    StartCoroutine(TryGetSaveDataManager());
+                }
+            }
+            
+            // Continue 버튼 상태 업데이트
             UpdateContinueButton();
+            
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + $"OnEnable - SaveDataManager: {(saveDataManager != null ? "존재" : "null")}");
+            #endif
         }
 
         protected override void Initialize()
@@ -367,6 +383,26 @@ namespace InvaderInsider.UI
         // 외부에서 호출 가능한 공개 메서드들
         public void RefreshContinueButton()
         {
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "RefreshContinueButton 호출됨");
+            #endif
+            
+            // SaveDataManager 재확인
+            if (saveDataManager == null)
+            {
+                saveDataManager = SaveDataManager.Instance;
+                if (saveDataManager == null)
+                {
+                    saveDataManager = FindObjectOfType<SaveDataManager>();
+                }
+            }
+            
+            // SaveDataManager가 있으면 데이터 강제 재로드
+            if (saveDataManager != null)
+            {
+                saveDataManager.LoadGameData();
+            }
+            
             UpdateContinueButton();
         }
 

@@ -959,6 +959,32 @@ namespace InvaderInsider.Managers
             isLoadingScene = false;
             
             UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
+            
+            // 씬 로드 후 MainMenuPanel의 Continue 버튼 갱신
+            StartCoroutine(RefreshMainMenuAfterLoad());
+        }
+        
+        private System.Collections.IEnumerator RefreshMainMenuAfterLoad()
+        {
+            // 씬 로드 완료까지 대기
+            yield return new WaitForEndOfFrame();
+            yield return null;
+            
+            // MainMenuPanel 찾기 및 Continue 버튼 갱신
+            var mainMenuPanel = FindObjectOfType<InvaderInsider.UI.MainMenuPanel>();
+            if (mainMenuPanel != null)
+            {
+                mainMenuPanel.RefreshContinueButton();
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "Main 씬 로드 후 Continue 버튼 갱신 완료");
+                #endif
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning(LOG_PREFIX + "MainMenuPanel을 찾을 수 없어 Continue 버튼을 갱신할 수 없습니다.");
+                #endif
+            }
         }
 
         private void LoadGameScene()
