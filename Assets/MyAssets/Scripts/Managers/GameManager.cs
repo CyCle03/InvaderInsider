@@ -491,6 +491,20 @@ namespace InvaderInsider.Managers
             #if UNITY_EDITOR
             Debug.Log($"{LOG_PREFIX}{string.Format(LOG_MESSAGES[7], stageNum)}");
             #endif
+            
+            // [FIX] SaveDataManager를 통해 스테이지 진행 저장
+            if (saveDataManager != null)
+            {
+                Debug.Log($"[FORCE LOG] StageCleared에서 UpdateStageProgress 호출 - 스테이지 번호: {stageNum}");
+                saveDataManager.UpdateStageProgress(stageNum); // stageNum은 이미 1-based
+                
+                var afterSaveData = saveDataManager.CurrentSaveData;
+                Debug.Log($"[FORCE LOG] StageCleared 저장 후 - 최고 클리어 스테이지: {afterSaveData?.progressData?.highestStageCleared}");
+            }
+            else
+            {
+                Debug.LogError($"[FORCE LOG] SaveDataManager를 찾을 수 없어 스테이지 {stageNum} 진행을 저장할 수 없습니다!");
+            }
 
             // StageManager에는 OnStageCleared 메서드가 없으므로 다른 방식으로 처리
             if (cachedStageManager == null)
