@@ -480,66 +480,36 @@ namespace InvaderInsider.Managers
 
         public void StageCleared(int stageNum)
         {
-            Debug.Log($"[FORCE LOG] StageCleared 호출됨 - 스테이지: {stageNum}");
-            Debug.Log($"[FORCE LOG] stageClearedProcessed: {stageClearedProcessed}");
-            Debug.Log($"[FORCE LOG] gameConfig null 여부: {gameConfig == null}");
-            
-            if (gameConfig != null)
-            {
-                Debug.Log($"[FORCE LOG] enableStageClearDuplicatePrevention: {gameConfig.enableStageClearDuplicatePrevention}");
-            }
-            
             if (stageClearedProcessed && gameConfig.enableStageClearDuplicatePrevention)
             {
-                Debug.LogWarning($"[FORCE LOG] 스테이지 클리어 중복 처리 방지 - 메서드 종료");
-                Debug.LogWarning($"{LOG_PREFIX}스테이지 클리어가 이미 처리되었습니다. 중복 처리를 방지합니다.");
+                // 중복 처리 방지 - 조용히 return (로그 제거)
                 return;
             }
 
             stageClearedProcessed = true;
-            Debug.Log($"[FORCE LOG] stageClearedProcessed를 true로 설정");
 
+            #if UNITY_EDITOR
             Debug.Log($"{LOG_PREFIX}{string.Format(LOG_MESSAGES[7], stageNum)}");
+            #endif
 
             // StageManager에는 OnStageCleared 메서드가 없으므로 다른 방식으로 처리
-            if (cachedStageManager != null)
+            if (cachedStageManager == null)
             {
-                // 스테이지 클리어 처리는 StageManager의 내부 로직으로 처리됨
-                // 여기서는 로그만 출력하고 실제 처리는 StageManager가 담당
-                Debug.Log($"{LOG_PREFIX}StageManager를 통해 스테이지 {stageNum} 클리어 처리 완료");
-            }
-            else
-            {
+                #if UNITY_EDITOR
                 Debug.LogError($"{LOG_PREFIX}StageManager가 null입니다. 스테이지 클리어 처리를 완료할 수 없습니다.");
+                #endif
             }
 
             OnStageClearedEvent?.Invoke();
-            Debug.Log($"[FORCE LOG] OnStageClearedEvent 호출 완료");
         }
 
         private void Update()
         {
-            // 10초마다 한 번씩 상태 체크
-            if (Time.time % 10f < 0.1f)
-            {
-                Debug.Log($"[GAME STATE] CurrentGameState: {CurrentGameState}, gameConfig null: {gameConfig == null}");
-                if (gameConfig != null)
-                {
-                    Debug.Log($"[GAME STATE] stateCheckInterval: {gameConfig.stateCheckInterval}");
-                }
-            }
-            
             if (CurrentGameState != GameState.Playing) return;
 
             // 상태 체크 주기 최적화
             if (Time.time >= nextStateCheckTime)
             {
-                // 20초마다 한 번씩 CheckStageCompletion 호출 로그
-                if (Time.time % 20f < 0.1f)
-                {
-                    Debug.Log($"[FORCE LOG] CheckStageCompletion 호출 예정 - nextStateCheckTime: {nextStateCheckTime}");
-                }
-                
                 CheckStageCompletion();
                 nextStateCheckTime = Time.time + gameConfig.stateCheckInterval;
             }
@@ -552,17 +522,10 @@ namespace InvaderInsider.Managers
             bool allEnemiesSpawned = AllEnemiesSpawned();
             int activeEnemyCount = cachedStageManager.ActiveEnemyCount;
             
-            // 주기적 로그 - 10초마다 한 번씩만 출력
-            if (Time.time % 10f < 0.1f)
-            {
-                Debug.Log($"[STAGE CHECK] 모든 적 스폰됨: {allEnemiesSpawned}, 활성 적 수: {activeEnemyCount}, 스테이지 클리어 처리됨: {stageClearedProcessed}");
-            }
-            
             if (allEnemiesSpawned && activeEnemyCount == 0)
             {
                 if (!stageClearedProcessed)
                 {
-                    Debug.Log("[FORCE LOG] 스테이지 클리어 조건 만족! HandleStageCleared 호출");
                     #if UNITY_EDITOR
                     Debug.Log(LOG_PREFIX + $"스테이지 클리어 조건 만족 - 모든 적 스폰됨: {allEnemiesSpawned}, 활성 적 수: {activeEnemyCount}");
                     #endif
@@ -586,27 +549,21 @@ namespace InvaderInsider.Managers
             int spawnedCount = cachedStageManager.GetSpawnedEnemyCount();
             int maxCount = cachedStageManager.GetStageWaveCount(currentStageIndex);
             
-            // 디버깅을 위한 강제 로그
-            Debug.Log($"[FORCE LOG] AllEnemiesSpawned - 스테이지: {currentStageIndex}, 스폰된 적: {spawnedCount}, 최대 적: {maxCount}, 결과: {spawnedCount >= maxCount}");
-            
             return spawnedCount >= maxCount;
         }
 
         private void HandleStageCleared()
         {
-            // 강제 로그 - 무조건 출력
-            Debug.Log("[FORCE LOG] HandleStageCleared 메서드 호출됨!");
-            
             if (cachedStageManager == null) 
             {
-                Debug.LogError("[FORCE LOG] cachedStageManager가 null입니다!");
+                #if UNITY_EDITOR
+                Debug.LogError("[GameManager] cachedStageManager가 null입니다!");
+                #endif
                 return;
             }
 
             // 스테이지 클리어 처리
             int clearedStageIndex = cachedStageManager.GetCurrentStageIndex();
-            
-            Debug.Log($"[FORCE LOG] 클리어된 스테이지 인덱스: {clearedStageIndex}");
             
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + $"HandleStageCleared 호출됨 - 스테이지 {clearedStageIndex} 클리어 처리 시작");
@@ -615,32 +572,19 @@ namespace InvaderInsider.Managers
             // 스테이지 클리어 시 축적된 EData와 스테이지 진행을 한 번에 저장
             if (saveDataManager != null)
             {
-                Debug.Log($"[FORCE LOG] SaveDataManager 존재 - UpdateStageProgress 호출 예정");
-                
                 #if UNITY_EDITOR
                 Debug.Log(LOG_PREFIX + $"UpdateStageProgress 호출 - 스테이지 {clearedStageIndex + 1}");
                 #endif
                 
-                // 저장 전 상태 확인
-                var beforeSaveData = saveDataManager.CurrentSaveData;
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"저장 전 - 최고 클리어 스테이지: {beforeSaveData?.progressData?.highestStageCleared}");
-                #endif
-                
                 saveDataManager.UpdateStageProgress(clearedStageIndex + 1);
                 
-                Debug.Log($"[FORCE LOG] UpdateStageProgress 호출 완료");
-                
-                // 저장 후 상태 확인
-                var afterSaveData = saveDataManager.CurrentSaveData;
                 #if UNITY_EDITOR
+                var afterSaveData = saveDataManager.CurrentSaveData;
                 Debug.Log(LOG_PREFIX + $"저장 후 - 최고 클리어 스테이지: {afterSaveData?.progressData?.highestStageCleared}");
-                Debug.Log(LOG_PREFIX + $"SaveDataManager.HasSaveData(): {saveDataManager.HasSaveData()}");
                 #endif
             }
             else
             {
-                Debug.LogError("[FORCE LOG] SaveDataManager가 null입니다!");
                 #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + "SaveDataManager를 찾을 수 없어 스테이지 진행을 저장할 수 없습니다!");
                 #endif

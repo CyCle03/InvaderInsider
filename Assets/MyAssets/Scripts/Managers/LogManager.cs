@@ -75,6 +75,8 @@ namespace InvaderInsider.Managers
             @"스테이지.*시작",
             @"스테이지.*클리어",
             @"스테이지 상태 변경",
+            @"스테이지 클리어.*중복 처리",
+            @"스테이지 클리어가 이미 처리되었습니다",
             
             // GameManager 관련
             @"\[GameManager\]",
