@@ -58,6 +58,14 @@ namespace InvaderInsider.UI
                 }
             }
             
+            // SaveDataManager가 있으면 강제로 데이터 재로드
+            if (saveDataManager != null)
+            {
+                Debug.Log("[FORCE LOG] OnEnable에서 SaveDataManager 발견됨 - 데이터 강제 재로드 시작");
+                saveDataManager.LoadGameData();
+                Debug.Log("[FORCE LOG] OnEnable에서 데이터 재로드 완료");
+            }
+            
             // Continue 버튼 상태 업데이트
             UpdateContinueButton();
             
@@ -190,14 +198,25 @@ namespace InvaderInsider.UI
 
         private void UpdateContinueButton()
         {
+            Debug.Log("[FORCE LOG] UpdateContinueButton 시작");
+            
             if (continueButton != null && saveDataManager != null)
             {
-                bool hasSaveData = saveDataManager.HasSaveData();
-                continueButton.interactable = hasSaveData;
-                
-                #if UNITY_EDITOR
+                // 저장 데이터 상태 확인
                 var saveData = saveDataManager.CurrentSaveData;
                 int highestCleared = saveData?.progressData?.highestStageCleared ?? 0;
+                bool hasSaveData = saveDataManager.HasSaveData();
+                
+                Debug.Log($"[FORCE LOG] Continue 버튼 상태 체크:");
+                Debug.Log($"[FORCE LOG] - saveData 존재: {saveData != null}");
+                Debug.Log($"[FORCE LOG] - highestStageCleared: {highestCleared}");
+                Debug.Log($"[FORCE LOG] - HasSaveData() 결과: {hasSaveData}");
+                
+                continueButton.interactable = hasSaveData;
+                
+                Debug.Log($"[FORCE LOG] Continue 버튼 최종 상태: {continueButton.interactable}");
+                
+                #if UNITY_EDITOR
                 Debug.Log(LOG_PREFIX + $"Continue 버튼 업데이트: HasSaveData = {hasSaveData}, 버튼 활성화 = {continueButton.interactable}, 최고 클리어 스테이지 = {highestCleared}");
                 #endif
             }
@@ -383,24 +402,40 @@ namespace InvaderInsider.UI
         // 외부에서 호출 가능한 공개 메서드들
         public void RefreshContinueButton()
         {
+            Debug.Log("[FORCE LOG] RefreshContinueButton 호출됨");
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "RefreshContinueButton 호출됨");
             #endif
             
-            // SaveDataManager 재확인
+            // SaveDataManager 재확인 및 강제 검색
             if (saveDataManager == null)
             {
+                Debug.Log("[FORCE LOG] SaveDataManager가 null이므로 다시 찾기 시도");
+                
                 saveDataManager = SaveDataManager.Instance;
                 if (saveDataManager == null)
                 {
+                    Debug.Log("[FORCE LOG] Instance에서 찾지 못함, FindObjectOfType으로 시도");
                     saveDataManager = FindObjectOfType<SaveDataManager>();
+                }
+                
+                if (saveDataManager == null)
+                {
+                    Debug.LogError("[FORCE LOG] SaveDataManager를 찾을 수 없습니다!");
+                    return;
+                }
+                else
+                {
+                    Debug.Log("[FORCE LOG] SaveDataManager 찾기 성공");
                 }
             }
             
             // SaveDataManager가 있으면 데이터 강제 재로드
             if (saveDataManager != null)
             {
+                Debug.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 시작");
                 saveDataManager.LoadGameData();
+                Debug.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 완료");
             }
             
             UpdateContinueButton();

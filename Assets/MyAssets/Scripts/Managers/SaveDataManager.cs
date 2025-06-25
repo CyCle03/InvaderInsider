@@ -324,14 +324,29 @@ namespace InvaderInsider.Data
         
         // 싱글턴 인스턴스 - 단순하고 확실한 방식
         private static SaveDataManager _instance;
+        private static readonly object _lock = new object();
         public static SaveDataManager Instance
         {
             get
             {
                 if (_instance == null)
                 {
-                    CreateInstance();
+                    lock (_lock)
+                    {
+                        if (_instance == null)
+                        {
+                            CreateInstance();
+                        }
+                    }
                 }
+                
+                // 인스턴스는 있지만 데이터가 초기화되지 않은 경우 강제 초기화
+                if (_instance != null && _instance.currentSaveData == null)
+                {
+                    Debug.Log("[FORCE LOG] Instance getter에서 currentSaveData가 null 발견, 강제 초기화");
+                    _instance.InitializeData();
+                }
+                
                 return _instance;
             }
         }
@@ -440,11 +455,28 @@ namespace InvaderInsider.Data
 
         private void InitializeData()
         {
+            Debug.Log("[FORCE LOG] SaveDataManager InitializeData 시작");
+            
             // 설정값을 먼저 독립적으로 로드
+            Debug.Log("[FORCE LOG] 설정값 로드 시작");
             LoadSettingsIndependently();
+            Debug.Log("[FORCE LOG] 설정값 로드 완료");
             
             // 게임 데이터 로드
+            Debug.Log("[FORCE LOG] 게임 데이터 로드 시작");
             LoadGameData();
+            Debug.Log("[FORCE LOG] 게임 데이터 로드 완료");
+            
+            // 초기화 완료 후 상태 확인
+            if (currentSaveData != null)
+            {
+                int highestCleared = currentSaveData.progressData.highestStageCleared;
+                Debug.Log($"[FORCE LOG] SaveDataManager 초기화 완료 - 최고 클리어 스테이지: {highestCleared}");
+            }
+            else
+            {
+                Debug.LogWarning("[FORCE LOG] SaveDataManager 초기화 완료 - currentSaveData가 null");
+            }
         }
 
         private void OnDestroy()
@@ -609,6 +641,8 @@ namespace InvaderInsider.Data
             // 게임이 실행 중이 아닐 때만 로드하지 않음
             if (!Application.isPlaying) return;
             
+            Debug.Log($"[FORCE LOG] LoadGameData 시작 - 파일 경로: {SAVE_KEY}");
+            
             #if UNITY_EDITOR
             LogOnly($"게임 데이터 로드 시도 - 파일 경로: {SAVE_KEY}");
             #endif
@@ -617,11 +651,17 @@ namespace InvaderInsider.Data
             {
                 if (File.Exists(SAVE_KEY))
                 {
+                    Debug.Log($"[FORCE LOG] 저장 파일 발견됨, 파일 읽기 시작");
+                    
                     string json = File.ReadAllText(SAVE_KEY);
+                    Debug.Log($"[FORCE LOG] 파일 읽기 완료 - JSON 길이: {json.Length}");
+                    
                     currentSaveData = JsonConvert.DeserializeObject<SaveData>(json);
+                    Debug.Log($"[FORCE LOG] JSON 역직렬화 완료");
                     
                     if (currentSaveData == null)
                     {
+                        Debug.LogWarning($"[FORCE LOG] 역직렬화 결과가 null, 새 데이터 생성");
                         #if UNITY_EDITOR
                         Debug.LogWarning(LOG_PREFIX + "저장 파일 역직렬화 실패 - 새 데이터로 초기화");
                         #endif
@@ -629,6 +669,10 @@ namespace InvaderInsider.Data
                     }
                     else
                     {
+                        int highestCleared = currentSaveData.progressData.highestStageCleared;
+                        int currentEData = currentSaveData.progressData.currentEData;
+                        Debug.Log($"[FORCE LOG] 데이터 로드 성공 - 최고 클리어 스테이지: {highestCleared}, eData: {currentEData}");
+                        
                         #if UNITY_EDITOR
                         LogOnly($"게임 데이터 로드 성공 - 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}, eData: {currentSaveData.progressData.currentEData}");
                         #endif
@@ -636,6 +680,7 @@ namespace InvaderInsider.Data
                 }
                 else
                 {
+                    Debug.Log($"[FORCE LOG] 저장 파일이 존재하지 않음, 새 데이터 생성");
                     #if UNITY_EDITOR
                     Debug.Log(LOG_PREFIX + "저장 파일 없음 - 새 게임 데이터 생성");
                     #endif
@@ -644,11 +689,14 @@ namespace InvaderInsider.Data
             }
             catch (Exception e)
             {
+                Debug.LogError($"[FORCE LOG] 데이터 로드 중 오류 발생: {e.Message}");
                 #if UNITY_EDITOR
                 Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], e.Message));
                 #endif
                 currentSaveData = new SaveData();
             }
+            
+            Debug.Log($"[FORCE LOG] LoadGameData 완료 - currentSaveData: {(currentSaveData != null ? "존재" : "null")}");
         }
 
         public void UpdateStageProgress(int stageNum)

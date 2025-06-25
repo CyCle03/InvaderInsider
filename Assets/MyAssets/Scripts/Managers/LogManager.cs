@@ -26,16 +26,16 @@ namespace InvaderInsider.Managers
         private static readonly StringBuilder _stringBuilder = new StringBuilder();
         
         // 극도로 엄격한 로그 필터링 설정
-        public static LogLevel MinimumLogLevel = LogLevel.Warning; // Warning 이상만 출력
+        public static LogLevel MinimumLogLevel = LogLevel.Info; // Info 이상 출력으로 변경 (FORCE LOG 보기 위해)
         public static bool EnablePerformanceLogs = false; // 성능 로그 비활성화
-        public static bool EnableGameplayLogs = false; // 게임플레이 로그 비활성화 (핵심 로그만)
+        public static bool EnableGameplayLogs = true; // 게임플레이 로그 활성화 (FORCE LOG 보기 위해)
         public static bool EnableSystemLogs = true; // 시스템 로그 활성화 (에러 추적용)
-        public static bool EnableUILogs = false; // UI 로그 비활성화
+        public static bool EnableUILogs = true; // UI 로그 활성화 (FORCE LOG 보기 위해)
         
         // 전역 로그 필터링 활성화
         public static bool GlobalFilterEnabled = true;
         
-        // 차단할 키워드들 (정규식 패턴)
+        // 차단할 키워드들 (정규식 패턴) - FORCE LOG는 차단하지 않음
         private static readonly HashSet<string> _blockedPatterns = new HashSet<string>
         {
             // MCP Unity 관련
@@ -43,58 +43,11 @@ namespace InvaderInsider.Managers
             @"McpUnity\.",
             @"WebSocket server",
             
-            // UI 관련
-            @"\[UI\]",
-            @"\[TopBar\]",
-            @"\[BottomBar\]",
-            @"\[InGame\]",
-            @"\[SummonChoice\]",
-            @"\[Pause\]",
+            // 일반 UI 관련 (FORCE LOG는 제외)
             @"Canvas Sorting Order",
             @"체력 업데이트",
-            @"패널이 표시",
-            @"패널이 숨겨짐",
             
-            // 누락된 UI 패널 관련 (선택적 패널들)
-            @"gameOverPanel이 할당되지 않았습니다",
-            @"패널을 찾을 수 없습니다.*HandDisplay",
-            @"패널을 찾을 수 없습니다.*Shop",
-            @"패널을 찾을 수 없습니다.*StageSelect",
-            
-            // SaveData 관련
-            @"\[SaveData\]",
-            @"SaveDataManager",
-            @"HasSaveData 확인",
-            @"게임 데이터 로드",
-            @"스테이지 진행 업데이트",
-            @"즉시 저장",
-            
-            // Stage 관련
-            @"\[Stage\]",
-            @"스테이지.*준비",
-            @"스테이지.*시작",
-            @"스테이지.*클리어",
-            @"스테이지 상태 변경",
-            @"스테이지 클리어.*중복 처리",
-            @"스테이지 클리어가 이미 처리되었습니다",
-            
-            // GameManager 관련
-            @"\[GameManager\]",
-            @"패널 등록",
-            @"게임 초기화",
-            @"게임 일시정지",
-            
-            // ResourceManager 관련
-            @"\[ResourceManager\]",
-            @"ResourceManager 인스턴스",
-            
-            // CardButton 관련
-            @"CardButton:",
-            @"필수 UI 요소들이 할당되지",
-            @"프리팹 경로를 확인하세요",
-            
-            // 기타 시스템
-            @"중복.*감지",
+            // 기타 시스템 (중요하지 않은 것들만)
             @"인스턴스 생성됨",
             @"초기화 완료"
         };
@@ -286,16 +239,16 @@ namespace InvaderInsider.Managers
             EnableUILogs = false;
         }
         
-        // 최소 로그만 활성화 (기본값)
+        // 최소 로그만 활성화 (기본값) - FORCE LOG 보기 위해 임시 수정
         public static void EnableMinimalLogs()
         {
             Debug.unityLogger.logEnabled = true;
-            Debug.unityLogger.filterLogType = LogType.Warning; // Warning 이상만 출력
-            MinimumLogLevel = LogLevel.Warning; // Warning 이상만 출력
+            Debug.unityLogger.filterLogType = LogType.Log; // 모든 로그 출력으로 변경
+            MinimumLogLevel = LogLevel.Info; // Info 로그부터 출력
             EnablePerformanceLogs = false;
-            EnableGameplayLogs = false;
+            EnableGameplayLogs = true; // 게임플레이 로그 활성화
             EnableSystemLogs = true; // 시스템 로그는 유지 (에러 추적용)
-            EnableUILogs = false;
+            EnableUILogs = true; // UI 로그도 활성화
         }
 
         // 통합 로그 메서드
@@ -322,8 +275,9 @@ namespace InvaderInsider.Managers
             switch (level)
             {
                 case LogLevel.Info:
-                    // Info 레벨은 출력하지 않음 (핵심 로그만)
-                    return;
+                    // Info 레벨도 출력하도록 변경 (FORCE LOG 보기 위해)
+                    Debug.Log(formattedMessage);
+                    break;
                 case LogLevel.Warning:
                     Debug.LogWarning(formattedMessage);
                     break;

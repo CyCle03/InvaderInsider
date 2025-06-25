@@ -970,21 +970,41 @@ namespace InvaderInsider.Managers
             yield return new WaitForEndOfFrame();
             yield return null;
             
+            Debug.Log("[FORCE LOG] RefreshMainMenuAfterLoad 시작");
+            
+            // SaveDataManager 강제 재로드
+            var saveDataManager = SaveDataManager.Instance;
+            if (saveDataManager != null)
+            {
+                Debug.Log("[FORCE LOG] SaveDataManager 발견됨, 데이터 강제 재로드");
+                saveDataManager.LoadGameData();
+                Debug.Log("[FORCE LOG] SaveDataManager 데이터 재로드 완료");
+            }
+            else
+            {
+                Debug.LogWarning("[FORCE LOG] SaveDataManager를 찾을 수 없음");
+            }
+            
             // MainMenuPanel 찾기 및 Continue 버튼 갱신
             var mainMenuPanel = FindObjectOfType<InvaderInsider.UI.MainMenuPanel>();
             if (mainMenuPanel != null)
             {
+                Debug.Log("[FORCE LOG] MainMenuPanel 발견됨, Continue 버튼 갱신 시작");
                 mainMenuPanel.RefreshContinueButton();
+                Debug.Log("[FORCE LOG] Continue 버튼 갱신 완료");
                 #if UNITY_EDITOR
                 Debug.Log(LOG_PREFIX + "Main 씬 로드 후 Continue 버튼 갱신 완료");
                 #endif
             }
             else
             {
+                Debug.LogWarning("[FORCE LOG] MainMenuPanel을 찾을 수 없음");
                 #if UNITY_EDITOR
                 Debug.LogWarning(LOG_PREFIX + "MainMenuPanel을 찾을 수 없어 Continue 버튼을 갱신할 수 없습니다.");
                 #endif
             }
+            
+            Debug.Log("[FORCE LOG] RefreshMainMenuAfterLoad 완료");
         }
 
         private void LoadGameScene()
