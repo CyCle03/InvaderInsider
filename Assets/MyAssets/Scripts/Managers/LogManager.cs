@@ -199,31 +199,46 @@ namespace InvaderInsider.Managers
             EnableMinimalLogs();
             
             // Unity 에디터에서 로그 필터링 설정 - 활성화
-            if (GlobalFilterEnabled)
-            {
-                Application.logMessageReceived += OnLogReceived;
-            }
+            Application.logMessageReceived += OnLogReceived;
+            
+            // Unity 로거를 사용자 정의 로거로 교체
+            SetupCustomLogger();
+        }
+        
+        private static void SetupCustomLogger()
+        {
+            // Warning 이상만 출력하도록 설정
+            Debug.unityLogger.filterLogType = LogType.Warning;
+            
+            // 추가적인 필터링을 위해 LogType을 제한
+            Debug.unityLogger.logEnabled = true;
         }
         
         // Unity 로그 메시지 필터링
         private static void OnLogReceived(string logString, string stackTrace, LogType type)
         {
-            if (!GlobalFilterEnabled) return;
-            
             // Error와 Exception은 항상 통과
             if (type == LogType.Error || type == LogType.Exception)
             {
                 return;
             }
             
-            // 차단된 패턴 확인
-            foreach (var pattern in _blockedPatterns)
+            // Warning 타입에 대해서만 중복 체크 및 패턴 필터링 적용
+            if (type == LogType.Warning)
             {
-                if (Regex.IsMatch(logString, pattern, RegexOptions.IgnoreCase))
+                // 먼저 차단 패턴 확인
+                foreach (var pattern in _blockedPatterns)
                 {
-                    // 이 로그는 차단 - 하지만 Unity의 logMessageReceived는 이미 출력된 후 호출됨
-                    // 대신 Debug.unityLogger.logEnabled를 사용해야 함
-                    return;
+                    if (Regex.IsMatch(logString, pattern, RegexOptions.IgnoreCase))
+                    {
+                        return; // 차단된 패턴이므로 로그 출력 중단
+                    }
+                }
+                
+                // 중복 로그 체크
+                if (IsDuplicateLog(logString))
+                {
+                    return; // 중복 로그이므로 출력 중단
                 }
             }
         }

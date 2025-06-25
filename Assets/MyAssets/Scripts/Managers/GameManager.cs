@@ -168,7 +168,7 @@ namespace InvaderInsider.Managers
             }
             else
             {
-                Debug.LogError($"[FORCE LOG] ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
+                Debug.LogError($"{LOG_PREFIX}ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
                 Debug.LogError($"{LOG_PREFIX}ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
                 // 기본값으로 폴백
                 gameConfig = ScriptableObject.CreateInstance<GameConfigSO>();
@@ -665,12 +665,18 @@ namespace InvaderInsider.Managers
             if (allStagesCompleted)
             {
             #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "모든 스테이지 완료! 일시정지 패널을 활성화합니다.");
+                Debug.Log(LOG_PREFIX + "모든 스테이지 완료! 3초 후 메인 메뉴로 돌아갑니다.");
             #endif
                 
-                // PauseGame을 호출하여 일시정지 상태로 변경하고 패널 표시
-                PauseGame(true);
+                // 모든 스테이지 완료 시 메인 메뉴로 돌아가기 (Pause 패널 대신)
+                StartCoroutine(ReturnToMainMenuAfterDelay(3f));
             }
+        }
+        
+        private System.Collections.IEnumerator ReturnToMainMenuAfterDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            LoadMainMenuScene();
         }
 
         public void InitializeGame()
@@ -781,7 +787,7 @@ namespace InvaderInsider.Managers
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogWarning($"{LOG_PREFIX}패널을 찾을 수 없습니다: {panelName} ({typeof(T).Name})");
+                LogManager.Warning("GameManager", $"패널을 찾을 수 없습니다: {panelName} ({typeof(T).Name})");
                 #endif
             }
         }
