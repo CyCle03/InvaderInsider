@@ -563,19 +563,20 @@ namespace InvaderInsider.Managers
             }
 
             // 스테이지 클리어 처리
-            int clearedStageIndex = cachedStageManager.GetCurrentStageIndex();
+            int clearedStageIndex = cachedStageManager.GetCurrentStageIndex(); // 0-based 인덱스
             
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"HandleStageCleared 호출됨 - 스테이지 {clearedStageIndex} 클리어 처리 시작");
+            Debug.Log(LOG_PREFIX + $"HandleStageCleared 호출됨 - 스테이지 인덱스 {clearedStageIndex} (스테이지 번호: {clearedStageIndex + 1}) 클리어 처리 시작");
             #endif
             
             // 스테이지 클리어 시 축적된 EData와 스테이지 진행을 한 번에 저장
             if (saveDataManager != null)
             {
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"UpdateStageProgress 호출 - 스테이지 {clearedStageIndex + 1}");
+                Debug.Log(LOG_PREFIX + $"UpdateStageProgress 호출 - 스테이지 번호 {clearedStageIndex + 1} (0-based 인덱스 {clearedStageIndex}를 1-based 번호로 변환)");
                 #endif
                 
+                // SaveDataManager는 1-based 스테이지 번호를 기대하므로 +1
                 saveDataManager.UpdateStageProgress(clearedStageIndex + 1);
                 
                 #if UNITY_EDITOR
@@ -590,11 +591,11 @@ namespace InvaderInsider.Managers
                 #endif
             }
             
-            // 스테이지 클리어 이벤트 호출
+            // 스테이지 클리어 이벤트 호출 (1-based 스테이지 번호로)
             StageCleared(clearedStageIndex + 1);
             OnStageClearedEvent?.Invoke();
             
-            // 모든 스테이지 완료 체크
+            // 모든 스테이지 완료 체크 (0-based 인덱스로)
             CheckAllStagesCompleted(clearedStageIndex);
         }
 
@@ -912,15 +913,16 @@ namespace InvaderInsider.Managers
                 var saveData = saveDataManager.CurrentSaveData;
                 if (saveData != null)
                 {
-                    // Continue는 클리어한 최고 스테이지부터 다시 시작 (다음 스테이지가 아닌)
+                    // Continue는 클리어한 다음 스테이지부터 시작
                     int highestCleared = saveData.progressData.highestStageCleared;
                     
                     #if UNITY_EDITOR
                     Debug.Log(LOG_PREFIX + $"Continue 게임 시작 - 최고 클리어 스테이지: {highestCleared}");
                     #endif
                     
-                    // 최소 1스테이지는 보장 (아무것도 클리어하지 않은 경우)
-                    int startStage = Mathf.Max(1, highestCleared);
+                    // 클리어한 다음 스테이지부터 시작 (첫 스테이지가 최소값)
+                    int nextStage = highestCleared + 1;
+                    int startStage = Mathf.Max(1, nextStage); // 최소 1스테이지 보장
                     
                     #if UNITY_EDITOR
                     Debug.Log(LOG_PREFIX + $"시작할 스테이지: {startStage} (인덱스: {startStage - 1})");
