@@ -55,6 +55,12 @@ namespace InvaderInsider.Managers
             @"패널이 표시",
             @"패널이 숨겨짐",
             
+            // 누락된 UI 패널 관련 (선택적 패널들)
+            @"gameOverPanel이 할당되지 않았습니다",
+            @"패널을 찾을 수 없습니다.*HandDisplay",
+            @"패널을 찾을 수 없습니다.*Shop",
+            @"패널을 찾을 수 없습니다.*StageSelect",
+            
             // SaveData 관련
             @"\[SaveData\]",
             @"SaveDataManager",
@@ -90,6 +96,11 @@ namespace InvaderInsider.Managers
             @"인스턴스 생성됨",
             @"초기화 완료"
         };
+        
+        // 중복 로그 방지 시스템
+        private static readonly Dictionary<string, int> _logCounts = new Dictionary<string, int>();
+        private static readonly HashSet<string> _suppressedLogs = new HashSet<string>();
+        private const int MAX_DUPLICATE_LOGS = 3; // 같은 로그 최대 3번까지만 출력
         
         // 개발/에디터 모드에서만 로그 출력
         private static bool ShouldLog =>
@@ -169,6 +180,14 @@ namespace InvaderInsider.Managers
         {
             DisableAllLogs();
             // 로그가 비활성화되어 있으므로 콘솔에 출력되지 않음
+        }
+        
+        [MenuItem("Tools/LogManager/Clear Duplicate Log Cache")]
+        public static void ClearDuplicateLogCache()
+        {
+            _logCounts.Clear();
+            _suppressedLogs.Clear();
+            Debug.Log("[LogManager] 중복 로그 캐시가 초기화되었습니다.");
         }
 #endif
 
@@ -276,6 +295,12 @@ namespace InvaderInsider.Managers
             if (!EnableSystemLogs && IsSystemTag(tag)) return;
 
             var formattedMessage = FormatMessage(tag, message, args);
+            
+            // 중복 로그 체크
+            if (IsDuplicateLog(formattedMessage))
+            {
+                return; // 중복 로그는 출력하지 않음
+            }
             
             switch (level)
             {
@@ -387,6 +412,36 @@ namespace InvaderInsider.Managers
                 
             Debug.LogError(FormatMessage(tag, message));
             Debug.LogException(exception);
+        }
+
+        // 중복 로그 체크 메서드
+        private static bool IsDuplicateLog(string message)
+        {
+            // 이미 억제된 로그인지 확인
+            if (_suppressedLogs.Contains(message))
+            {
+                return true;
+            }
+            
+            // 로그 카운트 증가
+            if (_logCounts.TryGetValue(message, out int count))
+            {
+                _logCounts[message] = count + 1;
+                
+                // 최대 허용 횟수를 초과하면 억제 목록에 추가
+                if (count + 1 >= MAX_DUPLICATE_LOGS)
+                {
+                    _suppressedLogs.Add(message);
+                    Debug.LogWarning($"[LogManager] 중복 로그 억제: '{message}' (총 {count + 1}회 출력됨)");
+                    return true;
+                }
+            }
+            else
+            {
+                _logCounts[message] = 1;
+            }
+            
+            return false;
         }
     }
 } 
