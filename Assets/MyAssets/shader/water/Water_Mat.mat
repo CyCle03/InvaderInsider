@@ -121,7 +121,7 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RefrectionScale: 1
+    - _RefrectionScale: 0.5
     - _RefrectionSpeed: 0.05
     - _RefrectionStr: 0.5
     - _Smoothness: 0.5
