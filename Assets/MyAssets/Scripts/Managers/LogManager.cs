@@ -365,10 +365,28 @@ namespace InvaderInsider.Managers
             Info("SaveData", message);
         }
 
+        public static void LogSave(string tag, string message, bool isError = false)
+        {
+            if (isError)
+            {
+                Error(tag, message);
+            }
+            else
+            {
+                Info(tag, message);
+            }
+        }
+
         public static void ForceLogOnce(string message)
         {
             // 한번만 출력하는 로그 - 단순화하여 일반 로그로 처리
             Info("System", message);
+        }
+
+        public static void ForceLogOnce(string tag, string message)
+        {
+            // 한번만 출력하는 로그 - 단순화하여 일반 로그로 처리
+            Info(tag, message);
         }
     }
 } 

@@ -16,7 +16,7 @@ namespace InvaderInsider.UI
         private const int INITIAL_CARD_CAPACITY = 8;
         private const float CARD_COST_MULTIPLIER = 2f;
         
-        private const string LOG_PREFIX = "[SummonChoice] ";
+        private new const string LOG_PREFIX = "[SummonChoice] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "카드 매니저가 null입니다.",

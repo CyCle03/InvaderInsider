@@ -9,7 +9,7 @@ namespace InvaderInsider.UI
     {
         private const float LOW_HEALTH_THRESHOLD = 0.25f; // 25% 이하 시 경고 표시
         
-        private const string LOG_PREFIX = "[BottomBar] ";
+        private new const string LOG_PREFIX = "[BottomBar] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "Player를 찾을 수 없습니다."

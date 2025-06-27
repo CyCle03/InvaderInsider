@@ -12,7 +12,7 @@ namespace InvaderInsider.UI
 {
     public class InGamePanel : BasePanel
     {
-        private const string LOG_PREFIX = "[UI] ";
+        private new const string LOG_PREFIX = "[InGame] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "InGame: Pause button missing",
