@@ -150,15 +150,24 @@ namespace InvaderInsider.UI
 
         private void SetupButtons()
         {
+            UnityEngine.Debug.Log("=== FORCE LOG: SetupButtons 호출됨! ===");
+            
             // 이벤트를 한 번만 등록 (RemoveAllListeners 제거)
             if (newGameButton != null)
             {
                 newGameButton.onClick.AddListener(OnNewGameClicked);
+                UnityEngine.Debug.Log("=== FORCE LOG: NewGame 버튼 리스너 등록 완료 ===");
             }
             
             if (continueButton != null)
             {
                 continueButton.onClick.AddListener(OnContinueClicked);
+                UnityEngine.Debug.Log("=== FORCE LOG: Continue 버튼 리스너 등록 완료 ===");
+                UnityEngine.Debug.Log($"=== FORCE LOG: Continue 버튼 상태 - interactable: {continueButton.interactable}, name: {continueButton.gameObject.name} ===");
+            }
+            else
+            {
+                UnityEngine.Debug.LogError("=== FORCE LOG: Continue 버튼이 null입니다! ===");
             }
             
             if (settingsButton != null)
@@ -190,10 +199,12 @@ namespace InvaderInsider.UI
                 bool hasSaveData = saveDataManager.HasSaveData();
                 continueButton.interactable = hasSaveData;
                 
+                UnityEngine.Debug.Log($"=== FORCE LOG: Continue 버튼 업데이트 - HasSaveData: {hasSaveData}, interactable: {continueButton.interactable} ===");
                 LogManager.Info(LOG_TAG, "Continue 버튼 업데이트: HasSaveData = {0}, 버튼 활성화 = {1}", hasSaveData, continueButton.interactable);
             }
             else
             {
+                UnityEngine.Debug.LogError($"=== FORCE LOG: Continue 버튼 업데이트 실패 - continueButton: {continueButton != null}, saveDataManager: {saveDataManager != null} ===");
                 LogManager.Warning(LOG_TAG, "Continue 버튼 업데이트 실패 - continueButton: {0}, saveDataManager: {1}", continueButton != null, saveDataManager != null);
             }
         }
@@ -209,11 +220,13 @@ namespace InvaderInsider.UI
         // 버튼 이벤트 핸들러들
         private void OnNewGameClicked()
         {
+            UnityEngine.Debug.Log("=== FORCE LOG: OnNewGameClicked 호출됨! ===");
             LogManager.Info(LOG_TAG, "OnNewGameClicked 호출됨");
             
             // 즉시 중복 클릭 방지
             if (isGameStarting)
             {
+                UnityEngine.Debug.Log("=== FORCE LOG: OnNewGameClicked 무시됨 - 이미 게임 시작 중 ===");
                 LogManager.Info(LOG_TAG, "OnNewGameClicked 무시됨 - 이미 게임 시작 중");
                 return;
             }
@@ -230,10 +243,15 @@ namespace InvaderInsider.UI
 
         private void OnContinueClicked()
         {
+            // 강력한 로그 - LogManager 우회
+            UnityEngine.Debug.Log("=== FORCE LOG: OnContinueClicked 호출됨! ===");
+            Debug.Log("[MainMenu] OnContinueClicked 호출됨!");
+            
             // 즉시 중복 클릭 방지
             if (isGameStarting)
             {
-                LogManager.Info(LOG_TAG, "OnContinueClicked 무시됨 - 이미 게임 시작 중");
+                UnityEngine.Debug.Log("=== FORCE LOG: OnContinueClicked 무시됨 - 이미 게임 시작 중 ===");
+                Debug.Log("[MainMenu] OnContinueClicked 무시됨 - 이미 게임 시작 중");
                 return;
             }
             
@@ -244,6 +262,7 @@ namespace InvaderInsider.UI
                 StartCoroutine(ReEnableButtonAfterDelay(continueButton, 1f));
             }
             
+            UnityEngine.Debug.Log("=== FORCE LOG: ContinueGame() 호출 시도 ===");
             ContinueGame();
         }
 
@@ -307,33 +326,44 @@ namespace InvaderInsider.UI
 
         private void ContinueGame()
         {
+            UnityEngine.Debug.Log("=== FORCE LOG: ContinueGame 호출됨! ===");
+            Debug.Log("[MainMenu] ContinueGame 호출됨!");
+            
             // 쿨다운 체크
             float currentTime = Time.unscaledTime;
             if (currentTime - lastClickTime < CLICK_COOLDOWN)
             {
-            LogManager.Info(LOG_TAG, "클릭 쿨다운 중입니다. 남은 시간: {0:F1}초", CLICK_COOLDOWN - (currentTime - lastClickTime));
+                UnityEngine.Debug.Log($"=== FORCE LOG: 클릭 쿨다운 중! 남은시간: {CLICK_COOLDOWN - (currentTime - lastClickTime):F1}초 ===");
+                Debug.Log($"[MainMenu] 클릭 쿨다운 중입니다. 남은 시간: {CLICK_COOLDOWN - (currentTime - lastClickTime):F1}초");
                 return;
             }
             
             // 이미 게임 시작 중이면 무시
             if (isGameStarting) 
             {
-                LogManager.Info(LOG_TAG, "이미 게임 시작 중입니다.");
+                UnityEngine.Debug.Log("=== FORCE LOG: 이미 게임 시작 중! ===");
+                Debug.Log("[MainMenu] 이미 게임 시작 중입니다.");
                 return;
-        }
+            }
 
             isGameStarting = true;
             lastClickTime = currentTime;
+            
+            UnityEngine.Debug.Log("=== FORCE LOG: GameManager.StartContinueGame() 호출 시도 ===");
+            Debug.Log("[MainMenu] GameManager.StartContinueGame() 호출 시도");
             
             // GameManager가 모든 게임 계속하기 로직을 담당
             var gameManager = InvaderInsider.Managers.GameManager.Instance;
             if (gameManager != null)
             {
+                UnityEngine.Debug.Log("=== FORCE LOG: GameManager 찾음, StartContinueGame 호출! ===");
+                Debug.Log("[MainMenu] GameManager 찾음, StartContinueGame 호출");
                 gameManager.StartContinueGame();
             }
             else
             {
-                LogManager.Error(LOG_TAG, "GameManager를 찾을 수 없습니다!");
+                UnityEngine.Debug.LogError("=== FORCE LOG: GameManager를 찾을 수 없습니다! ===");
+                Debug.LogError("[MainMenu] GameManager를 찾을 수 없습니다!");
                 isGameStarting = false; // 실패 시 플래그 리셋
             }
         }

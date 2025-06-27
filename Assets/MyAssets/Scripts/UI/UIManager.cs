@@ -102,17 +102,20 @@ namespace InvaderInsider.UI
 
         public void RegisterPanel(string panelName, BasePanel panel)
         {
-            if (string.IsNullOrEmpty(panelName) || panel == null) return;
+            if (string.IsNullOrEmpty(panelName) || panel == null) 
+            {
+                Debug.LogError($"{LOG_PREFIX}RegisterPanel 실패 - panelName: {panelName}, panel: {panel}");
+                return;
+            }
 
             if (panels.ContainsKey(panelName))
             {
-                #if UNITY_EDITOR
                 Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[0], panelName));
-                #endif
                 return;
             }
 
             panels[panelName] = panel;
+            Debug.Log($"{LOG_PREFIX}패널 등록 성공: {panelName} - {panel.gameObject.name}");
             
             if (!panel.gameObject.activeSelf)
             {
@@ -148,11 +151,9 @@ namespace InvaderInsider.UI
             }
             else
             {
-                #if UNITY_EDITOR
                 string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
                 string registeredPanels = string.Join(", ", panels.Keys);
                 Debug.LogError($"{LOG_PREFIX}Panel '{panelName}' not found for showing. 현재 씬: {currentSceneName}, 등록된 패널: [{registeredPanels}]");
-                #endif
             }
         }
 
@@ -168,9 +169,7 @@ namespace InvaderInsider.UI
             }
             else
             {
-                #if UNITY_EDITOR
                 Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], panelName));
-                #endif
             }
         }
 

@@ -315,14 +315,21 @@ namespace InvaderInsider.Managers
 
         public void StartStageFrom(int stageIndex)
         {
-            if (!isInitialized) return;
+            UnityEngine.Debug.Log($"=== FORCE LOG: StartStageFrom({stageIndex}) 호출됨 ===");
+            if (!isInitialized) 
+            {
+                UnityEngine.Debug.LogError("=== FORCE LOG: StageManager가 초기화되지 않음 ===");
+                return;
+            }
 
             if (stageData != null && stageIndex >= 0 && stageIndex < stageData.StageCount)
             {
+                UnityEngine.Debug.Log($"=== FORCE LOG: 유효한 스테이지 인덱스 - StartStageInternal({stageIndex}) 호출 ===");
                 StartStageInternal(stageIndex);
             }
             else
             {
+                UnityEngine.Debug.LogError($"=== FORCE LOG: 무효한 스테이지 인덱스 {stageIndex} (총 스테이지: {stageData?.StageCount ?? 0}) - 0으로 시작 ===");
                 #if UNITY_EDITOR
                 Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[0], stageIndex));
                 #endif
@@ -362,15 +369,19 @@ namespace InvaderInsider.Managers
 
         private void ResetStageState(int startStageIndex)
         {
+            UnityEngine.Debug.Log($"=== FORCE LOG: ResetStageState({startStageIndex}) 호출됨 ===");
             currentTime = 0f;
             enemyCount = 0;
             activeEnemyCountValue = 0;
             stageNum = startStageIndex;
             
+            UnityEngine.Debug.Log($"=== FORCE LOG: 스테이지 상태 리셋 완료 - stageNum: {stageNum} (인덱스), 실제 스테이지 번호: {stageNum + 1} ===");
+            
             // 스테이지 시작 시 UI 초기화 (GameManager를 통해)
             if (gameManager != null)
             {
                 int maxMonsters = GetStageWaveCount(startStageIndex);
+                UnityEngine.Debug.Log($"=== FORCE LOG: UI 업데이트 - 스테이지 {startStageIndex + 1}, 최대 몬스터: {maxMonsters} ===");
                 gameManager.UpdateStageWaveUI(startStageIndex + 1, 0, maxMonsters);
             }
             
@@ -507,7 +518,8 @@ namespace InvaderInsider.Managers
         {
             if (gameManager != null)
             {
-                gameManager.StageCleared(clearedStageIndex);
+                // clearedStageIndex는 0-based이므로 1-based로 변환하여 전달
+                gameManager.StageCleared(clearedStageIndex + 1);
             }
 
             stageNum++;

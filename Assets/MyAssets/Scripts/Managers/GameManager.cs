@@ -98,7 +98,11 @@ namespace InvaderInsider.Managers
         {
             base.OnInitialize();
             
-            DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "GameManager 초기화 시작");
+            // 강제 로그 테스트
+            Debug.unityLogger.logEnabled = true;
+            Debug.unityLogger.filterLogType = LogType.Log;
+            
+            Debug.Log($"{LOG_PREFIX}GameManager 초기화 시작");
             
             // Config 로딩 (가장 먼저)
             LoadConfig();
@@ -109,30 +113,30 @@ namespace InvaderInsider.Managers
             // 씬 전환 이벤트 등록
             SceneManager.sceneLoaded += OnSceneLoaded;
             
-            DebugUtils.LogInitialization("GameManager", true, "모든 매니저 초기화 완료");
+            Debug.Log($"{LOG_PREFIX}GameManager 초기화 완료 - 모든 매니저 초기화 완료");
         }
 
         private void LoadConfig()
         {
-            DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "GameConfig 로딩 시작");
+            Debug.Log($"{LOG_PREFIX}GameConfig 로딩 시작");
             
             var configManager = ConfigManager.Instance;
-            DebugUtils.LogNullCheck(configManager, "ConfigManager", "GameManager LoadConfig");
+            if (configManager == null)
+            {
+                Debug.LogError($"{LOG_PREFIX}ConfigManager가 null입니다.");
+            }
             
             if (configManager != null && configManager.GameConfig != null)
             {
                 gameConfig = configManager.GameConfig;
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                    "GameConfig 로딩 성공 - enableStageClearDuplicatePrevention: {0}", 
-                    gameConfig.enableStageClearDuplicatePrevention);
+                Debug.Log($"{LOG_PREFIX}GameConfig 로딩 성공 - enableStageClearDuplicatePrevention: {gameConfig.enableStageClearDuplicatePrevention}");
             }
             else
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
-                    "ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
+                Debug.LogError($"{LOG_PREFIX}ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
                 // 기본값으로 폴백
                 gameConfig = ScriptableObject.CreateInstance<GameConfigSO>();
-                DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "기본 GameConfig 생성 완료");
+                Debug.Log($"{LOG_PREFIX}기본 GameConfig 생성 완료");
             }
         }
 
@@ -247,6 +251,10 @@ namespace InvaderInsider.Managers
 
         private void Start()
         {
+            Debug.Log($"{LOG_PREFIX}GameManager Start() 호출됨!");
+            Debug.Log($"{LOG_PREFIX}현재 씬: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
+            Debug.Log($"{LOG_PREFIX}GameObject 이름: {gameObject.name}");
+            
             // 이제 InitializeGame()은 실제 게임 시작 시점(NewGame/Continue)에서만 호출됩니다.
             // 게임 씬 로드 후 외부에서 명시적으로 호출해야 합니다.
         }
@@ -456,13 +464,30 @@ namespace InvaderInsider.Managers
 
             stageClearedProcessed = true;
             
+            // 강제 디버그 로그 - 스테이지 클리어 확인
+            UnityEngine.Debug.Log($"=== FORCE LOG: 스테이지 {stageNum} 클리어됨! 저장 시작 ===");
+            
             // SaveDataManager를 통해 스테이지 진행 저장
             if (saveDataManager != null)
             {
+                UnityEngine.Debug.Log($"=== FORCE LOG: SaveDataManager 존재 확인, UpdateStageProgress({stageNum}) 호출 ===");
                 saveDataManager.UpdateStageProgress(stageNum); // stageNum은 이미 1-based
+                UnityEngine.Debug.Log($"=== FORCE LOG: UpdateStageProgress({stageNum}) 호출 완료 ===");
+                
+                // 저장 후 현재 데이터 확인
+                var currentData = saveDataManager.CurrentSaveData;
+                if (currentData != null)
+                {
+                    UnityEngine.Debug.Log($"=== FORCE LOG: 저장 후 최고 클리어 스테이지: {currentData.progressData.highestStageCleared} ===");
+                }
+                else
+                {
+                    UnityEngine.Debug.Log("=== FORCE LOG: CurrentSaveData가 null! ===");
+                }
             }
             else
             {
+                UnityEngine.Debug.Log("=== FORCE LOG: SaveDataManager가 null! ===");
                 LogManager.Error("GameManager", $"SaveDataManager를 찾을 수 없어 스테이지 {stageNum} 진행을 저장할 수 없습니다!");
             }
 
@@ -477,6 +502,27 @@ namespace InvaderInsider.Managers
 
         private void Update()
         {
+            // ESC 키 입력 감지 (모든 상태에서 체크)
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                Debug.Log($"{LOG_PREFIX}ESC 키 눌림! 현재 상태: {CurrentGameState}");
+                
+                if (CurrentGameState == GameState.Playing)
+                {
+                    Debug.Log($"{LOG_PREFIX}게임 중 ESC - PauseGame 호출");
+                    PauseGame(true);
+                }
+                else if (CurrentGameState == GameState.Paused)
+                {
+                    Debug.Log($"{LOG_PREFIX}일시정지 중 ESC - ResumeGame 호출");
+                    ResumeGame();
+                }
+                else
+                {
+                    Debug.Log($"{LOG_PREFIX}현재 상태({CurrentGameState})에서는 ESC 무시");
+                }
+            }
+            
             if (CurrentGameState != GameState.Playing) return;
 
             // 상태 체크 주기 최적화
@@ -573,12 +619,13 @@ namespace InvaderInsider.Managers
             
             if (allStagesCompleted)
             {
-            #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "모든 스테이지 완료! 3초 후 메인 메뉴로 돌아갑니다.");
-            #endif
+                Debug.Log(LOG_PREFIX + "모든 스테이지 완료! PausePanel을 표시합니다.");
                 
-                // 모든 스테이지 완료 시 메인 메뉴로 돌아가기 (Pause 패널 대신)
-                StartCoroutine(ReturnToMainMenuAfterDelay(3f));
+                // 게임 일시정지 및 PausePanel 표시
+                PauseGame(true);
+                
+                // 3초 후 자동으로 메인 메뉴로 돌아가는 옵션을 제공하는 대신
+                // 사용자가 직접 선택할 수 있도록 PausePanel만 표시
             }
         }
         
@@ -624,13 +671,16 @@ namespace InvaderInsider.Managers
             var stageManager = StageManager.Instance;
             if (stageManager != null)
             {
+                UnityEngine.Debug.Log($"=== FORCE LOG: StageManager 확인됨, requestedStartStage: {requestedStartStage} ===");
                 if (requestedStartStage >= 0)
                 {
+                    UnityEngine.Debug.Log($"=== FORCE LOG: StartStageFrom({requestedStartStage}) 호출 ===");
                     stageManager.StartStageFrom(requestedStartStage);
                     requestedStartStage = -1; // 사용한 후 리셋
                 }
                 else
                 {
+                    UnityEngine.Debug.Log("=== FORCE LOG: InitializeStage() 호출 (기본값) ===");
                     stageManager.InitializeStage(); // 기본적으로 첫 번째 스테이지 시작
                 }
                 
@@ -649,9 +699,7 @@ namespace InvaderInsider.Managers
                 CurrentGameState = GameState.Playing;
             }
             
-            #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "게임 초기화 완료. 게임 상태를 Playing으로 설정했습니다.");
-            #endif
         }
 
         // 성능 최적화: FindObjectOfType 호출을 한 번에 처리
@@ -660,13 +708,11 @@ namespace InvaderInsider.Managers
             // 모든 BasePanel을 한 번에 찾아서 처리
             var allPanels = FindObjectsOfType<BasePanel>(true);
             
-            #if UNITY_EDITOR
             Debug.Log($"{LOG_PREFIX}찾은 패널 수: {allPanels.Length}");
             foreach (var panel in allPanels)
             {
                 Debug.Log($"{LOG_PREFIX}찾은 패널: {panel.GetType().Name} - {panel.gameObject.name}");
             }
-            #endif
             
             // 딕셔너리로 빠른 검색을 위한 임시 매핑
             var panelsByType = new System.Collections.Generic.Dictionary<System.Type, BasePanel>();
@@ -696,16 +742,11 @@ namespace InvaderInsider.Managers
             if (panelsByType.TryGetValue(typeof(T), out BasePanel panel))
             {
                 uiManager.RegisterPanel(panelName, panel);
-                
-                #if UNITY_EDITOR
                 Debug.Log($"{LOG_PREFIX}패널 등록 성공: {panelName} ({typeof(T).Name})");
-                #endif
             }
             else
             {
-                #if UNITY_EDITOR
-                LogManager.Warning("GameManager", $"패널을 찾을 수 없습니다: {panelName} ({typeof(T).Name})");
-                #endif
+                Debug.LogWarning($"{LOG_PREFIX}패널을 찾을 수 없습니다: {panelName} ({typeof(T).Name})");
             }
         }
 
@@ -785,9 +826,7 @@ namespace InvaderInsider.Managers
 
         public void PauseGame(bool showPauseUI = true)
         {
-            #if UNITY_EDITOR
             Debug.Log($"{LOG_PREFIX}게임 일시정지 요청 - showPauseUI: {showPauseUI}");
-            #endif
             
             Time.timeScale = 0f;
             CurrentGameState = GameState.Paused;
@@ -796,7 +835,6 @@ namespace InvaderInsider.Managers
             {
                 if (uiManager != null)
                 {
-                    #if UNITY_EDITOR
                     Debug.Log($"{LOG_PREFIX}UIManager 확인됨. 등록된 패널 수: {uiManager.panels?.Count ?? 0}");
                     if (uiManager.panels != null)
                     {
@@ -805,18 +843,14 @@ namespace InvaderInsider.Managers
                             Debug.Log($"{LOG_PREFIX}등록된 패널: {panel.Key} - {(panel.Value != null ? "존재" : "null")}");
                         }
                     }
-                    #endif
                     
                     if (uiManager.IsPanelRegistered("Pause"))
                     {
                         uiManager.ShowPanel("Pause");
-                        #if UNITY_EDITOR
                         Debug.Log($"{LOG_PREFIX}Pause 패널을 표시했습니다.");
-                        #endif
                     }
                     else
                     {
-                        #if UNITY_EDITOR
                         Debug.LogWarning($"{LOG_PREFIX}Pause 패널이 UIManager에 등록되지 않았습니다.");
                         // 수동으로 Pause 패널 찾기 시도
                         var pausePanel = FindObjectOfType<InvaderInsider.UI.PausePanel>(true);
@@ -830,14 +864,11 @@ namespace InvaderInsider.Managers
                         {
                             Debug.LogError($"{LOG_PREFIX}Pause 패널을 찾을 수 없습니다!");
                         }
-                        #endif
                     }
                 }
                 else
                 {
-                    #if UNITY_EDITOR
                     Debug.LogError($"{LOG_PREFIX}UIManager가 없습니다.");
-                    #endif
                 }
             }
         }
@@ -866,16 +897,12 @@ namespace InvaderInsider.Managers
             CurrentGameState = GameState.GameOver;
             
             // 게임 종료 로직 (일반적인 종료)
-            #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "게임이 종료되었습니다.");
-            #endif
         }
 
         public void GameOver()
         {
-            #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "게임 오버! PausePanel을 표시합니다.");
-            #endif
             
             Time.timeScale = 0f;
             CurrentGameState = GameState.GameOver;
@@ -886,23 +913,17 @@ namespace InvaderInsider.Managers
                 if (uiManager.IsPanelRegistered("Pause"))
                 {
                     uiManager.ShowPanel("Pause");
-                    #if UNITY_EDITOR
                     Debug.Log(LOG_PREFIX + "게임 오버 시 Pause 패널을 표시했습니다.");
-                    #endif
                 }
                 else
                 {
-                    #if UNITY_EDITOR
                     Debug.LogWarning(LOG_PREFIX + "Pause 패널이 등록되지 않았습니다. 메인 메뉴로 이동합니다.");
-                    #endif
                     LoadMainMenuScene();
                 }
             }
             else
             {
-                #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + "UIManager가 없습니다. 메인 메뉴로 이동합니다.");
-                #endif
                 LoadMainMenuScene();
             }
         }
@@ -932,26 +953,25 @@ namespace InvaderInsider.Managers
 
         public void StartContinueGame()
         {
+            UnityEngine.Debug.Log("=== FORCE LOG: StartContinueGame 호출됨! ===");
+            Debug.Log(LOG_PREFIX + "=== StartContinueGame 호출됨! ===");
+            
             // 이미 게임 시작 중이거나 씬 로딩 중이면 무시
             if (isStartingGame || isLoadingScene)
             {
-                #if UNITY_EDITOR
+                UnityEngine.Debug.Log("=== FORCE LOG: StartContinueGame 무시됨 - 이미 진행 중 ===");
                 Debug.Log(LOG_PREFIX + "StartContinueGame 무시됨 - 이미 진행 중");
-                #endif
                 return;
             }
             
             isStartingGame = true;
             
-            #if UNITY_EDITOR
+            UnityEngine.Debug.Log("=== FORCE LOG: Continue 게임 시작 시도 ===");
             Debug.Log(LOG_PREFIX + "Continue 게임 시작 시도");
-            #endif
             
             if (saveDataManager != null)
             {
-                #if UNITY_EDITOR
                 Debug.Log(LOG_PREFIX + "SaveDataManager 확인됨, HasSaveData 체크 중...");
-                #endif
                 
                 if (saveDataManager.HasSaveData())
                 {
@@ -962,28 +982,39 @@ namespace InvaderInsider.Managers
                         // Continue는 클리어한 다음 스테이지부터 시작
                         int highestCleared = saveData.progressData.highestStageCleared;
                         
-                        #if UNITY_EDITOR
                         Debug.Log(LOG_PREFIX + $"Continue 게임 시작 - 최고 클리어 스테이지: {highestCleared}, EData: {saveData.progressData.currentEData}");
-                        #endif
                         
-                        // 스테이지 결정 로직 개선
+                        // 스테이지 결정 로직 개선 - 총 스테이지 수 확인
+                        var stageManager = StageManager.Instance;
+                        int totalStages = stageManager?.GetStageCount() ?? 1; // 기본값 1
+                        
+                        Debug.Log(LOG_PREFIX + $"[Continue Debug] StageManager 존재: {stageManager != null}, 총 스테이지 수: {totalStages}");
+                        
                         int startStage;
                         if (highestCleared <= 0)
                         {
                             // 한 번도 클리어하지 않았다면 1스테이지부터
                             startStage = 1;
+                            Debug.Log(LOG_PREFIX + $"[Continue Debug] 조건1: 한 번도 클리어 안함 → 1스테이지부터 시작");
+                        }
+                        else if (highestCleared >= totalStages)
+                        {
+                            // 모든 스테이지를 클리어했다면 마지막 스테이지부터 재시작
+                            startStage = totalStages;
+                            Debug.Log(LOG_PREFIX + $"[Continue Debug] 조건2: 모든 스테이지 클리어됨 ({highestCleared} >= {totalStages}) → 마지막 스테이지({totalStages})부터 재시작");
                         }
                         else
                         {
                             // 클리어한 다음 스테이지부터 시작
                             startStage = highestCleared + 1;
+                            Debug.Log(LOG_PREFIX + $"[Continue Debug] 조건3: 다음 스테이지부터 시작 ({highestCleared} + 1 = {startStage})");
                         }
                         
-                        #if UNITY_EDITOR
-                        Debug.Log(LOG_PREFIX + $"시작할 스테이지: {startStage} (인덱스: {startStage - 1})");
-                        #endif
+                        UnityEngine.Debug.Log($"=== FORCE LOG: Continue - 최고 클리어: {highestCleared}, 총 스테이지: {totalStages}, 시작할 스테이지: {startStage} (인덱스: {startStage - 1}) ===");
+                        Debug.Log(LOG_PREFIX + $"Continue - 최고 클리어: {highestCleared}, 총 스테이지: {totalStages}, 시작할 스테이지: {startStage} (인덱스: {startStage - 1})");
                         
                         // GameManager에 시작할 스테이지 설정 (인덱스는 0부터 시작하므로 startStage - 1)
+                        UnityEngine.Debug.Log($"=== FORCE LOG: SetRequestedStartStage({startStage - 1}) 호출 ===");
                         SetRequestedStartStage(startStage - 1);
                         
                         // 게임 씬으로 전환

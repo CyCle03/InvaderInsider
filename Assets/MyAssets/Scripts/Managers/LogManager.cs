@@ -25,157 +25,80 @@ namespace InvaderInsider.Managers
         private static readonly Dictionary<string, string> _prefixCache = new Dictionary<string, string>();
         private static readonly StringBuilder _stringBuilder = new StringBuilder();
         
-        // 극도로 엄격한 로그 필터링 설정
-        public static LogLevel MinimumLogLevel = LogLevel.Error; // Error만 출력
-        public static bool EnablePerformanceLogs = false; // 성능 로그 완전 비활성화
-        public static bool EnableGameplayLogs = false; // 게임플레이 로그 비활성화
-        public static bool EnableSystemLogs = false; // 시스템 로그 비활성화
-        public static bool EnableUILogs = false; // UI 로그 비활성화
+        // 로그 완전 비활성화
+        public static LogLevel MinimumLogLevel = LogLevel.Error;
+        public static bool EnableLogs = false; // 완전 비활성화
         
-        // 전역 로그 필터링 활성화
-        public static bool GlobalFilterEnabled = true;
+        // 전역 로그 필터링 비활성화 (디버깅용)
+        public static bool GlobalFilterEnabled = false;
         
-        // 차단할 키워드들 (정규식 패턴)
+        // 차단할 로그 패턴들 (대폭 확장)
         private static readonly HashSet<string> _blockedPatterns = new HashSet<string>
         {
-            // MCP Unity 관련
-            @"\[MCP Unity\]",
-            @"McpUnity\.",
-            @"WebSocket server",
-            
-            // UI 관련
-            @"\[UI\]",
-            @"\[TopBar\]",
-            @"\[BottomBar\]",
-            @"\[InGame\]",
-            @"\[SummonChoice\]",
-            @"\[Pause\]",
-            @"Canvas Sorting Order",
-            @"체력 업데이트",
-            @"패널이 표시",
-            @"패널이 숨겨짐",
-            
-            // SaveData 관련
-            @"\[SaveData\]",
-            @"SaveDataManager",
-            @"HasSaveData 확인",
-            @"게임 데이터 로드",
-            @"스테이지 진행 업데이트",
-            @"즉시 저장",
-            
-            // Stage 관련
-            @"\[Stage\]",
-            @"스테이지.*준비",
-            @"스테이지.*시작",
-            @"스테이지.*클리어",
-            @"스테이지 상태 변경",
-            
-            // GameManager 관련
-            @"\[GameManager\]",
-            @"패널 등록",
-            @"게임 초기화",
-            @"게임 일시정지",
-            
-            // ResourceManager 관련
-            @"\[ResourceManager\]",
-            @"ResourceManager 인스턴스",
-            
-            // CardButton 관련
-            @"CardButton:",
-            @"필수 UI 요소들이 할당되지",
-            @"프리팹 경로를 확인하세요",
-            
-            // 기타 시스템
-            @"중복.*감지",
-            @"인스턴스 생성됨",
-            @"초기화 완료"
+            // 모든 로그 차단용 - 와일드카드
+            "",
         };
         
-        // 개발/에디터 모드에서만 로그 출력
-        private static bool ShouldLog =>
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            true;
-#else
-            false;
-#endif
+        // 개발/에디터 모드에서도 로그 비활성화
+        private static bool ShouldLog => false; // 완전 비활성화
 
         static LogManager()
         {
-#if UNITY_EDITOR
-            // 에디터에서 즉시 로그 필터링 적용
-            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-            EnableMinimalLogs();
+            // 모든 로그 완전 비활성화
+            DisableAllLogs();
             
-            // Define Symbol 설정으로 로그 제거
-            SetupDefineSymbols();
-#endif
-        }
-
-#if UNITY_EDITOR
-        private static void SetupDefineSymbols()
-        {
-            // DISABLE_LOGS 심볼 추가하여 Debug.Log 호출 완전 제거
-            var target = EditorUserBuildSettings.selectedBuildTargetGroup;
-            var defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(target);
+            // 런타임에서 강제로 모든 Debug 로그 차단
+            Debug.unityLogger.logEnabled = false;
+            Debug.unityLogger.logEnabled = false;
             
-            if (!defines.Contains("DISABLE_LOGS"))
-            {
-                if (!string.IsNullOrEmpty(defines))
-                {
-                    defines += ";DISABLE_LOGS";
-                }
-                else
-                {
-                    defines = "DISABLE_LOGS";
-                }
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(target, defines);
-            }
+            // 가능한 모든 로그 타입 차단
+            Debug.unityLogger.filterLogType = LogType.Exception;
+            
+            #if UNITY_EDITOR
+            // 에디터에서도 강제 비활성화
+            Debug.unityLogger.logEnabled = false;
+            Debug.unityLogger.logEnabled = false;
+            #endif
         }
-        
-        private static void OnPlayModeStateChanged(PlayModeStateChange state)
-        {
-            // 플레이 모드 진입 시 로그 필터링 다시 적용
-            if (state == PlayModeStateChange.EnteredPlayMode)
-            {
-                EnableMinimalLogs();
-            }
-        }
-#endif
 
         // 초기화 메서드
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            // 게임 시작 시 즉시 로그 필터링 적용
-            EnableMinimalLogs();
-            
-            // Unity 에디터에서 로그 필터링 설정
-            if (GlobalFilterEnabled)
+            // Unity 로그 시스템 완전 비활성화 - 더 강력한 방법
+            try 
             {
-                Application.logMessageReceived += OnLogReceived;
+                Debug.unityLogger.logEnabled = false;
+                Debug.unityLogger.filterLogType = LogType.Exception;
+                Debug.unityLogger.logEnabled = false;
+                
+                // 리플렉션을 통한 추가 차단 시도
+                var unityLoggerType = typeof(UnityEngine.Logger);
+                var logEnabledProperty = unityLoggerType.GetProperty("logEnabled");
+                if (logEnabledProperty != null)
+                {
+                    logEnabledProperty.SetValue(Debug.unityLogger, false);
+                    logEnabledProperty.SetValue(Debug.unityLogger, false);
+                }
             }
+            catch (System.Exception)
+            {
+                // 리플렉션 실패 시 무시
+            }
+            
+            // 추가 안전장치 - 로그 수신기로 차단
+            Application.logMessageReceived -= OnLogReceived;
+            Application.logMessageReceived += OnLogReceived;
         }
         
         // Unity 로그 메시지 필터링
         private static void OnLogReceived(string logString, string stackTrace, LogType type)
         {
-            if (!GlobalFilterEnabled) return;
-            
-            // Error와 Exception은 항상 통과
-            if (type == LogType.Error || type == LogType.Exception)
+            // Force 로그가 아닌 모든 로그 차단
+            if (!logString.StartsWith("[FORCE]") && !logString.StartsWith("=== FORCE LOG:"))
             {
+                // 강제로 로그 출력 차단 - 이미 출력된 후지만 추가 처리 방지
                 return;
-            }
-            
-            // 차단된 패턴 확인
-            foreach (var pattern in _blockedPatterns)
-            {
-                if (Regex.IsMatch(logString, pattern, RegexOptions.IgnoreCase))
-                {
-                    // 이 로그는 차단 - 하지만 Unity의 logMessageReceived는 이미 출력된 후 호출됨
-                    // 대신 Debug.unityLogger.logEnabled를 사용해야 함
-                    return;
-                }
             }
         }
         
@@ -205,63 +128,44 @@ namespace InvaderInsider.Managers
         // 로그 완전 비활성화
         public static void DisableAllLogs()
         {
+            EnableLogs = false;
             Debug.unityLogger.logEnabled = false;
+            Debug.unityLogger.filterLogType = LogType.Exception;
+            Debug.unityLogger.logEnabled = false;
+            
+            // Unity 콘솔 로그 레벨을 가장 높게 설정 (추가 차단)
+            Debug.unityLogger.filterLogType = LogType.Exception;
         }
         
         // 로그 다시 활성화
         public static void EnableAllLogs()
         {
+            EnableLogs = true;
             Debug.unityLogger.logEnabled = true;
             Debug.unityLogger.filterLogType = LogType.Log;
             MinimumLogLevel = LogLevel.Info;
-            EnablePerformanceLogs = true;
-            EnableGameplayLogs = true;
-            EnableSystemLogs = true;
-            EnableUILogs = true;
         }
         
         // 최소 로그만 활성화 (기본값)
         public static void EnableMinimalLogs()
         {
+            EnableLogs = true;
             Debug.unityLogger.logEnabled = true;
             Debug.unityLogger.filterLogType = LogType.Error;
             MinimumLogLevel = LogLevel.Error;
-            EnablePerformanceLogs = false;
-            EnableGameplayLogs = false;
-            EnableSystemLogs = false;
-            EnableUILogs = false;
         }
 
-        // 통합 로그 메서드
+        // 로그 메시지가 차단 대상인지 확인 (항상 차단)
+        private static bool IsBlockedMessage(string message)
+        {
+            return true; // 모든 메시지 차단
+        }
+
+        // 메인 로그 메서드 (완전 비활성화)
         public static void Log(string tag, string message, LogLevel level = LogLevel.Info, params object[] args)
         {
-            if (!ShouldLog) return;
-            
-            // 로그 레벨 필터링
-            if (level < MinimumLogLevel) return;
-            
-            // 태그별 필터링
-            if (!EnableUILogs && IsUITag(tag)) return;
-            if (!EnableGameplayLogs && IsGameplayTag(tag)) return;
-            if (!EnableSystemLogs && IsSystemTag(tag)) return;
-
-            var formattedMessage = FormatMessage(tag, message, args);
-            
-            switch (level)
-            {
-                case LogLevel.Info:
-                    Debug.Log(formattedMessage);
-                    break;
-                case LogLevel.Warning:
-                    Debug.LogWarning(formattedMessage);
-                    break;
-                case LogLevel.Error:
-                    Debug.LogError(formattedMessage);
-                    break;
-                case LogLevel.Debug:
-                    Debug.Log($"[DEBUG] {formattedMessage}");
-                    break;
-            }
+            // 모든 로그 차단
+            return;
         }
         
         private static bool IsUITag(string tag)
@@ -282,111 +186,98 @@ namespace InvaderInsider.Managers
                    tag == "Network" || tag == "Audio";
         }
 
-        // 편의 메서드들
+        // 편의 메서드들 (모두 비활성화)
         public static void Info(string tag, string message, params object[] args)
         {
-            Log(tag, message, LogLevel.Info, args);
+            // 차단됨
         }
         
         public static void Warning(string tag, string message, params object[] args)
         {
-            Log(tag, message, LogLevel.Warning, args);
+            // 차단됨
         }
         
         public static void Error(string tag, string message, params object[] args)
         {
-            Log(tag, message, LogLevel.Error, args);
+            // 차단됨 (필요시 주석 해제)
+            // Debug.LogError($"[{tag}] {message}");
         }
 
         public static void DebugLog(string tag, string message, params object[] args)
         {
-            Log(tag, message, LogLevel.Debug, args);
+            // 차단됨
         }
 
         private static string FormatMessage(string tag, string message, params object[] args)
         {
-            _stringBuilder.Clear();
-            
-            // 태그를 캐시에서 가져오거나 생성
-            if (!_prefixCache.TryGetValue(tag, out var prefix))
-            {
-                prefix = $"[{tag}] ";
-                _prefixCache[tag] = prefix;
-            }
-            
-            _stringBuilder.Append(prefix);
-            
-            // 파라미터가 있으면 string.Format 사용, 없으면 직접 추가
-            if (args != null && args.Length > 0)
-            {
-                try
-                {
-                    _stringBuilder.Append(string.Format(message, args));
-                }
-                catch (FormatException)
-                {
-                    _stringBuilder.Append(message);
-                    _stringBuilder.Append(" [Format Error with args: ");
-                    _stringBuilder.Append(string.Join(", ", args));
-                    _stringBuilder.Append("]");
-                }
-            }
-            else
-            {
-                _stringBuilder.Append(message);
-            }
-            
-            return _stringBuilder.ToString();
+            // 사용되지 않음
+            return "";
         }
 
-        // 성능 모니터링용 메서드 (완전 비활성화)
-        public static void LogPerformance(string tag, string operation, float timeMs)
-        {
-            // 성능 로그는 완전 비활성화
-            return;
-        }
-
-        // 에러와 함께 스택트레이스 출력
+        // 예외 로깅 (중요한 예외만 허용)
         public static void LogException(string tag, Exception exception, string context = null)
         {
-            if (!ShouldLog) return;
-            
-            var message = string.IsNullOrEmpty(context) 
-                ? $"Exception: {exception.Message}" 
-                : $"Exception in {context}: {exception.Message}";
-                
-            Debug.LogError(FormatMessage(tag, message));
+            // 예외는 허용 (심각한 오류이므로)
             Debug.LogException(exception);
         }
 
-        // SaveDataManager에서 사용하는 메서드들 추가
+        // SaveDataManager 호환성을 위한 메서드들 (모두 비활성화)
         public static void LogSave(string message)
         {
-            Info("SaveData", message);
+            // 차단됨
         }
 
         public static void LogSave(string tag, string message, bool isError = false)
         {
-            if (isError)
-            {
-                Error(tag, message);
-            }
-            else
-            {
-                Info(tag, message);
-            }
+            // 차단됨
         }
 
         public static void ForceLogOnce(string message)
         {
-            // 한번만 출력하는 로그 - 단순화하여 일반 로그로 처리
-            Info("System", message);
+            // 차단됨
         }
 
         public static void ForceLogOnce(string tag, string message)
         {
-            // 한번만 출력하는 로그 - 단순화하여 일반 로그로 처리
-            Info(tag, message);
+            // 차단됨
+        }
+
+        // 로그 제어 메서드들
+        public static void SetLogLevel(LogLevel level)
+        {
+            MinimumLogLevel = level;
+            
+            switch (level)
+            {
+                case LogLevel.Error:
+                    Debug.unityLogger.filterLogType = LogType.Error;
+                    break;
+                case LogLevel.Warning:
+                    Debug.unityLogger.filterLogType = LogType.Warning;
+                    break;
+                case LogLevel.Info:
+                    Debug.unityLogger.filterLogType = LogType.Log;
+                    break;
+                default:
+                    Debug.unityLogger.filterLogType = LogType.Exception;
+                    break;
+            }
+        }
+
+        // 차단 패턴 관리 (사용되지 않음)
+        public static void AddBlockedPattern(string pattern)
+        {
+            // 이미 모든 로그가 차단됨
+        }
+        
+        public static void RemoveBlockedPattern(string pattern)
+        {
+            // 이미 모든 로그가 차단됨
+        }
+        
+        public static void ClearBlockedPatterns()
+        {
+            // 이미 모든 로그가 차단됨
         }
     }
 } 
