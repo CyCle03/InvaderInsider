@@ -10,17 +10,7 @@ namespace InvaderInsider.UI
 {
     public class DeckPanel : BasePanel
     {
-        private const string LOG_PREFIX = "[Deck] ";
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "Deck: Panel shown",
-            "Deck: Panel hidden",
-            "Deck: Card {0} added to deck",
-            "Deck: Card {0} removed from deck",
-            "Deck: Card {0} created",
-            "Deck: Card {0} destroyed",
-            "Deck: Card data not found for ID {0}"
-        };
+        private const string LOG_TAG = "Deck";
 
         [Header("Card Containers")]
         [SerializeField] private Transform deckCardContainer;
@@ -33,7 +23,6 @@ namespace InvaderInsider.UI
         private UIManager uiManager;
         private SaveDataManager saveManager;
         private CardManager cardManager;
-        private readonly string[] cachedStrings = new string[7];
         private bool isInitialized = false;
 
         protected override void Awake()
@@ -51,7 +40,7 @@ namespace InvaderInsider.UI
         {
             if (isInitialized)
             {
-                LogManager.Info("DeckPanel", "Deck 패널이 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
+                LogManager.Info(LOG_TAG, "패널이 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
                 return;
             }
 
@@ -72,22 +61,14 @@ namespace InvaderInsider.UI
         protected override void OnShow()
         {
             base.OnShow();
-            if (cachedStrings[0] == null)
-            {
-                cachedStrings[0] = LOG_PREFIX + LOG_MESSAGES[0];
-            }
-            Debug.Log(cachedStrings[0]);
+            LogManager.Info(LOG_TAG, "패널 표시됨");
             RefreshDeckDisplay();
         }
 
         protected override void OnHide()
         {
             base.OnHide();
-            if (cachedStrings[1] == null)
-            {
-                cachedStrings[1] = LOG_PREFIX + LOG_MESSAGES[1];
-            }
-            Debug.Log(cachedStrings[1]);
+            LogManager.Info(LOG_TAG, "패널 숨김");
             ClearCardDisplays();
         }
 
@@ -119,11 +100,7 @@ namespace InvaderInsider.UI
             var cardData = cardManager.GetCardById(cardId);
             if (cardData == null)
             {
-                if (cachedStrings[6] == null)
-                {
-                    cachedStrings[6] = string.Format(LOG_PREFIX + LOG_MESSAGES[6], cardId);
-                }
-                Debug.LogWarning(cachedStrings[6]);
+                LogManager.Warning(LOG_TAG, "카드 데이터를 찾을 수 없음 - ID: {0}", cardId);
                 return;
             }
 
@@ -145,11 +122,7 @@ namespace InvaderInsider.UI
                 activeCardUIs.Add(cardUI);
                 cardUIDict[cardId] = cardUI;
 
-                if (cachedStrings[4] == null)
-                {
-                    cachedStrings[4] = string.Format(LOG_PREFIX + LOG_MESSAGES[4], cardId);
-                }
-                Debug.Log(cachedStrings[4]);
+                LogManager.Info(LOG_TAG, "카드 생성됨 - ID: {0}", cardId);
             }
         }
 
@@ -160,20 +133,12 @@ namespace InvaderInsider.UI
             if (isInDeck)
             {
                 saveManager.RemoveCardFromDeck(cardId);
-                if (cachedStrings[3] == null)
-                {
-                    cachedStrings[3] = string.Format(LOG_PREFIX + LOG_MESSAGES[3], cardId);
-                }
-                Debug.Log(cachedStrings[3]);
+                LogManager.Info(LOG_TAG, "카드가 덱에서 제거됨 - ID: {0}", cardId);
             }
             else
             {
                 saveManager.AddCardToDeck(cardId);
-                if (cachedStrings[2] == null)
-                {
-                    cachedStrings[2] = string.Format(LOG_PREFIX + LOG_MESSAGES[2], cardId);
-                }
-                Debug.Log(cachedStrings[2]);
+                LogManager.Info(LOG_TAG, "카드가 덱에 추가됨 - ID: {0}", cardId);
             }
             
             RefreshDeckDisplay();
@@ -185,11 +150,7 @@ namespace InvaderInsider.UI
             {
                 if (cardUI != null)
                 {
-                    if (cachedStrings[5] == null)
-                    {
-                        cachedStrings[5] = string.Format(LOG_PREFIX + LOG_MESSAGES[5], cardUI.CardId);
-                    }
-                    Debug.Log(cachedStrings[5]);
+                    LogManager.Info(LOG_TAG, "카드 제거됨 - ID: {0}", cardUI.CardId);
                     cardUI.transform.SetParent(null);
                     cardUI.gameObject.SetActive(false);
                 }

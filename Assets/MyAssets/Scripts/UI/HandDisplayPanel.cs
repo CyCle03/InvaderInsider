@@ -11,20 +11,7 @@ namespace InvaderInsider.UI
     // 핸드에 있는 카드들을 작게 표시하는 UI 패널 스크립트
     public class HandDisplayPanel : BasePanel
     {
-        private const string LOG_PREFIX = "[UI] ";
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "Hand: SaveDataManager instance not found",
-            "Hand: Card Database not assigned",
-            "Hand: Popup opened with {0} cards",
-            "Hand: Card {0} ({1}) added to popup", 
-            "Hand: Card data not found for ID: {0}",
-            "Hand: Popup closed",
-            "Hand: Sort applied - {0}",
-            "Hand: Card {0} played/upgraded",
-            "Hand: Card {0} interaction failed - {1}",
-            "Hand: No CardInteractionHandler found for {0}"
-        };
+        private const string LOG_TAG = "HandDisplay";
 
         [Header("팝업 오버레이 UI")]
         [SerializeField] private GameObject popupOverlay; // 전체 팝업 오버레이
@@ -80,17 +67,17 @@ namespace InvaderInsider.UI
 
             if (saveManager == null)
             {
-                LogManager.Error("HandDisplay", "SaveDataManager instance not found");
+                LogManager.Error(LOG_TAG, "SaveDataManager instance not found");
                 return;
             }
             if (cardManager == null)
             {
-                LogManager.Error("HandDisplay", "CardManager instance not found");
+                LogManager.Error(LOG_TAG, "CardManager instance not found");
                 return;
             }
             if (cardDatabase == null)
             {
-                LogManager.Error("HandDisplay", "Card Database not assigned");
+                LogManager.Error(LOG_TAG, "Card Database not assigned");
                 return;
             }
 
@@ -177,7 +164,7 @@ namespace InvaderInsider.UI
             if (Application.isPlaying)
             {
                 var cardCount = cardManager?.GetHandCardIds()?.Count ?? 0;
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], cardCount));
+                LogManager.Info(LOG_TAG, "팝업 열림 - 카드 수: {0}", cardCount);
             }
         }
 
@@ -196,7 +183,7 @@ namespace InvaderInsider.UI
 
                 if (Application.isPlaying)
                 {
-                    Debug.Log(LOG_PREFIX + LOG_MESSAGES[5]);
+                    LogManager.Info(LOG_TAG, "팝업 닫힘");
                 }
             });
         }
@@ -231,7 +218,7 @@ namespace InvaderInsider.UI
                 {
                     if (Application.isPlaying)
                     {
-                        Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[4], cardId));
+                        LogManager.Warning(LOG_TAG, "카드 데이터를 찾을 수 없음 - ID: {0}", cardId);
                     }
                     continue;
                 }
@@ -257,14 +244,14 @@ namespace InvaderInsider.UI
                 }
                 else if (Application.isPlaying)
                 {
-                    Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[9], cardData.cardName));
+                    LogManager.Warning(LOG_TAG, "CardInteractionHandler가 없음: {0}", cardData.cardName);
                 }
 
                 currentHandItems.Add(cardObj);
 
                 if (Application.isPlaying)
                 {
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], cardData.cardName, cardId));
+                    LogManager.Info(LOG_TAG, "카드 추가됨: {0} (ID: {1})", cardData.cardName, cardId);
                 }
             }
         }
@@ -292,7 +279,7 @@ namespace InvaderInsider.UI
 
             if (Application.isPlaying)
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[6], sortType.ToString()));
+                LogManager.Info(LOG_TAG, "정렬 적용됨: {0}", sortType.ToString());
             }
         }
 
@@ -403,13 +390,13 @@ namespace InvaderInsider.UI
             {
                 if (Application.isPlaying)
                 {
-                    Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[7], playedCardData.cardName));
+                    LogManager.Info(LOG_TAG, "카드 {0} 플레이/업그레이드됨", playedCardData.cardName);
                 }
                 cardManager.RemoveCardFromHand(playedCardData.cardId);
             }
             else if (Application.isPlaying)
             {
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[8], playedCardData.cardName, result));
+                LogManager.Info(LOG_TAG, "카드 {0} 상호작용 실패: {1}", playedCardData.cardName, result);
             }
         }
 
@@ -503,9 +490,7 @@ namespace InvaderInsider.UI
         {
             if (cardPrefab == null)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(LOG_PREFIX + "cardPrefab이 할당되지 않아 카드 풀 초기화를 건너뜁니다.");
-#endif
+                LogManager.Warning(LOG_TAG, "cardPrefab이 할당되지 않아 카드 풀 초기화를 건너뜁니다.");
                 return;
             }
 

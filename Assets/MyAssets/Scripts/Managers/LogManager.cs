@@ -26,16 +26,16 @@ namespace InvaderInsider.Managers
         private static readonly StringBuilder _stringBuilder = new StringBuilder();
         
         // 극도로 엄격한 로그 필터링 설정
-        public static LogLevel MinimumLogLevel = LogLevel.Info; // Info 이상 출력으로 변경 (FORCE LOG 보기 위해)
-        public static bool EnablePerformanceLogs = false; // 성능 로그 비활성화
-        public static bool EnableGameplayLogs = true; // 게임플레이 로그 활성화 (FORCE LOG 보기 위해)
-        public static bool EnableSystemLogs = true; // 시스템 로그 활성화 (에러 추적용)
-        public static bool EnableUILogs = true; // UI 로그 활성화 (FORCE LOG 보기 위해)
+        public static LogLevel MinimumLogLevel = LogLevel.Error; // Error만 출력
+        public static bool EnablePerformanceLogs = false; // 성능 로그 완전 비활성화
+        public static bool EnableGameplayLogs = false; // 게임플레이 로그 비활성화
+        public static bool EnableSystemLogs = false; // 시스템 로그 비활성화
+        public static bool EnableUILogs = false; // UI 로그 비활성화
         
         // 전역 로그 필터링 활성화
         public static bool GlobalFilterEnabled = true;
         
-        // 차단할 키워드들 (정규식 패턴) - FORCE LOG는 차단하지 않음
+        // 차단할 키워드들 (정규식 패턴)
         private static readonly HashSet<string> _blockedPatterns = new HashSet<string>
         {
             // MCP Unity 관련
@@ -43,34 +43,53 @@ namespace InvaderInsider.Managers
             @"McpUnity\.",
             @"WebSocket server",
             
-            // FORCE LOG 완전 차단
-            @"\[FORCE LOG\]",
-            @"FORCE LOG",
-            
-            // SaveData 관련 로그 차단 (에러는 제외)
-            @"\[SaveData\].*(?!실패|오류|에러|Error|Exception)",
-            @"SaveDataManager.*(?!실패|오류|에러|Error|Exception)",
-            @"저장.*완료",
-            @"로드.*완료",
-            @"데이터.*초기화.*완료",
-            @"인스턴스.*생성",
-            @"파일.*존재.*확인",
-            
-            // 일반 UI 관련 (FORCE LOG는 제외)
+            // UI 관련
+            @"\[UI\]",
+            @"\[TopBar\]",
+            @"\[BottomBar\]",
+            @"\[InGame\]",
+            @"\[SummonChoice\]",
+            @"\[Pause\]",
             @"Canvas Sorting Order",
             @"체력 업데이트",
+            @"패널이 표시",
+            @"패널이 숨겨짐",
             
-            // 기타 시스템 (중요하지 않은 것들만)
+            // SaveData 관련
+            @"\[SaveData\]",
+            @"SaveDataManager",
+            @"HasSaveData 확인",
+            @"게임 데이터 로드",
+            @"스테이지 진행 업데이트",
+            @"즉시 저장",
+            
+            // Stage 관련
+            @"\[Stage\]",
+            @"스테이지.*준비",
+            @"스테이지.*시작",
+            @"스테이지.*클리어",
+            @"스테이지 상태 변경",
+            
+            // GameManager 관련
+            @"\[GameManager\]",
+            @"패널 등록",
+            @"게임 초기화",
+            @"게임 일시정지",
+            
+            // ResourceManager 관련
+            @"\[ResourceManager\]",
+            @"ResourceManager 인스턴스",
+            
+            // CardButton 관련
+            @"CardButton:",
+            @"필수 UI 요소들이 할당되지",
+            @"프리팹 경로를 확인하세요",
+            
+            // 기타 시스템
+            @"중복.*감지",
             @"인스턴스 생성됨",
-            @"초기화 완료",
-            @"연결 성공",
-            @"찾기 시도"
+            @"초기화 완료"
         };
-        
-        // 중복 로그 방지 시스템 - 더 엄격하게
-        private static readonly Dictionary<string, int> _logCounts = new Dictionary<string, int>();
-        private static readonly HashSet<string> _suppressedLogs = new HashSet<string>();
-        private const int MAX_DUPLICATE_LOGS = 1; // 같은 로그 최대 1번만 출력으로 변경
         
         // 개발/에디터 모드에서만 로그 출력
         private static bool ShouldLog =>
@@ -83,11 +102,11 @@ namespace InvaderInsider.Managers
         static LogManager()
         {
 #if UNITY_EDITOR
-            // 에디터에서 최소 로그만 활성화
+            // 에디터에서 즉시 로그 필터링 적용
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             EnableMinimalLogs();
             
-            // Define Symbol에서 DISABLE_LOGS 제거
+            // Define Symbol 설정으로 로그 제거
             SetupDefineSymbols();
 #endif
         }
@@ -95,69 +114,31 @@ namespace InvaderInsider.Managers
 #if UNITY_EDITOR
         private static void SetupDefineSymbols()
         {
-            // DISABLE_LOGS 심볼 제거하여 Debug.Log 호출 활성화
+            // DISABLE_LOGS 심볼 추가하여 Debug.Log 호출 완전 제거
             var target = EditorUserBuildSettings.selectedBuildTargetGroup;
             var defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(target);
             
-            if (defines.Contains("DISABLE_LOGS"))
+            if (!defines.Contains("DISABLE_LOGS"))
             {
-                defines = defines.Replace("DISABLE_LOGS;", "").Replace(";DISABLE_LOGS", "").Replace("DISABLE_LOGS", "");
+                if (!string.IsNullOrEmpty(defines))
+                {
+                    defines += ";DISABLE_LOGS";
+                }
+                else
+                {
+                    defines = "DISABLE_LOGS";
+                }
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(target, defines);
-                Debug.Log("[LogManager] DISABLE_LOGS 심볼을 제거했습니다. 스크립트 재컴파일이 필요할 수 있습니다.");
             }
         }
         
         private static void OnPlayModeStateChanged(PlayModeStateChange state)
         {
-            // 플레이 모드 진입 시 최소 로그만 활성화
+            // 플레이 모드 진입 시 로그 필터링 다시 적용
             if (state == PlayModeStateChange.EnteredPlayMode)
             {
                 EnableMinimalLogs();
             }
-        }
-        
-        // 수동으로 DISABLE_LOGS 심볼 제거하는 메서드
-        [MenuItem("Tools/LogManager/Enable All Logs")]
-        public static void ForceEnableAllLogs()
-        {
-            SetupDefineSymbols();
-            EnableAllLogs();
-            Debug.Log("[LogManager] 모든 로그가 강제로 활성화되었습니다.");
-        }
-        
-        [MenuItem("Tools/LogManager/Enable Minimal Logs (Default)")]
-        public static void ForceEnableMinimalLogs()
-        {
-            EnableMinimalLogs();
-            Debug.LogWarning("[LogManager] 최소 로그 모드로 설정되었습니다. (Warning/Error만 출력)");
-        }
-        
-        [MenuItem("Tools/LogManager/Enable Error Only")]
-        public static void EnableErrorOnly()
-        {
-            Debug.unityLogger.logEnabled = true;
-            Debug.unityLogger.filterLogType = LogType.Error;
-            MinimumLogLevel = LogLevel.Error;
-            EnablePerformanceLogs = false;
-            EnableGameplayLogs = false;
-            EnableSystemLogs = false;
-            EnableUILogs = false;
-            Debug.LogError("[LogManager] 에러 로그만 활성화되었습니다.");
-        }
-        
-        [MenuItem("Tools/LogManager/Disable All Logs")]
-        public static void ForceDisableAllLogs()
-        {
-            DisableAllLogs();
-            // 로그가 비활성화되어 있으므로 콘솔에 출력되지 않음
-        }
-        
-        [MenuItem("Tools/LogManager/Clear Duplicate Log Cache")]
-        public static void ClearDuplicateLogCache()
-        {
-            _logCounts.Clear();
-            _suppressedLogs.Clear();
-            Debug.Log("[LogManager] 중복 로그 캐시가 초기화되었습니다.");
         }
 #endif
 
@@ -165,50 +146,35 @@ namespace InvaderInsider.Managers
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            // 게임 시작 시 최소 로그만 활성화
+            // 게임 시작 시 즉시 로그 필터링 적용
             EnableMinimalLogs();
             
-            // Unity 에디터에서 로그 필터링 설정 - 활성화
-            Application.logMessageReceived += OnLogReceived;
-            
-            // Unity 로거를 사용자 정의 로거로 교체
-            SetupCustomLogger();
-        }
-        
-        private static void SetupCustomLogger()
-        {
-            // Warning 이상만 출력하도록 설정
-            Debug.unityLogger.filterLogType = LogType.Warning;
-            
-            // 추가적인 필터링을 위해 LogType을 제한
-            Debug.unityLogger.logEnabled = true;
+            // Unity 에디터에서 로그 필터링 설정
+            if (GlobalFilterEnabled)
+            {
+                Application.logMessageReceived += OnLogReceived;
+            }
         }
         
         // Unity 로그 메시지 필터링
         private static void OnLogReceived(string logString, string stackTrace, LogType type)
         {
+            if (!GlobalFilterEnabled) return;
+            
             // Error와 Exception은 항상 통과
             if (type == LogType.Error || type == LogType.Exception)
             {
                 return;
             }
             
-            // Warning 타입에 대해서만 중복 체크 및 패턴 필터링 적용
-            if (type == LogType.Warning)
+            // 차단된 패턴 확인
+            foreach (var pattern in _blockedPatterns)
             {
-                // 먼저 차단 패턴 확인
-                foreach (var pattern in _blockedPatterns)
+                if (Regex.IsMatch(logString, pattern, RegexOptions.IgnoreCase))
                 {
-                    if (Regex.IsMatch(logString, pattern, RegexOptions.IgnoreCase))
-                    {
-                        return; // 차단된 패턴이므로 로그 출력 중단
-                    }
-                }
-                
-                // 중복 로그 체크
-                if (IsDuplicateLog(logString))
-                {
-                    return; // 중복 로그이므로 출력 중단
+                    // 이 로그는 차단 - 하지만 Unity의 logMessageReceived는 이미 출력된 후 호출됨
+                    // 대신 Debug.unityLogger.logEnabled를 사용해야 함
+                    return;
                 }
             }
         }
@@ -247,23 +213,23 @@ namespace InvaderInsider.Managers
         {
             Debug.unityLogger.logEnabled = true;
             Debug.unityLogger.filterLogType = LogType.Log;
-            MinimumLogLevel = LogLevel.Warning;
-            EnablePerformanceLogs = false;
-            EnableGameplayLogs = false;
+            MinimumLogLevel = LogLevel.Info;
+            EnablePerformanceLogs = true;
+            EnableGameplayLogs = true;
             EnableSystemLogs = true;
-            EnableUILogs = false;
+            EnableUILogs = true;
         }
         
-        // 최소 로그만 활성화 (기본값) - FORCE LOG 보기 위해 임시 수정
+        // 최소 로그만 활성화 (기본값)
         public static void EnableMinimalLogs()
         {
             Debug.unityLogger.logEnabled = true;
-            Debug.unityLogger.filterLogType = LogType.Warning; // Warning 이상만 출력으로 변경
-            MinimumLogLevel = LogLevel.Warning; // Warning 로그부터 출력
+            Debug.unityLogger.filterLogType = LogType.Error;
+            MinimumLogLevel = LogLevel.Error;
             EnablePerformanceLogs = false;
-            EnableGameplayLogs = false; // 게임플레이 로그 비활성화
-            EnableSystemLogs = true; // 시스템 로그는 유지 (에러 추적용)
-            EnableUILogs = false; // UI 로그 비활성화
+            EnableGameplayLogs = false;
+            EnableSystemLogs = false;
+            EnableUILogs = false;
         }
 
         // 통합 로그 메서드
@@ -271,7 +237,7 @@ namespace InvaderInsider.Managers
         {
             if (!ShouldLog) return;
             
-            // 로그 레벨 필터링 - Warning 이상만 허용
+            // 로그 레벨 필터링
             if (level < MinimumLogLevel) return;
             
             // 태그별 필터링
@@ -281,26 +247,11 @@ namespace InvaderInsider.Managers
 
             var formattedMessage = FormatMessage(tag, message, args);
             
-            // 차단 패턴 확인
-            foreach (var pattern in _blockedPatterns)
-            {
-                if (Regex.IsMatch(formattedMessage, pattern, RegexOptions.IgnoreCase))
-                {
-                    return; // 차단된 패턴이므로 로그 출력 중단
-                }
-            }
-            
-            // 중복 로그 체크
-            if (IsDuplicateLog(formattedMessage))
-            {
-                return; // 중복 로그는 출력하지 않음
-            }
-            
             switch (level)
             {
                 case LogLevel.Info:
-                    // Info 레벨은 출력하지 않음
-                    return;
+                    Debug.Log(formattedMessage);
+                    break;
                 case LogLevel.Warning:
                     Debug.LogWarning(formattedMessage);
                     break;
@@ -308,8 +259,8 @@ namespace InvaderInsider.Managers
                     Debug.LogError(formattedMessage);
                     break;
                 case LogLevel.Debug:
-                    // Debug 레벨은 출력하지 않음
-                    return;
+                    Debug.Log($"[DEBUG] {formattedMessage}");
+                    break;
             }
         }
         
@@ -406,78 +357,6 @@ namespace InvaderInsider.Managers
                 
             Debug.LogError(FormatMessage(tag, message));
             Debug.LogException(exception);
-        }
-
-        // 중복 로그 체크 메서드
-        private static bool IsDuplicateLog(string message)
-        {
-            // 이미 억제된 로그인지 확인
-            if (_suppressedLogs.Contains(message))
-            {
-                return true;
-            }
-            
-            // 로그 카운트 증가
-            if (_logCounts.TryGetValue(message, out int count))
-            {
-                _logCounts[message] = count + 1;
-                
-                // 최대 허용 횟수를 초과하면 억제 목록에 추가
-                if (count + 1 >= MAX_DUPLICATE_LOGS)
-                {
-                    _suppressedLogs.Add(message);
-                    Debug.LogWarning($"[LogManager] 중복 로그 억제: '{message}' (총 {count + 1}회 출력됨)");
-                    return true;
-                }
-            }
-            else
-            {
-                _logCounts[message] = 1;
-            }
-            
-            return false;
-        }
-
-        // 저장 관련 로그 전용 메서드 (중앙화)
-        public static void LogSave(string operation, string detail = null, bool isError = false)
-        {
-            if (!ShouldLog) return;
-            
-            string message = string.IsNullOrEmpty(detail) 
-                ? $"저장 작업: {operation}" 
-                : $"저장 작업: {operation} - {detail}";
-            
-            // 저장 관련 로그는 에러가 아닌 경우 완전 차단
-            if (!isError) return;
-            
-            // 에러인 경우만 출력
-            if (isError)
-            {
-                Debug.LogError($"[SaveSystem] {message}");
-            }
-        }
-        
-        // 시스템 상태 요약 로그 (한 번만 출력)
-        private static bool _systemInfoLogged = false;
-        public static void LogSystemInfo()
-        {
-            if (!ShouldLog || _systemInfoLogged) return;
-            _systemInfoLogged = true;
-            
-            Debug.Log($"[LogManager] 시스템 설정 - 최소 레벨: {MinimumLogLevel}, " +
-                     $"UI: {EnableUILogs}, 게임플레이: {EnableGameplayLogs}, 시스템: {EnableSystemLogs}");
-        }
-        
-        // 개발자용: 강제로 한 번만 중요 정보 출력
-        public static void ForceLogOnce(string tag, string message)
-        {
-            if (!ShouldLog) return;
-            
-            string key = $"{tag}:{message}";
-            if (_suppressedLogs.Contains(key)) return;
-            
-            _suppressedLogs.Add(key);
-            Debug.LogWarning($"[ONCE] [{tag}] {message}");
         }
     }
 } 

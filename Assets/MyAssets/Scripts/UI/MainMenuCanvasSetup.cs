@@ -2,23 +2,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Linq;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
     public class MainMenuCanvasSetup : MonoBehaviour
     {
-        private const string LOG_PREFIX = "[CanvasSetup] ";
-        
-        // 에러 상황에만 LOG_MESSAGES 사용
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "Main Canvas not found in scene", // 0
-            "Canvas setup completed", // 1
-            "Render Mode: {0}", // 2
-            "Sorting Order: {0}", // 3
-            "EventSystem validated", // 4
-            "Canvas Scaler configured" // 5
-        };
+        private const string LOG_TAG = "CanvasSetup";
 
         [Header("Canvas Configuration")]
         public bool autoSetupOnAwake = true;
@@ -63,9 +53,7 @@ namespace InvaderInsider.UI
             
             if (mainCanvas == null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
-                #endif
+                LogManager.Error(LOG_TAG, "Main Canvas not found in scene");
                 return;
             }
 

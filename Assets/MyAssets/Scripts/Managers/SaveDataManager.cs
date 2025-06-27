@@ -290,9 +290,33 @@ namespace InvaderInsider.Data
     public class SaveDataManager : MonoBehaviour
     {
         // 로그 출력 제어 플래그
+        private const bool ENABLE_LOGS = false; // 로그 완전 비활성화
+        
+        // 로그 출력 제어 플래그
         private const bool ENABLE_LOGS = true; // 로그 활성화로 변경하여 디버깅
         
         private const string LOG_PREFIX = "[SaveData] ";
+        
+        // 로그 헬퍼 메서드
+        private static void LogOnly(string message)
+        {
+#if UNITY_EDITOR && !DISABLE_LOGS
+            if (ENABLE_LOGS) Debug.Log(LOG_PREFIX + message);
+#endif
+        }
+        
+        private static void LogWarningOnly(string message)
+        {
+#if UNITY_EDITOR && !DISABLE_LOGS
+            if (ENABLE_LOGS) Debug.LogWarning(LOG_PREFIX + message);
+#endif
+        }
+        
+        private static void LogErrorOnly(string message)
+        {
+            Debug.LogError(LOG_PREFIX + message); // Error는 항상 출력
+        }
+        
         
         // 로그 헬퍼 메서드
         private static void LogOnly(string message)
@@ -588,6 +612,10 @@ namespace InvaderInsider.Data
             {
                 string json = JsonConvert.SerializeObject(currentSaveData, Formatting.Indented);
                 File.WriteAllText(SAVE_KEY, json);
+                
+                #if UNITY_EDITOR
+                LogOnly($"게임 데이터 저장 성공 - 파일: {SAVE_KEY}, 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared}");
+                #endif
             }
             catch (Exception e)
             {
@@ -600,6 +628,10 @@ namespace InvaderInsider.Data
             // 게임이 실행 중이 아닐 때만 로드하지 않음
             if (!Application.isPlaying) return;
             
+            #if UNITY_EDITOR
+            LogOnly($"게임 데이터 로드 시도 - 파일 경로: {SAVE_KEY}");
+            #endif
+            
             try
             {
                 if (File.Exists(SAVE_KEY))
@@ -611,6 +643,12 @@ namespace InvaderInsider.Data
                     {
                         LogManager.LogSave("로드", "역직렬화 실패", true);
                         currentSaveData = new SaveData();
+                    }
+                    else
+                    {
+                        #if UNITY_EDITOR
+                        LogOnly($"게임 데이터 로드 성공 - 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}, eData: {currentSaveData.progressData.currentEData}");
+                        #endif
                     }
                 }
                 else
@@ -662,6 +700,9 @@ namespace InvaderInsider.Data
 
             if (saveImmediately)
             {
+                #if UNITY_EDITOR
+                LogOnly("즉시 저장 호출");
+                #endif
                 SaveGameData();
             }
         }
