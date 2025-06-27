@@ -54,7 +54,7 @@ namespace InvaderInsider.UI
         [SerializeField] private TextMeshProUGUI stageText;
         [SerializeField] private TextMeshProUGUI waveText;
 
-        private readonly Dictionary<string, BasePanel> panels = new Dictionary<string, BasePanel>();
+        public readonly Dictionary<string, BasePanel> panels = new Dictionary<string, BasePanel>();
         private readonly Stack<BasePanel> panelHistory = new Stack<BasePanel>();
         private BasePanel currentPanel;
 

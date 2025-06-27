@@ -660,6 +660,14 @@ namespace InvaderInsider.Managers
             // 모든 BasePanel을 한 번에 찾아서 처리
             var allPanels = FindObjectsOfType<BasePanel>(true);
             
+            #if UNITY_EDITOR
+            Debug.Log($"{LOG_PREFIX}찾은 패널 수: {allPanels.Length}");
+            foreach (var panel in allPanels)
+            {
+                Debug.Log($"{LOG_PREFIX}찾은 패널: {panel.GetType().Name} - {panel.gameObject.name}");
+            }
+            #endif
+            
             // 딕셔너리로 빠른 검색을 위한 임시 매핑
             var panelsByType = new System.Collections.Generic.Dictionary<System.Type, BasePanel>();
             
@@ -788,6 +796,17 @@ namespace InvaderInsider.Managers
             {
                 if (uiManager != null)
                 {
+                    #if UNITY_EDITOR
+                    Debug.Log($"{LOG_PREFIX}UIManager 확인됨. 등록된 패널 수: {uiManager.panels?.Count ?? 0}");
+                    if (uiManager.panels != null)
+                    {
+                        foreach (var panel in uiManager.panels)
+                        {
+                            Debug.Log($"{LOG_PREFIX}등록된 패널: {panel.Key} - {(panel.Value != null ? "존재" : "null")}");
+                        }
+                    }
+                    #endif
+                    
                     if (uiManager.IsPanelRegistered("Pause"))
                     {
                         uiManager.ShowPanel("Pause");
@@ -799,6 +818,18 @@ namespace InvaderInsider.Managers
                     {
                         #if UNITY_EDITOR
                         Debug.LogWarning($"{LOG_PREFIX}Pause 패널이 UIManager에 등록되지 않았습니다.");
+                        // 수동으로 Pause 패널 찾기 시도
+                        var pausePanel = FindObjectOfType<InvaderInsider.UI.PausePanel>(true);
+                        if (pausePanel != null)
+                        {
+                            Debug.Log($"{LOG_PREFIX}Pause 패널을 수동으로 찾았습니다: {pausePanel.gameObject.name}");
+                            pausePanel.gameObject.SetActive(true);
+                            pausePanel.Show();
+                        }
+                        else
+                        {
+                            Debug.LogError($"{LOG_PREFIX}Pause 패널을 찾을 수 없습니다!");
+                        }
                         #endif
                     }
                 }
@@ -904,45 +935,82 @@ namespace InvaderInsider.Managers
             // 이미 게임 시작 중이거나 씬 로딩 중이면 무시
             if (isStartingGame || isLoadingScene)
             {
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "StartContinueGame 무시됨 - 이미 진행 중");
+                #endif
                 return;
             }
             
             isStartingGame = true;
             
-            if (saveDataManager != null && saveDataManager.HasSaveData())
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "Continue 게임 시작 시도");
+            #endif
+            
+            if (saveDataManager != null)
             {
-                saveDataManager.LoadGameData();
-                var saveData = saveDataManager.CurrentSaveData;
-                if (saveData != null)
-                {
-                    // Continue는 클리어한 다음 스테이지부터 시작
-                    int highestCleared = saveData.progressData.highestStageCleared;
-                    
-                    #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + $"Continue 게임 시작 - 최고 클리어 스테이지: {highestCleared}");
-                    #endif
-                    
-                    // 클리어한 다음 스테이지부터 시작 (첫 스테이지가 최소값)
-                    int nextStage = highestCleared + 1;
-                    int startStage = Mathf.Max(1, nextStage); // 최소 1스테이지 보장
-                    
-                    #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + $"시작할 스테이지: {startStage} (인덱스: {startStage - 1})");
-                    #endif
-                    
-                    // GameManager에 시작할 스테이지 설정 (인덱스는 0부터 시작하므로 startStage - 1)
-                    SetRequestedStartStage(startStage - 1);
-                }
+                #if UNITY_EDITOR
+                Debug.Log(LOG_PREFIX + "SaveDataManager 확인됨, HasSaveData 체크 중...");
+                #endif
                 
-                // 게임 씬으로 전환
-                LoadGameScene();
+                if (saveDataManager.HasSaveData())
+                {
+                    saveDataManager.LoadGameData();
+                    var saveData = saveDataManager.CurrentSaveData;
+                    if (saveData != null)
+                    {
+                        // Continue는 클리어한 다음 스테이지부터 시작
+                        int highestCleared = saveData.progressData.highestStageCleared;
+                        
+                        #if UNITY_EDITOR
+                        Debug.Log(LOG_PREFIX + $"Continue 게임 시작 - 최고 클리어 스테이지: {highestCleared}, EData: {saveData.progressData.currentEData}");
+                        #endif
+                        
+                        // 스테이지 결정 로직 개선
+                        int startStage;
+                        if (highestCleared <= 0)
+                        {
+                            // 한 번도 클리어하지 않았다면 1스테이지부터
+                            startStage = 1;
+                        }
+                        else
+                        {
+                            // 클리어한 다음 스테이지부터 시작
+                            startStage = highestCleared + 1;
+                        }
+                        
+                        #if UNITY_EDITOR
+                        Debug.Log(LOG_PREFIX + $"시작할 스테이지: {startStage} (인덱스: {startStage - 1})");
+                        #endif
+                        
+                        // GameManager에 시작할 스테이지 설정 (인덱스는 0부터 시작하므로 startStage - 1)
+                        SetRequestedStartStage(startStage - 1);
+                        
+                        // 게임 씬으로 전환
+                        LoadGameScene();
+                    }
+                    else
+                    {
+                        #if UNITY_EDITOR
+                        Debug.LogError(LOG_PREFIX + "Continue 실패 - SaveData가 null");
+                        #endif
+                        isStartingGame = false;
+                    }
+                }
+                else
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogWarning(LOG_PREFIX + "Continue 실패 - HasSaveData가 false 반환");
+                    #endif
+                    isStartingGame = false;
+                }
             }
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + "Continue 실패 - SaveDataManager 없거나 저장 데이터 없음");
+                Debug.LogError(LOG_PREFIX + "Continue 실패 - SaveDataManager가 null");
                 #endif
-                isStartingGame = false; // 실패 시 플래그 리셋
+                isStartingGame = false;
             }
         }
 

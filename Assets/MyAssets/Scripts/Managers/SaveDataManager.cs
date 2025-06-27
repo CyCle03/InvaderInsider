@@ -547,9 +547,13 @@ namespace InvaderInsider.Data
                 // 항상 최신 데이터를 로드하여 확인 (캐시 무시)
                 LoadGameData();
 
-                bool hasProgress = currentSaveData != null && currentSaveData.progressData.highestStageCleared > 0;
+                // 저장 데이터가 있고, 진행 상황이 있으면 Continue 가능
+                // highestStageCleared >= 0 (0부터 허용 - 1스테이지 시작한 기록이 있으면 Continue 가능)
+                bool hasProgress = currentSaveData != null && 
+                    (currentSaveData.progressData.highestStageCleared >= 0 || 
+                     currentSaveData.progressData.currentEData > 100); // 기본 EData보다 많으면 플레이한 적 있음
                 
-                LogManager.ForceLogOnce("SaveData", $"저장 데이터 확인 - 파일 존재: {fileExists}, 데이터 유효: {currentSaveData != null}, 최고 클리어 스테이지: {currentSaveData?.progressData.highestStageCleared ?? -1}, 결과: {hasProgress}");
+                LogManager.ForceLogOnce("SaveData", $"저장 데이터 확인 - 파일 존재: {fileExists}, 데이터 유효: {currentSaveData != null}, 최고 클리어 스테이지: {currentSaveData?.progressData.highestStageCleared ?? -1}, EData: {currentSaveData?.progressData.currentEData ?? 0}, 결과: {hasProgress}");
                 
                 return hasProgress;
             }
