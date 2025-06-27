@@ -358,5 +358,17 @@ namespace InvaderInsider.Managers
             Debug.LogError(FormatMessage(tag, message));
             Debug.LogException(exception);
         }
+
+        // SaveDataManager에서 사용하는 메서드들 추가
+        public static void LogSave(string message)
+        {
+            Info("SaveData", message);
+        }
+
+        public static void ForceLogOnce(string message)
+        {
+            // 한번만 출력하는 로그 - 단순화하여 일반 로그로 처리
+            Info("System", message);
+        }
     }
 } 

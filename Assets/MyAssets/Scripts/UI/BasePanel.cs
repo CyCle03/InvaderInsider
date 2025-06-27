@@ -5,7 +5,7 @@ namespace InvaderInsider.UI
 {
     public abstract class BasePanel : MonoBehaviour
     {
-        private const string LOG_PREFIX = "[UI] ";
+        protected const string LOG_PREFIX = "[UI] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "Panel {0} Awake",

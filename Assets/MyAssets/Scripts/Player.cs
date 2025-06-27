@@ -4,6 +4,7 @@ using TMPro; // TextMeshPro 기능을 사용하기 위해 추가
 using InvaderInsider.UI; // Changed from InvaderInsider.Managers
 using InvaderInsider; // IDamageable 인터페이스 사용을 위해 추가
 using InvaderInsider.Managers; // LogManager 사용을 위해 추가
+using InvaderInsider.Core; // DebugUtils와 GameConstants 사용을 위해 추가
 using System; // Action 델리게이트 사용을 위해 추가
 
 namespace InvaderInsider
