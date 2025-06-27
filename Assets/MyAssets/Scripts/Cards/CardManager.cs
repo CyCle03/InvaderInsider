@@ -277,18 +277,20 @@ namespace InvaderInsider.Cards
             if (InvaderInsider.UI.UIManager.Instance != null && InvaderInsider.UI.UIManager.Instance.IsPanelRegistered("SummonChoice"))
             {
                 InvaderInsider.UI.UIManager.Instance.HidePanel("SummonChoice");
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "UIManager를 통해 SummonChoice 패널을 숨겼습니다.");
-                #endif
+                LogManager.Info(LOG_TAG, "UIManager를 통해 SummonChoice 패널을 숨겼습니다.");
+            }
+            
+            // null 체크 추가
+            if (selectedCard == null)
+            {
+                LogManager.Info(LOG_TAG, "카드 선택이 취소되었습니다 (Close 버튼 클릭).");
+                return;
             }
             
             if (SaveDataManager.Instance != null)
             {
                 SaveDataManager.Instance.AddCardToHandAndOwned(selectedCard.cardId);
-                
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + LOG_MESSAGES[5] + $" '{selectedCard.cardName}'");
-                #endif
+                LogManager.Info(LOG_TAG, "카드가 핸드에 추가되었습니다: '{0}'", selectedCard.cardName);
             }
             
             OnCardDrawn?.Invoke(selectedCard);
