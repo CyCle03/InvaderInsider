@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
+using InvaderInsider.Core;
+using InvaderInsider.Managers;
 using System.Linq;
 using UnityEngine.SceneManagement;
 
@@ -445,8 +447,210 @@ namespace InvaderInsider.UI
             
             // 이벤트 정리
             OnPanelShown = null;
-            
+        }
 
+        /// <summary>
+        /// UI 상태 복구 - ExceptionHandler에서 호출
+        /// </summary>
+        public void RestoreUIState()
+        {
+            DebugUtils.Log(GameConstants.LOG_PREFIX_UI, "UI 상태 복구 시작");
+
+            try
+            {
+                // 1. 파괴된 패널 참조 정리
+                CleanupDestroyedPanels();
+
+                // 2. 활성 패널들의 상태 검증
+                ValidateActivePanels();
+
+                // 3. 패널 히스토리 정리
+                CleanupPanelHistory();
+
+                // 4. 현재 패널 상태 복구
+                RestoreCurrentPanelState();
+
+                DebugUtils.Log(GameConstants.LOG_PREFIX_UI, "UI 상태 복구 완료");
+            }
+            catch (Exception e)
+            {
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, 
+                    $"UI 상태 복구 중 예외 발생: {e.Message}");
+                
+                // 복구 실패 시 UI 리셋
+                ResetUISystem();
+            }
+        }
+
+        /// <summary>
+        /// UI 시스템 리셋 - 긴급 상황에서 호출
+        /// </summary>
+        public void ResetUISystem()
+        {
+            DebugUtils.LogWarning(GameConstants.LOG_PREFIX_UI, "UI 시스템 리셋 실행");
+
+            try
+            {
+                // 1. 모든 패널 비활성화
+                HideAllPanels();
+
+                // 2. 패널 등록 정보 정리
+                panels.Clear();
+                panelHistory.Clear();
+                currentPanel = null;
+
+                // 3. 이벤트 리스너 정리
+                OnPanelShown = null;
+
+                // 4. 기본 UI 상태로 복원
+                RestoreDefaultUIState();
+
+                DebugUtils.Log(GameConstants.LOG_PREFIX_UI, "UI 시스템 리셋 완료");
+            }
+            catch (Exception e)
+            {
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, 
+                    $"UI 시스템 리셋 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 파괴된 패널 참조 정리
+        /// </summary>
+        private void CleanupDestroyedPanels()
+        {
+            tempKeysToRemove.Clear();
+            
+            foreach (var kvp in panels)
+            {
+                if (kvp.Value == null || kvp.Value.gameObject == null)
+                {
+                    tempKeysToRemove.Add(kvp.Key);
+                }
+            }
+            
+            foreach (var key in tempKeysToRemove)
+            {
+                panels.Remove(key);
+            }
+        }
+
+        /// <summary>
+        /// 활성 패널들의 상태 검증
+        /// </summary>
+        private void ValidateActivePanels()
+        {
+            foreach (var kvp in panels)
+            {
+                if (kvp.Value != null && kvp.Value.gameObject.activeInHierarchy)
+                {
+                    // 패널의 상태가 올바른지 검증
+                    if (!kvp.Value.IsValidState())
+                    {
+                        // 잘못된 상태의 패널은 숨김
+                        kvp.Value.Hide();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 패널 히스토리 정리
+        /// </summary>
+        private void CleanupPanelHistory()
+        {
+            var validHistory = new Stack<BasePanel>();
+            
+            while (panelHistory.Count > 0)
+            {
+                var panel = panelHistory.Pop();
+                if (panel != null && panel.gameObject != null)
+                {
+                    validHistory.Push(panel);
+                }
+            }
+            
+            // 유효한 히스토리만 다시 추가
+            panelHistory.Clear();
+            while (validHistory.Count > 0)
+            {
+                panelHistory.Push(validHistory.Pop());
+            }
+        }
+
+        /// <summary>
+        /// 현재 패널 상태 복구
+        /// </summary>
+        private void RestoreCurrentPanelState()
+        {
+            // 현재 패널이 유효하지 않으면 정리
+            if (currentPanel != null && 
+                (currentPanel.gameObject == null || !currentPanel.gameObject.activeInHierarchy))
+            {
+                currentPanel = null;
+            }
+
+            // 현재 패널이 없고 활성 패널이 있으면 복구
+            if (currentPanel == null)
+            {
+                foreach (var kvp in panels)
+                {
+                    if (kvp.Value != null && kvp.Value.gameObject.activeInHierarchy)
+                    {
+                        currentPanel = kvp.Value;
+                        break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 모든 패널 숨기기
+        /// </summary>
+        private void HideAllPanels()
+        {
+            foreach (var kvp in panels)
+            {
+                if (kvp.Value != null && kvp.Value.gameObject != null)
+                {
+                    try
+                    {
+                        kvp.Value.gameObject.SetActive(false);
+                    }
+                    catch (Exception e)
+                    {
+                        DebugUtils.LogWarning(GameConstants.LOG_PREFIX_UI, 
+                            $"패널 {kvp.Key} 숨김 중 오류: {e.Message}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 기본 UI 상태로 복원
+        /// </summary>
+        private void RestoreDefaultUIState()
+        {
+            // 게임 상태에 따른 기본 UI 표시
+            var gameManager = GameManager.Instance;
+            if (gameManager != null)
+            {
+                switch (gameManager.CurrentGameState)
+                {
+                    case GameState.MainMenu:
+                        ShowPanel("MainMenu");
+                        break;
+                    case GameState.Playing:
+                        ShowPanel("InGame");
+                        break;
+                    case GameState.Paused:
+                        ShowPanel("Pause");
+                        break;
+                    default:
+                        // 기본 상태에서는 아무 패널도 표시하지 않음
+                        break;
+                }
+            }
         }
     }
 } 

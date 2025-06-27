@@ -537,18 +537,20 @@ namespace InvaderInsider.Data
             
             if (!fileExists)
             {
+                LogManager.ForceLogOnce("SaveData", "저장 파일이 존재하지 않음");
                 return false;
             }
 
             // 파일이 존재하면 내용도 확인
             try
             {
-                if (currentSaveData == null)
-                {
-                    LoadGameData();
-                }
+                // 항상 최신 데이터를 로드하여 확인 (캐시 무시)
+                LoadGameData();
 
                 bool hasProgress = currentSaveData != null && currentSaveData.progressData.highestStageCleared > 0;
+                
+                LogManager.ForceLogOnce("SaveData", $"저장 데이터 확인 - 파일 존재: {fileExists}, 데이터 유효: {currentSaveData != null}, 최고 클리어 스테이지: {currentSaveData?.progressData.highestStageCleared ?? -1}, 결과: {hasProgress}");
+                
                 return hasProgress;
             }
             catch (Exception e)

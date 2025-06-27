@@ -77,6 +77,16 @@ namespace InvaderInsider.UI
             OnHide();
         }
 
+        /// <summary>
+        /// 패널의 현재 상태가 유효한지 확인합니다.
+        /// </summary>
+        /// <returns>상태가 유효하면 true</returns>
+        public virtual bool IsValidState()
+        {
+            // 기본 구현: 게임오브젝트와 CanvasGroup이 유효한지 확인
+            return gameObject != null && canvasGroup != null;
+        }
+
         protected virtual void OnShow() { }
         protected virtual void OnHide() { }
         protected virtual void Initialize() { }

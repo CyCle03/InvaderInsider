@@ -379,21 +379,24 @@ namespace InvaderInsider.UI
             Debug.Log(LOG_PREFIX + "RefreshContinueButton 호출됨");
             #endif
             
-            // SaveDataManager 재확인 및 강제 검색
+            // SaveDataManager 강제 재검색 (항상 최신 인스턴스 사용)
+            saveDataManager = SaveDataManager.Instance;
             if (saveDataManager == null)
             {
                 Debug.Log("[FORCE LOG] SaveDataManager가 null이므로 다시 찾기 시도");
                 
-                saveDataManager = SaveDataManager.Instance;
-                if (saveDataManager == null)
-                {
-                    Debug.Log("[FORCE LOG] Instance에서 찾지 못함, FindObjectOfType으로 시도");
-                    saveDataManager = FindObjectOfType<SaveDataManager>();
-                }
+                // 직접 검색
+                saveDataManager = FindObjectOfType<SaveDataManager>();
                 
                 if (saveDataManager == null)
                 {
                     Debug.LogError("[FORCE LOG] SaveDataManager를 찾을 수 없습니다!");
+                    
+                    // SaveDataManager가 없으면 Continue 버튼 비활성화
+                    if (continueButton != null)
+                    {
+                        continueButton.interactable = false;
+                    }
                     return;
                 }
                 else
@@ -408,9 +411,15 @@ namespace InvaderInsider.UI
                 Debug.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 시작");
                 saveDataManager.LoadGameData();
                 Debug.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 완료");
+                
+                // 저장 데이터 존재 여부 재확인
+                bool hasSaveData = saveDataManager.HasSaveData();
+                Debug.Log($"[FORCE LOG] 저장 데이터 확인 결과: {hasSaveData}");
             }
             
             UpdateContinueButton();
+            
+            Debug.Log("[FORCE LOG] RefreshContinueButton 완료");
         }
 
         public void SetInteractable(bool interactable)

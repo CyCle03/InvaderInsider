@@ -619,7 +619,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
+  currentHealth: 0
+  attackDamage: 10
+  baseAttackRange: 5
+  attackRate: 1
+  showDebugInfo: 0
   healthText: {fileID: 636028777}
+  enableTestKeys: 1
 --- !u!1 &101416146
 GameObject:
   m_ObjectHideFlags: 0
@@ -2084,6 +2090,62 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &472603242
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 472603244}
+  - component: {fileID: 472603243}
+  m_Layer: 0
+  m_Name: ObjectPoolManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &472603243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 472603242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e72f88c2552bd8448898c0204dec1a0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  poolConfigs:
+  - poolName: Bullet
+    prefab: {fileID: 2265586970664229171, guid: dd54440be1886dd4f932f338a5c3efad, type: 3}
+    initialSize: 20
+    maxSize: 100
+    expandPool: 1
+    autoCleanup: 1
+    cleanupInterval: 0
+  poolParent: {fileID: 0}
+  enablePerformanceLogging: 0
+  logInterval: 10
+  showDebugInfo: 1
+--- !u!4 &472603244
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 472603242}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 960, y: 540, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &475646680
 GameObject:
   m_ObjectHideFlags: 0
@@ -7229,7 +7291,6 @@ MonoBehaviour:
   hideSummonPanelButton: {fileID: 0}
   showSummonPanelButton: {fileID: 0}
   showHandButton: {fileID: 0}
-  clearHandButton: {fileID: 0}
   handCardCountText: {fileID: 0}
 --- !u!225 &1343210170
 CanvasGroup:
@@ -9854,6 +9915,10 @@ MonoBehaviour:
   enemyRemainText: {fileID: 708223208}
   healthSlider: {fileID: 721020621}
   lifeText: {fileID: 636028777}
+  gameOverPanel: {fileID: 0}
+  restartButton: {fileID: 0}
+  mainMenuButton: {fileID: 0}
+  gameOverMessageText: {fileID: 0}
 --- !u!225 &1886596331
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -11971,6 +12036,7 @@ SceneRoots:
   - {fileID: 1113356312}
   - {fileID: 688643432}
   - {fileID: 1541426034}
+  - {fileID: 472603244}
   - {fileID: 449809690}
   - {fileID: 1554795550}
   - {fileID: 1667510110}

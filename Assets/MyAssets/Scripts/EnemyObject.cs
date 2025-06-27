@@ -8,6 +8,7 @@ using InvaderInsider.Data;
 using InvaderInsider.Managers;
 using InvaderInsider.ScriptableObjects;
 using InvaderInsider;
+using InvaderInsider.Core;
 using System.Linq;
 using System.Text;
 
@@ -32,16 +33,23 @@ namespace InvaderInsider
         [Header("Base Stats")]
         public float baseHealth = 3f;
         public float baseDamage = 1f;
-        public float moveSpeed = 3f;
+        public float moveSpeed = GameConstants.DEFAULT_MOVE_SPEED;
 
         [Header("Rewards")]
-        public int eDataAmount = 1;
-        [SerializeField] public int damageOnFinalWaypoint = 10;
+        public int eDataAmount = GameConstants.DEFAULT_EDATA_REWARD;
+        [SerializeField] public int damageOnFinalWaypoint = GameConstants.DEFAULT_DAMAGE_ON_FINAL_WAYPOINT;
     }
 
     public class EnemyObject : BaseCharacter
     {
+        #region Constants
+        
         private const string LOG_PREFIX = "[Enemy] ";
+        
+        #endregion
+        
+        #region Static Members
+        
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "초기화 에러: 필수 컴포넌트를 찾을 수 없습니다.",
@@ -52,7 +60,7 @@ namespace InvaderInsider
         };
 
         // 메모리 할당 최적화 - StringBuilder 재사용
-        private static readonly StringBuilder stringBuilder = new StringBuilder(256);
+        private static readonly StringBuilder stringBuilder = new StringBuilder(GameConstants.STRING_BUILDER_CAPACITY);
         
         [Header("Enemy Data")]
         [SerializeField] private EnemyData enemyData;
@@ -79,6 +87,10 @@ namespace InvaderInsider
         private int enemyCount;
         private bool isInitialized = false;
         private float moveSpeed;
+        
+        // 이동 최적화를 위한 캐싱
+        private Vector3 lastPosition;
+        private float destinationThreshold;
 
         // 설정 참조
         private GameConfigSO enemyConfig;
@@ -90,8 +102,8 @@ namespace InvaderInsider
             // ConfigManager를 먼저 로드
             LoadConfig();
             
-            // pathUpdateWait 초기화
-            pathUpdateWait = new WaitForSeconds(0.1f);
+            // pathUpdateWait 초기화 (상수 사용)
+            pathUpdateWait = new WaitForSeconds(GameConstants.PATH_UPDATE_INTERVAL);
             
             // 기본 이동 속도 설정
             if (enemyData != null)
@@ -100,7 +112,7 @@ namespace InvaderInsider
             }
             else
             {
-                moveSpeed = enemyConfig?.defaultMoveSpeed ?? 5f;
+                moveSpeed = enemyConfig?.defaultMoveSpeed ?? GameConstants.DEFAULT_MOVE_SPEED;
             }
             
             // NavMeshAgent 컴포넌트 미리 캐싱
@@ -109,7 +121,12 @@ namespace InvaderInsider
             // StageManager 참조 미리 캐싱
             stageManager = StageManager.Instance;
             
-            Debug.Log($"{LOG_PREFIX}{gameObject.name}: Awake 완료 - Config: {(enemyConfig != null ? "로드됨" : "null")}, Agent: {(agent != null ? "찾음" : "null")}, StageManager: {(stageManager != null ? "찾음" : "null")}");
+            DebugUtils.LogFormat(GameConstants.LOG_PREFIX_ENEMY, 
+                "{0}: Awake 완료 - Config: {1}, Agent: {2}, StageManager: {3}", 
+                gameObject.name, 
+                enemyConfig != null ? "로드됨" : "null",
+                agent != null ? "찾음" : "null",
+                stageManager != null ? "찾음" : "null");
         }
 
         private void LoadConfig()
@@ -118,14 +135,16 @@ namespace InvaderInsider
             if (configManager != null && configManager.GameConfig != null)
             {
                 enemyConfig = configManager.GameConfig;
-                Debug.Log($"{LOG_PREFIX}{gameObject.name}: 설정을 성공적으로 로드했습니다.");
+                DebugUtils.Log(GameConstants.LOG_PREFIX_ENEMY, 
+                    $"{gameObject.name}: 설정을 성공적으로 로드했습니다.");
             }
             else
             {
-                Debug.LogWarning($"{LOG_PREFIX}{gameObject.name}: ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
+                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_ENEMY, 
+                    $"{gameObject.name}: ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
                 // 기본값으로 폴백
                 enemyConfig = ScriptableObject.CreateInstance<GameConfigSO>();
-                moveSpeed = 5f;
+                moveSpeed = GameConstants.DEFAULT_MOVE_SPEED;
                 
                 // ConfigManager가 나중에 초기화되면 다시 시도
                 StartCoroutine(RetryLoadConfig());
@@ -135,12 +154,10 @@ namespace InvaderInsider
         private System.Collections.IEnumerator RetryLoadConfig()
         {
             int retryCount = 0;
-            const int maxRetries = 10;
-            const float retryInterval = 0.5f;
             
-            while ((enemyConfig == null || stageManager == null) && retryCount < maxRetries)
+            while ((enemyConfig == null || stageManager == null) && retryCount < GameConstants.MAX_RETRY_ATTEMPTS)
             {
-                yield return new WaitForSeconds(retryInterval);
+                yield return new WaitForSeconds(GameConstants.RETRY_INTERVAL);
                 retryCount++;
                 
                 var configManager = ConfigManager.Instance;
@@ -148,14 +165,18 @@ namespace InvaderInsider
                 {
                     enemyConfig = configManager.GameConfig;
                     moveSpeed = enemyConfig.defaultMoveSpeed;
-                    Debug.Log($"{LOG_PREFIX}{gameObject.name}: 재시도 후 설정을 성공적으로 로드했습니다. (시도 횟수: {retryCount})");
+                    DebugUtils.LogFormat(GameConstants.LOG_PREFIX_ENEMY, 
+                        "{0}: 재시도 후 설정을 성공적으로 로드했습니다. (시도 횟수: {1})", 
+                        gameObject.name, retryCount);
                     break;
                 }
             }
             
             if (enemyConfig == null)
             {
-                Debug.LogError($"{LOG_PREFIX}{gameObject.name}: 최대 재시도 횟수({maxRetries})를 초과했습니다. 기본값을 계속 사용합니다.");
+                DebugUtils.LogErrorFormat(GameConstants.LOG_PREFIX_ENEMY, 
+                    "{0}: 최대 재시도 횟수({1})를 초과했습니다. 기본값을 계속 사용합니다.", 
+                    gameObject.name, GameConstants.MAX_RETRY_ATTEMPTS);
             }
         }
 
@@ -165,76 +186,64 @@ namespace InvaderInsider
 
             base.Initialize();
 
-            // NavMeshAgent가 없는 경우 에러 로그만 출력하고 계속 진행
+            // 컴포넌트 초기화
+            InitializeComponents();
+            
+            // 매니저 참조 초기화
+            InitializeManagers();
+
+            isInitialized = true;
+            DebugUtils.LogInitialization($"EnemyObject ({gameObject.name})", true);
+        }
+
+        private void InitializeComponents()
+        {
+            // NavMeshAgent 초기화
             if (agent == null)
             {
-                // 다시 한 번 시도
                 agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
-                
-                if (agent == null)
-                {
-                    Debug.LogError($"{LOG_PREFIX}{gameObject.name}: {LOG_MESSAGES[0]} - NavMeshAgent가 없습니다. (컴포넌트 목록: {string.Join(", ", GetComponents<Component>().Select(c => c.GetType().Name))})");
-                    Debug.LogError($"{LOG_PREFIX}{gameObject.name}: 전체 타입 목록: {string.Join(", ", GetComponents<Component>().Select(c => c.GetType().FullName))}");
-                    
-                    // NavMeshAgent가 없어도 계속 진행 (Transform 기반 이동 사용)
-                }
-                else
-                {
-                    Debug.Log($"{LOG_PREFIX}{gameObject.name}: NavMeshAgent를 재시도로 찾았습니다!");
-                }
+                DebugUtils.LogNullCheck(agent, "NavMeshAgent", "EnemyObject 초기화");
             }
 
-            // config가 null인 경우 안전한 기본값 사용
-            if (enemyConfig == null)
+            // NavMeshAgent 설정
+            if (agent != null && enemyConfig != null)
             {
-                Debug.LogWarning($"{LOG_PREFIX}{gameObject.name}: config가 null입니다. 기본값을 사용합니다.");
-                // LoadConfig는 이미 Awake에서 호출되었으므로 여기서는 기본값만 설정
-            }
-
-            // NavMeshAgent가 있는 경우에만 설정
-            if (agent != null)
-            {
-                // 성능 최적화: 한 번만 설정
                 agent.speed = moveSpeed;
-                agent.stoppingDistance = enemyConfig?.defaultStoppingDistance ?? 0.1f;
+                agent.stoppingDistance = enemyConfig.defaultStoppingDistance;
                 agent.autoBraking = false;
             }
+        }
 
+        private void InitializeManagers()
+        {
             // Player 참조 설정
             if (player == null)
             {
-                var gameManagerInstance = GameManager.Instance;
-                if (gameManagerInstance != null)
-                {
-                    player = gameManagerInstance.GetComponent<Player>();
-                }
-                
-                if (player == null)
-                {
-                    GameObject playerObj = GameObject.FindWithTag("Player");
-                    if (playerObj != null)
-                    {
-                        player = playerObj.GetComponent<Player>();
-                    }
-                    else
-                    {
-                        Debug.LogError($"{LOG_PREFIX}{gameObject.name}: Player를 찾을 수 없습니다.");
-                    }
-                }
+                player = FindPlayer();
+                DebugUtils.LogNullCheck(player, "Player", "EnemyObject 초기화");
             }
 
-            // StageManager가 null인 경우 다시 시도
+            // StageManager 참조 설정
             if (stageManager == null)
             {
                 stageManager = StageManager.Instance;
-                if (stageManager == null)
-                {
-                    Debug.LogError($"{LOG_PREFIX}{gameObject.name}: StageManager를 찾을 수 없습니다.");
-                }
+                DebugUtils.LogNullCheck(stageManager, "StageManager", "EnemyObject 초기화");
             }
+        }
 
-            isInitialized = true;
-            Debug.Log($"{LOG_PREFIX}{gameObject.name}: Initialize 완료");
+        private Player FindPlayer()
+        {
+            // GameManager를 통해 먼저 시도
+            var gameManagerInstance = GameManager.Instance;
+            if (gameManagerInstance != null)
+            {
+                var playerFromManager = gameManagerInstance.GetComponent<Player>();
+                if (playerFromManager != null) return playerFromManager;
+            }
+            
+            // 태그로 찾기
+            GameObject playerObj = GameObject.FindWithTag(GameConstants.TAG_PLAYER);
+            return playerObj?.GetComponent<Player>();
         }
 
         protected override void OnEnable()
@@ -292,6 +301,9 @@ namespace InvaderInsider
             }
         }
 
+        /// <summary>
+        /// 최적화된 경로 업데이트 - 불필요한 계산 최소화
+        /// </summary>
         private void UpdatePath()
         {
             if (!IsInitialized || currentWaypoint == null || agent == null || !agent.isActiveAndEnabled) 
@@ -302,18 +314,16 @@ namespace InvaderInsider
             // 목적지가 설정되지 않았거나 경로를 찾지 못한 경우 다시 설정
             if (!agent.hasPath || agent.pathStatus != NavMeshPathStatus.PathComplete)
             {
-                if (currentWaypoint != null)
-                {
-                    agent.SetDestination(currentWaypoint.position);
-                }
-                else
-                {
-                    Debug.LogWarning($"{LOG_PREFIX}{gameObject.name}: 현재 웨이포인트가 null입니다.");
-                }
+                agent.SetDestination(currentWaypoint.position);
             }
 
-            float destinationThreshold = enemyConfig?.destinationThreshold ?? 0.1f;
-            if (Vector3.Distance(transform.position, currentWaypoint.position) <= agent.stoppingDistance + destinationThreshold)
+            // 거리 계산 최적화 - SqrMagnitude 사용
+            Vector3 currentPosition = transform.position;
+            float sqrDistanceToWaypoint = Vector3.SqrMagnitude(currentPosition - currentWaypoint.position);
+            float sqrThreshold = (agent.stoppingDistance + destinationThreshold);
+            sqrThreshold *= sqrThreshold; // 제곱으로 변환
+
+            if (sqrDistanceToWaypoint <= sqrThreshold)
             {
                 if (waypoints.Count == 0)
                 {
@@ -324,6 +334,12 @@ namespace InvaderInsider
                     OnWaypointReached?.Invoke(this);
                     MoveToNextWaypoint();
                 }
+            }
+            
+            // 위치 변화 감지 (필요한 경우에만)
+            if (Vector3.SqrMagnitude(currentPosition - lastPosition) > 0.01f)
+            {
+                lastPosition = currentPosition;
             }
         }
 
@@ -487,30 +503,60 @@ namespace InvaderInsider
             base.TakeDamage(damage);
         }
 
+        /// <summary>
+        /// 안전하게 적의 초기 스탯을 설정합니다.
+        /// BaseCharacter의 캡슐화를 보장하면서 적절한 초기화를 수행합니다.
+        /// </summary>
+        /// <param name="health">초기 체력</param>
+        /// <param name="damage">초기 공격력</param>
+        private void SetInitialStats(float health, float damage)
+        {
+            // BaseCharacter의 protected 필드에 안전하게 접근
+            maxHealth = health;
+            attackDamage = damage;
+            
+            // 체력을 최대치로 설정
+            if (IsInitialized)
+            {
+                // 이미 초기화된 경우 Heal을 사용하여 체력을 최대치로
+                Heal(maxHealth);
+            }
+            else
+            {
+                // 초기화 전이므로 직접 설정
+                currentHealth = maxHealth;
+            }
+            
+            // 체력 변경 이벤트 호출
+            InvokeHealthChanged();
+        }
+
         public void SetupEnemy(int stageNum, int enemyCount)
         {
             if (stageManager == null)
             {
-                Debug.LogError($"{LOG_PREFIX}{gameObject.name}: StageManager가 null입니다. 적 설정을 완료할 수 없습니다.");
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_ENEMY, 
+                    $"{gameObject.name}: StageManager가 null입니다. 적 설정을 완료할 수 없습니다.");
                 return;
             }
 
             this.stageNum = stageNum;
             this.enemyCount = enemyCount;
 
-            // 적의 체력을 최대체력으로 설정
+            // 적의 체력을 최대체력으로 설정 - BaseCharacter 시스템 사용
             if (enemyData != null)
             {
-                maxHealth = enemyData.baseHealth;
-                currentHealth = maxHealth;
-                attackDamage = enemyData.baseDamage;
+                // BaseCharacter의 protected 필드에 안전하게 접근
+                SetInitialStats(enemyData.baseHealth, enemyData.baseDamage);
                 
-                // 체력 변경 이벤트 호출하여 UI 업데이트
-                InvokeHealthChanged();
+                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_ENEMY, 
+                    "{0} 적 초기화 완료 - 체력: {1}, 공격력: {2}", 
+                    gameObject.name, MaxHealth, AttackDamage);
             }
             else
             {
-                Debug.LogError($"{LOG_PREFIX}{gameObject.name}: EnemyData가 설정되지 않았습니다.");
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_ENEMY, 
+                    $"{gameObject.name}: EnemyData가 설정되지 않았습니다.");
             }
             
             // 적의 레이어와 태그 설정
@@ -557,6 +603,10 @@ namespace InvaderInsider
                 }
             }
 
+            // 이동 최적화 파라미터 초기화
+            destinationThreshold = enemyConfig?.destinationThreshold ?? GameConstants.DEFAULT_STOPPING_DISTANCE;
+            lastPosition = transform.position;
+            
             isInitialized = true;
             
             // NavMeshAgent가 있고 게임 오브젝트가 활성화된 상태라면 코루틴 시작
@@ -624,6 +674,9 @@ namespace InvaderInsider
             }
         }
 
+        /// <summary>
+        /// 최적화된 Update - NavMeshAgent가 없는 경우의 Transform 기반 이동
+        /// </summary>
         private void Update()
         {
             // NavMeshAgent가 있는 경우에는 UpdatePathRoutine에서 처리하므로 여기서는 건너뜀
@@ -637,23 +690,35 @@ namespace InvaderInsider
                 Transform targetWaypoint = wayPoints[currentWaypointIndex];
                 if (targetWaypoint == null)
                 {
-                    Debug.LogError($"{LOG_PREFIX}{gameObject.name}: 웨이포인트 {currentWaypointIndex}가 null입니다.");
+                    DebugUtils.LogError(GameConstants.LOG_PREFIX_ENEMY, 
+                        $"{gameObject.name}: 웨이포인트 {currentWaypointIndex}가 null입니다.");
                     currentWaypointIndex++;
                     return;
                 }
 
-                Vector3 direction = (targetWaypoint.position - transform.position).normalized;
-                transform.position += direction * moveSpeed * Time.deltaTime;
-
-                float waypointReachDistance = enemyConfig?.waypointReachDistance ?? 0.1f;
-                if (Vector3.Distance(transform.position, targetWaypoint.position) < waypointReachDistance)
+                // 이동 계산 최적화
+                Vector3 currentPosition = transform.position;
+                Vector3 targetPosition = targetWaypoint.position;
+                Vector3 direction = (targetPosition - currentPosition);
+                
+                // 거리 체크 먼저 수행 (SqrMagnitude 사용)
+                float waypointReachDistance = enemyConfig?.waypointReachDistance ?? GameConstants.DEFAULT_STOPPING_DISTANCE;
+                float sqrReachDistance = waypointReachDistance * waypointReachDistance;
+                float sqrDistanceToWaypoint = direction.sqrMagnitude;
+                
+                if (sqrDistanceToWaypoint <= sqrReachDistance)
                 {
                     currentWaypointIndex++;
                     if (currentWaypointIndex >= wayPoints.Count)
                     {
                         OnReachedEnd();
                     }
+                    return;
                 }
+
+                // 정규화 및 이동 (도달하지 않은 경우에만)
+                direction.Normalize();
+                transform.position = currentPosition + direction * moveSpeed * Time.deltaTime;
             }
         }
 
@@ -677,5 +742,7 @@ namespace InvaderInsider
             
             gameObject.SetActive(false);
         }
+        
+        #endregion
     }
 } 

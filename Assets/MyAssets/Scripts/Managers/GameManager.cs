@@ -5,6 +5,7 @@ using InvaderInsider.UI;
 using UnityEngine.SceneManagement;
 using InvaderInsider.Cards;
 using InvaderInsider.ScriptableObjects;
+using InvaderInsider.Core;
 
 namespace InvaderInsider.Managers
 {
@@ -19,9 +20,16 @@ namespace InvaderInsider.Managers
         Settings
     }
 
-    public class GameManager : MonoBehaviour
+    public class GameManager : SingletonManager<GameManager>
     {
+        #region Constants
+        
         private const string LOG_PREFIX = "[GameManager] ";
+        
+        #endregion
+        
+        #region Static Members
+        
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "State changed to: {0}", // 0
@@ -38,40 +46,8 @@ namespace InvaderInsider.Managers
             "필수 컴포넌트를 찾을 수 없습니다: {0}" // 11
         };
         
-        private static GameManager instance;
-        private static readonly object _lock = new object();
-        private static bool isQuitting = false;
         private static int requestedStartStage = -1; // 메인 메뉴에서 요청한 시작 스테이지
-
         private static bool isHandlingStateChange = false; // 중복 호출 방지 플래그
-
-        public static GameManager Instance
-        {
-            get
-            {
-                if (isQuitting) return null;
-                
-                // 에디터에서 플레이 모드가 아닐 때는 인스턴스 생성하지 않음
-                #if UNITY_EDITOR
-                if (!UnityEngine.Application.isPlaying) return null;
-                #endif
-
-                lock (_lock)
-                {
-                    if (instance == null)
-                    {
-                        instance = FindObjectOfType<GameManager>();
-                        if (instance == null && !isQuitting)
-                        {
-                            GameObject go = new GameObject("GameManager");
-                            instance = go.AddComponent<GameManager>();
-                            DontDestroyOnLoad(go);
-                        }
-                    }
-                    return instance;
-                }
-            }
-        }
 
         [Header("Game State")]
         private GameState currentGameState = GameState.MainMenu;
@@ -118,61 +94,45 @@ namespace InvaderInsider.Managers
             requestedStartStage = stageIndex;
         }
 
-        private void Awake()
+        protected override void OnInitialize()
         {
-            Debug.Log("[FORCE LOG] GameManager Awake 시작");
+            base.OnInitialize();
             
-            if (isQuitting) return;
+            DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "GameManager 초기화 시작");
+            
+            // Config 로딩 (가장 먼저)
+            LoadConfig();
+            
+            // 매니저들 초기화
+            InitializeManagers();
 
-            lock (_lock)
-            {
-                if (instance == null)
-                {
-                    instance = this;
-                    DontDestroyOnLoad(gameObject);
-                    
-                    Debug.Log("[FORCE LOG] GameManager 인스턴스 설정 완료, Config 로딩 시작");
-                    
-                    // Config 로딩 (가장 먼저)
-                    LoadConfig();
-                    
-                    Debug.Log("[FORCE LOG] Config 로딩 완료, 매니저 초기화 시작");
-                    
-                    // 매니저들 초기화
-                    InitializeManagers();
-
-                    // 씬 전환 이벤트 등록
-                    SceneManager.sceneLoaded += OnSceneLoaded;
-                    
-                    Debug.Log("[FORCE LOG] GameManager Awake 완료");
-                }
-                else if (instance != this)
-                {
-                    Debug.Log("[FORCE LOG] 중복 GameManager 제거");
-                    Destroy(gameObject);
-                }
-            }
+            // 씬 전환 이벤트 등록
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            
+            DebugUtils.LogInitialization("GameManager", true, "모든 매니저 초기화 완료");
         }
 
         private void LoadConfig()
         {
-            Debug.Log("[FORCE LOG] LoadConfig 시작");
+            DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "GameConfig 로딩 시작");
             
             var configManager = ConfigManager.Instance;
-            Debug.Log($"[FORCE LOG] ConfigManager 인스턴스: {(configManager != null ? "존재" : "null")}");
+            DebugUtils.LogNullCheck(configManager, "ConfigManager", "GameManager LoadConfig");
             
             if (configManager != null && configManager.GameConfig != null)
             {
                 gameConfig = configManager.GameConfig;
-                Debug.Log($"[FORCE LOG] GameConfig 로딩 성공 - enableStageClearDuplicatePrevention: {gameConfig.enableStageClearDuplicatePrevention}");
+                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                    "GameConfig 로딩 성공 - enableStageClearDuplicatePrevention: {0}", 
+                    gameConfig.enableStageClearDuplicatePrevention);
             }
             else
             {
-                Debug.LogError($"{LOG_PREFIX}ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
-                Debug.LogError($"{LOG_PREFIX}ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+                    "ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
                 // 기본값으로 폴백
                 gameConfig = ScriptableObject.CreateInstance<GameConfigSO>();
-                Debug.Log($"[FORCE LOG] 기본 GameConfig 생성 완료");
+                DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "기본 GameConfig 생성 완료");
             }
         }
 
@@ -211,10 +171,11 @@ namespace InvaderInsider.Managers
             UpdateCachedComponents();
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
             CleanupEventListeners();
+            base.OnDestroy();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -279,9 +240,9 @@ namespace InvaderInsider.Managers
             CleanupEventListeners();
         }
 
-        private void OnApplicationQuit()
+        protected override void OnApplicationQuit()
         {
-            isQuitting = true;
+            base.OnApplicationQuit();
         }
 
         private void Start()
@@ -871,10 +832,48 @@ namespace InvaderInsider.Managers
         public void EndGame()
         {
             Time.timeScale = 0f;
+            CurrentGameState = GameState.GameOver;
             
-            // 스테이지 클리어 시에만 저장하므로 게임 종료 시 저장 제거
+            // 게임 종료 로직 (일반적인 종료)
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "게임이 종료되었습니다.");
+            #endif
+        }
+
+        public void GameOver()
+        {
+            #if UNITY_EDITOR
+            Debug.Log(LOG_PREFIX + "게임 오버! PausePanel을 표시합니다.");
+            #endif
             
-            // 게임 종료 로직
+            Time.timeScale = 0f;
+            CurrentGameState = GameState.GameOver;
+            
+            // PausePanel을 표시하여 사용자가 선택할 수 있도록 함
+            if (uiManager != null)
+            {
+                if (uiManager.IsPanelRegistered("Pause"))
+                {
+                    uiManager.ShowPanel("Pause");
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + "게임 오버 시 Pause 패널을 표시했습니다.");
+                    #endif
+                }
+                else
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogWarning(LOG_PREFIX + "Pause 패널이 등록되지 않았습니다. 메인 메뉴로 이동합니다.");
+                    #endif
+                    LoadMainMenuScene();
+                }
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogError(LOG_PREFIX + "UIManager가 없습니다. 메인 메뉴로 이동합니다.");
+                #endif
+                LoadMainMenuScene();
+            }
         }
 
         // 씬 전환 및 게임 시작 메서드들
@@ -957,6 +956,9 @@ namespace InvaderInsider.Managers
             Time.timeScale = 1f;
             CurrentGameState = GameState.MainMenu;
             
+            // 씬 전환 전 싱글톤 정리
+            CleanupSingletonsForSceneChange();
+            
             // 상태 플래그 리셋
             isStartingGame = false;
             isLoadingScene = false;
@@ -1027,6 +1029,9 @@ namespace InvaderInsider.Managers
 
         private System.Collections.IEnumerator LoadGameSceneAsync()
         {
+            // 씬 전환 전 싱글톤 정리
+            CleanupSingletonsForSceneChange();
+            
             // UI 정리
             if (uiManager != null)
             {
@@ -1053,5 +1058,169 @@ namespace InvaderInsider.Managers
             isStartingGame = false;
             isLoadingScene = false;
         }
+
+        /// <summary>
+        /// 에러 복구 처리 - ExceptionHandler에서 호출
+        /// </summary>
+        public void HandleErrorRecovery()
+        {
+            DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "GameManager 에러 복구 시작");
+
+            try
+            {
+                // 1. 게임 상태 체크
+                if (CurrentGameState == GameState.Playing)
+                {
+                    // 게임이 진행 중이었다면 일시 정지
+                    PauseGame();
+                }
+
+                // 2. UI 상태 복구
+                if (uiManager != null)
+                {
+                    uiManager.RestoreUIState();
+                }
+
+                // 3. 카드 시스템 상태 점검
+                if (cardManager != null)
+                {
+                    // 기본 상태 점검 (추후 IsCardSystemHealthy 메서드 구현 시 대체)
+                    DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "CardManager 상태 확인");
+                }
+
+                // 4. 스테이지 시스템 상태 점검
+                if (cachedStageManager != null)
+                {
+                    // 기본 상태 점검 (추후 IsSystemHealthy 메서드 구현 시 대체)
+                    DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "StageManager 상태 확인");
+                }
+
+                // 5. 게임 재개 (안전한 상태라면)
+                if (CurrentGameState == GameState.Paused)
+                {
+                    ResumeGame();
+                }
+
+                DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "GameManager 에러 복구 완료");
+            }
+            catch (Exception e)
+            {
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+                    $"GameManager 에러 복구 중 예외 발생: {e.Message}");
+                
+                // 복구 실패 시 긴급 리셋 시도
+                EmergencyReset();
+            }
+        }
+
+        /// <summary>
+        /// 긴급 리셋 - 치명적 오류 발생 시 호출
+        /// </summary>
+        public void EmergencyReset()
+        {
+            DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, "긴급 리셋 실행");
+
+            try
+            {
+                // 1. 모든 시스템 정지
+                Time.timeScale = 0f;
+                
+                // 2. 핵심 시스템 리셋
+                ResetCoreSystem();
+                
+                // 3. 메모리 정리
+                Resources.UnloadUnusedAssets();
+                System.GC.Collect();
+                
+                // 4. 게임 시간 복원
+                Time.timeScale = 1f;
+                
+                // 5. 새 게임 시작
+                StartNewGame();
+                
+                DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "긴급 리셋 완료");
+            }
+            catch (Exception e)
+            {
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+                    $"긴급 리셋 실패: {e.Message}");
+                
+                // 마지막 수단: 씬 재로드
+                LoadMainMenuScene();
+            }
+        }
+
+        /// <summary>
+        /// 씬 전환 시 싱글톤 정리
+        /// </summary>
+        private void CleanupSingletonsForSceneChange()
+        {
+            DebugUtils.LogInfo(GameConstants.LOG_PREFIX_GAME, "씬 전환을 위한 싱글톤 정리 시작");
+
+            try
+            {
+                // 중요하지 않은 싱글톤들만 정리 (GameManager, SaveDataManager는 유지)
+                ConfigManager.PrepareForSceneChange();
+                ObjectPoolManager.PrepareForSceneChange();
+                
+                // 메모리 정리
+                Resources.UnloadUnusedAssets();
+                
+                DebugUtils.LogInfo(GameConstants.LOG_PREFIX_GAME, "싱글톤 정리 완료");
+            }
+            catch (System.Exception e)
+            {
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+                    $"싱글톤 정리 중 오류 발생: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 핵심 시스템 리셋
+        /// </summary>
+        private void ResetCoreSystem()
+        {
+            // 게임 상태 초기화
+            SetGameState(GameState.MainMenu);
+            
+            // 플래그 리셋
+            isStartingGame = false;
+            isLoadingScene = false;
+            stageClearedProcessed = false;
+            
+            // 스테이지 시스템 리셋
+            if (cachedStageManager != null)
+            {
+                // 기본 리셋 (추후 ResetToFirstStage 메서드 구현 시 대체)
+                DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "StageManager 리셋");
+            }
+            
+            // 카드 시스템 리셋
+            if (cardManager != null)
+            {
+                // 기본 리셋 (추후 ResetCardSystem 메서드 구현 시 대체)
+                DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "CardManager 리셋");
+            }
+            
+            // UI 시스템 리셋
+            if (uiManager != null)
+            {
+                uiManager.ResetUISystem();
+            }
+            
+            // 오브젝트 풀 정리
+            var poolManager = ObjectPoolManager.Instance;
+            poolManager?.ClearAllPools();
+            
+            // 리소스 매니저 리셋
+            var resourceManager = ResourceManager.Instance;
+            if (resourceManager != null)
+            {
+                // 기본 리셋 (추후 ResetResources 메서드 구현 시 대체)
+                DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "ResourceManager 리셋");
+            }
+        }
+        
+        #endregion
     }
 } 

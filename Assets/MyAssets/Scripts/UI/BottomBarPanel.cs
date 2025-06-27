@@ -189,7 +189,10 @@ namespace InvaderInsider.UI
             Debug.Log($"{LOG_PREFIX}Player 이벤트 리스너 설정 완료");
             #endif
             
-            // 이벤트 구독 후 현재 Player 상태로 즉시 동기화
+            // Health Display 초기화
+            InitializeHealthDisplay();
+            
+            // 추가 동기화 (안전장치)
             if (player.MaxHealth > 0)
             {
                 float currentHealthRatio = player.CurrentHealth / player.MaxHealth;
@@ -227,9 +230,26 @@ namespace InvaderInsider.UI
 
         private void InitializeHealthDisplay()
         {
-            if (player != null && healthSlider != null)
+            if (player != null && healthSlider != null && player.MaxHealth > 0)
             {
-                UpdateHealthDisplay(player.CurrentHealth / player.MaxHealth);
+                float healthRatio = player.CurrentHealth / player.MaxHealth;
+                
+                // Slider 초기 설정
+                healthSlider.minValue = 0f;
+                healthSlider.maxValue = 1f;
+                healthSlider.value = healthRatio;
+                
+                UpdateHealthDisplay(healthRatio);
+                
+                #if UNITY_EDITOR
+                Debug.Log($"{LOG_PREFIX}Health Display 초기화: {healthRatio:F2} ({player.CurrentHealth}/{player.MaxHealth})");
+                #endif
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning($"{LOG_PREFIX}Health Display 초기화 실패 - Player: {player != null}, Slider: {healthSlider != null}, MaxHealth: {player?.MaxHealth ?? 0}");
+                #endif
             }
         }
 
