@@ -16,14 +16,7 @@ namespace InvaderInsider
     {
         #region Constants & Log Messages
         
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "플레이어 체력 초기화 완료",
-            "플레이어 사망!",
-            "BottomBarPanel을 찾을 수 없습니다",
-            "UIManager를 찾을 수 없습니다",
-            "플레이어가 {0} 데미지를 받았습니다. 현재 체력: {1}/{2}"
-        };
+        // 공통 메시지는 GameConstants.LogMessages 사용
         
         #endregion
 
@@ -31,6 +24,7 @@ namespace InvaderInsider
         
         [Header("UI References")]
         [SerializeField] private TextMeshProUGUI healthText;
+        [SerializeField] private BottomBarPanel bottomBarPanel; // FindObjectOfType 대신 직접 할당
         
         [Header("Player Settings")]
         [SerializeField] private bool enableTestKeys = true;
@@ -39,7 +33,6 @@ namespace InvaderInsider
 
         #region Runtime State
         
-        private BottomBarPanel bottomBarPanel;
         private UIManager uiManager;
         
         #endregion
@@ -110,19 +103,15 @@ namespace InvaderInsider
             uiManager = UIManager.Instance;
             if (uiManager == null)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_PLAYER, LOG_MESSAGES[3]);
+                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
+                string.Format(GameConstants.LogMessages.MANAGER_NOT_FOUND, "UIManager"));
             }
 
             // BottomBarPanel 찾기
             if (bottomBarPanel == null)
             {
-                var panels = FindObjectsOfType<BottomBarPanel>(true);
-                bottomBarPanel = panels.Length > 0 ? panels[0] : null;
-                
-                if (bottomBarPanel == null)
-                {
-                    DebugUtils.LogWarning(GameConstants.LOG_PREFIX_PLAYER, LOG_MESSAGES[2]);
-                }
+                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
+                string.Format(GameConstants.LogMessages.COMPONENT_NOT_FOUND, "BottomBarPanel"));
             }
         }
 
@@ -164,7 +153,7 @@ namespace InvaderInsider
         /// </summary>
         private void HandlePlayerDeath()
         {
-            DebugUtils.Log(GameConstants.LOG_PREFIX_PLAYER, LOG_MESSAGES[1]);
+            DebugUtils.Log(GameConstants.LOG_PREFIX_PLAYER, "플레이어 사망!");
             
             // GameManager에게 게임 종료 알림 (PausePanel과 함께 게임 오버 처리)
             var gameManager = InvaderInsider.Managers.GameManager.Instance;
@@ -190,8 +179,7 @@ namespace InvaderInsider
         {
             Heal(MaxHealth); // BaseCharacter의 Heal 메서드 사용
             
-            DebugUtils.LogFormat(GameConstants.LOG_PREFIX_PLAYER, 
-                LOG_MESSAGES[0]);
+            DebugUtils.Log(GameConstants.LOG_PREFIX_PLAYER, "플레이어 체력 초기화 완료");
         }
 
         /// <summary>
@@ -203,7 +191,7 @@ namespace InvaderInsider
             base.TakeDamage(damage); // BaseCharacter의 TakeDamage 호출
             
             DebugUtils.LogFormat(GameConstants.LOG_PREFIX_PLAYER, 
-                LOG_MESSAGES[4], damage, CurrentHealth, MaxHealth);
+                GameConstants.LogMessages.DAMAGE_RECEIVED, gameObject.name, damage, CurrentHealth, MaxHealth);
         }
 
         /// <summary>
@@ -229,8 +217,6 @@ namespace InvaderInsider
             if (bottomBarPanel != null)
             {
                 bottomBarPanel.UpdateHealthDisplay(healthRatio);
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_PLAYER, 
-                    $"BottomBarPanel UI 강제 동기화: {healthRatio:F2}");
             }
 
             DebugUtils.LogInfo(GameConstants.LOG_PREFIX_PLAYER, 

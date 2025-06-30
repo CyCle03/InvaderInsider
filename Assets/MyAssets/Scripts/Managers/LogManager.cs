@@ -25,39 +25,31 @@ namespace InvaderInsider.Managers
         private static readonly Dictionary<string, string> _prefixCache = new Dictionary<string, string>();
         private static readonly StringBuilder _stringBuilder = new StringBuilder();
         
-        // 로그 완전 비활성화
+        // 로그 기본 활성화 (DebugUtils와 협력)
         public static LogLevel MinimumLogLevel = LogLevel.Error;
-        public static bool EnableLogs = false; // 완전 비활성화
+        public static bool EnableLogs = true; // 기본 활성화
         
-        // 전역 로그 필터링 비활성화 (디버깅용)
-        public static bool GlobalFilterEnabled = false;
+        // 전역 로그 필터링 활성화
+        public static bool GlobalFilterEnabled = true;
         
-        // 차단할 로그 패턴들 (대폭 확장)
+        // 차단할 로그 패턴들 (최소화)
         private static readonly HashSet<string> _blockedPatterns = new HashSet<string>
         {
-            // 모든 로그 차단용 - 와일드카드
-            "",
+            // 필요시 추가
         };
         
-        // 개발/에디터 모드에서도 로그 비활성화
-        private static bool ShouldLog => false; // 완전 비활성화
+        // 개발/에디터 모드에서 로그 활성화
+        private static bool ShouldLog => EnableLogs;
 
         static LogManager()
         {
-            // 모든 로그 완전 비활성화
-            DisableAllLogs();
-            
-            // 런타임에서 강제로 모든 Debug 로그 차단
-            Debug.unityLogger.logEnabled = false;
-            Debug.unityLogger.logEnabled = false;
-            
-            // 가능한 모든 로그 타입 차단
-            Debug.unityLogger.filterLogType = LogType.Exception;
+            // 기본적으로 경고와 에러만 활성화
+            EnableMinimalLogs();
             
             #if UNITY_EDITOR
-            // 에디터에서도 강제 비활성화
-            Debug.unityLogger.logEnabled = false;
-            Debug.unityLogger.logEnabled = false;
+            // 에디터에서는 더 많은 로그 허용
+            Debug.unityLogger.logEnabled = true;
+            Debug.unityLogger.filterLogType = LogType.Warning;
             #endif
         }
 
@@ -155,17 +147,43 @@ namespace InvaderInsider.Managers
             MinimumLogLevel = LogLevel.Error;
         }
 
-        // 로그 메시지가 차단 대상인지 확인 (항상 차단)
+        // 로그 메시지가 차단 대상인지 확인
         private static bool IsBlockedMessage(string message)
         {
-            return true; // 모든 메시지 차단
+            if (!GlobalFilterEnabled || _blockedPatterns.Count == 0) return false;
+            
+            foreach (string pattern in _blockedPatterns)
+            {
+                if (message.Contains(pattern)) return true;
+            }
+            return false;
         }
 
-        // 메인 로그 메서드 (완전 비활성화)
+        // 메인 로그 메서드
         public static void Log(string tag, string message, LogLevel level = LogLevel.Info, params object[] args)
         {
-            // 모든 로그 차단
-            return;
+            if (!ShouldLog || level < MinimumLogLevel) return;
+            if (IsBlockedMessage(message)) return;
+
+            string formattedMessage = FormatMessage(tag, message, args);
+            
+            switch (level)
+            {
+                case LogLevel.Info:
+                    Debug.Log(formattedMessage);
+                    break;
+                case LogLevel.Warning:
+                    Debug.LogWarning(formattedMessage);
+                    break;
+                case LogLevel.Error:
+                    Debug.LogError(formattedMessage);
+                    break;
+                case LogLevel.Debug:
+                    #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.Log($"[DEBUG] {formattedMessage}");
+                    #endif
+                    break;
+            }
         }
         
         private static bool IsUITag(string tag)
@@ -186,21 +204,20 @@ namespace InvaderInsider.Managers
                    tag == "Network" || tag == "Audio";
         }
 
-        // 편의 메서드들 (모두 비활성화)
+        // 편의 메서드들
         public static void Info(string tag, string message, params object[] args)
         {
-            // 차단됨
+            Log(tag, message, LogLevel.Info, args);
         }
         
         public static void Warning(string tag, string message, params object[] args)
         {
-            // 차단됨
+            Log(tag, message, LogLevel.Warning, args);
         }
         
         public static void Error(string tag, string message, params object[] args)
         {
-            // 차단됨 (필요시 주석 해제)
-            // Debug.LogError($"[{tag}] {message}");
+            Log(tag, message, LogLevel.Error, args);
         }
 
         public static void DebugLog(string tag, string message, params object[] args)
@@ -210,8 +227,22 @@ namespace InvaderInsider.Managers
 
         private static string FormatMessage(string tag, string message, params object[] args)
         {
-            // 사용되지 않음
-            return "";
+            lock (_stringBuilder)
+            {
+                _stringBuilder.Clear();
+                _stringBuilder.Append($"[{tag}] ");
+                
+                if (args != null && args.Length > 0)
+                {
+                    _stringBuilder.AppendFormat(message, args);
+                }
+                else
+                {
+                    _stringBuilder.Append(message);
+                }
+                
+                return _stringBuilder.ToString();
+            }
         }
 
         // 예외 로깅 (중요한 예외만 허용)

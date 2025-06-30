@@ -16,16 +16,7 @@ namespace InvaderInsider
     {
         #region Constants & Log Messages
         
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "Equipment {0} applied to Character {1}. Attack: {2}, MaxHealth: {3}",
-            "Tried to apply non-equipment card {0} to {1}",
-            "장비 카드가 null입니다.",
-            "초기화되지 않은 상태에서 장비를 적용하려고 했습니다.",
-            "이미 초기화된 캐릭터입니다.",
-            "캐릭터 {0} 초기화 완료 - 체력: {1}/{2}, 공격력: {3}",
-            "캐릭터 {0} 사망 처리 완료"
-        };
+        // 공통 메시지는 GameConstants.LogMessages 사용
         
         #endregion
 
@@ -179,7 +170,7 @@ namespace InvaderInsider
             if (_isInitialized)
             {
                 DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
-                    $"{gameObject.name}: {LOG_MESSAGES[4]}");
+                    $"{gameObject.name}: 이미 초기화된 캐릭터입니다.");
                 return;
             }
 
@@ -192,7 +183,8 @@ namespace InvaderInsider
             if (showDebugInfo)
             {
                 DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                    LOG_MESSAGES[5], gameObject.name, currentHealth, maxHealth, attackDamage);
+                    GameConstants.LogMessages.INITIALIZATION_SUCCESS + " - 체력: {1}/{2}, 공격력: {3}", 
+                    gameObject.name, currentHealth, maxHealth, attackDamage);
             }
         }
         
@@ -300,7 +292,7 @@ namespace InvaderInsider
             if (showDebugInfo)
             {
                 DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                    LOG_MESSAGES[6], gameObject.name);
+                    "캐릭터 {0} 사망 처리 완료", gameObject.name);
             }
 
             OnDeath?.Invoke();
@@ -449,21 +441,21 @@ namespace InvaderInsider
             if (!_isInitialized)
             {
                 DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
-                    $"{gameObject.name}: {LOG_MESSAGES[3]}");
+                    $"{gameObject.name}: 초기화되지 않은 상태에서 장비를 적용하려고 했습니다.");
                 return false;
             }
 
             if (equipmentCard == null)
             {
                 DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
-                    $"{gameObject.name}: {LOG_MESSAGES[2]}");
+                    $"{gameObject.name}: 장비 카드가 null입니다.");
                 return false;
             }
 
             if (equipmentCard.type != CardType.Equipment)
             {
                 DebugUtils.LogWarningFormat(GameConstants.LOG_PREFIX_GAME, 
-                    LOG_MESSAGES[1], equipmentCard.cardName, gameObject.name);
+                    "비장비 카드 {0}을(를) {1}에게 적용하려고 했습니다", equipmentCard.cardName, gameObject.name);
                 return false;
             }
 
@@ -511,7 +503,7 @@ namespace InvaderInsider
             }
 
             DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                LOG_MESSAGES[0], equipmentCard.cardName, gameObject.name, attackDamage, maxHealth);
+                "장비 {0}이(가) {1}에게 적용됨. 공격력: {2}, 최대체력: {3}", equipmentCard.cardName, gameObject.name, attackDamage, maxHealth);
             
             // 변경사항 상세 로그
             if (equipmentCard.equipmentBonusAttack != 0)

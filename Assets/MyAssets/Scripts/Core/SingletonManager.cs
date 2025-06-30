@@ -74,8 +74,7 @@ namespace InvaderInsider.Core
                 _isInitialized = true;
                 OnInitialize();
                 
-                DebugUtils.LogVerbose($"[{typeof(T).Name}]", 
-                    $"새 싱글톤 인스턴스 생성 및 초기화 완료");
+                // VERBOSE 로그 제거 - 성능 최적화
             }
             else if (_instance != this)
             {
@@ -111,8 +110,7 @@ namespace InvaderInsider.Core
                     _instance = null;
                 }
                 
-                DebugUtils.LogVerbose($"[{typeof(T).Name}]", 
-                    $"싱글톤 인스턴스 파괴됨 (씬 전환: {_isSceneChanging}, 종료: {_isQuitting})");
+                // VERBOSE 로그 제거 - 성능 최적화
             }
         }
 

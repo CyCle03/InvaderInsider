@@ -103,5 +103,45 @@ namespace InvaderInsider.Core
         public const string ANIM_PARAM_ATTACK = "Attack";
         public const string ANIM_PARAM_DIE = "Die";
         public const string ANIM_PARAM_IDLE = "Idle";
+        
+        // === 공통 로그 메시지 ===
+        public static class LogMessages
+        {
+            // 초기화 관련
+            public const string INITIALIZATION_SUCCESS = "{0} 초기화 완료";
+            public const string INITIALIZATION_FAILED = "{0} 초기화 실패: {1}";
+            public const string COMPONENT_NOT_FOUND = "{0} 컴포넌트를 찾을 수 없습니다";
+            public const string MANAGER_NOT_FOUND = "{0} 매니저를 찾을 수 없습니다";
+            
+            // 상태 변경 관련
+            public const string STATE_CHANGED = "상태가 {0}에서 {1}로 변경됨";
+            public const string HEALTH_CHANGED = "체력 변경: {0}/{1} ({2:F1}%)";
+            public const string DAMAGE_RECEIVED = "{0}이(가) {1} 데미지를 받음. 현재 체력: {2}/{3}";
+            
+            // UI 관련
+            public const string PANEL_REGISTERED = "패널 등록: {0}";
+            public const string PANEL_NOT_FOUND = "패널 '{0}'을(를) 찾을 수 없습니다";
+            public const string UI_UPDATE_SUCCESS = "UI 업데이트 완료: {0}";
+            
+            // 게임플레이 관련
+            public const string STAGE_CLEARED = "스테이지 {0} 클리어";
+            public const string ENEMY_SPAWNED = "적 생성: {0} (총 {1}/{2})";
+            public const string PROJECTILE_HIT = "투사체가 {0}에게 {1} 데미지";
+            
+            // 에러/경고 관련
+            public const string NULL_REFERENCE_ERROR = "{0}이(가) null입니다";
+            public const string INVALID_PARAMETER = "잘못된 매개변수: {0}";
+            public const string OPERATION_FAILED = "{0} 작업 실패: {1}";
+            
+            // 성능 관련
+            public const string PERFORMANCE_WARNING = "성능 경고: {0}";
+            public const string MEMORY_ALLOCATION = "메모리 할당: {0}";
+            
+            // 저장/로드 관련
+            public const string SAVE_SUCCESS = "저장 완료: {0}";
+            public const string LOAD_SUCCESS = "로드 완료: {0}";
+            public const string SAVE_FAILED = "저장 실패: {0}";
+            public const string LOAD_FAILED = "로드 실패: {0}";
+        }
     }
 } 

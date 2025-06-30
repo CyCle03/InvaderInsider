@@ -14,12 +14,7 @@ namespace InvaderInsider.UI
     public class UIManager : MonoBehaviour
     {
         private const string LOG_PREFIX = "[UI] ";
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "Panel not found: {0}", // 0
-            "Panel {0} not found for showing", // 1
-            "UIManager destroyed: {0}" // 2
-        };
+        // LOG_MESSAGES 배열을 GameConstants.LogMessages 사용으로 대체
 
         private static UIManager instance;
         private static readonly object _lock = new object();
@@ -102,24 +97,21 @@ namespace InvaderInsider.UI
 
         public void RegisterPanel(string panelName, BasePanel panel)
         {
-            if (string.IsNullOrEmpty(panelName) || panel == null) 
+            if (string.IsNullOrEmpty(panelName) || panel == null)
             {
-                Debug.LogError($"{LOG_PREFIX}RegisterPanel 실패 - panelName: {panelName}, panel: {panel}");
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, $"RegisterPanel 실패 - panelName: {panelName}, panel: {panel}");
                 return;
             }
 
             if (panels.ContainsKey(panelName))
             {
-                Debug.LogWarning(string.Format(LOG_PREFIX + LOG_MESSAGES[0], panelName));
-                return;
+                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_UI, string.Format(GameConstants.LogMessages.PANEL_NOT_FOUND, panelName));
+                panels[panelName] = panel; // 덮어쓰기
             }
-
-            panels[panelName] = panel;
-            Debug.Log($"{LOG_PREFIX}패널 등록 성공: {panelName} - {panel.gameObject.name}");
-            
-            if (!panel.gameObject.activeSelf)
+            else
             {
-                panel.gameObject.SetActive(true);
+                panels.Add(panelName, panel);
+                DebugUtils.Log(GameConstants.LOG_PREFIX_UI, $"패널 등록 성공: {panelName} - {panel.gameObject.name}");
             }
         }
 
@@ -153,7 +145,7 @@ namespace InvaderInsider.UI
             {
                 string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
                 string registeredPanels = string.Join(", ", panels.Keys);
-                Debug.LogError($"{LOG_PREFIX}Panel '{panelName}' not found for showing. 현재 씬: {currentSceneName}, 등록된 패널: [{registeredPanels}]");
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, $"Panel '{panelName}' not found for showing. 현재 씬: {currentSceneName}, 등록된 패널: [{registeredPanels}]");
             }
         }
 
@@ -169,7 +161,7 @@ namespace InvaderInsider.UI
             }
             else
             {
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], panelName));
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, string.Format(GameConstants.LogMessages.PANEL_NOT_FOUND, panelName));
             }
         }
 
@@ -257,7 +249,7 @@ namespace InvaderInsider.UI
         {
             if (stageText != null)
             {
-                stageText.text = string.Format(LOG_PREFIX + LOG_MESSAGES[3], currentStage + 1, totalStages);
+                stageText.text = $"Stage: {currentStage + 1}/{totalStages}";
             }
         }
 
@@ -265,7 +257,7 @@ namespace InvaderInsider.UI
         {
             if (waveText != null)
             {
-                waveText.text = string.Format(LOG_PREFIX + LOG_MESSAGES[4], currentWave, totalWaves);
+                waveText.text = $"Wave: {currentWave}/{totalWaves}";
             }
         }
 
@@ -275,7 +267,7 @@ namespace InvaderInsider.UI
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
             
             #if UNITY_EDITOR
-            Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], gameObject.name));
+            Debug.Log($"{LOG_PREFIX}UIManager destroyed: {gameObject.name}");
             
             // 에디터에서 플레이 모드 종료 시 SaveDataManager 정리
             if (!Application.isPlaying)

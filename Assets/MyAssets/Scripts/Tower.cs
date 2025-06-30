@@ -461,11 +461,6 @@ namespace InvaderInsider
                 try
                 {
                     projectile = poolManager.GetObject<Projectile>();
-                    if (projectile != null)
-                    {
-                        DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_TOWER, 
-                            $"풀에서 투사체를 성공적으로 가져왔습니다: {projectile.name}");
-                    }
                 }
                 catch (System.Exception ex)
                 {
@@ -522,9 +517,6 @@ namespace InvaderInsider
                     // PooledObject 컴포넌트 처리 (있는 경우에만)
                     var pooledObject = projectile.GetComponent<PooledObject>();
                     pooledObject?.OnObjectSpawned();
-                    
-                    DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_TOWER, 
-                        $"투사체 발사 완료: {projectile.name}");
                 }
                 catch (System.Exception ex)
                 {

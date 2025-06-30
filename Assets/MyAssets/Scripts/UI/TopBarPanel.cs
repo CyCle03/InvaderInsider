@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using InvaderInsider.Managers;
 using InvaderInsider.Data;
+using InvaderInsider.Core;
 
 namespace InvaderInsider.UI
 {
@@ -26,7 +27,7 @@ namespace InvaderInsider.UI
         {
                     if (stageText == null || waveText == null || eDataText == null || pauseButton == null)
         {
-            LogManager.Error("TopBarPanel", "UI 요소가 할당되지 않았습니다.");
+            DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, LOG_MESSAGES[0]);
             return;
         }
 
@@ -77,7 +78,7 @@ namespace InvaderInsider.UI
             if (stageText == null || eDataText == null || 
                 waveText == null || pauseButton == null)
             {
-                Debug.LogError(LOG_MESSAGES[0]);
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, LOG_MESSAGES[0]);
                 return false;
             }
             return true;
@@ -115,11 +116,14 @@ namespace InvaderInsider.UI
             if (eDataText != null)
             {
                 eDataText.text = $"eData: {amount}";
+                // #if UNITY_EDITOR
+                // Debug.Log($"[TopBar] EData 업데이트: {amount}");
+                // #endif
             }
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogError("[TopBarPanel] UpdateEData 호출됨 - eDataText가 null!");
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, "UpdateEData 호출됨 - eDataText가 null!");
                 #endif
             }
         }
@@ -133,33 +137,33 @@ namespace InvaderInsider.UI
             }
         }
 
-        public void UpdateStageInfo(int stage, int wave)
-        {
-            if (stageText != null)
-            {
-                stageText.text = $"Stage {stage}";
-            }
-            
-            if (waveText != null)
-            {
-                waveText.text = $"Wave {wave}";
-            }
-        }
-
         public void UpdateStageInfo(int currentStage, int totalStages, int spawnedMonsters, int maxMonsters)
         {
             if (stageText != null)
             {
                 stageText.text = $"Stage {currentStage}/{totalStages}";
             }
+            else
+            {
+                #if UNITY_EDITOR
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, "UpdateStageInfo 호출됨 - stageText가 null!");
+                #endif
+            }
             
             if (waveText != null)
             {
                 waveText.text = $"Wave {spawnedMonsters}/{maxMonsters}";
+                // #if UNITY_EDITOR
+                // Debug.Log($"[TopBar] Wave 업데이트: {spawnedMonsters}/{maxMonsters}");
+                // #endif
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, "UpdateStageInfo 호출됨 - waveText가 null!");
+                #endif
             }
         }
-
-
 
         public int GetCurrentEData()
         {

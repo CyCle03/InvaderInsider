@@ -26,12 +26,21 @@ namespace InvaderInsider.UI
         [SerializeField] private Button mainMenuButton;
         [SerializeField] private TextMeshProUGUI gameOverMessageText;
 
-        private Player player;
+        [Header("UI Elements")]
+        [SerializeField] private Image healthFillImage;
+        [SerializeField] private TextMeshProUGUI healthText;
+        [SerializeField] private TextMeshProUGUI eDataText;
+        [SerializeField] private Button pauseButton;
+        
+        [Header("References")]
+        [SerializeField] private Player player; // FindObjectOfType 대신 직접 할당
+        
+        // 캐시된 참조들
+        private GameManager gameManager;
+        private ResourceManager resourceManager;
+
         private bool isInitialized = false;
         private bool isGameOverUIVisible = false;
-        
-        // 런타임에 찾을 UI 요소들
-        private Image healthFillImage;
         
         // 색상 캐싱
         private static readonly Color normalHealthColor = Color.green;
@@ -55,7 +64,6 @@ namespace InvaderInsider.UI
             }
 
             // Player 찾기 - 여러 방법으로 시도
-            player = FindObjectOfType<Player>();
             if (player == null)
             {
                 // Player 태그로도 찾아보기
