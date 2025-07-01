@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using InvaderInsider;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
 using UnityEngine.SceneManagement;
@@ -429,19 +430,81 @@ namespace InvaderInsider.Managers
 
         public void UpdateStageWaveUI(int currentStage, int spawnedMonsters, int maxMonsters)
         {
-            // #if UNITY_EDITOR
-            // Debug.Log(LOG_PREFIX + $"Wave UI 업데이트: 스테이지 {currentStage}, 몬스터 {spawnedMonsters}/{maxMonsters}, 총 스테이지 {GetTotalStageCount()}");
-            // #endif
-            
-            if (uiCoordinator != null)
+            // UICoordinator 참조 확인 및 재참조
+            if (uiCoordinator == null)
             {
-                uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, GetTotalStageCount());
+                uiCoordinator = UICoordinator.Instance;
+                if (uiCoordinator == null)
+                {
+                    uiCoordinator = FindObjectOfType<UICoordinator>();
+                    if (uiCoordinator == null)
+                    {
+                        #if UNITY_EDITOR
+                        Debug.LogWarning($"{LOG_PREFIX}UICoordinator를 찾을 수 없습니다. Stage Wave UI 업데이트를 건너뜁니다.");
+                        #endif
+                        return;
+                    }
+                }
             }
+            
+            uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, GetTotalStageCount());
         }
 
         public void InitializeEDataDisplay()
         {
             UpdateEDataUI();
+        }
+
+        /// <summary>
+        /// TopBarPanel의 초기 데이터를 설정합니다.
+        /// </summary>
+        private void InitializeTopBarDisplay()
+        {
+            // UICoordinator 참조 확인 및 재참조
+            if (uiCoordinator == null)
+            {
+                uiCoordinator = UICoordinator.Instance;
+                if (uiCoordinator == null)
+                {
+                    uiCoordinator = FindObjectOfType<UICoordinator>();
+                    if (uiCoordinator == null)
+                    {
+                        #if UNITY_EDITOR
+                        Debug.LogError($"{LOG_PREFIX}UICoordinator를 찾을 수 없습니다. TopBarPanel 초기화를 건너뜁니다.");
+                        #endif
+                        return;
+                    }
+                }
+            }
+            
+            // 초기 스테이지 정보 설정
+            int currentStage = requestedStartStage + 1; // 0-based to 1-based
+            int totalStages = GetTotalStageCount();
+            
+            // StageManager에서 초기 웨이브 정보 가져오기
+            var stageManager = StageManager.Instance;
+            int spawnedMonsters = 0;
+            int maxMonsters = 0;
+            
+            if (stageManager != null)
+            {
+                maxMonsters = stageManager.GetStageWaveCount(requestedStartStage);
+            }
+            
+            // TopBarPanel 업데이트
+            uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, totalStages);
+            
+            // 초기 EData 설정
+            var resourceManager = ResourceManager.Instance;
+            if (resourceManager != null)
+            {
+                int currentEData = resourceManager.GetCurrentEData();
+                uiCoordinator.UpdateEDataUI(currentEData);
+                
+                #if UNITY_EDITOR
+                Debug.Log($"{LOG_PREFIX}TopBarPanel 초기 데이터 설정 완료 - 스테이지: {currentStage}/{totalStages}, 웨이브: {spawnedMonsters}/{maxMonsters}, eData: {currentEData}");
+                #endif
+            }
         }
 
         private void OnEDataChanged(int newEDataAmount)
@@ -476,22 +539,17 @@ namespace InvaderInsider.Managers
                 if (uiCoordinator == null)
                 {
                     uiCoordinator = FindObjectOfType<UICoordinator>();
+                    if (uiCoordinator == null)
+                    {
+                        #if UNITY_EDITOR
+                        Debug.LogWarning($"{LOG_PREFIX}UICoordinator를 찾을 수 없습니다. EData UI 업데이트를 건너뜁니다.");
+                        #endif
+                        return;
+                    }
                 }
             }
             
-            if (uiCoordinator != null)
-            {
-                uiCoordinator.UpdateEDataUI(currentEData);
-                // #if UNITY_EDITOR
-                // Debug.Log($"{LOG_PREFIX}EData UI 업데이트: {currentEData}");
-                // #endif
-            }
-            else
-            {
-                // #if UNITY_EDITOR
-                // Debug.LogWarning($"{LOG_PREFIX}UICoordinator가 null입니다. EData UI 업데이트를 건너뜁니다.");
-                // #endif
-            }
+            uiCoordinator.UpdateEDataUI(currentEData);
         }
 
         public void StageCleared(int stageNum)
@@ -654,6 +712,9 @@ namespace InvaderInsider.Managers
             // 게임플레이 패널 설정
             SetupGameplayPanels();
             
+            // TopBarPanel 초기 데이터 업데이트
+            InitializeTopBarDisplay();
+            
             // StageManager 참조 찾기 및 스테이지 시작
             var stageManager = StageManager.Instance;
             if (stageManager != null)
@@ -685,11 +746,11 @@ namespace InvaderInsider.Managers
             // 모든 BasePanel을 한 번에 찾아서 처리
             var allPanels = FindObjectsOfType<BasePanel>(true);
             
-            Debug.Log($"{LOG_PREFIX}찾은 패널 수: {allPanels.Length}");
-            foreach (var panel in allPanels)
-            {
-                Debug.Log($"{LOG_PREFIX}찾은 패널: {panel.GetType().Name} - {panel.gameObject.name}");
-            }
+            // Debug.Log($"{LOG_PREFIX}찾은 패널 수: {allPanels.Length}");
+            // foreach (var panel in allPanels)
+            // {
+            //     Debug.Log($"{LOG_PREFIX}찾은 패널: {panel.GetType().Name} - {panel.gameObject.name}");
+            // }
             
             // 딕셔너리로 빠른 검색을 위한 임시 매핑
             var panelsByType = new System.Collections.Generic.Dictionary<System.Type, BasePanel>();
@@ -719,11 +780,11 @@ namespace InvaderInsider.Managers
             if (panelsByType.TryGetValue(typeof(T), out BasePanel panel))
             {
                 uiManager.RegisterPanel(panelName, panel);
-                Debug.Log($"{LOG_PREFIX}패널 등록 성공: {panelName} ({typeof(T).Name})");
+                // Debug.Log($"{LOG_PREFIX}패널 등록 성공: {panelName} ({typeof(T).Name})");
             }
             else
             {
-                Debug.LogWarning($"{LOG_PREFIX}패널을 찾을 수 없습니다: {panelName} ({typeof(T).Name})");
+                // Debug.LogWarning($"{LOG_PREFIX}패널을 찾을 수 없습니다: {panelName} ({typeof(T).Name})");
             }
         }
 
@@ -961,11 +1022,32 @@ namespace InvaderInsider.Managers
                         
                         Debug.Log(LOG_PREFIX + $"Continue 게임 시작 - 최고 클리어 스테이지: {highestCleared}, EData: {saveData.progressData.currentEData}");
                         
-                        // 스테이지 결정 로직 개선 - 총 스테이지 수 확인
-                        var stageManager = StageManager.Instance;
-                        int totalStages = stageManager?.GetStageCount() ?? 1; // 기본값 1
+                        // 스테이지 결정 로직 - StageData를 Resources에서 로드하여 총 스테이지 수 확인
+                        int totalStages = 1; // 기본값
                         
-                        Debug.Log(LOG_PREFIX + $"[Continue Debug] StageManager 존재: {stageManager != null}, 총 스테이지 수: {totalStages}");
+                        // 먼저 StageList를 시도 (여러 스테이지용)
+                        var stageList = Resources.Load<StageList>("StageList1");
+                        if (stageList != null)
+                        {
+                            totalStages = stageList.StageCount;
+                            Debug.Log(LOG_PREFIX + $"[Continue Debug] StageList에서 총 스테이지 수 로드: {totalStages}");
+                        }
+                        else
+                        {
+                            // StageList가 없으면 StageDBObject를 시도 (단일 스테이지용)
+                            var stageData = Resources.Load<StageDBObject>("Stage1 Database");
+                            if (stageData != null)
+                            {
+                                totalStages = stageData.StageCount;
+                                Debug.Log(LOG_PREFIX + $"[Continue Debug] StageDBObject에서 총 스테이지 수 로드: {totalStages}");
+                            }
+                            else
+                            {
+                                Debug.LogWarning(LOG_PREFIX + "[Continue Debug] StageData를 로드할 수 없어 기본값 1 사용");
+                            }
+                        }
+                        
+                        Debug.Log(LOG_PREFIX + $"[Continue Debug] 총 스테이지 수 (하드코딩): {totalStages}");
                         
                         int startStage;
                         if (highestCleared <= 0)

@@ -87,6 +87,9 @@ namespace InvaderInsider.Managers
                 DebugUtils.Log(LOG_PREFIX, LOG_MESSAGES[0]);
             }
             
+            // 주요 패널 참조 자동 설정
+            EnsurePanelReferences();
+            
             int registeredCount = 0;
             
             // 각 패널 타입별로 등록
@@ -100,6 +103,48 @@ namespace InvaderInsider.Managers
             registeredCount += RegisterPanelByType<HandDisplayPanel>("HandDisplay");
             
             DebugUtils.LogFormat(LOG_PREFIX, LOG_MESSAGES[1], registeredCount);
+        }
+        
+        /// <summary>
+        /// 주요 패널 참조를 자동으로 설정합니다.
+        /// </summary>
+        private void EnsurePanelReferences()
+        {
+            // TopBarPanel 참조 설정
+            if (topBarPanel == null)
+            {
+                topBarPanel = FindObjectOfType<TopBarPanel>(true);
+                if (topBarPanel != null)
+                {
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + "TopBarPanel 참조를 자동으로 찾았습니다.");
+                    #endif
+                }
+            }
+            
+            // BottomBarPanel 참조 설정
+            if (bottomBarPanel == null)
+            {
+                bottomBarPanel = FindObjectOfType<BottomBarPanel>(true);
+                if (bottomBarPanel != null)
+                {
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + "BottomBarPanel 참조를 자동으로 찾았습니다.");
+                    #endif
+                }
+            }
+            
+            // InGamePanel 참조 설정
+            if (inGamePanel == null)
+            {
+                inGamePanel = FindObjectOfType<InGamePanel>(true);
+                if (inGamePanel != null)
+                {
+                    #if UNITY_EDITOR
+                    Debug.Log(LOG_PREFIX + "InGamePanel 참조를 자동으로 찾았습니다.");
+                    #endif
+                }
+            }
         }
         
         /// <summary>
@@ -178,14 +223,20 @@ namespace InvaderInsider.Managers
         /// </summary>
         public void UpdateEDataUI(int currentEData)
         {
-            // #if UNITY_EDITOR
-            // Debug.Log(LOG_PREFIX + $"EData UI 업데이트: {currentEData}");
-            // #endif
-            
-            if (topBarPanel != null)
+            // TopBarPanel 참조 재확인
+            if (topBarPanel == null)
             {
-                topBarPanel.UpdateEData(currentEData);
+                topBarPanel = FindObjectOfType<TopBarPanel>(true);
+                if (topBarPanel == null)
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogWarning(LOG_PREFIX + "TopBarPanel을 찾을 수 없습니다. EData UI 업데이트를 건너뜁니다.");
+                    #endif
+                    return;
+                }
             }
+            
+            topBarPanel.UpdateEData(currentEData);
         }
         
         /// <summary>
@@ -193,14 +244,20 @@ namespace InvaderInsider.Managers
         /// </summary>
         public void UpdateStageWaveUI(int currentStage, int spawnedMonsters, int maxMonsters, int totalStages)
         {
-            // #if UNITY_EDITOR
-            // Debug.Log(LOG_PREFIX + $"Stage Wave UI 업데이트: 스테이지 {currentStage}, 몬스터 {spawnedMonsters}/{maxMonsters}, 총 스테이지 {totalStages}");
-            // #endif
-            
-            if (topBarPanel != null)
+            // TopBarPanel 참조 재확인
+            if (topBarPanel == null)
             {
-                topBarPanel.UpdateStageInfo(currentStage, totalStages, spawnedMonsters, maxMonsters);
+                topBarPanel = FindObjectOfType<TopBarPanel>(true);
+                if (topBarPanel == null)
+                {
+                    #if UNITY_EDITOR
+                    Debug.LogWarning(LOG_PREFIX + "TopBarPanel을 찾을 수 없습니다. Stage Wave UI 업데이트를 건너뜁니다.");
+                    #endif
+                    return;
+                }
             }
+            
+            topBarPanel.UpdateStageInfo(currentStage, totalStages, spawnedMonsters, maxMonsters);
         }
         
         /// <summary>

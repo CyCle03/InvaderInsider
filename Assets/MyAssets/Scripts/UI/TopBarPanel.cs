@@ -86,20 +86,48 @@ namespace InvaderInsider.UI
 
         private void UpdateUI()
         {
-            // eData는 GameManager에서 직접 호출로 업데이트됨
-            
-            // 초기 스테이지 정보 표시 (기본값)
-            if (stageText != null)
+            // GameManager에서 현재 게임 상태를 가져와서 UI 업데이트
+            var gameManager = GameManager.Instance;
+            if (gameManager != null)
             {
-                stageText.text = "Stage 1/1";
+                // 현재 스테이지 정보 가져오기
+                var stageManager = StageManager.Instance;
+                if (stageManager != null)
+                {
+                    int currentStage = stageManager.GetCurrentStageIndex() + 1; // 0-based to 1-based
+                    int totalStages = stageManager.GetStageCount();
+                    int spawnedMonsters = stageManager.GetSpawnedEnemyCount();
+                    int maxMonsters = stageManager.GetStageWaveCount(stageManager.GetCurrentStageIndex());
+                    
+                    UpdateStageInfo(currentStage, totalStages, spawnedMonsters, maxMonsters);
+                }
+                
+                // 현재 EData 가져오기
+                var resourceManager = ResourceManager.Instance;
+                if (resourceManager != null)
+                {
+                    int currentEData = resourceManager.GetCurrentEData();
+                    UpdateEData(currentEData);
+                }
             }
-            
-            if (waveText != null)
+            else
             {
-                waveText.text = "Wave 0/0";  // 몬스터 소환 수/최대 몬스터 수
+                // GameManager가 없는 경우 기본값 설정
+                if (stageText != null)
+                {
+                    stageText.text = "Stage 1/1";
+                }
+                
+                if (waveText != null)
+                {
+                    waveText.text = "Wave 0/0";
+                }
+                
+                if (eDataText != null)
+                {
+                    eDataText.text = "eData: 0";
+                }
             }
-            
-
         }
 
         private void HandlePauseClick()
@@ -142,6 +170,9 @@ namespace InvaderInsider.UI
             if (stageText != null)
             {
                 stageText.text = $"Stage {currentStage}/{totalStages}";
+                // #if UNITY_EDITOR
+                // Debug.Log($"[TopBar] Stage 업데이트: {currentStage}/{totalStages}");
+                // #endif
             }
             else
             {
@@ -194,7 +225,8 @@ namespace InvaderInsider.UI
         {
             base.OnShow();
             
-            // eData는 GameManager에서 직접 호출로 업데이트됨 (이벤트 재구독 제거)
+            // 패널이 표시될 때 현재 게임 상태로 UI 업데이트
+            UpdateUI();
         }
 
         protected override void OnHide()

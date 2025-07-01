@@ -625,6 +625,7 @@ MonoBehaviour:
   attackRate: 1
   showDebugInfo: 0
   healthText: {fileID: 636028777}
+  bottomBarPanel: {fileID: 0}
   enableTestKeys: 1
 --- !u!1 &101416146
 GameObject:
@@ -5760,7 +5761,6 @@ MonoBehaviour:
   wayPointsList:
   - {fileID: 1408072179}
   - {fileID: 1703004656}
-  defaultEnemyPrefab: {fileID: 0}
   stageNum: 0
   stageWave: 20
   createTime: 1.5
@@ -9919,6 +9919,11 @@ MonoBehaviour:
   restartButton: {fileID: 0}
   mainMenuButton: {fileID: 0}
   gameOverMessageText: {fileID: 0}
+  healthFillImage: {fileID: 0}
+  healthText: {fileID: 0}
+  eDataText: {fileID: 0}
+  pauseButton: {fileID: 0}
+  player: {fileID: 0}
 --- !u!225 &1886596331
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -10347,6 +10352,54 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7039887058434185255, guid: 6a91e5ecbd1293644b1b9f5eeb148ec1, type: 3}
   m_PrefabInstance: {fileID: 188928766486283300}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2000479534
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2000479535}
+  - component: {fileID: 2000479536}
+  m_Layer: 0
+  m_Name: UICoordinator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2000479535
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000479534}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 960, y: 540, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2000479536
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000479534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3b6c3d872ea95045a63b5bf444b5f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bottomBarPanel: {fileID: 1886596330}
+  topBarPanel: {fileID: 79394968}
+  inGamePanel: {fileID: 1343210169}
+  pausePanel: {fileID: 857696273}
 --- !u!4 &2060630223 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 840a94fcaa98a6849b8a79a4552e815f, type: 3}
@@ -12037,6 +12090,7 @@ SceneRoots:
   - {fileID: 688643432}
   - {fileID: 1541426034}
   - {fileID: 472603244}
+  - {fileID: 2000479535}
   - {fileID: 449809690}
   - {fileID: 1554795550}
   - {fileID: 1667510110}
