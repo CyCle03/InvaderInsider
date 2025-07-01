@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using InvaderInsider.Cards;
+using InvaderInsider.Managers;
 using System.Threading.Tasks;
 using System.IO;
 using Newtonsoft.Json;
@@ -288,7 +289,31 @@ namespace InvaderInsider.Data
     /// </summary>
     public class SaveDataManager : MonoBehaviour
     {
+        // 로그 출력 제어 플래그
+        private const bool ENABLE_LOGS = false; // 로그 완전 비활성화
+        
         private const string LOG_PREFIX = "[SaveData] ";
+        
+        // 로그 헬퍼 메서드
+        private static void LogOnly(string message)
+        {
+#if UNITY_EDITOR && !DISABLE_LOGS
+            if (ENABLE_LOGS) Debug.Log(LOG_PREFIX + message);
+#endif
+        }
+        
+        private static void LogWarningOnly(string message)
+        {
+#if UNITY_EDITOR && !DISABLE_LOGS
+            if (ENABLE_LOGS) Debug.LogWarning(LOG_PREFIX + message);
+#endif
+        }
+        
+        private static void LogErrorOnly(string message)
+        {
+            Debug.LogError(LOG_PREFIX + message); // Error는 항상 출력
+        }
+        
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "게임 데이터 저장 실패: {0}",
@@ -300,14 +325,28 @@ namespace InvaderInsider.Data
         
         // 싱글턴 인스턴스 - 단순하고 확실한 방식
         private static SaveDataManager _instance;
+        private static readonly object _lock = new object();
         public static SaveDataManager Instance
         {
             get
             {
                 if (_instance == null)
                 {
-                    CreateInstance();
+                    lock (_lock)
+                    {
+                        if (_instance == null)
+                        {
+                            CreateInstance();
+                        }
+                    }
                 }
+                
+                // 인스턴스는 있지만 데이터가 초기화되지 않은 경우 강제 초기화
+                if (_instance != null && _instance.currentSaveData == null)
+                {
+                    _instance.InitializeData();
+                }
+                
                 return _instance;
             }
         }
@@ -342,7 +381,9 @@ namespace InvaderInsider.Data
                 DontDestroyOnLoad(go);
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "SaveDataManager 싱글턴 인스턴스 생성됨");
+        #if !DISABLE_LOGS
+        Debug.Log(LOG_PREFIX + "SaveDataManager 싱글턴 인스턴스 생성됨");
+#endif
                 #endif
             }
             else
@@ -351,7 +392,7 @@ namespace InvaderInsider.Data
                 DontDestroyOnLoad(_instance.gameObject);
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "기존 SaveDataManager 인스턴스 발견 및 설정됨");
+                LogOnly("기존 SaveDataManager 인스턴스 발견 및 설정됨");
                 #endif
             }
         }
@@ -387,7 +428,7 @@ namespace InvaderInsider.Data
             if (_instance != null && _instance != this)
             {
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "중복 SaveDataManager 감지 - 파괴됨");
+                LogOnly("중복 SaveDataManager 감지 - 파괴됨");
                 #endif
                 Destroy(gameObject);
                 return;
@@ -400,14 +441,14 @@ namespace InvaderInsider.Data
                 DontDestroyOnLoad(gameObject);
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "SaveDataManager 새 인스턴스 생성됨");
+                LogOnly("SaveDataManager 새 인스턴스 생성됨");
                 #endif
                 
                 // 게임 데이터 초기화
                 InitializeData();
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "SaveDataManager 초기화 완료");
+                LogOnly("SaveDataManager 초기화 완료");
                 #endif
             }
         }
@@ -419,6 +460,12 @@ namespace InvaderInsider.Data
             
             // 게임 데이터 로드
             LoadGameData();
+            
+            // 초기화 완료 후 상태 확인 (에러가 있을 때만 로그)
+            if (currentSaveData == null)
+            {
+                LogManager.LogSave("초기화", "currentSaveData가 null입니다", true);
+            }
         }
 
         private void OnDestroy()
@@ -438,11 +485,23 @@ namespace InvaderInsider.Data
 
         private void OnApplicationQuit()
         {
-            // 게임 종료 시에는 저장하지 않음
-            // 스테이지 클리어 시에만 저장됨
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "게임 종료 - 저장하지 않음");
-            #endif
+            // 게임 종료 시에도 저장 (데이터 보존을 위해)
+            if (currentSaveData != null && Application.isPlaying)
+            {
+                try 
+                {
+                    SaveGameDataImmediate();
+                    Debug.Log(LOG_PREFIX + "게임 종료 - 최종 저장 완료");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError(LOG_PREFIX + "게임 종료 시 저장 실패: " + e.Message);
+                }
+            }
+            else
+            {
+                Debug.Log(LOG_PREFIX + "게임 종료 - 저장할 데이터 없음");
+            }
             
             // 인스턴스 정리
             if (_instance == this)
@@ -486,11 +545,74 @@ namespace InvaderInsider.Data
 
         public bool HasSaveData()
         {
-            bool exists = File.Exists(SAVE_KEY);
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"HasSaveData 확인 - 파일 경로: {Path.GetFullPath(SAVE_KEY)}, 존재 여부: {exists}");
-            #endif
-            return exists;
+            bool fileExists = File.Exists(SAVE_KEY);
+            
+            if (!fileExists)
+            {
+                Debug.Log($"{LOG_PREFIX}저장 파일이 존재하지 않음");
+                return false;
+            }
+
+            // 파일이 존재하면 내용도 확인
+            try
+            {
+                // 항상 최신 데이터를 로드하여 확인 (캐시 무시)
+                LoadGameData();
+
+                // Continue 가능 조건:
+                // 1. 저장 데이터가 있고
+                // 2. 게임을 시작한 기록이 있으면서 (EData > 기본값 또는 스테이지 클리어 기록)
+                // 3. 모든 스테이지를 클리어했어도 재플레이 가능
+                bool hasGameProgress = currentSaveData != null && 
+                    (currentSaveData.progressData.highestStageCleared >= 0 || 
+                     currentSaveData.progressData.currentEData > 100); // 기본 EData보다 많으면 플레이한 적 있음
+                
+                bool hasProgress = false;
+                if (hasGameProgress)
+                {
+                    int highestCleared = currentSaveData.progressData.highestStageCleared;
+                    
+                    // Continue 가능 조건을 더 관대하게 변경:
+                    // 1. 게임을 시작한 적이 있으면 항상 Continue 가능 (첫 스테이지 클리어 후에도)
+                    // 2. 모든 스테이지를 클리어했어도 재플레이를 위해 Continue 가능
+                    
+                    if (highestCleared < 0)
+                    {
+                        // 아직 아무 스테이지도 클리어하지 않았지만 게임을 시작한 기록이 있음
+                        hasProgress = true;
+                        Debug.Log($"{LOG_PREFIX}게임 시작 기록 있음 - Continue 가능");
+                    }
+                    else
+                    {
+                        // StageManager에서 총 스테이지 수 확인
+                        var stageManager = FindObjectOfType<InvaderInsider.Managers.StageManager>();
+                        if (stageManager != null)
+                        {
+                            int totalStages = stageManager.GetStageCount();
+                            
+                            // 스테이지를 하나라도 클리어했다면 항상 Continue 가능 (재플레이 포함)
+                            hasProgress = highestCleared >= 0 && totalStages > 0;
+                            
+                            Debug.Log($"{LOG_PREFIX}Continue 조건 체크 - 최고 클리어: {highestCleared}, 총 스테이지: {totalStages}, Continue 가능: {hasProgress}");
+                        }
+                        else
+                        {
+                            // StageManager를 찾을 수 없으면 게임 진행 기록이 있으면 Continue 허용
+                            hasProgress = true;
+                            Debug.Log($"{LOG_PREFIX}StageManager를 찾을 수 없어 기본 Continue 허용: {hasProgress}");
+                        }
+                    }
+                }
+                
+                Debug.Log($"{LOG_PREFIX}저장 데이터 확인 - 파일 존재: {fileExists}, 데이터 유효: {currentSaveData != null}, 최고 클리어 스테이지: {currentSaveData?.progressData.highestStageCleared ?? -1}, EData: {currentSaveData?.progressData.currentEData ?? 0}, 결과: {hasProgress}");
+                
+                return hasProgress;
+            }
+            catch (Exception e)
+            {
+                LogManager.LogSave("데이터 확인", e.Message, true);
+                return false;
+            }
         }
 
         public void ResetGameData()
@@ -505,8 +627,20 @@ namespace InvaderInsider.Data
         // 지연 저장: 여러 변경사항을 모아서 한 번에 저장
         public void SaveGameData()
         {
+            UnityEngine.Debug.Log("=== FORCE LOG: SaveGameData() 호출됨 ===");
+            
             // 게임이 실행 중이 아닐 때만 저장하지 않음
-            if (!Application.isPlaying) return;
+            if (!Application.isPlaying) 
+            {
+                UnityEngine.Debug.Log("=== FORCE LOG: Application.isPlaying이 false여서 저장 취소 ===");
+                return;
+            }
+            
+            if (currentSaveData == null)
+            {
+                UnityEngine.Debug.Log("=== FORCE LOG: SaveGameData - currentSaveData가 null! ===");
+                return;
+            }
             
             // 지연 저장 제거하고 즉시 저장으로 변경
             SaveGameDataImmediate();
@@ -514,23 +648,25 @@ namespace InvaderInsider.Data
         
         // 지연 저장 제거됨 - 즉시 저장으로 변경
         
-        // 즉시 저장 (동기식)
+        // 즉시 저장 (동기식) - 로그 최소화
         private void SaveGameDataImmediate()
         {
+            UnityEngine.Debug.Log("=== FORCE LOG: SaveGameDataImmediate() 시작 ===");
+            
             try
             {
                 string json = JsonConvert.SerializeObject(currentSaveData, Formatting.Indented);
                 File.WriteAllText(SAVE_KEY, json);
                 
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"게임 데이터 저장 성공 - 파일: {SAVE_KEY}, 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared}");
-                #endif
+                UnityEngine.Debug.Log($"=== FORCE LOG: 저장 완료! 파일: {SAVE_KEY} ===");
+                UnityEngine.Debug.Log($"=== FORCE LOG: 저장된 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared} ===");
+                
+                Debug.Log($"{LOG_PREFIX}게임 데이터 저장 성공 - 파일: {SAVE_KEY}, 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared}");
             }
             catch (Exception e)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[0], e.Message));
-                #endif
+                UnityEngine.Debug.Log($"=== FORCE LOG: 저장 실패! 에러: {e.Message} ===");
+                LogManager.LogSave("데이터 저장", e.Message, true);
             }
         }
 
@@ -539,9 +675,7 @@ namespace InvaderInsider.Data
             // 게임이 실행 중이 아닐 때만 로드하지 않음
             if (!Application.isPlaying) return;
             
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"게임 데이터 로드 시도 - 파일 경로: {SAVE_KEY}");
-            #endif
+            Debug.Log($"{LOG_PREFIX}게임 데이터 로드 시도 - 파일 경로: {SAVE_KEY}");
             
             try
             {
@@ -552,31 +686,22 @@ namespace InvaderInsider.Data
                     
                     if (currentSaveData == null)
                     {
-                        #if UNITY_EDITOR
-                        Debug.LogWarning(LOG_PREFIX + "저장 파일 역직렬화 실패 - 새 데이터로 초기화");
-                        #endif
+                        LogManager.LogSave("로드", "역직렬화 실패", true);
                         currentSaveData = new SaveData();
                     }
                     else
                     {
-                        #if UNITY_EDITOR
-                        Debug.Log(LOG_PREFIX + $"게임 데이터 로드 성공 - 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}, eData: {currentSaveData.progressData.currentEData}");
-                        #endif
+                        Debug.Log($"{LOG_PREFIX}게임 데이터 로드 성공 - 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}, eData: {currentSaveData.progressData.currentEData}");
                     }
                 }
                 else
                 {
-                    #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + "저장 파일 없음 - 새 게임 데이터 생성");
-                    #endif
                     currentSaveData = new SaveData();
                 }
             }
             catch (Exception e)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(string.Format(LOG_PREFIX + LOG_MESSAGES[1], e.Message));
-                #endif
+                LogManager.LogSave("데이터 로드", e.Message, true);
                 currentSaveData = new SaveData();
             }
         }
@@ -588,36 +713,47 @@ namespace InvaderInsider.Data
 
         public void UpdateStageProgress(int stageNum, bool saveImmediately)
         {
-            if (stageNum <= 0) 
-            {
-                #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + $"잘못된 스테이지 번호: {stageNum}");
-                #endif
-                return;
-            }
-
+            UnityEngine.Debug.Log($"=== FORCE LOG: UpdateStageProgress({stageNum}, {saveImmediately}) 호출됨 ===");
+            
             if (currentSaveData == null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "currentSaveData가 null입니다!");
-                #endif
-                return;
+                UnityEngine.Debug.Log("=== FORCE LOG: currentSaveData가 null! 초기화 시도 ===");
+                LogManager.LogSave("스테이지 진행", "currentSaveData가 null입니다", true);
+                InitializeData(); // 데이터 초기화 시도
+                if (currentSaveData == null)
+                {
+                    UnityEngine.Debug.Log("=== FORCE LOG: 초기화 후에도 currentSaveData가 null! ===");
+                    return;
+                }
             }
 
+            // 이전 값과 비교하여 정상적인 진행인지 확인
+            int previousHighest = currentSaveData.progressData.highestStageCleared;
+            UnityEngine.Debug.Log($"=== FORCE LOG: 이전 최고 클리어: {previousHighest}, 새 스테이지: {stageNum} ===");
+            
             currentSaveData.stageProgress.Set(stageNum);
             currentSaveData.progressData.highestStageCleared = 
                 Mathf.Max(currentSaveData.progressData.highestStageCleared, stageNum);
 
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"스테이지 진행 업데이트: 스테이지 {stageNum} 클리어, 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}, saveImmediately: {saveImmediately}");
-            #endif
+            UnityEngine.Debug.Log($"=== FORCE LOG: 업데이트 후 최고 클리어: {currentSaveData.progressData.highestStageCleared} ===");
+
+            // 정상적인 진행 상황만 로그 (에러가 아닌 경우)
+            if (stageNum > previousHighest)
+            {
+                UnityEngine.Debug.Log($"=== FORCE LOG: 새 스테이지 진행: {stageNum} (이전 최고: {previousHighest}) ===");
+                Debug.Log($"{LOG_PREFIX}새 스테이지 진행: {stageNum} (이전 최고: {previousHighest})");
+            }
 
             if (saveImmediately)
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "즉시 저장 호출");
-                #endif
+                UnityEngine.Debug.Log($"=== FORCE LOG: 즉시 저장 호출 시작 ===");
+                Debug.Log($"{LOG_PREFIX}즉시 저장 호출");
                 SaveGameData();
+                UnityEngine.Debug.Log($"=== FORCE LOG: 즉시 저장 호출 완료 ===");
+            }
+            else
+            {
+                UnityEngine.Debug.Log($"=== FORCE LOG: 즉시 저장하지 않음 (saveImmediately=false) ===");
             }
         }
 
@@ -785,7 +921,7 @@ namespace InvaderInsider.Data
                         currentSaveData = new SaveData();
                     }
                     #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + "설정 파일 없음 - 기본 설정 사용");
+                    LogOnly("설정 파일 없음 - 기본 설정 사용");
                     #endif
                 }
             }

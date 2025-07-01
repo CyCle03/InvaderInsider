@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using InvaderInsider.Data;
 using InvaderInsider.Cards;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
@@ -47,9 +48,7 @@ namespace InvaderInsider.UI
         {
             if (card == null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError("CardButton: 초기화할 카드 데이터가 null입니다.");
-                #endif
+                LogManager.Error("CardButton", "초기화할 카드 데이터가 null입니다.");
                 return;
             }
 
@@ -61,16 +60,14 @@ namespace InvaderInsider.UI
             // UI 업데이트 실행 (필수 요소가 없어도 가능한 부분만 업데이트)
             UpdateUIWithNullCheck();
 
-            #if UNITY_EDITOR
             if (HasMissingRequiredElements())
             {
-                Debug.LogWarning($"CardButton: 필수 요소 누락으로 제한된 초기화를 수행했습니다. 카드: {card.cardName}");
+                LogManager.Warning("CardButton", $"필수 요소 누락으로 제한된 초기화를 수행했습니다. 카드: {card.cardName}");
             }
             else
             {
-                Debug.Log($"CardButton: 초기화 완료 - {card.cardName}");
+                LogManager.Info("CardButton", $"초기화 완료 - {card.cardName}");
             }
-            #endif
         }
 
         /// <summary>

@@ -8,7 +8,7 @@ namespace InvaderInsider.UI
 {
     public class PausePanel : BasePanel
     {
-        private const string LOG_PREFIX = "[Pause] ";
+        private new const string LOG_PREFIX = "[Pause] ";
         
         [Header("Pause Panel UI")]
         public Button resumeButton;

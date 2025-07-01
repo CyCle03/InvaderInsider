@@ -5,7 +5,7 @@ using UnityEngine;
 namespace InvaderInsider
 {
     [CreateAssetMenu(fileName = "New Stage Database", menuName = "Stage System/StageDatabase")]
-    public class StageDBObject : ScriptableObject, IStageContainer
+    public class StageDBObject : ScriptableObject, IStageContainer, IStageData
     {
         [SerializeField] private int stageID = -1;
         [SerializeField] private GameObject[] container;
@@ -19,6 +19,18 @@ namespace InvaderInsider
                 return null;
             
             return container[index];
+        }
+
+        public int StageCount => 1;
+
+        public GameObject GetStageObject(int stageIndex, int objectIndex)
+        {
+            return GetObject(objectIndex);
+        }
+
+        public int GetStageWaveCount(int stageIndex)
+        {
+            return ObjectCount;
         }
     }
 
@@ -44,30 +56,18 @@ namespace InvaderInsider
         public int indexNum;
 
         [SerializeField]
-        private Enemy enemyData;
+        private GameObject enemyPrefab;
 
-        public IEnemy Enemy => enemyData;
-
-        public GameObject EnemyPrefab
-        {
-            get
-            {
-                if (enemyData != null)
-                {
-                    return enemyData.Prefab;
-                }
-                return null;
-            }
-        }
+        public GameObject EnemyPrefab => enemyPrefab;
 
         public WaveObject()
         {
-            enemyData = new Enemy();
+            enemyPrefab = null;
         }
 
-        public WaveObject(Enemy enemy)
+        public WaveObject(GameObject enemyPrefab)
         {
-            UpdateListSlot(enemy);
+            UpdateListSlot(enemyPrefab);
         }
 
         public void SetParent(IStageContainer stageContainer)
@@ -75,14 +75,28 @@ namespace InvaderInsider
             parent = stageContainer;
         }
 
-        public void UpdateListSlot(Enemy enemy)
+        public void UpdateListSlot(GameObject enemyPrefab)
         {
-            enemyData = enemy;
+            this.enemyPrefab = enemyPrefab;
         }
 
         public void RemoveEnemy()
         {
-            enemyData = new Enemy();
+            enemyPrefab = null;
+        }
+        
+        public EnemyObject GetEnemyComponent()
+        {
+            if (enemyPrefab != null)
+            {
+                return enemyPrefab.GetComponent<EnemyObject>();
+            }
+            return null;
+        }
+        
+        public bool IsValidEnemy()
+        {
+            return enemyPrefab != null && enemyPrefab.GetComponent<EnemyObject>() != null;
         }
     }
 }

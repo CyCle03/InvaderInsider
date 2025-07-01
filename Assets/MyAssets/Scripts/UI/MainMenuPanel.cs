@@ -10,7 +10,7 @@ namespace InvaderInsider.UI
 {
     public class MainMenuPanel : BasePanel
     {
-        private const string LOG_PREFIX = "[MainMenu] ";
+        private const string LOG_TAG = "MainMenu";
         
         [Header("Components")]
         [SerializeField] private MainMenuButtonHandler buttonHandler;
@@ -45,6 +45,26 @@ namespace InvaderInsider.UI
 
         private void OnEnable()
         {
+            // 씬 전환 후 플래그 리셋
+            isGameStarting = false;
+            
+            // Main 씬으로 돌아올 때 SaveDataManager 재확인
+            if (saveDataManager == null)
+            {
+                saveDataManager = SaveDataManager.Instance;
+                if (saveDataManager == null)
+                {
+                    StartCoroutine(TryGetSaveDataManager());
+                }
+            }
+            
+            // SaveDataManager가 있으면 강제로 데이터 재로드
+            if (saveDataManager != null)
+            {
+                saveDataManager.LoadGameData();
+            }
+            
+            // Continue 버튼 상태 업데이트
             UpdateContinueButton();
         }
 
@@ -85,26 +105,20 @@ namespace InvaderInsider.UI
                 
                 attempts++;
                 
-                #if UNITY_EDITOR
                 if (saveDataManager == null)
                 {
-                    Debug.Log(LOG_PREFIX + $"SaveDataManager 찾기 시도 {attempts}/{maxAttempts}");
+                    LogManager.Info(LOG_TAG, "SaveDataManager 찾기 시도 {0}/{1}", attempts, maxAttempts);
                 }
-                #endif
             }
             
             if (saveDataManager != null)
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "SaveDataManager 연결 성공");
-                #endif
+                LogManager.Info(LOG_TAG, "SaveDataManager 연결 성공");
                 UpdateContinueButton();
             }
             else
             {
-                #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + "SaveDataManager 연결 실패 - 백업 메커니즘 실행");
-                #endif
+                LogManager.Warning(LOG_TAG, "SaveDataManager 연결 실패 - 백업 메커니즘 실행");
                 
                 // Continue 버튼을 일시적으로 비활성화
                 if (continueButton != null)
@@ -124,16 +138,12 @@ namespace InvaderInsider.UI
                 
                 if (saveDataManager != null)
                 {
-                    #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + "SaveDataManager 백업 연결 성공");
-                    #endif
+                    LogManager.Info(LOG_TAG, "SaveDataManager 백업 연결 성공");
                     UpdateContinueButton();
                 }
                 else
                 {
-                    #if UNITY_EDITOR
-                    Debug.LogError(LOG_PREFIX + "SaveDataManager를 찾을 수 없습니다. Continue 버튼이 비활성화됩니다.");
-                    #endif
+                    LogManager.Error(LOG_TAG, "SaveDataManager를 찾을 수 없습니다. Continue 버튼이 비활성화됩니다.");
                 }
             }
         }
@@ -149,6 +159,10 @@ namespace InvaderInsider.UI
             if (continueButton != null)
             {
                 continueButton.onClick.AddListener(OnContinueClicked);
+            }
+            else
+            {
+                Debug.LogError("Continue 버튼이 null입니다!");
             }
             
             if (settingsButton != null)
@@ -176,19 +190,16 @@ namespace InvaderInsider.UI
         {
             if (continueButton != null && saveDataManager != null)
             {
+                // 저장 데이터 상태 확인
                 bool hasSaveData = saveDataManager.HasSaveData();
                 continueButton.interactable = hasSaveData;
                 
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"Continue 버튼 업데이트: HasSaveData = {hasSaveData}, 버튼 활성화 = {continueButton.interactable}");
-                #endif
+                LogManager.Info(LOG_TAG, "Continue 버튼 업데이트: HasSaveData = {0}, 버튼 활성화 = {1}", hasSaveData, continueButton.interactable);
             }
-            #if UNITY_EDITOR
             else
             {
-                Debug.LogWarning(LOG_PREFIX + $"Continue 버튼 업데이트 실패 - continueButton: {continueButton != null}, saveDataManager: {saveDataManager != null}");
+                LogManager.Warning(LOG_TAG, "Continue 버튼 업데이트 실패 - continueButton: {0}, saveDataManager: {1}", continueButton != null, saveDataManager != null);
             }
-            #endif
         }
 
         private void UpdateVersionInfo()
@@ -202,16 +213,12 @@ namespace InvaderInsider.UI
         // 버튼 이벤트 핸들러들
         private void OnNewGameClicked()
         {
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "OnNewGameClicked 호출됨");
-            #endif
+            LogManager.Info(LOG_TAG, "OnNewGameClicked 호출됨");
             
             // 즉시 중복 클릭 방지
             if (isGameStarting)
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "OnNewGameClicked 무시됨 - 이미 게임 시작 중");
-                #endif
+                LogManager.Info(LOG_TAG, "OnNewGameClicked 무시됨 - 이미 게임 시작 중");
                 return;
             }
             
@@ -227,12 +234,12 @@ namespace InvaderInsider.UI
 
         private void OnContinueClicked()
         {
+            LogManager.Info(LOG_TAG, "OnContinueClicked 호출됨!");
+            
             // 즉시 중복 클릭 방지
             if (isGameStarting)
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "OnContinueClicked 무시됨 - 이미 게임 시작 중");
-                #endif
+                LogManager.Info(LOG_TAG, "OnContinueClicked 무시됨 - 이미 게임 시작 중");
                 return;
             }
             
@@ -273,31 +280,23 @@ namespace InvaderInsider.UI
             float currentTime = Time.unscaledTime;
             if (currentTime - lastClickTime < CLICK_COOLDOWN)
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"클릭 쿨다운 중입니다. 남은 시간: {CLICK_COOLDOWN - (currentTime - lastClickTime):F1}초");
-                #endif
+                LogManager.Info(LOG_TAG, "클릭 쿨다운 중입니다. 남은 시간: {0:F1}초", CLICK_COOLDOWN - (currentTime - lastClickTime));
                 return;
             }
             
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + $"StartNewGame 호출됨 - isGameStarting: {isGameStarting}");
-            #endif
+            LogManager.Info(LOG_TAG, "StartNewGame 호출됨 - isGameStarting: {0}", isGameStarting);
             
             // 이미 게임 시작 중이면 무시
             if (isGameStarting) 
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "이미 게임 시작 중입니다.");
-                #endif
+                LogManager.Info(LOG_TAG, "이미 게임 시작 중입니다.");
                 return;
             }
             
             isGameStarting = true;
             lastClickTime = currentTime;
             
-                    #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "GameManager.StartNewGame() 호출 시도");
-                    #endif
+            LogManager.Info(LOG_TAG, "GameManager.StartNewGame() 호출 시도");
                     
             // GameManager가 모든 게임 시작 로직을 담당
             var gameManager = InvaderInsider.Managers.GameManager.Instance;
@@ -307,36 +306,34 @@ namespace InvaderInsider.UI
             }
             else
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "GameManager를 찾을 수 없습니다!");
-                #endif
+                LogManager.Error(LOG_TAG, "GameManager를 찾을 수 없습니다!");
                 isGameStarting = false; // 실패 시 플래그 리셋
             }
         }
 
         private void ContinueGame()
         {
+            LogManager.Info(LOG_TAG, "ContinueGame 호출됨!");
+            
             // 쿨다운 체크
             float currentTime = Time.unscaledTime;
             if (currentTime - lastClickTime < CLICK_COOLDOWN)
             {
-            #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"클릭 쿨다운 중입니다. 남은 시간: {CLICK_COOLDOWN - (currentTime - lastClickTime):F1}초");
-            #endif
+                LogManager.Info(LOG_TAG, "클릭 쿨다운 중입니다. 남은시간: {0:F1}초", CLICK_COOLDOWN - (currentTime - lastClickTime));
                 return;
             }
             
             // 이미 게임 시작 중이면 무시
             if (isGameStarting) 
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "이미 게임 시작 중입니다.");
-                #endif
+                LogManager.Info(LOG_TAG, "이미 게임 시작 중입니다.");
                 return;
-        }
+            }
 
             isGameStarting = true;
             lastClickTime = currentTime;
+            
+            LogManager.Info(LOG_TAG, "GameManager.StartContinueGame() 호출 시도");
             
             // GameManager가 모든 게임 계속하기 로직을 담당
             var gameManager = InvaderInsider.Managers.GameManager.Instance;
@@ -346,9 +343,7 @@ namespace InvaderInsider.UI
             }
             else
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "GameManager를 찾을 수 없습니다!");
-                #endif
+                LogManager.Error(LOG_TAG, "GameManager를 찾을 수 없습니다!");
                 isGameStarting = false; // 실패 시 플래그 리셋
             }
         }
@@ -365,6 +360,44 @@ namespace InvaderInsider.UI
         // 외부에서 호출 가능한 공개 메서드들
         public void RefreshContinueButton()
         {
+            // SaveDataManager 강제 재검색 (항상 최신 인스턴스 사용)
+            saveDataManager = SaveDataManager.Instance;
+            if (saveDataManager == null)
+            {
+                Debug.Log("[FORCE LOG] SaveDataManager가 null이므로 다시 찾기 시도");
+                
+                // 직접 검색
+                saveDataManager = FindObjectOfType<SaveDataManager>();
+                
+                if (saveDataManager == null)
+                {
+                    Debug.LogError("[FORCE LOG] SaveDataManager를 찾을 수 없습니다!");
+                    
+                    // SaveDataManager가 없으면 Continue 버튼 비활성화
+                    if (continueButton != null)
+                    {
+                        continueButton.interactable = false;
+                    }
+                    return;
+                }
+                else
+                {
+                    Debug.Log("[FORCE LOG] SaveDataManager 찾기 성공");
+                }
+            }
+            
+            // SaveDataManager가 있으면 데이터 강제 재로드
+            if (saveDataManager != null)
+            {
+                Debug.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 시작");
+                saveDataManager.LoadGameData();
+                Debug.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 완료");
+                
+                // 저장 데이터 존재 여부 재확인
+                bool hasSaveData = saveDataManager.HasSaveData();
+                Debug.Log($"[FORCE LOG] 저장 데이터 확인 결과: {hasSaveData}");
+            }
+            
             UpdateContinueButton();
         }
 

@@ -12,7 +12,7 @@ namespace InvaderInsider.UI
 {
     public class InGamePanel : BasePanel
     {
-        private const string LOG_PREFIX = "[UI] ";
+        private new const string LOG_PREFIX = "[InGame] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "InGame: Pause button missing",
@@ -62,9 +62,7 @@ namespace InvaderInsider.UI
             // 중복 초기화 방지
             if (isInitialized)
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "InGame 패널이 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
-                #endif
+                LogManager.Info("InGamePanel", "InGame 패널이 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
                 return;
             }
 
@@ -89,9 +87,7 @@ namespace InvaderInsider.UI
             
             isInitialized = true;
 
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "InGame 패널 초기화 완료");
-            #endif
+            LogManager.Info("InGamePanel", "InGame 패널 초기화 완료");
         }
 
         private void Update()

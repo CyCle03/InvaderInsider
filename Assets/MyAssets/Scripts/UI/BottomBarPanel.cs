@@ -1,6 +1,6 @@
 using UnityEngine;
-using TMPro;
 using UnityEngine.UI;
+using TMPro;
 using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
@@ -9,7 +9,7 @@ namespace InvaderInsider.UI
     {
         private const float LOW_HEALTH_THRESHOLD = 0.25f; // 25% 이하 시 경고 표시
         
-        private const string LOG_PREFIX = "[BottomBar] ";
+        private new const string LOG_PREFIX = "[BottomBar] ";
         private static readonly string[] LOG_MESSAGES = new string[]
         {
             "Player를 찾을 수 없습니다."
@@ -26,12 +26,21 @@ namespace InvaderInsider.UI
         [SerializeField] private Button mainMenuButton;
         [SerializeField] private TextMeshProUGUI gameOverMessageText;
 
-        private Player player;
+        [Header("UI Elements")]
+        [SerializeField] private Image healthFillImage;
+        [SerializeField] private TextMeshProUGUI healthText;
+        [SerializeField] private TextMeshProUGUI eDataText;
+        [SerializeField] private Button pauseButton;
+        
+        [Header("References")]
+        [SerializeField] private Player player; // FindObjectOfType 대신 직접 할당
+        
+        // 캐시된 참조들
+        private GameManager gameManager;
+        private ResourceManager resourceManager;
+
         private bool isInitialized = false;
         private bool isGameOverUIVisible = false;
-        
-        // 런타임에 찾을 UI 요소들
-        private Image healthFillImage;
         
         // 색상 캐싱
         private static readonly Color normalHealthColor = Color.green;
@@ -55,7 +64,6 @@ namespace InvaderInsider.UI
             }
 
             // Player 찾기 - 여러 방법으로 시도
-            player = FindObjectOfType<Player>();
             if (player == null)
             {
                 // Player 태그로도 찾아보기
@@ -146,7 +154,7 @@ namespace InvaderInsider.UI
             #if UNITY_EDITOR
             if (gameOverPanel == null)
             {
-                Debug.LogWarning($"{LOG_PREFIX}gameOverPanel이 할당되지 않았습니다. 게임 오버 UI가 표시되지 않습니다.");
+                LogManager.Warning("BottomBar", "gameOverPanel이 할당되지 않았습니다. 게임 오버 UI가 표시되지 않습니다.");
             }
             #endif
 
@@ -189,7 +197,10 @@ namespace InvaderInsider.UI
             Debug.Log($"{LOG_PREFIX}Player 이벤트 리스너 설정 완료");
             #endif
             
-            // 이벤트 구독 후 현재 Player 상태로 즉시 동기화
+            // Health Display 초기화
+            InitializeHealthDisplay();
+            
+            // 추가 동기화 (안전장치)
             if (player.MaxHealth > 0)
             {
                 float currentHealthRatio = player.CurrentHealth / player.MaxHealth;
@@ -214,7 +225,7 @@ namespace InvaderInsider.UI
         {
             if (enemyRemainText == null) return;
 
-            enemyRemainText.text = $"Enemy: {activeCount}/{totalCount}";
+            enemyRemainText.text = $"Active Enemy: {activeCount}";
         }
         
         // 기존 메서드와의 호환성을 위한 오버로드
@@ -222,14 +233,31 @@ namespace InvaderInsider.UI
         {
             if (enemyRemainText == null) return;
 
-            enemyRemainText.text = $"Enemy: {count}";
+            enemyRemainText.text = $"Active Enemy: {count}";
         }
 
         private void InitializeHealthDisplay()
         {
-            if (player != null && healthSlider != null)
+            if (player != null && healthSlider != null && player.MaxHealth > 0)
             {
-                UpdateHealthDisplay(player.CurrentHealth / player.MaxHealth);
+                float healthRatio = player.CurrentHealth / player.MaxHealth;
+                
+                // Slider 초기 설정
+                healthSlider.minValue = 0f;
+                healthSlider.maxValue = 1f;
+                healthSlider.value = healthRatio;
+                
+                UpdateHealthDisplay(healthRatio);
+                
+                #if UNITY_EDITOR
+                Debug.Log($"{LOG_PREFIX}Health Display 초기화: {healthRatio:F2} ({player.CurrentHealth}/{player.MaxHealth})");
+                #endif
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                Debug.LogWarning($"{LOG_PREFIX}Health Display 초기화 실패 - Player: {player != null}, Slider: {healthSlider != null}, MaxHealth: {player?.MaxHealth ?? 0}");
+                #endif
             }
         }
 
