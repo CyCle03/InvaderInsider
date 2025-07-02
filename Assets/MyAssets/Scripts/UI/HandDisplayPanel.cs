@@ -5,6 +5,7 @@ using InvaderInsider.Data; // CardDBObject, CardDatabase 사용을 위해 추가
 using InvaderInsider.Managers; // SaveDataManager 사용을 위해 추가
 using TMPro; // TextMeshPro 사용 시 추가
 using InvaderInsider.Cards; // CardInteractionHandler 참조를 위해 추가
+using System.Linq;
 
 namespace InvaderInsider.UI
 {
@@ -254,7 +255,12 @@ namespace InvaderInsider.UI
 
             if (handContainer == null || cardPrefab == null || cardDatabase == null) return;
 
-            foreach (int cardId in handCardIds)
+            // CardManager에서 실제로 선택된 카드만 필터링
+            var selectedCardIds = handCardIds
+                .Where(cardId => cardManager.IsCardSelectedInSummonChoice(cardId))
+                .ToList();
+
+            foreach (int cardId in selectedCardIds)
             {
                 var cardData = cardDatabase.GetCardById(cardId);
                 if (cardData != null)
@@ -278,7 +284,7 @@ namespace InvaderInsider.UI
                 }
             }
 
-            UpdateTitle(handCardIds.Count);
+            UpdateTitle(selectedCardIds.Count);
         }
 
         // 카드 상세 정보 표시

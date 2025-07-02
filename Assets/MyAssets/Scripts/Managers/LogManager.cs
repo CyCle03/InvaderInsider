@@ -26,16 +26,27 @@ namespace InvaderInsider.Managers
         private static readonly StringBuilder _stringBuilder = new StringBuilder();
         
         // 로그 기본 활성화 (DebugUtils와 협력)
-        public static LogLevel MinimumLogLevel = LogLevel.Error;
-        public static bool EnableLogs = true; // 기본 활성화
+        public static LogLevel MinimumLogLevel = LogLevel.Warning; // 경고 이상만 로그
+        public static bool EnableLogs = true; 
         
         // 전역 로그 필터링 활성화
         public static bool GlobalFilterEnabled = true;
         
-        // 차단할 로그 패턴들 (최소화)
+        // 차단할 로그 패턴들 추가
         private static readonly HashSet<string> _blockedPatterns = new HashSet<string>
         {
-            // 필요시 추가
+            "[ObjectPool]", // 오브젝트 풀 관련 로그
+            "Loaded shader", // 쉐이더 로딩 로그
+            "Shader.CreateGPUSkinningVertexTexture", // GPU 스키닝 관련 로그
+            "RenderTexture", // 렌더 텍스처 관련 로그
+            "Preloading", // 에셋 프리로딩 로그
+            "Async", // 비동기 작업 관련 로그
+            "Texture", // 텍스처 로딩 관련 로그
+            "Material", // 머티리얼 관련 로그
+            "Shader", // 쉐이더 관련 로그
+            "Mesh", // 메시 관련 로그
+            "Animation", // 애니메이션 관련 로그
+            "AudioClip" // 오디오 클립 관련 로그
         };
         
         // 개발/에디터 모드에서 로그 활성화

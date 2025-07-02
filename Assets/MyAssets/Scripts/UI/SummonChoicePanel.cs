@@ -131,22 +131,16 @@ namespace InvaderInsider.UI
         {
             if (cards == null || cards.Count == 0)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[7]);
-                #endif
+                Debug.LogError($"{LOG_PREFIX} 카드 리스트가 null이거나 비어있습니다.");
                 return;
             }
 
             availableCards = cards;
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[1], cards.Count));
-            #endif
+            Debug.Log($"{LOG_PREFIX} 카드 수: {cards.Count}");
 
             if (cardContainer == null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[7]);
-                #endif
+                Debug.LogError($"{LOG_PREFIX} cardContainer가 null입니다.");
                 return;
             }
 
@@ -178,60 +172,39 @@ namespace InvaderInsider.UI
         {
             if (cardButtonPrefab == null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[6]);
-                #endif
+                Debug.LogError($"{LOG_PREFIX} cardButtonPrefab이 null입니다.");
                 return;
             }
 
             GameObject buttonObj = Instantiate(cardButtonPrefab, cardContainer);
             
-            // HideFlags 초기화 (에디터에서 이름 변경 가능하도록)
-            #if UNITY_EDITOR
-            buttonObj.hideFlags = HideFlags.None;
-            #endif
-            
             Button cardButton = buttonObj.GetComponent<Button>();
             CardButton cardButtonComponent = buttonObj.GetComponent<CardButton>();
-            
 
-            
-            if (cardButton != null && cardButtonComponent != null)
+            if (cardButton == null || cardButtonComponent == null)
             {
-                // CardButton 컴포넌트 초기화
-                cardButtonComponent.Initialize(card);
-                
-                // 클릭 이벤트 연결
-                cardButton.onClick.AddListener(() => HandleCardSelect(card));
-                
-                // 리스트에 추가
-                cardButtons.Add(cardButton);
-                cardButtonComponents.Add(cardButtonComponent);
-                
-
-            }
-            else
-            {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + $"카드 버튼 컴포넌트를 찾을 수 없습니다. 프리팹 설정을 확인하세요.");
-                Debug.LogError(LOG_PREFIX + $"- CardButton 컴포넌트: {(cardButtonComponent != null ? "존재함" : "없음")}");
-                Debug.LogError(LOG_PREFIX + $"- Button 컴포넌트: {(cardButton != null ? "존재함" : "없음")}");
-                Debug.LogError(LOG_PREFIX + $"- 프리팹 경로: {cardButtonPrefab.name}");
-                Debug.LogError(LOG_PREFIX + $"- 생성된 오브젝트의 모든 컴포넌트:");
-                
-                Component[] allComponents = buttonObj.GetComponents<Component>();
-                foreach (Component comp in allComponents)
-                {
-                    Debug.LogError(LOG_PREFIX + $"  - {comp.GetType().Name}");
-                }
-                #endif
+                Debug.LogError($"{LOG_PREFIX} 카드 버튼 컴포넌트를 찾을 수 없습니다. 프리팹 설정을 확인하세요.");
                 
                 // 생성된 오브젝트 정리
                 if (buttonObj != null)
                 {
                     Destroy(buttonObj);
                 }
+                return;
             }
+
+            // CardButton 컴포넌트 초기화
+            cardButtonComponent.Initialize(card);
+            
+            // 클릭 이벤트 연결
+            cardButton.onClick.AddListener(() => HandleCardSelect(card));
+            
+            // 리스트에 추가
+            cardButtons.Add(cardButton);
+            cardButtonComponents.Add(cardButtonComponent);
+
+            // 명시적으로 활성화
+            buttonObj.SetActive(true);
         }
 
         private void HandleCardSelect(CardDBObject selectedCard)
@@ -753,6 +726,21 @@ namespace InvaderInsider.UI
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "패널 Canvas Sorting Order 설정 완료: " + panelCanvas.sortingOrder);
             #endif
+        }
+
+        // 패널 숨기기 메서드 수정
+        public override void Hide()
+        {
+            base.Hide(); // 부모 클래스의 Hide 메서드 호출
+            
+            // 필요한 경우 추가 정리 작업
+            ClearCardButtons();
+            
+            // 게임 상태 복원 등 추가 로직
+            if (gameManager != null && !wasGamePaused)
+            {
+                gameManager.ResumeGame();
+            }
         }
     }
 } 

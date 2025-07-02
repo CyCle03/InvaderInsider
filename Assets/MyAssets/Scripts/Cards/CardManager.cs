@@ -65,6 +65,9 @@ namespace InvaderInsider.Cards
         // Events
         public UnityEvent<CardDBObject> OnCardDrawn = new UnityEvent<CardDBObject>();
 
+        // 소환 선택에서 선택된 카드 추적을 위한 필드
+        private HashSet<int> selectedCardIds = new HashSet<int>();
+
         private void Awake()
         {
             // 에디터 모드에서는 초기화하지 않음
@@ -268,32 +271,41 @@ namespace InvaderInsider.Cards
             LogManager.Error(LOG_TAG, "카드 데이터베이스에 카드가 없습니다.");
         }
 
+        // 소환 선택에서 카드가 선택되었는지 확인하는 메서드
+        public bool IsCardSelectedInSummonChoice(int cardId)
+        {
+            return selectedCardIds.Contains(cardId);
+        }
+
+        // 소환 선택에서 카드 선택 시 호출되는 메서드
+        public void MarkCardAsSelected(int cardId)
+        {
+            selectedCardIds.Add(cardId);
+        }
+
+        // 소환 선택 후 선택된 카드 초기화
+        public void ClearSelectedCards()
+        {
+            selectedCardIds.Clear();
+        }
+
+        // 카드 선택 메서드 수정
         public void OnCardChoiceSelected(CardDBObject selectedCard)
         {
-            // 소환 진행 플래그 해제
-            isSummonInProgress = false;
+            if (selectedCard == null) return;
 
-            // UIManager를 통해 패널 숨기기
-            if (InvaderInsider.UI.UIManager.Instance != null && InvaderInsider.UI.UIManager.Instance.IsPanelRegistered("SummonChoice"))
-            {
-                InvaderInsider.UI.UIManager.Instance.HidePanel("SummonChoice");
-                LogManager.Info(LOG_TAG, "UIManager를 통해 SummonChoice 패널을 숨겼습니다.");
-            }
-            
-            // null 체크 추가
-            if (selectedCard == null)
-            {
-                LogManager.Info(LOG_TAG, "카드 선택이 취소되었습니다 (Close 버튼 클릭).");
-                return;
-            }
-            
-            if (SaveDataManager.Instance != null)
-            {
-                SaveDataManager.Instance.AddCardToHandAndOwned(selectedCard.cardId);
-                LogManager.Info(LOG_TAG, "카드가 핸드에 추가되었습니다: '{0}'", selectedCard.cardName);
-            }
-            
-            OnCardDrawn?.Invoke(selectedCard);
+            // 선택된 카드를 핸드에 추가
+            AddCard(selectedCard);
+
+            // 선택된 카드 ID 마킹
+            MarkCardAsSelected(selectedCard.cardId);
+
+            // UI 업데이트 및 로깅
+            LogManager.Info(LOG_TAG, $"카드 선택됨: {selectedCard.cardName} (ID: {selectedCard.cardId})");
+
+            // 소환 선택 패널 숨기기
+            var summonChoicePanel = UIManager.Instance.GetPanel("SummonChoice") as SummonChoicePanel;
+            summonChoicePanel?.Hide();
         }
         #endregion
 

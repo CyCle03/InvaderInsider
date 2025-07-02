@@ -381,28 +381,11 @@ namespace InvaderInsider.Core
             ClearAllPools();
         }
 
-        #if UNITY_EDITOR
-        [Header("Editor Tools")]
-        [SerializeField] private bool showDebugInfo = true;
-
+        // 디버그 UI 렌더링 제거
         private void OnGUI()
         {
-            if (!showDebugInfo || !Application.isPlaying) return;
-
-            GUILayout.BeginArea(new Rect(10, 10, 300, 200));
-            GUILayout.Label("Object Pool Manager", GUI.skin.box);
-            
-            foreach (var kvp in namedPools)
-            {
-                var poolObj = kvp.Value;
-                var availableCount = (int)poolObj.GetType().GetProperty("AvailableCount")?.GetValue(poolObj, null);
-                var activeCount = (int)poolObj.GetType().GetProperty("ActiveCount")?.GetValue(poolObj, null);
-                
-                GUILayout.Label($"{kvp.Key}: Active={activeCount}, Available={availableCount}");
-            }
-            
-            GUILayout.EndArea();
+            // 디버그 UI 완전 제거
+            // 필요한 경우 조건부 디버깅을 위해 #if UNITY_EDITOR 사용 가능
         }
-        #endif
     }
 } 
