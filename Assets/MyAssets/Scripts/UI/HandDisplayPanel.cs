@@ -19,16 +19,11 @@ namespace InvaderInsider.UI
         [SerializeField] private GameObject mainPanel; // 메인 패널
         [SerializeField] private Transform handContainer; // 카드들이 배치될 컨테이너 (Grid Layout)
         [SerializeField] private GameObject cardPrefab; // 카드 프리팹
+        [SerializeField] private GameObject cardDetailPrefab; // 카드 상세 프리팹
 
         [Header("헤더 UI")]
         [SerializeField] private TextMeshProUGUI titleText; // "핸드 (5/10)" 형태
         [SerializeField] private Button closeButton; // X 버튼
-
-        [Header("정렬 버튼들")]
-        [SerializeField] private Button sortByTypeButton; // 타입별 정렬
-        [SerializeField] private Button sortByCostButton; // 비용별 정렬
-        [SerializeField] private Button sortByRarityButton; // 등급별 정렬
-        [SerializeField] private Button sortByNameButton; // 이름별 정렬
 
         [Header("애니메이션 설정")]
         [SerializeField] private float animationDuration = 0.3f; // 팝업 애니메이션 시간
@@ -43,20 +38,12 @@ namespace InvaderInsider.UI
         private Queue<GameObject> cardDisplayPool = new Queue<GameObject>();
         private int initialPoolSize = 10;
         private bool isPopupOpen = false;
-        private HandSortType currentSortType = HandSortType.None;
         private bool buttonsSetup = false; // 버튼 이벤트 등록 완료 플래그
 
         [Header("Data References")]
         [SerializeField] private CardDatabase cardDatabase;
 
-        public enum HandSortType
-        {
-            None,
-            ByType,
-            ByCost,
-            ByRarity,
-            ByName
-        }
+        private GameObject currentDetailCardInstance; // 현재 생성된 상세 카드 인스턴스
 
         protected override void Initialize()
         {
@@ -99,6 +86,21 @@ namespace InvaderInsider.UI
             
             SetupInitialState();
 
+            // 초기 핸드 상태 확인 추가
+            CheckInitialHandState();
+
+            // 카드 상세 패널 초기화
+            if (cardDetailPrefab != null)
+            {
+                cardDetailPrefab.SetActive(false);
+                
+                // 상세 패널 클릭 시 닫기 기능 추가
+                Button detailPanelButton = cardDetailPrefab.GetComponent<Button>();
+                if (detailPanelButton == null)
+                    detailPanelButton = cardDetailPrefab.AddComponent<Button>();
+                detailPanelButton.onClick.AddListener(HideCardDetail);
+            }
+
             isInitialized = true;
         }
 
@@ -107,19 +109,6 @@ namespace InvaderInsider.UI
             // 닫기 버튼
             if (closeButton != null)
                 closeButton.onClick.AddListener(ClosePopup);
-
-            // 정렬 버튼들
-            if (sortByTypeButton != null)
-                sortByTypeButton.onClick.AddListener(() => SortHand(HandSortType.ByType));
-
-            if (sortByCostButton != null)
-                sortByCostButton.onClick.AddListener(() => SortHand(HandSortType.ByCost));
-
-            if (sortByRarityButton != null)
-                sortByRarityButton.onClick.AddListener(() => SortHand(HandSortType.ByRarity));
-
-            if (sortByNameButton != null)
-                sortByNameButton.onClick.AddListener(() => SortHand(HandSortType.ByName));
 
             // 어두운 배경 클릭 시 닫기
             if (darkBackground != null)
@@ -138,7 +127,6 @@ namespace InvaderInsider.UI
                 popupOverlay.SetActive(false);
 
             isPopupOpen = false;
-            currentSortType = HandSortType.None;
         }
 
         // 팝업 열기 (외부에서 호출)
@@ -148,6 +136,16 @@ namespace InvaderInsider.UI
 
             if (popupOverlay != null)
                 popupOverlay.SetActive(true);
+
+            // 핸드 보기 시 어두운 배경 활성화
+            if (darkBackground != null)
+                darkBackground.SetActive(true);
+
+            // 기존 상세 카드 인스턴스 제거
+            if (currentDetailCardInstance != null)
+            {
+                Destroy(currentDetailCardInstance);
+            }
 
             isPopupOpen = true;
 
@@ -178,6 +176,16 @@ namespace InvaderInsider.UI
                 if (popupOverlay != null)
                     popupOverlay.SetActive(false);
 
+                // 팝업 닫힐 때 어두운 배경도 비활성화
+                if (darkBackground != null)
+                    darkBackground.SetActive(false);
+
+                // 상세 카드 인스턴스 제거
+                if (currentDetailCardInstance != null)
+                {
+                    Destroy(currentDetailCardInstance);
+                }
+
                 isPopupOpen = false;
                 ClearHandItems();
 
@@ -191,6 +199,9 @@ namespace InvaderInsider.UI
         // 핸드 데이터 변경 시 호출 (SaveDataManager 이벤트)
         private void OnHandDataChanged(List<int> handCardIds)
         {
+            // 카드 유무에 따른 패널 가시성 제어
+            UpdatePanelVisibility(handCardIds);
+
             // 팝업이 열려있을 때만 업데이트
             if (isPopupOpen)
             {
@@ -198,61 +209,127 @@ namespace InvaderInsider.UI
             }
         }
 
+        // 카드 유무에 따른 패널 가시성 제어 메서드 추가
+        private void UpdatePanelVisibility(List<int> handCardIds)
+        {
+            bool hasCards = handCardIds != null && handCardIds.Count > 0;
+            
+            // 카드가 있으면 패널 활성화, 없으면 비활성화
+            if (gameObject.activeSelf != hasCards)
+            {
+                gameObject.SetActive(hasCards);
+                
+                LogManager.Info(LOG_TAG, "패널 가시성 변경: {0} (카드 수: {1})", 
+                    hasCards ? "활성화" : "비활성화", 
+                    handCardIds?.Count ?? 0);
+            }
+
+            // 카드가 없으면 팝업도 자동으로 닫기
+            if (!hasCards && isPopupOpen)
+            {
+                ClosePopup();
+            }
+        }
+
+        // 초기 핸드 상태 확인 메서드 추가
+        private void CheckInitialHandState()
+        {
+            if (cardManager != null)
+            {
+                var handCardIds = cardManager.GetHandCardIds();
+                UpdatePanelVisibility(handCardIds);
+            }
+        }
+
         // 팝업 내용 업데이트
         private void UpdatePopupContent(List<int> handCardIds)
         {
-            if (!isInitialized) return;
-
             ClearHandItems();
-            UpdateTitle(handCardIds.Count);
+
+            if (handCardIds == null || handCardIds.Count == 0)
+            {
+                UpdateTitle(0);
+                return;
+            }
 
             if (handContainer == null || cardPrefab == null || cardDatabase == null) return;
 
-            // 정렬 적용
-            var sortedCardIds = SortCardIds(handCardIds, currentSortType);
-
-            foreach (int cardId in sortedCardIds)
+            foreach (int cardId in handCardIds)
             {
                 var cardData = cardDatabase.GetCardById(cardId);
-                if (cardData == null)
+                if (cardData != null)
                 {
-                    if (Application.isPlaying)
+                    GameObject cardObj = GetPooledCard();
+                    if (cardObj != null)
                     {
-                        LogManager.Warning(LOG_TAG, "카드 데이터를 찾을 수 없음 - ID: {0}", cardId);
+                        cardObj.transform.SetParent(handContainer, false);
+                        cardObj.SetActive(true);
+
+                        // CardIcon 컴포넌트 사용
+                        CardIcon cardIcon = cardObj.GetComponent<CardIcon>();
+                        if (cardIcon != null)
+                        {
+                            cardIcon.InitializeIcon(cardData);
+                            cardIcon.OnCardClicked += ShowCardDetail; // 클릭 시 상세 정보 표시
+                        }
+
+                        currentHandItems.Add(cardObj);
                     }
-                    continue;
                 }
+            }
 
-                var cardObj = GetPooledCard();
-                if (cardObj == null) continue;
+            UpdateTitle(handCardIds.Count);
+        }
 
-                cardObj.transform.SetParent(handContainer);
-                cardObj.transform.localScale = Vector3.one;
-
-                var display = cardObj.GetComponent<CardDisplay>();
-                if (display != null)
+        // 카드 상세 정보 표시
+        private void ShowCardDetail(CardDBObject cardData)
+        {
+            // PopupOverlay 내부의 cardDetailPrefab 활성화
+            if (cardDetailPrefab != null)
+            {
+                // 기존 상세 카드 인스턴스 제거
+                if (currentDetailCardInstance != null)
                 {
-                    display.SetupCard(cardData);
+                    Destroy(currentDetailCardInstance);
                 }
 
-                // 드래그 앤 드롭 활성화
-                var handler = cardObj.GetComponent<CardInteractionHandler>();
-                if (handler != null)
-                {
-                    handler.enabled = true;
-                    handler.OnCardPlayInteractionCompleted.AddListener(HandleCardPlayInteractionCompleted);
-                }
-                else if (Application.isPlaying)
-                {
-                    LogManager.Warning(LOG_TAG, "CardInteractionHandler가 없음: {0}", cardData.cardName);
-                }
+                // 메인 패널 비활성화
+                if (mainPanel != null)
+                    mainPanel.SetActive(false);
 
-                currentHandItems.Add(cardObj);
+                // 카드 상세 보기 시 어두운 배경 활성화
+                if (darkBackground != null)
+                    darkBackground.SetActive(true);
 
-                if (Application.isPlaying)
+                // 카드 데이터 설정 및 뷰 표시
+                currentDetailCardInstance = Instantiate(cardDetailPrefab, popupOverlay.transform);
+                CardIcon cardIcon = currentDetailCardInstance.GetComponent<CardIcon>();
+                if (cardIcon != null)
                 {
-                    LogManager.Info(LOG_TAG, "카드 추가됨: {0} (ID: {1})", cardData.cardName, cardId);
+                    cardIcon.InitializeIcon(cardData);
+                    cardIcon.OnCardClicked -= ShowCardDetail;
                 }
+                currentDetailCardInstance.SetActive(true);
+            }
+        }
+
+        // 카드 상세 정보 숨기기
+        public void HideCardDetail()
+        {
+            // PopupOverlay 내부의 cardDetailPrefab 비활성화
+            if (currentDetailCardInstance != null)
+            {
+                // 메인 패널 다시 활성화
+                if (mainPanel != null)
+                    mainPanel.SetActive(true);
+
+                // 상세 카드 인스턴스 제거
+                Destroy(currentDetailCardInstance);
+                currentDetailCardInstance = null;
+
+                // 카드 상세 보기 닫을 때 어두운 배경 비활성화
+                if (darkBackground != null)
+                    darkBackground.SetActive(false);
             }
         }
 
@@ -264,73 +341,6 @@ namespace InvaderInsider.UI
                 int maxHandSize = 10; // 최대 핸드 크기 (설정 가능)
                 titleText.text = $"핸드 ({handCount}/{maxHandSize})";
             }
-        }
-
-        // 정렬 기능
-        public void SortHand(HandSortType sortType)
-        {
-            currentSortType = sortType;
-
-            if (isPopupOpen && cardManager != null)
-            {
-                var handCardIds = cardManager.GetHandCardIds();
-                UpdatePopupContent(handCardIds);
-            }
-
-            if (Application.isPlaying)
-            {
-                LogManager.Info(LOG_TAG, "정렬 적용됨: {0}", sortType.ToString());
-            }
-        }
-
-        private List<int> SortCardIds(List<int> cardIds, HandSortType sortType)
-        {
-            var sortedIds = new List<int>(cardIds);
-
-            switch (sortType)
-            {
-                case HandSortType.ByType:
-                    sortedIds.Sort((id1, id2) =>
-                    {
-                        var card1 = cardDatabase.GetCardById(id1);
-                        var card2 = cardDatabase.GetCardById(id2);
-                        if (card1 == null || card2 == null) return 0;
-                        return card1.type.CompareTo(card2.type);
-                    });
-                    break;
-
-                case HandSortType.ByCost:
-                    sortedIds.Sort((id1, id2) =>
-                    {
-                        var card1 = cardDatabase.GetCardById(id1);
-                        var card2 = cardDatabase.GetCardById(id2);
-                        if (card1 == null || card2 == null) return 0;
-                        return card1.cost.CompareTo(card2.cost);
-                    });
-                    break;
-
-                case HandSortType.ByRarity:
-                    sortedIds.Sort((id1, id2) =>
-                    {
-                        var card1 = cardDatabase.GetCardById(id1);
-                        var card2 = cardDatabase.GetCardById(id2);
-                        if (card1 == null || card2 == null) return 0;
-                        return card1.rarity.CompareTo(card2.rarity);
-                    });
-                    break;
-
-                case HandSortType.ByName:
-                    sortedIds.Sort((id1, id2) =>
-                    {
-                        var card1 = cardDatabase.GetCardById(id1);
-                        var card2 = cardDatabase.GetCardById(id2);
-                        if (card1 == null || card2 == null) return 0;
-                        return string.Compare(card1.cardName, card2.cardName, System.StringComparison.Ordinal);
-                    });
-                    break;
-            }
-
-            return sortedIds;
         }
 
         // 애니메이션 메서드들
@@ -378,39 +388,19 @@ namespace InvaderInsider.UI
             onComplete?.Invoke();
         }
 
-        // 카드 상호작용 완료 처리
-        private void HandleCardPlayInteractionCompleted(CardDisplay playedCardDisplay, CardPlacementResult result)
-        {
-            if (!isInitialized || cardManager == null) return;
-
-            var playedCardData = playedCardDisplay.GetCardData();
-            if (playedCardData == null) return;
-
-            if (result == CardPlacementResult.Success_Place || result == CardPlacementResult.Success_Upgrade)
-            {
-                if (Application.isPlaying)
-                {
-                    LogManager.Info(LOG_TAG, "카드 {0} 플레이/업그레이드됨", playedCardData.cardName);
-                }
-                cardManager.RemoveCardFromHand(playedCardData.cardId);
-            }
-            else if (Application.isPlaying)
-            {
-                LogManager.Info(LOG_TAG, "카드 {0} 상호작용 실패: {1}", playedCardData.cardName, result);
-            }
-        }
-
         private void ClearHandItems()
         {
             foreach (var item in currentHandItems)
             {
                 if (item != null)
                 {
-                    var handler = item.GetComponent<CardInteractionHandler>();
-                    if (handler != null)
+                    // CardIcon 이벤트 정리
+                    CardIcon cardIcon = item.GetComponent<CardIcon>();
+                    if (cardIcon != null)
                     {
-                        handler.OnCardPlayInteractionCompleted.RemoveListener(HandleCardPlayInteractionCompleted);
+                        cardIcon.OnCardClicked -= ShowCardDetail;
                     }
+                    
                     ReturnPooledCard(item);
                 }
             }
@@ -444,14 +434,6 @@ namespace InvaderInsider.UI
             {
                 if (closeButton != null)
                     closeButton.onClick.RemoveListener(ClosePopup);
-                if (sortByTypeButton != null)
-                    sortByTypeButton.onClick.RemoveAllListeners();
-                if (sortByCostButton != null)
-                    sortByCostButton.onClick.RemoveAllListeners();
-                if (sortByRarityButton != null)
-                    sortByRarityButton.onClick.RemoveAllListeners();
-                if (sortByNameButton != null)
-                    sortByNameButton.onClick.RemoveAllListeners();
                 
                 // 동적으로 생성된 배경 버튼 처리
                 if (darkBackground != null)
