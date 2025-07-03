@@ -281,7 +281,7 @@ namespace InvaderInsider.UI
                 }
             }
 
-            UpdateTitle(selectedCardIds.Count);
+            UpdateTitle(handCardIds.Count);
         }
 
         // 카드 상세 정보 표시
