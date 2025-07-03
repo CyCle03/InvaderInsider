@@ -173,7 +173,7 @@ namespace InvaderInsider
             if (!isActivelySearching)
             {
                 isActivelySearching = true;
-                targetSearchCoroutine = StartCoroutine(TargetSearchRoutine());
+                targetSearchCoroutine = TargetSearchRoutine().Forget();
             }
         }
 
@@ -190,7 +190,7 @@ namespace InvaderInsider
         /// <summary>
         /// 최적화된 타겟 검색 코루틴 - 매 프레임 대신 설정된 간격으로 실행
         /// </summary>
-        private IEnumerator TargetSearchRoutine()
+        private async UniTask TargetSearchRoutine()
         {
             while (isActivelySearching && gameObject.activeInHierarchy)
             {

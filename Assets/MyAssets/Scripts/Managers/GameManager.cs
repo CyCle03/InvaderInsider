@@ -698,9 +698,9 @@ namespace InvaderInsider.Managers
             }
         }
         
-        private System.Collections.IEnumerator ReturnToMainMenuAfterDelay(float delay)
+        private async UniTask ReturnToMainMenuAfterDelay(float delay)
         {
-            yield return new WaitForSeconds(delay);
+            await UniTask.Delay(TimeSpan.FromSeconds(delay));
             LoadMainMenuScene();
         }
 
@@ -1124,14 +1124,14 @@ namespace InvaderInsider.Managers
             UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
             
             // 씬 로드 후 MainMenuPanel의 Continue 버튼 갱신
-            StartCoroutine(RefreshMainMenuAfterLoad());
+            RefreshMainMenuAfterLoad().Forget();
         }
         
-        private System.Collections.IEnumerator RefreshMainMenuAfterLoad()
+        private async UniTask RefreshMainMenuAfterLoad()
         {
             // 씬 로드 완료까지 대기
-            yield return new WaitForEndOfFrame();
-            yield return null;
+            await UniTask.Yield(PlayerLoopTiming.EndOfFrame);
+            await UniTask.Yield();
             
             Debug.Log("[FORCE LOG] RefreshMainMenuAfterLoad 시작");
             
@@ -1182,10 +1182,10 @@ namespace InvaderInsider.Managers
             Time.timeScale = 1f;
             CurrentGameState = GameState.Loading;
 
-            StartCoroutine(LoadGameSceneAsync());
+            LoadGameSceneAsync().Forget();
         }
 
-        private System.Collections.IEnumerator LoadGameSceneAsync()
+        private async UniTask LoadGameSceneAsync()
         {
             // 씬 전환 전 싱글톤 정리
             CleanupSingletonsForSceneChange();
@@ -1196,7 +1196,7 @@ namespace InvaderInsider.Managers
                 uiManager.Cleanup();
             }
             
-            yield return null; // 한 프레임 대기
+                        await UniTask.Yield(); // 한 프레임 대기
             
             // 비동기로 Game 씬 로드
             var asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Game");
@@ -1204,10 +1204,10 @@ namespace InvaderInsider.Managers
             // 씬 로딩 완료까지 대기
             while (!asyncLoad.isDone)
             {
-                yield return null;
+                await UniTask.Yield();
             }
 
-            yield return new WaitForEndOfFrame(); // 모든 오브젝트 초기화 대기
+            await UniTask.Yield(PlayerLoopTiming.EndOfFrame); // 모든 오브젝트 초기화 대기
             
             // 게임 씬 로드 완료 후 자동으로 게임 초기화
             InitializeGame();

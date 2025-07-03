@@ -190,7 +190,7 @@ namespace InvaderInsider.UI
                 menuManager.HideMainMenu();
             }
             
-            StartCoroutine(LoadGameSceneAsync(false));
+            LoadGameSceneAsync(false).Forget();
         }
 
         private void HandleContinueClick()
@@ -203,11 +203,11 @@ namespace InvaderInsider.UI
                 }
                 
                 SaveDataManager.Instance.LoadGameData();
-                StartCoroutine(LoadGameSceneAsync(true));
+                LoadGameSceneAsync(true).Forget();
             }
         }
         
-        private System.Collections.IEnumerator LoadGameSceneAsync(bool isContinue)
+        private async UniTask LoadGameSceneAsync(bool isContinue)
         {
             var uiManager = FindObjectOfType<UIManager>();
             if (uiManager != null)
@@ -215,7 +215,7 @@ namespace InvaderInsider.UI
                 uiManager.Cleanup();
             }
             
-            yield return null; // 한 프레임 대기
+            await UniTask.Yield(); // 한 프레임 대기
             
             // 비동기로 Game 씬 로드
             var asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Game");
@@ -223,7 +223,7 @@ namespace InvaderInsider.UI
             // 씬 로딩 완료까지 대기
             while (!asyncLoad.isDone)
             {
-                yield return null;
+                await UniTask.Yield();
             }
             
             yield return new WaitForEndOfFrame(); // 모든 오브젝트 초기화 대기

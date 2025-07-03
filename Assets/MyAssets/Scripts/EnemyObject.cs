@@ -147,11 +147,11 @@ namespace InvaderInsider
                 moveSpeed = GameConstants.DEFAULT_MOVE_SPEED;
                 
                 // ConfigManager가 나중에 초기화되면 다시 시도
-                StartCoroutine(RetryLoadConfig());
+                RetryLoadConfig().Forget();
             }
         }
         
-        private System.Collections.IEnumerator RetryLoadConfig()
+        private async UniTask RetryLoadConfig()
         {
             int retryCount = 0;
             
@@ -288,11 +288,11 @@ namespace InvaderInsider
             StopPathUpdateCoroutine(); // 기존 코루틴이 있다면 중지
             if (agent != null && isInitialized)
             {
-                pathUpdateCoroutine = StartCoroutine(UpdatePathRoutine());
+                pathUpdateCoroutine = UpdatePathRoutine().Forget();
             }
         }
 
-        private IEnumerator UpdatePathRoutine()
+        private async UniTask UpdatePathRoutine()
         {
             while (enabled)
             {

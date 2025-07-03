@@ -39,7 +39,7 @@ namespace InvaderInsider.UI
             // SaveDataManager가 아직 없다면 코루틴으로 재시도
             if (saveDataManager == null)
             {
-                StartCoroutine(TryGetSaveDataManager());
+                TryGetSaveDataManager().Forget();
             }
         }
 
@@ -54,7 +54,7 @@ namespace InvaderInsider.UI
                 saveDataManager = SaveDataManager.Instance;
                 if (saveDataManager == null)
                 {
-                    StartCoroutine(TryGetSaveDataManager());
+                    TryGetSaveDataManager().Forget();
                 }
             }
             
@@ -85,14 +85,14 @@ namespace InvaderInsider.UI
 
         // ButtonHandler 이벤트는 더 이상 사용하지 않음 (MainMenuPanel에서 직접 처리)
 
-        private System.Collections.IEnumerator TryGetSaveDataManager()
+        private async UniTask TryGetSaveDataManager()
         {
             int attempts = 0;
             const int maxAttempts = 15; // 최대 시도 횟수 증가
             
             while (saveDataManager == null && attempts < maxAttempts)
             {
-                yield return new WaitForSeconds(0.1f); // 0.1초 대기
+                await UniTask.Delay(TimeSpan.FromSeconds(0.1f)); // 0.1초 대기
                 
                 // 여러 방법으로 SaveDataManager 찾기 시도
                 saveDataManager = SaveDataManager.Instance;
@@ -127,7 +127,7 @@ namespace InvaderInsider.UI
                 }
                 
                 // 백업 메커니즘: 1초 후 다시 시도
-                yield return new WaitForSecondsRealtime(1f);
+                await UniTask.Delay(TimeSpan.FromSeconds(1f), ignoreTimeScale: true);
                 
                 // 마지막 시도
                 saveDataManager = SaveDataManager.Instance;
@@ -226,7 +226,7 @@ namespace InvaderInsider.UI
             if (newGameButton != null)
             {
                 newGameButton.interactable = false;
-                StartCoroutine(ReEnableButtonAfterDelay(newGameButton, 1f));
+                ReEnableButtonAfterDelay(newGameButton, 1f).Forget();
             }
             
             StartNewGame();
@@ -247,7 +247,7 @@ namespace InvaderInsider.UI
             if (continueButton != null)
             {
                 continueButton.interactable = false;
-                StartCoroutine(ReEnableButtonAfterDelay(continueButton, 1f));
+                ReEnableButtonAfterDelay(continueButton, 1f).Forget();
             }
             
             ContinueGame();
@@ -445,9 +445,9 @@ namespace InvaderInsider.UI
         }
         
         // 버튼 재활성화 코루틴
-        private System.Collections.IEnumerator ReEnableButtonAfterDelay(Button button, float delay)
+        private async UniTask ReEnableButtonAfterDelay(Button button, float delay)
         {
-            yield return new WaitForSecondsRealtime(delay);
+            await UniTask.Delay(TimeSpan.FromSeconds(delay), ignoreTimeScale: true);
             if (button != null)
             {
                 button.interactable = true;

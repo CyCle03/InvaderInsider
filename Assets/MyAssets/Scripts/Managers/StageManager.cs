@@ -516,7 +516,7 @@ namespace InvaderInsider.Managers
             {
                 StopCoroutine(stageCoroutine);
             }
-            stageCoroutine = StartCoroutine(StageLoopCoroutine());
+            stageCoroutine = StageLoopCoroutine().Forget();
         }
 
         private void ResetStageState(int startStageIndex)
@@ -552,7 +552,7 @@ namespace InvaderInsider.Managers
             activeEnemies.Clear();
         }
 
-        private IEnumerator StageLoopCoroutine()
+        private async UniTask StageLoopCoroutine()
         {
             StageState lastState = StageState.Ready;
             
@@ -570,24 +570,24 @@ namespace InvaderInsider.Managers
                 switch (currentState)
                 {
                     case StageState.Ready:
-                        yield return StartCoroutine(HandleReadyState());
+                        await HandleReadyState();
                         break;
                     case StageState.Run:
-                        yield return StartCoroutine(HandleRunState());
+                        await HandleRunState();
                         break;
                     case StageState.Wait:
-                        yield return StartCoroutine(HandleWaitState());
+                        await HandleWaitState();
                         break;
                     case StageState.End:
-                        yield return StartCoroutine(HandleEndState());
+                        await HandleEndState();
                         break;
                     default:
-                        yield return null;
+                        await UniTask.Yield();
                         break;
                 }
                 
                 // 프레임당 한 번씩 체크
-                yield return null;
+                await UniTask.Yield();
             }
             
             #if UNITY_EDITOR
@@ -595,7 +595,7 @@ namespace InvaderInsider.Managers
             #endif
         }
 
-        private IEnumerator HandleReadyState()
+        private async UniTask HandleReadyState()
         {
             // 동적으로 현재 스테이지의 웨이브 카운트 가져오기
             int currentStageWaveCount = GetStageWaveCount(stageNum);
@@ -623,14 +623,14 @@ namespace InvaderInsider.Managers
                 uiManager.UpdateStage(stageNum, GetStageCount());
             }
 
-            yield return new WaitForSeconds(STAGE_START_DELAY);
+            await UniTask.Delay(TimeSpan.FromSeconds(STAGE_START_DELAY));
             currentState = StageState.Run;
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[4], stageNum));
             #endif
         }
 
-        private IEnumerator HandleRunState()
+        private async UniTask HandleRunState()
         {
             while (currentState == StageState.Run && !isQuitting)
             {
@@ -658,7 +658,7 @@ namespace InvaderInsider.Managers
                     break; // 상태가 변경되었으므로 루프 종료
                 }
 
-                yield return null;
+                await UniTask.Yield();
             }
         }
 
@@ -666,7 +666,7 @@ namespace InvaderInsider.Managers
         /// 스테이지 종료 상태를 처리합니다.
         /// 스테이지 클리어 시 GameManager를 통해 진행 정보를 저장하고 다음 스테이지로 진행합니다.
         /// </summary>
-        private IEnumerator HandleEndState()
+        private async UniTask HandleEndState()
         {
             // GameManager를 통해 스테이지 클리어 정보 저장
             if (gameManager != null)
@@ -698,7 +698,7 @@ namespace InvaderInsider.Managers
                 Debug.Log(LOG_PREFIX + "모든 스테이지 완료 - 스테이지 진행 종료");
                 #endif
                 
-                yield break; // 코루틴 종료로 더 이상 진행하지 않음
+                return; // 코루틴 종료로 더 이상 진행하지 않음
             }
             else
             {
@@ -717,7 +717,7 @@ namespace InvaderInsider.Managers
         /// 스테이지 대기 상태를 처리합니다.
         /// 다음 스테이지 시작 전 대기 시간을 제공하고 UI를 업데이트합니다.
         /// </summary>
-        private IEnumerator HandleWaitState()
+        private async UniTask HandleWaitState()
         {
             // 다음 스테이지 시작 전 UI 업데이트 (GameManager를 통해)
             if (gameManager != null)
@@ -727,7 +727,7 @@ namespace InvaderInsider.Managers
             }
             
             // 다음 스테이지 시작 대기 시간
-            yield return new WaitForSeconds(STAGE_START_DELAY);
+            await UniTask.Delay(TimeSpan.FromSeconds(STAGE_START_DELAY));
             
             // 다음 스테이지 시작
             StartStageInternal(stageNum);

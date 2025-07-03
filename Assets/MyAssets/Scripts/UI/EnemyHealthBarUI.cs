@@ -31,12 +31,12 @@ namespace InvaderInsider.UI
 
             SetupEventListeners();
             // 초기 체력 표시 - 즉시 호출
-            StartCoroutine(DelayedHealthUpdate());
+            DelayedHealthUpdate().Forget();
 
             isInitialized = true;
         }
 
-        private System.Collections.IEnumerator DelayedHealthUpdate()
+        private async UniTask DelayedHealthUpdate()
         {
             // 한 프레임 대기 후 체력 업데이트
             yield return null;

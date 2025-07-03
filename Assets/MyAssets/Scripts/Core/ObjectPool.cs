@@ -261,7 +261,7 @@ namespace InvaderInsider.Core
             // 자동 반환 타이머 시작
             if (autoReturnTime > 0)
             {
-                autoReturnCoroutine = StartCoroutine(AutoReturnRoutine());
+                AutoReturnRoutine().Forget();
             }
             
             if (showDebugInfo)
@@ -354,7 +354,7 @@ namespace InvaderInsider.Core
         /// <summary>
         /// 자동 반환 코루틴
         /// </summary>
-        private IEnumerator AutoReturnRoutine()
+        private async UniTask AutoReturnRoutine()
         {
             yield return new WaitForSeconds(autoReturnTime);
             

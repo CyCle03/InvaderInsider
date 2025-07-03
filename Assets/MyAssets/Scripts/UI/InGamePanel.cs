@@ -245,11 +245,11 @@ namespace InvaderInsider.UI
             finally
             {
                 // 처리 완료 (일정 시간 후 버튼 다시 활성화)
-                StartCoroutine(ResetSummonButtonAfterDelay());
+                ResetSummonButtonAfterDelay().Forget();
             }
         }
         
-        private System.Collections.IEnumerator ResetSummonButtonAfterDelay()
+        private async UniTask ResetSummonButtonAfterDelay()
         {
             // 0.5초 후 버튼 다시 활성화 (쿨다운보다 짧게)
             yield return new WaitForSecondsRealtime(0.5f);

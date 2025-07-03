@@ -356,7 +356,7 @@ namespace InvaderInsider.UI
             {
                 // 스케일 애니메이션으로 팝업 등장
                 mainPanel.transform.localScale = Vector3.zero;
-                StartCoroutine(AnimateScale(Vector3.zero, Vector3.one, animationDuration));
+                AnimateScale(Vector3.zero, Vector3.one, animationDuration).Forget();
             }
         }
 
@@ -364,7 +364,7 @@ namespace InvaderInsider.UI
         {
             if (mainPanel != null)
             {
-                StartCoroutine(AnimateScale(Vector3.one, Vector3.zero, animationDuration, onComplete));
+                AnimateScale(Vector3.one, Vector3.zero, animationDuration, onComplete).Forget();
             }
             else
             {
@@ -372,7 +372,7 @@ namespace InvaderInsider.UI
             }
         }
 
-        private System.Collections.IEnumerator AnimateScale(Vector3 from, Vector3 to, float duration, System.Action onComplete = null)
+        private async UniTask AnimateScale(Vector3 from, Vector3 to, float duration, System.Action onComplete = null)
         {
             float elapsed = 0f;
             
@@ -385,7 +385,7 @@ namespace InvaderInsider.UI
                 if (mainPanel != null)
                     mainPanel.transform.localScale = Vector3.Lerp(from, to, curveValue);
                 
-                yield return null;
+                await UniTask.Yield();
             }
             
             if (mainPanel != null)

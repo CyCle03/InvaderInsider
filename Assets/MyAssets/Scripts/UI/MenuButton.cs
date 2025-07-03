@@ -124,10 +124,10 @@ namespace InvaderInsider.UI
             {
                 StopCoroutine(currentAnimation);
             }
-            currentAnimation = StartCoroutine(ScaleAnimation(targetScale));
+            currentAnimation = ScaleAnimation(targetScale).Forget();
         }
 
-        private IEnumerator ScaleAnimation(Vector3 targetScale)
+        private async UniTask ScaleAnimation(Vector3 targetScale)
         {
             Vector3 startScale = transform.localScale;
             float elapsed = 0f;

@@ -37,19 +37,19 @@ namespace InvaderInsider.UI
             if (!isInitialized)
             {
                 // 1프레임 대기 후 재시도
-                StartCoroutine(RetryInitialization());
+                RetryInitialization().Forget();
             }
         }
 
-        private System.Collections.IEnumerator RetryInitialization()
+        private async UniTask RetryInitialization()
         {
-            yield return new WaitForEndOfFrame();
+            await UniTask.Yield(PlayerLoopTiming.EndOfFrame);
             
             InitializeUI();
             
             if (!isInitialized)
             {
-                yield return new WaitForEndOfFrame();
+                await UniTask.Yield(PlayerLoopTiming.EndOfFrame);
                 InitializeUI();
             }
         }
