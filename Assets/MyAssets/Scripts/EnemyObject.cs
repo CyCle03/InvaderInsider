@@ -292,7 +292,7 @@ namespace InvaderInsider
             while (enabled)
             {
                 UpdatePath();
-                await UniTask.Delay(TimeSpan.FromSeconds(GameConstants.PATH_UPDATE_INTERVAL));
+                await UniTask.Delay(TimeSpan.FromSeconds(GameConstants.PATH_UPDATE_INTERVAL), ignoreTimeScale: false, PlayerLoopTiming.Update, this.GetCancellationTokenOnDestroy());
             }
         }
 
