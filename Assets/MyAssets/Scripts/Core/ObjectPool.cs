@@ -49,7 +49,7 @@ namespace InvaderInsider.Core
         /// </summary>
         private T CreateNewObject()
         {
-            T newObj = Object.Instantiate(prefab, parent);
+            T newObj = UnityEngine.Object.Instantiate(prefab, parent);
             newObj.gameObject.SetActive(false);
             availableObjects.Enqueue(newObj);
             return newObj;
@@ -138,7 +138,7 @@ namespace InvaderInsider.Core
                 var obj = availableObjects.Dequeue();
                 if (obj != null)
                 {
-                    Object.DestroyImmediate(obj.gameObject);
+                    UnityEngine.Object.DestroyImmediate(obj.gameObject);
                 }
             }
 
