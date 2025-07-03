@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI; // UI 요소 사용을 위해 추가
-using System.Collections.Generic;
+
 using InvaderInsider.Data; // CardDBObject, CardDatabase 사용을 위해 추가
 using InvaderInsider.Managers; // SaveDataManager 사용을 위해 추가
 using TMPro; // TextMeshPro 사용 시 추가

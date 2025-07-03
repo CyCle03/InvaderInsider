@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
 using InvaderInsider.Data;
-using System.Collections;
+
 
 namespace InvaderInsider.UI
 {

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using InvaderInsider;
-using System.Collections;
+
 
 namespace InvaderInsider.UI
 {

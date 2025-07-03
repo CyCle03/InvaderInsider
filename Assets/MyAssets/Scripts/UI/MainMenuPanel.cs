@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 using InvaderInsider.Data;
 using InvaderInsider.Managers;
 using TMPro;
-using System.Collections;
+
 
 namespace InvaderInsider.UI
 {
