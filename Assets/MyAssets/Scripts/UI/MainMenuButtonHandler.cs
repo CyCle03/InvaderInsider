@@ -227,7 +227,7 @@ namespace InvaderInsider.UI
                 await UniTask.Yield();
             }
             
-            yield return new WaitForEndOfFrame(); // 모든 오브젝트 초기화 대기
+            await UniTask.EndOfFrame(); // 모든 오브젝트 초기화 대기
         }
 
         private void HandleSettingsClick()

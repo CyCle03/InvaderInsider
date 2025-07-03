@@ -40,7 +40,7 @@ namespace InvaderInsider.UI
         private async UniTask DelayedHealthUpdate()
         {
             // 한 프레임 대기 후 체력 업데이트
-            yield return null;
+            await UniTask.Yield();
             UpdateHealthDisplay(character.CurrentHealth / character.MaxHealth);
         }
 

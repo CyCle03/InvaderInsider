@@ -44,13 +44,13 @@ namespace InvaderInsider.UI
 
         private async UniTask RetryInitialization()
         {
-            await UniTask.Yield(PlayerLoopTiming.EndOfFrame);
+            await UniTask.EndOfFrame();
             
             InitializeUI();
             
             if (!isInitialized)
             {
-                await UniTask.Yield(PlayerLoopTiming.EndOfFrame);
+                await UniTask.EndOfFrame();
                 InitializeUI();
             }
         }

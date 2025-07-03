@@ -41,8 +41,8 @@ namespace InvaderInsider
         private readonly List<EnemyObject> validTargets = new List<EnemyObject>();
         
         // 코루틴 관리
-        private Coroutine targetSearchCoroutine;
-        private WaitForSeconds targetSearchWait;
+        
+        
         
         // 이벤트 기반 타겟팅을 위한 적 추적
         private readonly HashSet<EnemyObject> nearbyEnemies = new HashSet<EnemyObject>();
@@ -173,17 +173,13 @@ namespace InvaderInsider
             if (!isActivelySearching)
             {
                 isActivelySearching = true;
-                targetSearchCoroutine = TargetSearchRoutine().Forget();
+                TargetSearchRoutine().Forget();
             }
         }
 
         private void StopTargetSearching()
         {
-            if (targetSearchCoroutine != null)
-            {
-                StopCoroutine(targetSearchCoroutine);
-                targetSearchCoroutine = null;
-            }
+            // UniTask는 별도의 Stop이 필요 없음
             isActivelySearching = false;
         }
 
@@ -207,7 +203,7 @@ namespace InvaderInsider
                     RotateTowardsTarget();
                 }
                 
-                yield return targetSearchWait;
+                await UniTask.Delay(TimeSpan.FromSeconds(towerConfig?.targetSearchInterval ?? GameConstants.TARGET_SEARCH_INTERVAL));
             }
         }
 

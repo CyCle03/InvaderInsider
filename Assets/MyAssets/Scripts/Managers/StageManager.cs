@@ -82,7 +82,7 @@ namespace InvaderInsider.Managers
         private float currentTime = 0f;
         private int enemyCount = 0;
         private int activeEnemyCountValue = 0;
-        private Coroutine stageCoroutine = null;
+        
         private readonly Queue<EnemyObject> enemyPool = new Queue<EnemyObject>();
         private readonly HashSet<EnemyObject> activeEnemies = new HashSet<EnemyObject>();
 
@@ -512,11 +512,7 @@ namespace InvaderInsider.Managers
 
             currentState = StageState.Ready;
 
-            if (stageCoroutine != null)
-            {
-                StopCoroutine(stageCoroutine);
-            }
-            stageCoroutine = StageLoopCoroutine().Forget();
+            StageLoopCoroutine().Forget();
         }
 
         private void ResetStageState(int startStageIndex)
@@ -710,7 +706,7 @@ namespace InvaderInsider.Managers
             }
 
             // 스테이지 종료 대기 시간
-            yield return new WaitForSeconds(STAGE_END_DELAY);
+            await UniTask.Delay(TimeSpan.FromSeconds(STAGE_END_DELAY));
         }
 
         /// <summary>
@@ -931,9 +927,6 @@ namespace InvaderInsider.Managers
             Debug.Log(LOG_PREFIX + "StageManager 파괴 - 리소스 정리");
             #endif
             
-            // 코루틴 정리
-            StopStageCoroutine();
-            
             // 적 오브젝트 정리
             CleanupActiveEnemies();
             
@@ -955,27 +948,15 @@ namespace InvaderInsider.Managers
             #endif
             
             // 씬 전환시 코루틴만 정리 (인스턴스는 유지)
-            StopStageCoroutine();
         }
 
         private void OnApplicationQuit()
         {
             isQuitting = true;
             CleanupActiveEnemies();
-            StopStageCoroutine();
         }
 
-        private void StopStageCoroutine()
-        {
-            if (stageCoroutine != null)
-            {
-                StopCoroutine(stageCoroutine);
-                stageCoroutine = null;
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "스테이지 코루틴 정리 완료");
-                #endif
-            }
-        }
+        
 
         public void IncrementEnemyCount()
         {

@@ -33,7 +33,7 @@ namespace InvaderInsider.UI
         private Vector3 originalScale;
         private MenuManager menuManager;
         private UIManager uiManager;
-        private Coroutine currentAnimation;
+        
 
         private void Awake()
         {
@@ -121,11 +121,8 @@ namespace InvaderInsider.UI
 
         private void AnimateScale(Vector3 targetScale)
         {
-            if (currentAnimation != null)
-            {
-                StopCoroutine(currentAnimation);
-            }
-            currentAnimation = ScaleAnimation(targetScale).Forget();
+            // UniTask는 별도의 Stop이 필요 없음
+            ScaleAnimation(targetScale).Forget();
         }
 
         private async UniTask ScaleAnimation(Vector3 targetScale)
@@ -138,7 +135,7 @@ namespace InvaderInsider.UI
                 elapsed += Time.unscaledDeltaTime;
                 float t = elapsed / animationDuration;
                 transform.localScale = Vector3.Lerp(startScale, targetScale, t);
-                yield return null;
+                await UniTask.Yield();
             }
 
             transform.localScale = targetScale;

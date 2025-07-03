@@ -253,7 +253,7 @@ namespace InvaderInsider.UI
         private async UniTask ResetSummonButtonAfterDelay()
         {
             // 0.5초 후 버튼 다시 활성화 (쿨다운보다 짧게)
-            yield return new WaitForSecondsRealtime(0.5f);
+            await UniTask.Delay(TimeSpan.FromSeconds(0.5f), ignoreTimeScale: true);
             
             isSummonButtonProcessing = false;
             

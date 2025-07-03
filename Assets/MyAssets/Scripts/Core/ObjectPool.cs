@@ -176,7 +176,7 @@ namespace InvaderInsider.Core
         #region Private Fields
         
         private ObjectPoolManager poolManager;
-        private Coroutine autoReturnCoroutine;
+        
         private System.Type componentType;
         private bool isInPool = true;
         private float spawnTime;
@@ -218,12 +218,7 @@ namespace InvaderInsider.Core
                 }
             }
             
-            // 기존 코루틴 정리
-            if (autoReturnCoroutine != null)
-            {
-                StopCoroutine(autoReturnCoroutine);
-                autoReturnCoroutine = null;
-            }
+            // 기존 코루틴 정리 (UniTask는 별도의 Stop이 필요 없음)
         }
         
         #endregion
@@ -286,12 +281,7 @@ namespace InvaderInsider.Core
                 return;
             }
             
-            // 코루틴 및 Invoke 정리
-            if (autoReturnCoroutine != null)
-            {
-                StopCoroutine(autoReturnCoroutine);
-                autoReturnCoroutine = null;
-            }
+            // 코루틴 및 Invoke 정리 (UniTask는 별도의 Stop이 필요 없음)
             CancelInvoke(nameof(ReturnToPool));
             
             isInPool = true;
@@ -332,11 +322,7 @@ namespace InvaderInsider.Core
             isInPool = true; // 반환 시도 방지
             CancelInvoke();
             
-            if (autoReturnCoroutine != null)
-            {
-                StopCoroutine(autoReturnCoroutine);
-                autoReturnCoroutine = null;
-            }
+            // UniTask는 별도의 Stop이 필요 없음
             
             if (showDebugInfo)
             {
@@ -356,7 +342,7 @@ namespace InvaderInsider.Core
         /// </summary>
         private async UniTask AutoReturnRoutine()
         {
-            yield return new WaitForSeconds(autoReturnTime);
+            await UniTask.Delay(TimeSpan.FromSeconds(autoReturnTime));
             
             if (showDebugInfo)
             {

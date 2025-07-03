@@ -78,8 +78,8 @@ namespace InvaderInsider
         
         private Player player;
         private StageManager stageManager;
-        private Coroutine pathUpdateCoroutine;
-        private WaitForSeconds pathUpdateWait;
+        
+        
 
         private List<Transform> wayPoints;
         private int currentWaypointIndex = 0;
@@ -157,7 +157,7 @@ namespace InvaderInsider
             
             while ((enemyConfig == null || stageManager == null) && retryCount < GameConstants.MAX_RETRY_ATTEMPTS)
             {
-                yield return new WaitForSeconds(GameConstants.RETRY_INTERVAL);
+                await UniTask.Delay(TimeSpan.FromSeconds(GameConstants.RETRY_INTERVAL));
                 retryCount++;
                 
                 var configManager = ConfigManager.Instance;
@@ -276,19 +276,14 @@ namespace InvaderInsider
 
         private void StopPathUpdateCoroutine()
         {
-            if (pathUpdateCoroutine != null)
-            {
-                StopCoroutine(pathUpdateCoroutine);
-                pathUpdateCoroutine = null;
-            }
+            // UniTask는 별도의 Stop이 필요 없음
         }
 
         private void StartPathUpdateCoroutine()
         {
-            StopPathUpdateCoroutine(); // 기존 코루틴이 있다면 중지
             if (agent != null && isInitialized)
             {
-                pathUpdateCoroutine = UpdatePathRoutine().Forget();
+                UpdatePathRoutine().Forget();
             }
         }
 
@@ -297,7 +292,7 @@ namespace InvaderInsider
             while (enabled)
             {
                 UpdatePath();
-                yield return pathUpdateWait;
+                await UniTask.Delay(TimeSpan.FromSeconds(GameConstants.PATH_UPDATE_INTERVAL));
             }
         }
 
