@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI; // UI 요소 사용을 위해 추가
+using Cysharp.Threading.Tasks;
 
 using InvaderInsider.Data; // CardDBObject, CardDatabase 사용을 위해 추가
 using InvaderInsider.Managers; // SaveDataManager 사용을 위해 추가

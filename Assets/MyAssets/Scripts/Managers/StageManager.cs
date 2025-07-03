@@ -1,13 +1,13 @@
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
 using InvaderInsider.Managers;
 using InvaderInsider.Cards;
-using System.Threading.Tasks;
-using System;
 using UnityEditor;
+using Cysharp.Threading.Tasks;
 
 namespace InvaderInsider.Managers
 {

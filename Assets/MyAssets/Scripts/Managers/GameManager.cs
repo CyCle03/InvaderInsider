@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using InvaderInsider.Cards;
 using InvaderInsider.ScriptableObjects;
 using InvaderInsider.Core;
+using Cysharp.Threading.Tasks;
 
 namespace InvaderInsider.Managers
 {
