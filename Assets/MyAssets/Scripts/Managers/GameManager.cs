@@ -1131,7 +1131,7 @@ namespace InvaderInsider.Managers
         private async UniTask RefreshMainMenuAfterLoad()
         {
             // 씬 로드 완료까지 대기
-            await UniTask.EndOfFrame();
+            await UniTask.NextFrame();
             await UniTask.Yield();
             
             Debug.Log("[FORCE LOG] RefreshMainMenuAfterLoad 시작");
@@ -1208,7 +1208,7 @@ namespace InvaderInsider.Managers
                 await UniTask.Yield();
             }
 
-            await UniTask.EndOfFrame(); // 모든 오브젝트 초기화 대기
+            await UniTask.NextFrame(); // 모든 오브젝트 초기화 대기
             
             // 게임 씬 로드 완료 후 자동으로 게임 초기화
             InitializeGame();

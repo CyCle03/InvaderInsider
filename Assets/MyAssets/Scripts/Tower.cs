@@ -112,7 +112,7 @@ namespace InvaderInsider
             detectionBuffer = new Collider[bufferSize];
             
             float searchInterval = towerConfig?.targetSearchInterval ?? GameConstants.TARGET_SEARCH_INTERVAL;
-            targetSearchWait = new WaitForSeconds(searchInterval);
+            
             
             // 위치 캐싱
             cachedPosition = transform.position;

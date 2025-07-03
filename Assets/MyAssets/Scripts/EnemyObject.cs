@@ -103,7 +103,7 @@ namespace InvaderInsider
             LoadConfig();
             
             // pathUpdateWait 초기화 (상수 사용)
-            pathUpdateWait = new WaitForSeconds(GameConstants.PATH_UPDATE_INTERVAL);
+            
             
             // 기본 이동 속도 설정
             if (enemyData != null)
