@@ -202,6 +202,7 @@ namespace InvaderInsider.UI
         // 핸드 데이터 변경 시 호출 (SaveDataManager 이벤트)
         private void OnHandDataChanged(List<int> handCardIds)
         {
+            LogManager.Info(LOG_TAG, $"OnHandDataChanged 이벤트 수신. 핸드 카드 수: {handCardIds.Count}");
             // 카드 유무에 따른 패널 가시성 제어
             UpdatePanelVisibility(handCardIds);
 

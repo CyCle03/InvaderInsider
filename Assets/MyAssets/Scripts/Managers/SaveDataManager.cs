@@ -831,6 +831,7 @@ namespace InvaderInsider.Data
             if (currentSaveData.deckData.AddToHand(cardId))
             {
                 onHandDataChanged?.Invoke(currentSaveData.deckData.handCardIds);
+                LogManager.Info("SaveDataManager", $"OnHandDataChanged 이벤트 호출됨. 핸드 카드 수: {currentSaveData.deckData.handCardIds.Count}");
             }
 
             // 카드 획득 시에는 저장하지 않고 메모리에만 업데이트
