@@ -257,12 +257,7 @@ namespace InvaderInsider.UI
 
             if (handContainer == null || cardPrefab == null || cardDatabase == null) return;
 
-            // CardManager에서 실제로 선택된 카드만 필터링
-            var selectedCardIds = handCardIds
-                .Where(cardId => cardManager.IsCardSelectedInSummonChoice(cardId))
-                .ToList();
-
-            foreach (int cardId in selectedCardIds)
+            foreach (int cardId in handCardIds)
             {
                 var cardData = cardDatabase.GetCardById(cardId);
                 if (cardData != null)

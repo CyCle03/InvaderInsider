@@ -295,7 +295,7 @@ namespace InvaderInsider.Cards
             if (selectedCard == null) return;
 
             // 선택된 카드를 핸드에 추가
-            AddCard(selectedCard);
+            SaveDataManager.Instance.AddCardToHandAndOwned(selectedCard.cardId);
 
             // 선택된 카드 ID 마킹
             MarkCardAsSelected(selectedCard.cardId);
