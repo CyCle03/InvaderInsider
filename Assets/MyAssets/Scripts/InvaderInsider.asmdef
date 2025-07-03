@@ -3,7 +3,8 @@
     "rootNamespace": "InvaderInsider",
     "references": [
         "Unity.TextMeshPro",
-        "Unity.AI.Navigation"
+        "Unity.AI.Navigation",
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
