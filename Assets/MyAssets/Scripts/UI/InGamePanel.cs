@@ -8,7 +8,6 @@ using TMPro;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using System;
-using System;
 
 
 namespace InvaderInsider.UI
