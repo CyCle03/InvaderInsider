@@ -68,41 +68,34 @@ namespace InvaderInsider.Managers
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            // Unity 로그 시스템 완전 비활성화 - 더 강력한 방법
-            try 
-            {
-                Debug.unityLogger.logEnabled = false;
-                Debug.unityLogger.filterLogType = LogType.Exception;
-                Debug.unityLogger.logEnabled = false;
-                
-                // 리플렉션을 통한 추가 차단 시도
-                var unityLoggerType = typeof(UnityEngine.Logger);
-                var logEnabledProperty = unityLoggerType.GetProperty("logEnabled");
-                if (logEnabledProperty != null)
-                {
-                    logEnabledProperty.SetValue(Debug.unityLogger, false);
-                    logEnabledProperty.SetValue(Debug.unityLogger, false);
-                }
-            }
-            catch (System.Exception)
-            {
-                // 리플렉션 실패 시 무시
-            }
-            
-            // 추가 안전장치 - 로그 수신기로 차단
+            // Unity 로그 시스템 기본 활성화 (LogManager가 제어)
+            Debug.unityLogger.logEnabled = true;
+            Debug.unityLogger.filterLogType = LogType.Log; // 모든 타입의 로그를 LogManager로 전달
+
+            // LogManager의 최소 로그 레벨 설정
+            SetLogLevel(MinimumLogLevel);
+
+            // Unity 로그 메시지 수신 이벤트 등록 (LogManager가 필터링)
             Application.logMessageReceived -= OnLogReceived;
             Application.logMessageReceived += OnLogReceived;
         }
         
-        // Unity 로그 메시지 필터링
+        // Unity 로그 메시지 필터링 (LogManager의 설정에 따라)
         private static void OnLogReceived(string logString, string stackTrace, LogType type)
         {
-            // Force 로그가 아닌 모든 로그 차단
-            if (!logString.StartsWith("[FORCE]") && !logString.StartsWith("=== FORCE LOG:"))
-            {
-                // 강제로 로그 출력 차단 - 이미 출력된 후지만 추가 처리 방지
-                return;
-            }
+            // LogManager를 통해 출력된 로그는 다시 필터링하지 않음
+            if (logString.StartsWith("[") && logString.Contains("] ")) return;
+
+            // LogManager의 설정에 따라 필터링
+            LogLevel logLevel = LogLevel.Info;
+            if (type == LogType.Warning) logLevel = LogLevel.Warning;
+            else if (type == LogType.Error || type == LogType.Exception) logLevel = LogLevel.Error;
+
+            if (logLevel < MinimumLogLevel) return;
+            if (IsBlockedMessage(logString)) return;
+
+            // LogManager를 통해 다시 출력 (스택 트레이스는 Unity가 자동으로 처리)
+            // Debug.Log, Debug.LogWarning, Debug.LogError는 이미 LogManager.Log에서 처리되므로 직접 호출하지 않음
         }
         
         // 전역 로그 필터링 토글
@@ -190,9 +183,7 @@ namespace InvaderInsider.Managers
                     Debug.LogError(formattedMessage);
                     break;
                 case LogLevel.Debug:
-                    #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"[DEBUG] {formattedMessage}");
-                    #endif
+                    Debug.Log($"[DEBUG] {formattedMessage}"); // Debug 레벨은 항상 출력
                     break;
             }
         }
@@ -233,7 +224,7 @@ namespace InvaderInsider.Managers
 
         public static void DebugLog(string tag, string message, params object[] args)
         {
-            // 차단됨
+            Log(tag, message, LogLevel.Debug, args);
         }
 
         private static string FormatMessage(string tag, string message, params object[] args)
@@ -266,12 +257,19 @@ namespace InvaderInsider.Managers
         // SaveDataManager 호환성을 위한 메서드들 (모두 비활성화)
         public static void LogSave(string message)
         {
-            // 차단됨
+            Info("Save", message);
         }
 
         public static void LogSave(string tag, string message, bool isError = false)
         {
-            // 차단됨
+            if (isError)
+            {
+                Error(tag, message);
+            }
+            else
+            {
+                Info(tag, message);
+            }
         }
 
         public static void ForceLogOnce(string message)

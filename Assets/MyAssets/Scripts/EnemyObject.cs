@@ -121,7 +121,7 @@ namespace InvaderInsider
             // StageManager 참조 미리 캐싱
             stageManager = StageManager.Instance;
             
-            DebugUtils.LogFormat(GameConstants.LOG_PREFIX_ENEMY, 
+            LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
                 "{0}: Awake 완료 - Config: {1}, Agent: {2}, StageManager: {3}", 
                 gameObject.name, 
                 enemyConfig != null ? "로드됨" : "null",
@@ -135,12 +135,15 @@ namespace InvaderInsider
             if (configManager != null && configManager.GameConfig != null)
             {
                 enemyConfig = configManager.GameConfig;
-                DebugUtils.Log(GameConstants.LOG_PREFIX_ENEMY, 
+                LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
+                    LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
+                    LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
+                    LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
                     $"{gameObject.name}: 설정을 성공적으로 로드했습니다.");
             }
             else
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_ENEMY, 
+                LogManager.Warning(GameConstants.LOG_PREFIX_ENEMY, 
                     $"{gameObject.name}: ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
                 // 기본값으로 폴백
                 enemyConfig = ScriptableObject.CreateInstance<GameConfigSO>();
@@ -165,7 +168,7 @@ namespace InvaderInsider
                 {
                     enemyConfig = configManager.GameConfig;
                     moveSpeed = enemyConfig.defaultMoveSpeed;
-                    DebugUtils.LogFormat(GameConstants.LOG_PREFIX_ENEMY, 
+                    LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
                         "{0}: 재시도 후 설정을 성공적으로 로드했습니다. (시도 횟수: {1})", 
                         gameObject.name, retryCount);
                     break;
