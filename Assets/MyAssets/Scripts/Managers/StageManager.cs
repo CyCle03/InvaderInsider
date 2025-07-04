@@ -551,7 +551,7 @@ namespace InvaderInsider.Managers
 
         private async UniTask HandleRunState()
         {
-            while (currentState == StageState.Run && !isQuitting)
+            while (currentState != StageState.Run && !_isQuitting)
             {
                 currentTime += Time.deltaTime;
 
@@ -857,7 +857,7 @@ namespace InvaderInsider.Managers
         private void OnDisable()
         {
             // 애플리케이션 종료 중이면 정리 과정 생략
-            if (isQuitting) return;
+            if (_isQuitting) return;
             
             #if UNITY_EDITOR
             DebugUtils.Log(LOG_PREFIX + "StageManager 비활성화 - 코루틴 정리");

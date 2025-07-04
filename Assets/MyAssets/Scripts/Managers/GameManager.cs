@@ -182,7 +182,8 @@ namespace InvaderInsider.Managers
             var resourceManager = ResourceManager.Instance;
             if (resourceManager != null)
             {
-                
+                resourceManager.OnEDataChanged -= OnEDataChanged; // 중복 구독 방지
+                resourceManager.OnEDataChanged += OnEDataChanged;
             }
             else
             {
@@ -240,7 +241,14 @@ namespace InvaderInsider.Managers
 
         private void CleanupEventListeners()
         {
+            OnGameStateChanged -= HandleGameStateChanged;
             
+            // ResourceManager 이벤트 구독 해제
+            var resourceManager = ResourceManager.Instance;
+            if (resourceManager != null)
+            {
+                resourceManager.OnEDataChanged -= OnEDataChanged;
+            }
         }
 
         private void OnEnable()
@@ -358,7 +366,8 @@ namespace InvaderInsider.Managers
                 bool success = resourceManager.TrySpendEData(amount);
                 if (success)
                 {
-                    // UI 업데이트는 ResourceManager에서 TopBarPanel로 직접 호출
+                    // UI 업데이트
+                    UpdateEDataUI();
                 }
                 return success;
             }
@@ -396,7 +405,7 @@ namespace InvaderInsider.Managers
             if (resourceManager != null)
             {
                 resourceManager.AddEData(amount, saveImmediately);
-                // UpdateEDataUI(); // EData UI 업데이트는 ResourceManager에서 TopBarPanel로 직접 호출
+                UpdateEDataUI();
             }
             else
             {
@@ -444,19 +453,106 @@ namespace InvaderInsider.Managers
 
         
 
-        public void StageCleared(int stageNum)
+        public void InitializeEDataDisplay()
         {
-            if (saveDataManager != null)
+            UpdateEDataUI();
+        }
+
+        /// <summary>
+        /// TopBarPanel의 초기 데이터를 설정합니다。
+        /// </summary>
+        private void InitializeTopBarDisplay()
+        {
+            // UICoordinator 참조 확인 및 재참조
+            if (uiCoordinator == null)
             {
-                // 스테이지 클리어 시 진행상황 저장
-                saveDataManager.UpdateStageProgress(stageNum);
-                
-                var currentData = saveDataManager.CurrentSaveData;
-                if (currentData != null)
+                uiCoordinator = UICoordinator.Instance;
+                if (uiCoordinator == null)
                 {
-                    DebugUtils.Log(LOG_PREFIX, $"스테이지 {stageNum} 클리어됨! 최고 클리어 스테이지: {currentData.progressData.highestStageCleared}");
+                    uiCoordinator = FindObjectOfType<UICoordinator>();
+                    if (uiCoordinator == null)
+                    {
+                        #if UNITY_EDITOR
+                        DebugUtils.LogError(LOG_PREFIX, "UICoordinator를 찾을 수 없습니다. TopBarPanel 초기화를 건너뜁니다.");
+                        #endif
+                        return;
+                    }
                 }
             }
+            
+            // 초기 스테이지 정보 설정
+            int currentStage = requestedStartStage + 1; // 0-based to 1-based
+            int totalStages = GetTotalStageCount();
+            
+            // StageManager에서 초기 웨이브 정보 가져오기
+            var stageManager = StageManager.Instance;
+            int spawnedMonsters = 0;
+            int maxMonsters = 0;
+            
+            if (stageManager != null)
+            {
+                maxMonsters = stageManager.GetStageWaveCount(requestedStartStage);
+            }
+            
+            // TopBarPanel 업데이트
+            uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, totalStages);
+            
+            // 초기 EData 설정
+            var resourceManager = ResourceManager.Instance;
+            if (resourceManager != null)
+            {
+                int currentEData = resourceManager.GetCurrentEData();
+                uiCoordinator.UpdateEDataUI(currentEData);
+                
+                #if UNITY_EDITOR
+                DebugUtils.Log(LOG_PREFIX, $"TopBarPanel 초기 데이터 설정 완료 - 스테이지: {currentStage}/{totalStages}, 웨이브: {spawnedMonsters}/{maxMonsters}, eData: {currentEData}");
+                #endif
+            }
+        }
+
+        private void OnEDataChanged(int newEDataAmount)
+        {
+            // #if UNITY_EDITOR
+            // DebugUtils.Log(LOG_PREFIX + $"EData changed: {newEDataAmount}");
+            // #endif
+            
+            UpdateEDataUI(newEDataAmount);
+        }
+
+        private void UpdateEDataUI()
+        {
+            var resourceManager = ResourceManager.Instance;
+            if (resourceManager != null)
+            {
+                int currentEData = resourceManager.GetCurrentEData();
+                UpdateEDataUI(currentEData);
+            }
+            else
+            {
+                DebugUtils.LogError(LOG_PREFIX, LOG_MESSAGES[8]);
+            }
+        }
+
+        private void UpdateEDataUI(int currentEData)
+        {
+            // UICoordinator 참조 확인 및 재참조
+            if (uiCoordinator == null)
+            {
+                uiCoordinator = UICoordinator.Instance;
+                if (uiCoordinator == null)
+                {
+                    uiCoordinator = FindObjectOfType<UICoordinator>();
+                    if (uiCoordinator == null)
+                    {
+                        #if UNITY_EDITOR
+                        DebugUtils.LogWarning(LOG_PREFIX, "UICoordinator를 찾을 수 없습니다. EData UI 업데이트를 건너뜁니다.");
+                        #endif
+                        return;
+                    }
+                }
+            }
+            
+            uiCoordinator.UpdateEDataUI(currentEData);
         }
 
         private void Update()
