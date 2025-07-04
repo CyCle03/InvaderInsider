@@ -551,7 +551,7 @@ namespace InvaderInsider.Managers
 
         private async UniTask HandleRunState()
         {
-            while (currentState != StageState.Run && !_isQuitting)
+            while (currentState == StageState.Run && !_isQuitting)
             {
                 currentTime += Time.deltaTime;
 
