@@ -701,7 +701,7 @@ namespace InvaderInsider.Data
             }
             catch (Exception e)
             {
-                LogManager.LogSave("데이터 로드", e.Message, true);
+                LogManager.Error("SaveDataManager", e.Message);
                 currentSaveData = new SaveData();
             }
         }

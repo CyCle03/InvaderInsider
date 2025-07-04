@@ -587,7 +587,7 @@ namespace InvaderInsider.Managers
                 }
                 else
                 {
-                    DebugUtils.Log(LOG_PREFIX, "현재 상태({0})에서는 ESC 무시", CurrentGameState);
+                    DebugUtils.LogFormat(LOG_PREFIX, "현재 상태({0})에서는 ESC 무시", CurrentGameState);
                 }
             }
             
@@ -742,7 +742,7 @@ namespace InvaderInsider.Managers
             var allPanels = FindObjectsOfType<BasePanel>(true);
             
             // Debug.Log($"{LOG_PREFIX}찾은 패널 수: {allPanels.Length}");
-            DebugUtils.Log(LOG_PREFIX, $"찾은 패널: {panel.GetType().Name} - {panel.gameObject.name}");
+            
             
             // 딕셔너리로 빠른 검색을 위한 임시 매핑
             var panelsByType = new System.Collections.Generic.Dictionary<System.Type, BasePanel>();
