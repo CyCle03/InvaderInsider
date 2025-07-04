@@ -11,7 +11,7 @@ namespace InvaderInsider.Core
     {
         private static T _instance;
         private static readonly object _lock = new object();
-        private static bool _isQuitting = false;
+        protected static bool _isQuitting = false;
 
         public static T Instance
         {

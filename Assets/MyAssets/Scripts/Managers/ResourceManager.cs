@@ -35,7 +35,7 @@ namespace InvaderInsider.Managers
             if (currentEData < amount) return false;
 
             saveDataManager.UpdateEData(-amount);
-            TopBarPanel.Instance.UpdateEData(saveDataManager.GetCurrentEData());
+            OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
             return true;
         }
 
@@ -58,7 +58,7 @@ namespace InvaderInsider.Managers
                 saveDataManager.UpdateEDataWithoutSave(amount);
             }
             
-            TopBarPanel.Instance.UpdateEData(saveDataManager.GetCurrentEData());
+            OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
         }
 
         public int GetCurrentEData()
@@ -79,7 +79,7 @@ namespace InvaderInsider.Managers
             if (difference != 0)
             {
                 saveDataManager.UpdateEData(difference);
-                TopBarPanel.Instance.UpdateEData(saveDataManager.GetCurrentEData());
+                OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
             }
         }
 
