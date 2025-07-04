@@ -367,14 +367,14 @@ namespace InvaderInsider.UI
             saveDataManager = SaveDataManager.Instance;
             if (saveDataManager == null)
             {
-                Debug.Log("[FORCE LOG] SaveDataManager가 null이므로 다시 찾기 시도");
+                DebugUtils.Log("[FORCE LOG] SaveDataManager가 null이므로 다시 찾기 시도");
                 
                 // 직접 검색
                 saveDataManager = FindObjectOfType<SaveDataManager>();
                 
                 if (saveDataManager == null)
                 {
-                    Debug.LogError("[FORCE LOG] SaveDataManager를 찾을 수 없습니다!");
+                    DebugUtils.LogError("[FORCE LOG] SaveDataManager를 찾을 수 없습니다!");
                     
                     // SaveDataManager가 없으면 Continue 버튼 비활성화
                     if (continueButton != null)
@@ -385,16 +385,16 @@ namespace InvaderInsider.UI
                 }
                 else
                 {
-                    Debug.Log("[FORCE LOG] SaveDataManager 찾기 성공");
+                    DebugUtils.Log("[FORCE LOG] SaveDataManager 찾기 성공");
                 }
             }
             
             // SaveDataManager가 있으면 데이터 강제 재로드
             if (saveDataManager != null)
             {
-                Debug.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 시작");
+                DebugUtils.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 시작");
                 saveDataManager.LoadGameData();
-                Debug.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 완료");
+                DebugUtils.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 완료");
                 
                 // 저장 데이터 존재 여부 재확인
                 bool hasSaveData = saveDataManager.HasSaveData();
