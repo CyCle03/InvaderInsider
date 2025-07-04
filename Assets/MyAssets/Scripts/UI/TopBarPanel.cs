@@ -144,9 +144,7 @@ namespace InvaderInsider.UI
             if (eDataText != null)
             {
                 eDataText.text = $"eData: {amount}";
-                // #if UNITY_EDITOR
-                // Debug.Log($"[TopBar] EData 업데이트: {amount}");
-                // #endif
+                DebugUtils.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] EData 업데이트: {amount}");
             }
             else
             {
@@ -170,9 +168,7 @@ namespace InvaderInsider.UI
             if (stageText != null)
             {
                 stageText.text = $"Stage {currentStage}/{totalStages}";
-                // #if UNITY_EDITOR
-                // Debug.Log($"[TopBar] Stage 업데이트: {currentStage}/{totalStages}");
-                // #endif
+                DebugUtils.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] Stage 업데이트: {currentStage}/{totalStages}");
             }
             else
             {
@@ -184,9 +180,7 @@ namespace InvaderInsider.UI
             if (waveText != null)
             {
                 waveText.text = $"Wave {spawnedMonsters}/{maxMonsters}";
-                // #if UNITY_EDITOR
-                // Debug.Log($"[TopBar] Wave 업데이트: {spawnedMonsters}/{maxMonsters}");
-                // #endif
+                DebugUtils.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] Wave 업데이트: {spawnedMonsters}/{maxMonsters}");
             }
             else
             {
@@ -254,7 +248,7 @@ namespace InvaderInsider.UI
             topBarCanvas.sortingOrder = 10; // 기본보다 낮은 값 (SummonChoice는 100)
             
             #if UNITY_EDITOR
-            Debug.Log("[TopBar] TopBar Canvas Sorting Order 설정 완료: " + topBarCanvas.sortingOrder);
+            DebugUtils.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] TopBar Canvas Sorting Order 설정 완료: {topBarCanvas.sortingOrder}");
             #endif
         }
     }

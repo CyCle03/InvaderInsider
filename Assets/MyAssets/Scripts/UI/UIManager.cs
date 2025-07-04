@@ -11,39 +11,12 @@ using UnityEngine.SceneManagement;
 
 namespace InvaderInsider.UI
 {
-    public class UIManager : MonoBehaviour
+    public class UIManager : InvaderInsider.Core.SingletonManager<UIManager>
     {
         private const string LOG_PREFIX = "[UI] ";
         // LOG_MESSAGES 배열을 GameConstants.LogMessages 사용으로 대체
 
-        private static UIManager instance;
-        private static readonly object _lock = new object();
-
-        public static UIManager Instance
-        {
-            get
-            {
-                // 에디터에서 플레이 모드가 아닐 때는 인스턴스 생성하지 않음
-                #if UNITY_EDITOR
-                if (!UnityEngine.Application.isPlaying) return null;
-                #endif
-                
-                lock (_lock)
-                {
-                    if (instance == null)
-                    {
-                        instance = FindObjectOfType<UIManager>();
-                        if (instance == null)
-                        {
-                            GameObject go = new GameObject("UIManager");
-                            instance = go.AddComponent<UIManager>();
-                            DontDestroyOnLoad(go);
-                        }
-                    }
-                    return instance;
-                }
-            }
-        }
+        
 
         [Header("Game UI")]
         [SerializeField] private TextMeshProUGUI stageText;
@@ -63,31 +36,11 @@ namespace InvaderInsider.UI
         private static readonly List<string> tempKeysToRemove = new List<string>();
         private static readonly List<BasePanel> tempPanelList = new List<BasePanel>();
 
-        private void Awake()
+        protected override void Awake()
         {
-            // 에디터 모드에서는 초기화하지 않음
-            #if UNITY_EDITOR
-            if (!Application.isPlaying) return;
-            #endif
-            
-            if (instance == null)
-            {
-                instance = this;
-                DontDestroyOnLoad(gameObject);
-                
-                // HideFlags 명시적 설정 (에디터에서 편집 가능하도록)
-                #if UNITY_EDITOR
-                gameObject.hideFlags = HideFlags.None;
-                #endif
-                
-                SceneManager.sceneLoaded += OnSceneLoaded;
-                SceneManager.sceneUnloaded += OnSceneUnloaded;
-            }
-            else if (instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
+            base.Awake();
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
         private void Start()
@@ -261,7 +214,7 @@ namespace InvaderInsider.UI
             }
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
@@ -275,6 +228,7 @@ namespace InvaderInsider.UI
                 InvaderInsider.Data.SaveDataManager.ForceDestroy();
             }
             #endif
+            base.OnDestroy();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)

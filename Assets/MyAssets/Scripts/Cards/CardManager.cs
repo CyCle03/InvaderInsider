@@ -9,43 +9,11 @@ using InvaderInsider.UI;
 
 namespace InvaderInsider.Cards
 {
-    public class CardManager : MonoBehaviour
+    public class CardManager : InvaderInsider.Core.SingletonManager<CardManager>
     {
         private const string LOG_TAG = "CardManager";
 
-        private static CardManager instance;
-        private static readonly object _lock = new object();
-        private static bool isQuitting = false;
-        private static bool isInitialized = false;
-
-        public static CardManager Instance
-        {
-            get
-            {
-                if (isQuitting) return null;
-
-                lock (_lock)
-                {
-                    if (instance == null && !isQuitting)
-                    {
-                        instance = FindObjectOfType<CardManager>();
-                        if (instance == null)
-                        {
-                            GameObject go = new GameObject("CardManager");
-                            instance = go.AddComponent<CardManager>();
-                            DontDestroyOnLoad(go);
-                        }
-                    }
-                    
-                    if (instance != null && !isInitialized)
-                    {
-                        instance.PerformInitialization();
-                    }
-                    
-                    return instance;
-                }
-            }
-        }
+        
 
         [Header("Card Collections")]
         [SerializeField] private CardDatabase cardDatabase;
@@ -68,35 +36,15 @@ namespace InvaderInsider.Cards
         // 소환 선택에서 선택된 카드 추적을 위한 필드
         private HashSet<int> selectedCardIds = new HashSet<int>();
 
-        private void Awake()
+        protected override void Awake()
         {
-            // 에디터 모드에서는 초기화하지 않음
-            #if UNITY_EDITOR
-            if (!Application.isPlaying) return;
-            #endif
-            
-            if (instance == null)
-            {
-                instance = this;
-                DontDestroyOnLoad(gameObject);
-                
-                // HideFlags 명시적 설정 (에디터에서 편집 가능하도록)
-                gameObject.hideFlags = HideFlags.None;
-                LogManager.Info(LOG_TAG, "인스턴스 생성됨");
-                
-                PerformInitialization();
-                LoadSummonData();
-            }
-            else if (instance != this)
-            {
-                LogManager.Info(LOG_TAG, "중복 인스턴스 파괴됨");
-                Destroy(gameObject);
-                return;
-            }
+            base.Awake();
+            LoadSummonData();
         }
 
-        private void PerformInitialization()
+        protected override void OnInitialize()
         {
+            base.OnInitialize();
             if (cardDatabase == null)
             {
                 cardDatabase = Resources.Load<CardDatabase>("CardDatabase");
@@ -111,22 +59,16 @@ namespace InvaderInsider.Cards
                     }
                 }
             }
-            
-            isInitialized = true;
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
-            if (instance == this)
-            {
-                instance = null;
-                isInitialized = false;
-            }
+            base.OnDestroy();
         }
 
-        private void OnApplicationQuit()
+        protected override void OnApplicationQuit()
         {
-            isQuitting = true;
+            base.OnApplicationQuit();
         }
 
         #region Summon System

@@ -4,72 +4,24 @@ using InvaderInsider.Data;
 
 namespace InvaderInsider.Managers
 {
-    public class ResourceManager : MonoBehaviour
+    public class ResourceManager : InvaderInsider.Core.SingletonManager<ResourceManager>
     {
         private const string LOG_PREFIX = "[ResourceManager] ";
         
-        private static ResourceManager instance;
-        private static readonly object _lock = new object();
-        private static bool isQuitting = false;
+        
 
-        public static ResourceManager Instance
-        {
-            get
-            {
-                if (isQuitting) return null;
-                
-                #if UNITY_EDITOR
-                if (!UnityEngine.Application.isPlaying) return null;
-                #endif
-
-                lock (_lock)
-                {
-                    if (instance == null)
-                    {
-                        instance = FindObjectOfType<ResourceManager>();
-                        if (instance == null && !isQuitting)
-                        {
-                            GameObject go = new GameObject("ResourceManager");
-                            instance = go.AddComponent<ResourceManager>();
-                            DontDestroyOnLoad(go);
-                        }
-                    }
-                    return instance;
-                }
-            }
-        }
-
-        public event Action<int> OnEDataChanged;
+        
         
         private SaveDataManager saveDataManager;
 
-        private void Awake()
+        protected override void Awake()
         {
-            #if UNITY_EDITOR
-            if (!Application.isPlaying) return;
-            #endif
-            
-            if (instance == null)
-            {
-                instance = this;
-                DontDestroyOnLoad(gameObject);
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "ResourceManager 인스턴스 생성됨");
-                #endif
-                InitializeManager();
-            }
-            else if (instance != this)
-            {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "중복 ResourceManager 인스턴스 파괴됨");
-                #endif
-                Destroy(gameObject);
-                return;
-            }
+            base.Awake();
         }
 
-        private void InitializeManager()
+        protected override void OnInitialize()
         {
+            base.OnInitialize();
             saveDataManager = SaveDataManager.Instance;
         }
 
@@ -81,7 +33,7 @@ namespace InvaderInsider.Managers
             if (currentEData < amount) return false;
 
             saveDataManager.UpdateEData(-amount);
-            OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
+            TopBarPanel.Instance.UpdateEData(saveDataManager.GetCurrentEData());
             return true;
         }
 
@@ -104,7 +56,7 @@ namespace InvaderInsider.Managers
                 saveDataManager.UpdateEDataWithoutSave(amount);
             }
             
-            OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
+            TopBarPanel.Instance.UpdateEData(saveDataManager.GetCurrentEData());
         }
 
         public int GetCurrentEData()
@@ -125,7 +77,7 @@ namespace InvaderInsider.Managers
             if (difference != 0)
             {
                 saveDataManager.UpdateEData(difference);
-                OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
+                TopBarPanel.Instance.UpdateEData(saveDataManager.GetCurrentEData());
             }
         }
 
@@ -134,9 +86,9 @@ namespace InvaderInsider.Managers
             OnEDataChanged = null;
         }
 
-        private void OnApplicationQuit()
+        protected override void OnApplicationQuit()
         {
-            isQuitting = true;
+            base.OnApplicationQuit();
         }
     }
 } 
