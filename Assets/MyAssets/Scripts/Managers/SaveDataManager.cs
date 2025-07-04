@@ -318,7 +318,7 @@ namespace InvaderInsider.Data
         {
             add
             {
-                if (_instance != null && Application.isPlaying)
+                if (Instance != null && Application.isPlaying)
                 {
                     onHandDataChanged -= value;
                     onHandDataChanged += value;
@@ -326,7 +326,7 @@ namespace InvaderInsider.Data
             }
             remove
             {
-                if (_instance != null && Application.isPlaying)
+                if (Instance != null && Application.isPlaying)
                 {
                     onHandDataChanged -= value;
                 }
@@ -393,16 +393,16 @@ namespace InvaderInsider.Data
         [UnityEditor.InitializeOnEnterPlayMode]
         static void OnEnterPlayModeInEditor(UnityEditor.EnterPlayModeOptions options)
         {
-            _instance = null;
+            InvaderInsider.Core.SingletonManager<SaveDataManager>.ResetInstance();
         }
 
         private void OnApplicationPause(bool pauseStatus)
         {
             // 에디터에서 플레이 모드 종료 시 호출될 수 있음
-            if (!Application.isPlaying && _instance == this)
+            if (!Application.isPlaying && Instance == this)
             {
                 CleanupEventListeners();
-                _instance = null;
+                // _instance = null; // SingletonManager에서 처리
             }
         }
 
@@ -411,7 +411,7 @@ namespace InvaderInsider.Data
         private static void OnScriptsReloaded()
         {
             // 스크립트 리로드 시 정적 인스턴스 정리
-            _instance = null;
+            InvaderInsider.Core.SingletonManager<SaveDataManager>.ResetInstance();
         }
         #endif
 

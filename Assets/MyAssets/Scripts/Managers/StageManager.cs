@@ -8,6 +8,7 @@ using InvaderInsider.Managers;
 using InvaderInsider.Cards;
 using UnityEditor;
 using Cysharp.Threading.Tasks;
+using InvaderInsider.Core;
 
 namespace InvaderInsider.Managers
 {
@@ -474,7 +475,7 @@ namespace InvaderInsider.Managers
         {
             StageState lastState = StageState.Ready;
             
-            while (currentState != StageState.Over && !isQuitting)
+            while (currentState != StageState.Over && !_isQuitting)
             {
                 // 상태가 변경되었는지 확인
                 if (lastState != currentState)

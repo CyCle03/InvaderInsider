@@ -182,8 +182,7 @@ namespace InvaderInsider.Managers
             var resourceManager = ResourceManager.Instance;
             if (resourceManager != null)
             {
-                resourceManager.OnEDataChanged -= OnEDataChanged; // 중복 구독 방지
-                resourceManager.OnEDataChanged += OnEDataChanged;
+                
             }
             else
             {
@@ -241,14 +240,7 @@ namespace InvaderInsider.Managers
 
         private void CleanupEventListeners()
         {
-            OnGameStateChanged -= HandleGameStateChanged;
             
-            // ResourceManager 이벤트 구독 해제
-            var resourceManager = ResourceManager.Instance;
-            if (resourceManager != null)
-            {
-                resourceManager.OnEDataChanged -= OnEDataChanged;
-            }
         }
 
         private void OnEnable()
@@ -366,8 +358,7 @@ namespace InvaderInsider.Managers
                 bool success = resourceManager.TrySpendEData(amount);
                 if (success)
                 {
-                    // UI 업데이트
-                    UpdateEDataUI();
+                    // UI 업데이트는 ResourceManager에서 TopBarPanel로 직접 호출
                 }
                 return success;
             }
@@ -405,7 +396,7 @@ namespace InvaderInsider.Managers
             if (resourceManager != null)
             {
                 resourceManager.AddEData(amount, saveImmediately);
-                UpdateEDataUI();
+                // UpdateEDataUI(); // EData UI 업데이트는 ResourceManager에서 TopBarPanel로 직접 호출
             }
             else
             {
