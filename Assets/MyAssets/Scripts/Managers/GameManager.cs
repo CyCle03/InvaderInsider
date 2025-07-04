@@ -145,7 +145,7 @@ namespace InvaderInsider.Managers
             }
             else
             {
-                Debug.LogError($"{LOG_PREFIX}ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
+                DebugUtils.LogError(LOG_PREFIX, "ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
                 // 기본값으로 폴백
                 gameConfig = ScriptableObject.CreateInstance<GameConfigSO>();
                 Debug.Log($"{LOG_PREFIX}기본 GameConfig 생성 완료");
@@ -175,7 +175,7 @@ namespace InvaderInsider.Managers
             cardManagerReference = FindObjectOfType<CardManager>();
             if (cardManagerReference == null)
             {
-                Debug.LogWarning($"{LOG_PREFIX}{string.Format(LOG_MESSAGES[11], "CardManager")}");
+                DebugUtils.LogWarning(LOG_PREFIX, string.Format(LOG_MESSAGES[11], "CardManager"));
             }
             
             // ResourceManager 이벤트 구독
@@ -187,7 +187,7 @@ namespace InvaderInsider.Managers
             }
             else
             {
-                Debug.LogError($"{LOG_PREFIX}{LOG_MESSAGES[8]}");
+                DebugUtils.LogError(LOG_PREFIX, LOG_MESSAGES[8]);
             }
             
             UpdateCachedComponents();
@@ -234,7 +234,7 @@ namespace InvaderInsider.Managers
                 if (playerReference == null) 
                     Debug.LogWarning($"{LOG_PREFIX}{string.Format(LOG_MESSAGES[11], "Player")}");
                 if (topBarPanelReference == null) 
-                    Debug.LogWarning($"{LOG_PREFIX}{string.Format(LOG_MESSAGES[11], "TopBarPanel")}");
+                    DebugUtils.LogWarning(LOG_PREFIX, string.Format(LOG_MESSAGES[11], "TopBarPanel"));
             }
             #endif
         }
@@ -271,7 +271,7 @@ namespace InvaderInsider.Managers
         {
             Debug.Log($"{LOG_PREFIX}GameManager Start() 호출됨!");
             Debug.Log($"{LOG_PREFIX}현재 씬: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
-            Debug.Log($"{LOG_PREFIX}GameObject 이름: {gameObject.name}");
+            DebugUtils.Log(LOG_PREFIX, $"GameObject 이름: {gameObject.name}");
             
             // 이제 InitializeGame()은 실제 게임 시작 시점(NewGame/Continue)에서만 호출됩니다.
             // 게임 씬 로드 후 외부에서 명시적으로 호출해야 합니다.
@@ -322,7 +322,7 @@ namespace InvaderInsider.Managers
             }
             catch (Exception ex)
             {
-                Debug.LogError($"{LOG_PREFIX}게임 상태 변경 중 오류가 발생했습니다: {ex.Message}");
+                DebugUtils.LogError(LOG_PREFIX, $"게임 상태 변경 중 오류가 발생했습니다: {ex.Message}");
             }
             finally
             {
@@ -354,7 +354,7 @@ namespace InvaderInsider.Managers
 
                 if (amount > gameConfig.maxEDataValue)
                 {
-                    Debug.LogWarning($"{LOG_PREFIX}EData 소비량이 최대값을 초과합니다: {amount}");
+                    DebugUtils.LogWarning(LOG_PREFIX, $"EData 소비량이 최대값을 초과합니다: {amount}");
                     return false;
                 }
             }
@@ -373,7 +373,7 @@ namespace InvaderInsider.Managers
             }
             else
             {
-                Debug.LogError($"{LOG_PREFIX}{LOG_MESSAGES[8]}");
+                DebugUtils.LogError(LOG_PREFIX, LOG_MESSAGES[8]);
                 return false;
             }
         }
@@ -395,7 +395,7 @@ namespace InvaderInsider.Managers
 
                 if (amount > gameConfig.maxEDataValue)
                 {
-                    Debug.LogWarning($"{LOG_PREFIX}EData 추가량이 최대값을 초과합니다: {amount}");
+                    DebugUtils.LogWarning(LOG_PREFIX, $"EData 추가량이 최대값을 초과합니다: {amount}");
                     return;
                 }
             }
@@ -409,7 +409,7 @@ namespace InvaderInsider.Managers
             }
             else
             {
-                Debug.LogError($"{LOG_PREFIX}{LOG_MESSAGES[8]}");
+                DebugUtils.LogError(LOG_PREFIX, LOG_MESSAGES[8]);
             }
         }
 
@@ -503,7 +503,7 @@ namespace InvaderInsider.Managers
                 uiCoordinator.UpdateEDataUI(currentEData);
                 
                 #if UNITY_EDITOR
-                Debug.Log($"{LOG_PREFIX}TopBarPanel 초기 데이터 설정 완료 - 스테이지: {currentStage}/{totalStages}, 웨이브: {spawnedMonsters}/{maxMonsters}, eData: {currentEData}");
+                DebugUtils.Log(LOG_PREFIX, $"TopBarPanel 초기 데이터 설정 완료 - 스테이지: {currentStage}/{totalStages}, 웨이브: {spawnedMonsters}/{maxMonsters}, eData: {currentEData}");
                 #endif
             }
         }
@@ -527,7 +527,7 @@ namespace InvaderInsider.Managers
             }
             else
             {
-                Debug.LogError($"{LOG_PREFIX}{LOG_MESSAGES[8]}");
+                DebugUtils.LogError(LOG_PREFIX, LOG_MESSAGES[8]);
             }
         }
 
@@ -543,7 +543,7 @@ namespace InvaderInsider.Managers
                     if (uiCoordinator == null)
                     {
                         #if UNITY_EDITOR
-                        Debug.LogWarning($"{LOG_PREFIX}UICoordinator를 찾을 수 없습니다. EData UI 업데이트를 건너뜁니다.");
+                        DebugUtils.LogWarning(LOG_PREFIX, "UICoordinator를 찾을 수 없습니다. EData UI 업데이트를 건너뜁니다.");
                         #endif
                         return;
                     }
@@ -563,9 +563,7 @@ namespace InvaderInsider.Managers
                 var currentData = saveDataManager.CurrentSaveData;
                 if (currentData != null)
                 {
-                    // #if UNITY_EDITOR
-                    // Debug.Log($"{LOG_PREFIX}스테이지 {stageNum} 클리어됨! 최고 클리어 스테이지: {currentData.progressData.highestStageCleared}");
-                    // #endif
+                    DebugUtils.Log(LOG_PREFIX, $"스테이지 {stageNum} 클리어됨! 최고 클리어 스테이지: {currentData.progressData.highestStageCleared}");
                 }
             }
         }
@@ -589,7 +587,7 @@ namespace InvaderInsider.Managers
                 }
                 else
                 {
-                    Debug.Log($"{LOG_PREFIX}현재 상태({CurrentGameState})에서는 ESC 무시");
+                    DebugUtils.Log(LOG_PREFIX, "현재 상태({0})에서는 ESC 무시", CurrentGameState);
                 }
             }
             
@@ -614,9 +612,7 @@ namespace InvaderInsider.Managers
             {
                 if (!stageClearedProcessed)
                 {
-                    // #if UNITY_EDITOR
-                    // Debug.Log(LOG_PREFIX + $"스테이지 클리어 조건 만족 - 모든 적 스폰됨: {allEnemiesSpawned}, 활성 적 수: {activeEnemyCount}");
-                    // #endif
+                    DebugUtils.Log(LOG_PREFIX, $"스테이지 클리어 조건 만족 - 모든 적 스폰됨: {allEnemiesSpawned}, 활성 적 수: {activeEnemyCount}");
                     HandleStageCleared();
                     stageClearedProcessed = true;
                 }
@@ -689,7 +685,7 @@ namespace InvaderInsider.Managers
             
             if (allStagesCompleted)
             {
-                Debug.Log(LOG_PREFIX + "모든 스테이지 완료! PausePanel을 표시합니다.");
+                DebugUtils.Log(LOG_PREFIX, "모든 스테이지 완료! PausePanel을 표시합니다.");
                 
                 // 게임 일시정지 및 PausePanel 표시
                 PauseGame(true);
@@ -728,16 +724,14 @@ namespace InvaderInsider.Managers
             }
             else
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "StageManager를 찾을 수 없습니다.");
-                #endif
+                DebugUtils.LogError(LOG_PREFIX, "StageManager를 찾을 수 없습니다.");
             }
             
             // 게임 상태를 Playing으로 설정
             SetGameState(GameState.Playing);
             
             // #if UNITY_EDITOR
-            // Debug.Log(LOG_PREFIX + "게임 초기화 완료. 게임 상태를 Playing으로 설정했습니다.");
+            DebugUtils.Log(LOG_PREFIX, "게임 초기화 완료. 게임 상태를 Playing으로 설정했습니다.");
             // #endif
         }
 
@@ -748,10 +742,7 @@ namespace InvaderInsider.Managers
             var allPanels = FindObjectsOfType<BasePanel>(true);
             
             // Debug.Log($"{LOG_PREFIX}찾은 패널 수: {allPanels.Length}");
-            // foreach (var panel in allPanels)
-            // {
-            //     Debug.Log($"{LOG_PREFIX}찾은 패널: {panel.GetType().Name} - {panel.gameObject.name}");
-            // }
+            DebugUtils.Log(LOG_PREFIX, $"찾은 패널: {panel.GetType().Name} - {panel.gameObject.name}");
             
             // 딕셔너리로 빠른 검색을 위한 임시 매핑
             var panelsByType = new System.Collections.Generic.Dictionary<System.Type, BasePanel>();
@@ -907,7 +898,7 @@ namespace InvaderInsider.Managers
                 }
                 else
                 {
-                    Debug.LogError($"{LOG_PREFIX}UIManager가 없습니다.");
+                    DebugUtils.LogError(LOG_PREFIX, "UIManager가 없습니다.");
                 }
             }
         }
@@ -962,7 +953,7 @@ namespace InvaderInsider.Managers
             }
             else
             {
-                Debug.LogError(LOG_PREFIX + "UIManager가 없습니다. 메인 메뉴로 이동합니다.");
+                DebugUtils.LogError(LOG_PREFIX, "UIManager가 없습니다. 메인 메뉴로 이동합니다.");
                 LoadMainMenuScene();
             }
         }
@@ -1090,9 +1081,7 @@ namespace InvaderInsider.Managers
                 }
                 else
                 {
-                    #if UNITY_EDITOR
-                    Debug.LogWarning(LOG_PREFIX + "Continue 실패 - HasSaveData가 false 반환");
-                    #endif
+                    DebugUtils.LogWarning(LOG_PREFIX, "Continue 실패 - HasSaveData가 false 반환");
                     isStartingGame = false;
                 }
             }
@@ -1156,9 +1145,7 @@ namespace InvaderInsider.Managers
                 Debug.Log("[FORCE LOG] MainMenuPanel 발견됨, Continue 버튼 갱신 시작");
                 mainMenuPanel.RefreshContinueButton();
                 Debug.Log("[FORCE LOG] Continue 버튼 갱신 완료");
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "Main 씬 로드 후 Continue 버튼 갱신 완료");
-                #endif
+                DebugUtils.Log(LOG_PREFIX, "Main 씬 로드 후 Continue 버튼 갱신 완료");
             }
             else
             {

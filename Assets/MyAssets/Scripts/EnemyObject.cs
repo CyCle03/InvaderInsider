@@ -652,7 +652,7 @@ namespace InvaderInsider
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (Application.isPlaying)
                 {
-                    Debug.LogWarning($"{LOG_PREFIX}{gameObject.name}: '{enemyConfig.enemyLayerName}' 레이어가 존재하지 않음. 기본값 {enemyConfig.defaultEnemyLayerIndex}번 레이어로 설정");
+                    DebugUtils.LogWarning(GameConstants.LOG_PREFIX_ENEMY, $"'{enemyConfig.enemyLayerName}' 레이어가 존재하지 않음. 기본값 {enemyConfig.defaultEnemyLayerIndex}번 레이어로 설정");
                 }
 #endif
             }
@@ -734,7 +734,7 @@ namespace InvaderInsider
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Application.isPlaying)
             {
-                Debug.Log($"{LOG_PREFIX}{gameObject.name}: 적이 목적지에 도달 - 스테이지: {stageNum}, 적 번호: {enemyCount}");
+                DebugUtils.Log(GameConstants.LOG_PREFIX_ENEMY, $"적이 목적지에 도달 - 스테이지: {stageNum}, 적 번호: {enemyCount}");
             }
 #endif
             

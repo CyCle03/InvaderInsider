@@ -260,7 +260,7 @@ namespace InvaderInsider.Core
             EnableWarningLogs = false;
             EnableErrorLogs = true;
             EnableVerboseLogs = false;
-            LogManager.DisableAllLogs();
+            LogManager.SetLogLevel(LogManager.LogLevel.Error);
         }
 
         /// <summary>

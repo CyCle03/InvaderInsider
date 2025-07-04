@@ -174,7 +174,7 @@ namespace InvaderInsider.UI
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "GameManager를 찾을 수 없습니다");
+                DebugUtils.LogError(LOG_PREFIX, "GameManager를 찾을 수 없습니다");
                 #endif
             }
         }
@@ -191,7 +191,7 @@ namespace InvaderInsider.UI
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "GameManager를 찾을 수 없습니다");
+                DebugUtils.LogError(LOG_PREFIX, "GameManager를 찾을 수 없습니다");
                 #endif
             }
         }
@@ -406,7 +406,7 @@ namespace InvaderInsider.UI
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + LOG_MESSAGES[1]);
+                DebugUtils.LogWarning(LOG_PREFIX, LOG_MESSAGES[1]);
                 #endif
             }
 

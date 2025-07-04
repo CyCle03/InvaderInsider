@@ -483,7 +483,7 @@ namespace InvaderInsider.UI
             Debug.Log($"equipmentBonusPanel: {(equipmentBonusPanel != null ? "할당됨" : "할당 안됨")}");
             Debug.Log($"equipmentAttackBonusText: {(equipmentAttackBonusText != null ? "할당됨" : "할당 안됨")}");
             Debug.Log($"equipmentHealthBonusText: {(equipmentHealthBonusText != null ? "할당됨" : "할당 안됨")}");
-            Debug.Log("================================");
+            DebugUtils.Log("================================");
         }
         #endif
     }

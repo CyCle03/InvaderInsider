@@ -718,7 +718,7 @@ namespace InvaderInsider.Data
             if (currentSaveData == null)
             {
                 UnityEngine.Debug.Log("=== FORCE LOG: currentSaveData가 null! 초기화 시도 ===");
-                LogManager.LogSave("스테이지 진행", "currentSaveData가 null입니다", true);
+                LogManager.Error("SaveDataManager", "currentSaveData가 null입니다");
                 InitializeData(); // 데이터 초기화 시도
                 if (currentSaveData == null)
                 {

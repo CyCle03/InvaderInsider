@@ -385,7 +385,7 @@ namespace InvaderInsider.UI
             }
             
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "BottomBar Canvas Sorting Order 설정 완료: " + bottomBarCanvas.sortingOrder);
+            DebugUtils.Log(LOG_PREFIX, "BottomBar Canvas Sorting Order 설정 완료: {0}", bottomBarCanvas.sortingOrder);
             #endif
         }
     }

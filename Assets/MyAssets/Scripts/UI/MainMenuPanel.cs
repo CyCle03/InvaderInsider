@@ -397,7 +397,7 @@ namespace InvaderInsider.UI
                 
                 // 저장 데이터 존재 여부 재확인
                 bool hasSaveData = saveDataManager.HasSaveData();
-                Debug.Log($"[FORCE LOG] 저장 데이터 확인 결과: {hasSaveData}");
+                DebugUtils.Log($"[FORCE LOG] 저장 데이터 확인 결과: {hasSaveData}");
             }
             
             UpdateContinueButton();
