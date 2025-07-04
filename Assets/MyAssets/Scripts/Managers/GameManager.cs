@@ -451,20 +451,7 @@ namespace InvaderInsider.Managers
             uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, GetTotalStageCount());
         }
 
-        public void StageCleared(int stageNum)
-        {
-            if (saveDataManager != null)
-            {
-                // 스테이지 클리어 시 진행상황 저장
-                saveDataManager.UpdateStageProgress(stageNum);
-                
-                var currentData = saveDataManager.CurrentSaveData;
-                if (currentData != null)
-                {
-                    DebugUtils.Log(LOG_PREFIX, $"스테이지 {stageNum} 클리어됨! 최고 클리어 스테이지: {currentData.progressData.highestStageCleared}");
-                }
-            }
-        }     
+             
 
         public void InitializeEDataDisplay()
         {
