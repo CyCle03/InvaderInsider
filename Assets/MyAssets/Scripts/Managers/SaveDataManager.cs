@@ -464,7 +464,7 @@ namespace InvaderInsider.Data
             // 초기화 완료 후 상태 확인 (에러가 있을 때만 로그)
             if (currentSaveData == null)
             {
-                LogManager.LogSave("초기화", "currentSaveData가 null입니다", true);
+                LogManager.Error("초기화", "currentSaveData가 null입니다");
             }
         }
 
@@ -610,7 +610,7 @@ namespace InvaderInsider.Data
             }
             catch (Exception e)
             {
-                LogManager.LogSave("데이터 확인", e.Message, true);
+                LogManager.Error("데이터 확인", e.Message);
                 return false;
             }
         }
@@ -666,7 +666,7 @@ namespace InvaderInsider.Data
             catch (Exception e)
             {
                 UnityEngine.Debug.Log($"=== FORCE LOG: 저장 실패! 에러: {e.Message} ===");
-                LogManager.LogSave("데이터 저장", e.Message, true);
+                LogManager.Error("데이터 저장", e.Message);
             }
         }
 
@@ -686,7 +686,7 @@ namespace InvaderInsider.Data
                     
                     if (currentSaveData == null)
                     {
-                        LogManager.LogSave("로드", "역직렬화 실패", true);
+                        LogManager.Error("로드", "역직렬화 실패");
                         currentSaveData = new SaveData();
                     }
                     else
