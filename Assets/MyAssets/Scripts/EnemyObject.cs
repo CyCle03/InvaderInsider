@@ -136,9 +136,6 @@ namespace InvaderInsider
             {
                 enemyConfig = configManager.GameConfig;
                 LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
-                    LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
-                    LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
-                    LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
                     $"{gameObject.name}: 설정을 성공적으로 로드했습니다.");
             }
             else
