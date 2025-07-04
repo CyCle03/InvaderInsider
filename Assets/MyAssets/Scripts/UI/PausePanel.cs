@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using InvaderInsider.Managers;
 using InvaderInsider.UI;
+using InvaderInsider.Core;
 
 namespace InvaderInsider.UI
 {
