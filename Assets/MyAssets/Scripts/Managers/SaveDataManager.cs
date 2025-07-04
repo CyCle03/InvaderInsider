@@ -292,7 +292,7 @@ namespace InvaderInsider.Data
         // 로그 출력 제어 플래그
         
         
-        private const string LOG_PREFIX = "[SaveData] ";;
+        private const string LOG_PREFIX = "[SaveData] ";
 
         private static string SAVE_KEY => Path.Combine(Application.persistentDataPath, "GameSaveData.json");
         private static string SETTINGS_SAVE_KEY => Path.Combine(Application.persistentDataPath, "GameSettings.json");
