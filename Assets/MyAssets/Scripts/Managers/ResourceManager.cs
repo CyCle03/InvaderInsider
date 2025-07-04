@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using InvaderInsider.Data;
+using InvaderInsider.UI;
 
 namespace InvaderInsider.Managers
 {
@@ -34,7 +35,7 @@ namespace InvaderInsider.Managers
             if (currentEData < amount) return false;
 
             saveDataManager.UpdateEData(-amount);
-            OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
+            TopBarPanel.Instance.UpdateEData(saveDataManager.GetCurrentEData());
             return true;
         }
 
@@ -57,7 +58,7 @@ namespace InvaderInsider.Managers
                 saveDataManager.UpdateEDataWithoutSave(amount);
             }
             
-            OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
+            TopBarPanel.Instance.UpdateEData(saveDataManager.GetCurrentEData());
         }
 
         public int GetCurrentEData()
@@ -78,7 +79,7 @@ namespace InvaderInsider.Managers
             if (difference != 0)
             {
                 saveDataManager.UpdateEData(difference);
-                OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
+                TopBarPanel.Instance.UpdateEData(saveDataManager.GetCurrentEData());
             }
         }
 

@@ -182,8 +182,8 @@ namespace InvaderInsider.Managers
             var resourceManager = ResourceManager.Instance;
             if (resourceManager != null)
             {
-                resourceManager.OnEDataChanged -= OnEDataChanged; // 중복 구독 방지
-                resourceManager.OnEDataChanged += OnEDataChanged;
+                // resourceManager.OnEDataChanged -= OnEDataChanged; // 중복 구독 방지
+                // resourceManager.OnEDataChanged += OnEDataChanged;
             }
             else
             {
@@ -247,7 +247,7 @@ namespace InvaderInsider.Managers
             var resourceManager = ResourceManager.Instance;
             if (resourceManager != null)
             {
-                resourceManager.OnEDataChanged -= OnEDataChanged;
+                // resourceManager.OnEDataChanged -= OnEDataChanged;
             }
         }
 
@@ -655,7 +655,7 @@ namespace InvaderInsider.Managers
             }
             
             // 스테이지 클리어 이벤트 호출 (1-based 스테이지 번호로)
-            StageCleared(stageNumber);
+            this.StageCleared(stageNumber);
             OnStageClearedEvent?.Invoke();
             
             // 모든 스테이지 완료 체크 (0-based 인덱스로)
