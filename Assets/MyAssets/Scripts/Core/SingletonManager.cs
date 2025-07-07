@@ -1,7 +1,7 @@
 using UnityEngine;
 
 using InvaderInsider.Managers;
-{
+
     /// <summary>
     /// 스레드 안전한 Singleton 패턴의 기본 클래스
     /// 모든 매니저들이 상속받아 사용할 수 있습니다.
@@ -188,5 +188,4 @@ using InvaderInsider.Managers;
         {
             PrepareForSceneChange();
         }
-    }
-} 
+    } 
