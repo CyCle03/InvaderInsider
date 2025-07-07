@@ -4,7 +4,7 @@ using InvaderInsider.Managers;
 using System.Linq;
 using UnityEngine.SceneManagement;
 using InvaderInsider.Core;
-{
+
     /// <summary>
     /// UI 시스템 조정자 - GameManager에서 UI 관련 기능을 분리
     /// UI 패널 간의 조정과 상태 관리를 담당합니다.
