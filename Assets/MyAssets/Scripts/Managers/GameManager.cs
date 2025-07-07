@@ -8,6 +8,7 @@ using InvaderInsider.Cards;
 using InvaderInsider.ScriptableObjects;
 using InvaderInsider.Managers;
 using Cysharp.Threading.Tasks;
+using InvaderInsider.Core;
 
 namespace InvaderInsider.Managers
 {

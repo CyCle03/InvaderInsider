@@ -1,6 +1,7 @@
 using UnityEngine;
 using InvaderInsider.ScriptableObjects;
 using InvaderInsider.Managers;
+using InvaderInsider.Core;
 
 namespace InvaderInsider.Managers
 {

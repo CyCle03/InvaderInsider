@@ -1,9 +1,9 @@
 using UnityEngine;
 using InvaderInsider.UI;
 using InvaderInsider.Managers;
-using System.Collections.Generic;
-
-namespace InvaderInsider.Managers
+using System.Linq;
+using UnityEngine.SceneManagement;
+using InvaderInsider.Core;
 {
     /// <summary>
     /// UI 시스템 조정자 - GameManager에서 UI 관련 기능을 분리
