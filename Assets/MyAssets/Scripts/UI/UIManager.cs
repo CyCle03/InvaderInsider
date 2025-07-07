@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 
 namespace InvaderInsider.UI
 {
-    public class UIManager : InvaderInsider.Managers.SingletonManager<UIManager>
+    public class UIManager : InvaderInsider.Core.SingletonManager<UIManager>
     {
         private const string LOG_PREFIX = "[UI] ";
         // LOG_MESSAGES 배열을 GameConstants.LogMessages 사용으로 대체

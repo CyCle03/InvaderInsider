@@ -10,7 +10,7 @@ using InvaderInsider.Core;
 
 namespace InvaderInsider.Cards
 {
-    public class CardManager : InvaderInsider.Managers.SingletonManager<CardManager>
+    public class CardManager : InvaderInsider.Core.SingletonManager<CardManager>
     {
         private const string LOG_TAG = "CardManager";
 

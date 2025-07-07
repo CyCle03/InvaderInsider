@@ -6,7 +6,7 @@ using InvaderInsider.Core;
 
 namespace InvaderInsider.Managers
 {
-    public class ResourceManager : InvaderInsider.Managers.SingletonManager<ResourceManager>
+    public class ResourceManager : InvaderInsider.Core.SingletonManager<ResourceManager>
     {
         private const string LOG_PREFIX = "[ResourceManager] ";
         
