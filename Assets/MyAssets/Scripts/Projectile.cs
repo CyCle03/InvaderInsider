@@ -1,6 +1,6 @@
-using System.Collections;
 using UnityEngine;
 using InvaderInsider.Managers;
+using InvaderInsider.Core;
 
 namespace InvaderInsider
 {

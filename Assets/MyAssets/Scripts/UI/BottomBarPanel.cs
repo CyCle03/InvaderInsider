@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using InvaderInsider.Managers;
-using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {

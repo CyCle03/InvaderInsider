@@ -3,7 +3,6 @@ using InvaderInsider.Data;
 using InvaderInsider.Cards;
 using InvaderInsider.Managers;
 using InvaderInsider.ScriptableObjects;
-using InvaderInsider.Managers;
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;

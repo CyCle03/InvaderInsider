@@ -3,7 +3,6 @@ using UnityEngine.UI;
 using TMPro;
 using InvaderInsider.Managers;
 using InvaderInsider.Data;
-using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {

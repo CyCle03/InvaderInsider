@@ -6,6 +6,7 @@ using InvaderInsider.Managers;
 using System.Threading.Tasks;
 using System.IO;
 using Newtonsoft.Json;
+using InvaderInsider.Core;
 
 namespace InvaderInsider.Data
 {
@@ -287,7 +288,7 @@ namespace InvaderInsider.Data
     /// 게임 데이터 저장/로드를 담당하는 싱글턴 매니저
     /// DontDestroyOnLoad로 씬 전환과 무관하게 유지됨
     /// </summary>
-    public class SaveDataManager : InvaderInsider.Core.SingletonManager<SaveDataManager>
+    public class SaveDataManager : InvaderInsider.Managers.SingletonManager<SaveDataManager>
     {
         // 로그 출력 제어 플래그
         

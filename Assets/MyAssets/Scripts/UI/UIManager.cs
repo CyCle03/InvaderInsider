@@ -5,13 +5,12 @@ using System.Collections.Generic;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
 using InvaderInsider.Managers;
-using InvaderInsider.Managers;
 using System.Linq;
 using UnityEngine.SceneManagement;
 
 namespace InvaderInsider.UI
 {
-    public class UIManager : InvaderInsider.Core.SingletonManager<UIManager>
+    public class UIManager : InvaderInsider.Managers.SingletonManager<UIManager>
     {
         private const string LOG_PREFIX = "[UI] ";
         // LOG_MESSAGES 배열을 GameConstants.LogMessages 사용으로 대체

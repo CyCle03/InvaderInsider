@@ -6,10 +6,11 @@ using UnityEngine.Events;
 using InvaderInsider.Managers;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
+using InvaderInsider.Core;
 
 namespace InvaderInsider.Cards
 {
-    public class CardManager : InvaderInsider.Core.SingletonManager<CardManager>
+    public class CardManager : InvaderInsider.Managers.SingletonManager<CardManager>
     {
         private const string LOG_TAG = "CardManager";
 

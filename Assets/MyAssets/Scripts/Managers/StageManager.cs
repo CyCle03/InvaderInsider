@@ -8,7 +8,6 @@ using InvaderInsider.Managers;
 using InvaderInsider.Cards;
 using UnityEditor;
 using Cysharp.Threading.Tasks;
-using InvaderInsider.Managers;
 
 namespace InvaderInsider.Managers
 {

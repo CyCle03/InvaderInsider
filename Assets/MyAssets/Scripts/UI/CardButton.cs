@@ -4,7 +4,6 @@ using TMPro;
 using InvaderInsider.Data;
 using InvaderInsider.Cards;
 using InvaderInsider.Managers;
-using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {

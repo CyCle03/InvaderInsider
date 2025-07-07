@@ -4,7 +4,6 @@ using InvaderInsider.Data;
 using InvaderInsider.Cards;
 using InvaderInsider.ScriptableObjects;
 using InvaderInsider.Managers;
-using InvaderInsider.Managers;
 
 namespace InvaderInsider
 {
