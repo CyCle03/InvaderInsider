@@ -505,18 +505,18 @@ namespace InvaderInsider.Data
         // 지연 저장: 여러 변경사항을 모아서 한 번에 저장
         public void SaveGameData()
         {
-            LogManager.Info("[FORCE LOG] SaveGameData() 호출됨");
+            LogManager.Info("SaveData", "SaveGameData() 호출됨");
             
             // 게임이 실행 중이 아닐 때만 저장하지 않음
             if (!Application.isPlaying) 
             {
-                LogManager.Info("[FORCE LOG] Application.isPlaying이 false여서 저장 취소");
+                LogManager.Info("SaveData", "Application.isPlaying이 false여서 저장 취소");
                 return;
             }
             
             if (currentSaveData == null)
             {
-                LogManager.Info("[FORCE LOG] SaveGameData - currentSaveData가 null!");
+                LogManager.Info("SaveData", "SaveGameData - currentSaveData가 null!");
                 return;
             }
             
@@ -529,21 +529,21 @@ namespace InvaderInsider.Data
         // 즉시 저장 (동기식) - 로그 최소화
         private void SaveGameDataImmediate()
         {
-            LogManager.Info("[FORCE LOG] SaveGameDataImmediate() 시작");
+            LogManager.Info("SaveData", "SaveGameDataImmediate() 시작");
             
             try
             {
                 string json = JsonConvert.SerializeObject(currentSaveData, Formatting.Indented);
                 File.WriteAllText(SAVE_KEY, json);
                 
-                LogManager.Info("[FORCE LOG] 저장 완료! 파일: {SAVE_KEY}");
-                LogManager.Info("[FORCE LOG] 저장된 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared}");
+                LogManager.Info("SaveData", "저장 완료! 파일: {0}", SAVE_KEY);
+                LogManager.Info("SaveData", "저장된 최고 클리어 스테이지: {0}", currentSaveData?.progressData?.highestStageCleared);
                 
                 LogManager.Info(LOG_PREFIX, $"게임 데이터 저장 성공 - 파일: {SAVE_KEY}, 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared}");
             }
             catch (Exception e)
             {
-                LogManager.Error("[FORCE LOG] 저장 실패! 에러: {e.Message}");
+                LogManager.Error("SaveData", "저장 실패! 에러: {0}", e.Message);
                 LogManager.Error("데이터 저장", e.Message);
             }
         }
@@ -591,47 +591,47 @@ namespace InvaderInsider.Data
 
         public void UpdateStageProgress(int stageNum, bool saveImmediately)
         {
-            LogManager.Info("[FORCE LOG] UpdateStageProgress({stageNum}, {saveImmediately}) 호출됨");
+            LogManager.Info("SaveData", "UpdateStageProgress({0}, {1}) 호출됨", stageNum, saveImmediately);
             
             if (currentSaveData == null)
             {
-                LogManager.Info("[FORCE LOG] currentSaveData가 null! 초기화 시도");
+                LogManager.Info("SaveData", "currentSaveData가 null! 초기화 시도");
                 LogManager.Error("SaveDataManager", "currentSaveData가 null입니다");
                 InitializeData(); // 데이터 초기화 시도
                 if (currentSaveData == null)
                 {
-                    LogManager.Info("[FORCE LOG] 초기화 후에도 currentSaveData가 null!");
+                    LogManager.Info("SaveData", "초기화 후에도 currentSaveData가 null!");
                     return;
                 }
             }
 
             // 이전 값과 비교하여 정상적인 진행인지 확인
             int previousHighest = currentSaveData.progressData.highestStageCleared;
-            LogManager.Info("[FORCE LOG] 이전 최고 클리어: {previousHighest}, 새 스테이지: {stageNum}");
+            LogManager.Info("SaveData", "이전 최고 클리어: {0}, 새 스테이지: {1}", previousHighest, stageNum);
             
             currentSaveData.stageProgress.Set(stageNum);
             currentSaveData.progressData.highestStageCleared = 
                 Mathf.Max(currentSaveData.progressData.highestStageCleared, stageNum);
 
-            LogManager.Info("[FORCE LOG] 업데이트 후 최고 클리어: {currentSaveData.progressData.highestStageCleared}");
+            LogManager.Info("SaveData", "업데이트 후 최고 클리어: {0}", currentSaveData.progressData.highestStageCleared);
 
             // 정상적인 진행 상황만 로그 (에러가 아닌 경우)
             if (stageNum > previousHighest)
             {
-                LogManager.Info("[FORCE LOG] 새 스테이지 진행: {stageNum} (이전 최고: {previousHighest})");
+                LogManager.Info("SaveData", "새 스테이지 진행: {0} (이전 최고: {1})", stageNum, previousHighest);
                 LogManager.Info(LOG_PREFIX, $"새 스테이지 진행: {stageNum} (이전 최고: {previousHighest})");
             }
 
             if (saveImmediately)
             {
-                LogManager.Info("[FORCE LOG] 즉시 저장 호출 시작");
+                LogManager.Info("SaveData", "즉시 저장 호출 시작");
                 LogManager.Info(LOG_PREFIX, "즉시 저장 호출");
                 SaveGameData();
-                LogManager.Info("[FORCE LOG] 즉시 저장 호출 완료");
+                LogManager.Info("SaveData", "즉시 저장 호출 완료");
             }
             else
             {
-                LogManager.Info("[FORCE LOG] 즉시 저장하지 않음 (saveImmediately=false)");
+                LogManager.Info("SaveData", "즉시 저장하지 않음 (saveImmediately=false)");
             }
         }
 

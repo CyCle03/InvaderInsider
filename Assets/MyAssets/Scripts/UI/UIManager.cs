@@ -7,6 +7,7 @@ using InvaderInsider.UI;
 using InvaderInsider.Managers;
 using System.Linq;
 using UnityEngine.SceneManagement;
+using InvaderInsider.Core;
 
 namespace InvaderInsider.UI
 {

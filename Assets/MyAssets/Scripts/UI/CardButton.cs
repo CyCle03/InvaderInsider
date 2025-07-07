@@ -479,7 +479,7 @@ namespace InvaderInsider.UI
             LogManager.Info("CardButton", $"equipmentBonusPanel: {(equipmentBonusPanel != null ? "할당됨" : "할당 안됨")}");
             LogManager.Info("CardButton", $"equipmentAttackBonusText: {(equipmentAttackBonusText != null ? "할당됨" : "할당 안됨")}");
             LogManager.Info("CardButton", $"equipmentHealthBonusText: {(equipmentHealthBonusText != null ? "할당됨" : "할당 안됨")}");
-            LogManager.Info("================================");
+            LogManager.Info("CardButton", "================================");
         }
         #endif
     }

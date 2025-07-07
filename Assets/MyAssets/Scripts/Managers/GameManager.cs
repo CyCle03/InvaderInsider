@@ -374,7 +374,7 @@ namespace InvaderInsider.Managers
             }
             else
             {
-                LogManager.LogError(LOG_PREFIX, LOG_MESSAGES[8]);
+                LogManager.Error(LOG_PREFIX, LOG_MESSAGES[8]);
                 return false;
             }
         }
@@ -986,20 +986,20 @@ namespace InvaderInsider.Managers
 
         public void StartContinueGame()
         {
-            LogManager.Info("[FORCE LOG] StartContinueGame 호출됨!");
+            LogManager.Info("GameManager", "StartContinueGame 호출됨!");
             LogManager.Info(LOG_PREFIX, "=== StartContinueGame 호출됨! ===");
             
             // 이미 게임 시작 중이거나 씬 로딩 중이면 무시
             if (isStartingGame || isLoadingScene)
             {
-                LogManager.Info("[FORCE LOG] StartContinueGame 무시됨 - 이미 진행 중");
+                LogManager.Info("GameManager", "StartContinueGame 무시됨 - 이미 진행 중");
                 LogManager.Info(LOG_PREFIX, "StartContinueGame 무시됨 - 이미 진행 중");
                 return;
             }
             
             isStartingGame = true;
             
-            LogManager.Info("[FORCE LOG] Continue 게임 시작 시도");
+            LogManager.Info("GameManager", "Continue 게임 시작 시도");
             LogManager.Info(LOG_PREFIX, "Continue 게임 시작 시도");
             
             if (saveDataManager != null)
@@ -1064,11 +1064,11 @@ namespace InvaderInsider.Managers
                             LogManager.Info(LOG_PREFIX, $"[Continue Debug] 조건3: 다음 스테이지부터 시작 ({highestCleared} + 1 = {startStage})");
                         }
                         
-                        LogManager.Info("[FORCE LOG] Continue - 최고 클리어: {highestCleared}, 총 스테이지: {totalStages}, 시작할 스테이지: {startStage} (인덱스: {startStage - 1})");
+                        LogManager.Info("GameManager", "Continue - 최고 클리어: {0}, 총 스테이지: {1}, 시작할 스테이지: {2} (인덱스: {3})", highestCleared, totalStages, startStage, startStage - 1);
                         LogManager.Info(LOG_PREFIX, $"Continue - 최고 클리어: {highestCleared}, 총 스테이지: {totalStages}, 시작할 스테이지: {startStage} (인덱스: {startStage - 1})");
                         
                         // GameManager에 시작할 스테이지 설정 (인덱스는 0부터 시작하므로 startStage - 1)
-                        LogManager.Info("[FORCE LOG] SetRequestedStartStage({startStage - 1}) 호출");
+                        LogManager.Info("GameManager", "SetRequestedStartStage({0}) 호출", startStage - 1);
                         SetRequestedStartStage(startStage - 1);
                         
                         // 게임 씬으로 전환
@@ -1126,39 +1126,39 @@ namespace InvaderInsider.Managers
             await UniTask.NextFrame();
             await UniTask.Yield();
             
-            LogManager.Info("[FORCE LOG] RefreshMainMenuAfterLoad 시작");
+            LogManager.Info("GameManager", "RefreshMainMenuAfterLoad 시작");
             
             // SaveDataManager 강제 재로드
             var saveDataManager = SaveDataManager.Instance;
             if (saveDataManager != null)
             {
-                LogManager.Info("[FORCE LOG] SaveDataManager 발견됨, 데이터 강제 재로드");
+                LogManager.Info("GameManager", "SaveDataManager 발견됨, 데이터 강제 재로드");
                 saveDataManager.LoadGameData();
-                LogManager.Info("[FORCE LOG] SaveDataManager 데이터 재로드 완료");
+                LogManager.Info("GameManager", "SaveDataManager 데이터 재로드 완료");
             }
             else
             {
-                LogManager.Warning("[FORCE LOG] SaveDataManager를 찾을 수 없음");
+                LogManager.Warning("GameManager", "SaveDataManager를 찾을 수 없음");
             }
             
             // MainMenuPanel 찾기 및 Continue 버튼 갱신
             var mainMenuPanel = FindObjectOfType<InvaderInsider.UI.MainMenuPanel>();
             if (mainMenuPanel != null)
             {
-                LogManager.Info("[FORCE LOG] MainMenuPanel 발견됨, Continue 버튼 갱신 시작");
+                                    LogManager.Info("GameManager", "MainMenuPanel 발견됨, Continue 버튼 갱신 시작");
                 mainMenuPanel.RefreshContinueButton();
-                LogManager.Info("[FORCE LOG] Continue 버튼 갱신 완료");
+                                    LogManager.Info("GameManager", "Continue 버튼 갱신 완료");
                 LogManager.Info(LOG_PREFIX, "Main 씬 로드 후 Continue 버튼 갱신 완료");
             }
             else
             {
-                LogManager.Warning("[FORCE LOG] MainMenuPanel을 찾을 수 없음");
+                LogManager.Warning("GameManager", "MainMenuPanel을 찾을 수 없음");
                 #if UNITY_EDITOR
                 LogManager.Warning(LOG_PREFIX, "MainMenuPanel을 찾을 수 없어 Continue 버튼을 갱신할 수 없습니다.");
                 #endif
             }
             
-            LogManager.Info("[FORCE LOG] RefreshMainMenuAfterLoad 완료");
+            LogManager.Info("GameManager", "RefreshMainMenuAfterLoad 완료");
         }
 
         private void LoadGameScene()

@@ -4,6 +4,7 @@ using InvaderInsider.Managers;
 using System.Linq;
 using UnityEngine.SceneManagement;
 using InvaderInsider.Core;
+using System.Collections.Generic;
 
     /// <summary>
     /// UI 시스템 조정자 - GameManager에서 UI 관련 기능을 분리
@@ -338,5 +339,4 @@ using InvaderInsider.Core;
         }
         
         #endregion
-    }
-} 
+    } 

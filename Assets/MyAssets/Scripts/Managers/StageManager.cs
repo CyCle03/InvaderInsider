@@ -241,7 +241,7 @@ namespace InvaderInsider.Managers
             string bottomBarStatus = bottomBarPanel != null ? "찾음" : "없음";
             string saveDataStatus = saveDataManager != null ? "찾음" : "없음";
             string stageDataStatus = stageData != null ? "찾음" : "없음";
-            LogManager.Info($"[Stage] 컴포넌트 초기화 - GameManager: {gameManagerStatus}, BottomBarPanel: {bottomBarStatus}, SaveDataManager: {saveDataStatus}, StageData: {stageDataStatus}");
+            LogManager.Info("Stage", "컴포넌트 초기화 - GameManager: {0}, BottomBarPanel: {1}, SaveDataManager: {2}, StageData: {3}", gameManagerStatus, bottomBarStatus, saveDataStatus, stageDataStatus);
             #endif
 
             activeTowers.Clear();

@@ -210,6 +210,10 @@ namespace InvaderInsider.Managers
             if (condition) Info(prefix, message);
         }
 
+        // Backwards compatibility methods
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        public static void LogInfo(string prefix, string message) => Info(prefix, message);
+
         #endregion
     }
 }

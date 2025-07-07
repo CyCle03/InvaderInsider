@@ -1,4 +1,5 @@
 using UnityEngine;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.Core
 {
@@ -81,7 +82,7 @@ namespace InvaderInsider.Core
                 // 중복 로그 빈도 줄이기
                 if (Time.time - _lastDuplicateWarningTime > 1f) // 1초 간격으로 제한
                 {
-                    LogManager.LogWarning($"[{typeof(T).Name}]", 
+                    LogManager.Warning($"[{typeof(T).Name}]", 
                         $"중복 인스턴스가 감지되어 제거합니다. 기존: {_instance.gameObject.name}, 새것: {gameObject.name}");
                     _lastDuplicateWarningTime = Time.time;
                 }

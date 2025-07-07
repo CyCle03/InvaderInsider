@@ -5,6 +5,7 @@ using InvaderInsider.UI; // Changed from InvaderInsider.Managers
 using InvaderInsider; // IDamageable 인터페이스 사용을 위해 추가
 using InvaderInsider.Managers;
 using System; // Action 델리게이트 사용을 위해 추가
+using InvaderInsider.Core;
 
 namespace InvaderInsider
 {
