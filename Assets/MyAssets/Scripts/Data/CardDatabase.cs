@@ -141,7 +141,8 @@ namespace InvaderInsider.Data
             if (validationErrors.Count > 0)
             {
                 LogManager.Error("CardDatabase", $"유효성 검사 실패:
-{string.Join("\n", validationErrors)}");
+{string.Join("
+", validationErrors)}");
             }
             else
             {

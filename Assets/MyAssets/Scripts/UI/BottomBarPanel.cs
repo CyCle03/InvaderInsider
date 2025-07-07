@@ -77,9 +77,10 @@ namespace InvaderInsider.UI
 
             if (player == null)
             {
+#if UNITY_EDITOR
                 LogManager.Error(LOG_PREFIX, "Player 컴포넌트를 찾을 수 없습니다. Player 오브젝트가 씬에 있는지 확인해주세요.");
                 LogManager.Error(LOG_PREFIX, "Player 오브젝트에 Player 컴포넌트가 있는지, 또는 'Player' 태그가 설정되어 있는지 확인해주세요.");
-                #endif
+#endif
                 return;
             }
 
