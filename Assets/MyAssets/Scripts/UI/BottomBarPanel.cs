@@ -255,11 +255,9 @@ namespace InvaderInsider.UI
             }
             else
             {
-                #if UNITY_EDITOR
-                else
-            {
+#if UNITY_EDITOR
                 LogManager.Warning(LOG_PREFIX, $"Health Display 초기화 실패 - Player: {player != null}, Slider: {healthSlider != null}, MaxHealth: {player?.MaxHealth ?? 0}");
-                #endif
+#endif
             }
         }
 

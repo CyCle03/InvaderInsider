@@ -270,11 +270,9 @@ namespace InvaderInsider.UI
                 }
                 else
                 {
-                    #if UNITY_EDITOR
-                    else
-                {
+#if UNITY_EDITOR
                     LogManager.Warning(LOG_PREFIX, LOG_MESSAGES[9]);
-                    #endif
+#endif
                 }
             }
         }
@@ -292,11 +290,9 @@ namespace InvaderInsider.UI
                 }
                 else
                 {
-                    #if UNITY_EDITOR
-                    else
-                {
+#if UNITY_EDITOR
                     LogManager.Warning(LOG_PREFIX, LOG_MESSAGES[10]);
-                    #endif
+#endif
                 }
             }
         }
@@ -382,12 +378,9 @@ namespace InvaderInsider.UI
             }
             else
             {
-                #if UNITY_EDITOR
-                else
-            {
+#if UNITY_EDITOR
                 LogManager.Warning(LOG_PREFIX, LOG_MESSAGES[1]);
-            }
-                #endif
+#endif
             }
 
             if (hideSummonPanelButton != null)

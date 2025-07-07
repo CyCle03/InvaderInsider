@@ -594,8 +594,6 @@ namespace InvaderInsider.Data
             
             if (currentSaveData == null)
             {
-                if (currentSaveData == null)
-            {
                 LogManager.Info("[FORCE LOG] currentSaveData가 null! 초기화 시도");
                 LogManager.Error("SaveDataManager", "currentSaveData가 null입니다");
                 InitializeData(); // 데이터 초기화 시도

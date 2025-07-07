@@ -153,14 +153,14 @@ namespace InvaderInsider.UI
             }
             else
             {
-                #if UNITY_EDITOR
                 else
             {
+#if UNITY_EDITOR
                 string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
                 string registeredPanels = string.Join(", ", panels.Keys);
                 LogManager.Error(GameConstants.LOG_PREFIX_UI, $"Panel '{panelName}' not found for hiding. 현재 씬: {currentSceneName}, 등록된 패널: [{registeredPanels}]");
+#endif
             }
-                #endif
             }
         }
 
