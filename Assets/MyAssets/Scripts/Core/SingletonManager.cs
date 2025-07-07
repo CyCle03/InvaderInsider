@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace InvaderInsider.Core
+using InvaderInsider.Managers;
 {
     /// <summary>
     /// 스레드 안전한 Singleton 패턴의 기본 클래스
@@ -81,7 +81,7 @@ namespace InvaderInsider.Core
                 // 중복 로그 빈도 줄이기
                 if (Time.time - _lastDuplicateWarningTime > 1f) // 1초 간격으로 제한
                 {
-                    DebugUtils.LogWarning($"[{typeof(T).Name}]", 
+                    LogManager.LogWarning($"[{typeof(T).Name}]", 
                         $"중복 인스턴스가 감지되어 제거합니다. 기존: {_instance.gameObject.name}, 새것: {gameObject.name}");
                     _lastDuplicateWarningTime = Time.time;
                 }
@@ -154,7 +154,7 @@ namespace InvaderInsider.Core
                 
                 if (_instance != null)
                 {
-                    DebugUtils.LogInfo($"[{typeof(T).Name}]", 
+                    LogManager.LogInfo($"[{typeof(T).Name}]", 
                         "씬 전환을 위해 기존 인스턴스 정리 중...");
                     
                     // OnCleanup 호출

@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using InvaderInsider.Managers;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
@@ -386,7 +386,7 @@ namespace InvaderInsider.UI
             }
             
             #if UNITY_EDITOR
-            DebugUtils.LogFormat(LOG_PREFIX, "BottomBar Canvas Sorting Order 설정 완료: {0}", bottomBarCanvas.sortingOrder);
+            LogManager.LogFormat(LOG_PREFIX, "BottomBar Canvas Sorting Order 설정 완료: {0}", bottomBarCanvas.sortingOrder);
             #endif
         }
     }

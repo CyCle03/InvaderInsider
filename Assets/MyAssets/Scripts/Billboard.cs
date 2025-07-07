@@ -1,5 +1,5 @@
 using UnityEngine;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider
 {
@@ -26,7 +26,7 @@ namespace InvaderInsider
             targetCamera = Camera.main;
             if (targetCamera == null)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"Billboard {gameObject.name}: Main Camera not found");
                 enabled = false;
                 return;

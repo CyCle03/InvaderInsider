@@ -7,7 +7,7 @@ using InvaderInsider.Data;
 using InvaderInsider.Managers;
 using InvaderInsider.ScriptableObjects;
 using InvaderInsider;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 using System.Linq;
 using System.Text;
 using Cysharp.Threading.Tasks;
@@ -174,7 +174,7 @@ namespace InvaderInsider
             
             if (enemyConfig == null)
             {
-                DebugUtils.LogErrorFormat(GameConstants.LOG_PREFIX_ENEMY, 
+                LogManager.LogErrorFormat(GameConstants.LOG_PREFIX_ENEMY, 
                     "{0}: 최대 재시도 횟수({1})를 초과했습니다. 기본값을 계속 사용합니다.", 
                     gameObject.name, GameConstants.MAX_RETRY_ATTEMPTS);
             }
@@ -193,7 +193,7 @@ namespace InvaderInsider
             InitializeManagers();
 
             isInitialized = true;
-            DebugUtils.LogInitialization($"EnemyObject ({gameObject.name})", true);
+            LogManager.LogInitialization($"EnemyObject ({gameObject.name})", true);
         }
 
         private void InitializeComponents()
@@ -202,7 +202,7 @@ namespace InvaderInsider
             if (agent == null)
             {
                 agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
-                DebugUtils.LogNullCheck(agent, "NavMeshAgent", "EnemyObject 초기화");
+                LogManager.LogNullCheck(agent, "NavMeshAgent", "EnemyObject 초기화");
             }
 
             // NavMeshAgent 설정
@@ -220,14 +220,14 @@ namespace InvaderInsider
             if (player == null)
             {
                 player = FindPlayer();
-                DebugUtils.LogNullCheck(player, "Player", "EnemyObject 초기화");
+                LogManager.LogNullCheck(player, "Player", "EnemyObject 초기화");
             }
 
             // StageManager 참조 설정
             if (stageManager == null)
             {
                 stageManager = StageManager.Instance;
-                DebugUtils.LogNullCheck(stageManager, "StageManager", "EnemyObject 초기화");
+                LogManager.LogNullCheck(stageManager, "StageManager", "EnemyObject 초기화");
             }
         }
 
@@ -530,7 +530,7 @@ namespace InvaderInsider
         {
             if (stageManager == null)
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_ENEMY, 
+                LogManager.LogError(GameConstants.LOG_PREFIX_ENEMY, 
                     $"{gameObject.name}: StageManager가 null입니다. 적 설정을 완료할 수 없습니다.");
                 return;
             }
@@ -544,13 +544,13 @@ namespace InvaderInsider
                 // BaseCharacter의 protected 필드에 안전하게 접근
                 SetInitialStats(enemyData.baseHealth, enemyData.baseDamage);
                 
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_ENEMY, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_ENEMY, 
                     "{0} 적 초기화 완료 - 체력: {1}, 공격력: {2}", 
                     gameObject.name, MaxHealth, AttackDamage);
             }
             else
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_ENEMY, 
+                LogManager.LogError(GameConstants.LOG_PREFIX_ENEMY, 
                     $"{gameObject.name}: EnemyData가 설정되지 않았습니다.");
             }
             
@@ -649,7 +649,7 @@ namespace InvaderInsider
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (Application.isPlaying)
                 {
-                    DebugUtils.LogWarning(GameConstants.LOG_PREFIX_ENEMY, $"'{enemyConfig.enemyLayerName}' 레이어가 존재하지 않음. 기본값 {enemyConfig.defaultEnemyLayerIndex}번 레이어로 설정");
+                    LogManager.LogWarning(GameConstants.LOG_PREFIX_ENEMY, $"'{enemyConfig.enemyLayerName}' 레이어가 존재하지 않음. 기본값 {enemyConfig.defaultEnemyLayerIndex}번 레이어로 설정");
                 }
 #endif
             }
@@ -685,7 +685,7 @@ namespace InvaderInsider
                 Transform targetWaypoint = wayPoints[currentWaypointIndex];
                 if (targetWaypoint == null)
                 {
-                    DebugUtils.LogError(GameConstants.LOG_PREFIX_ENEMY, 
+                    LogManager.LogError(GameConstants.LOG_PREFIX_ENEMY, 
                         $"{gameObject.name}: 웨이포인트 {currentWaypointIndex}가 null입니다.");
                     currentWaypointIndex++;
                     return;
@@ -731,7 +731,7 @@ namespace InvaderInsider
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Application.isPlaying)
             {
-                DebugUtils.Log(GameConstants.LOG_PREFIX_ENEMY, $"적이 목적지에 도달 - 스테이지: {stageNum}, 적 번호: {enemyCount}");
+                LogManager.Log(GameConstants.LOG_PREFIX_ENEMY, $"적이 목적지에 도달 - 스테이지: {stageNum}, 적 번호: {enemyCount}");
             }
 #endif
             

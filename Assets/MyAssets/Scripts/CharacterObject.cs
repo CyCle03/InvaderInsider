@@ -1,6 +1,6 @@
 using UnityEngine;
 using System;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider
 {
@@ -96,7 +96,7 @@ namespace InvaderInsider
             
             if (showDebugInfo)
             {
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     LOG_MESSAGES[2], gameObject.name, level, CurrentHealth, MaxHealth);
             }
         }
@@ -203,7 +203,7 @@ namespace InvaderInsider
                 if (showDebugInfo)
                 {
                     string targetName = target is MonoBehaviour mb ? mb.name : "Unknown";
-                    DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                    LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                         LOG_MESSAGES[1], gameObject.name, targetName, AttackDamage);
                 }
                 
@@ -275,7 +275,7 @@ namespace InvaderInsider
 
             if (showDebugInfo)
             {
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     LOG_MESSAGES[0], gameObject.name, level, CurrentHealth, AttackDamage);
             }
         }

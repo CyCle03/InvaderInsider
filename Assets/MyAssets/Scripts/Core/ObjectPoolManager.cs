@@ -57,7 +57,7 @@ namespace InvaderInsider.Core
             InitializePools();
 
             int poolCount = poolConfigs?.Length ?? 0;
-            DebugUtils.LogInitialization("ObjectPoolManager", true, $"{poolCount}개의 풀 초기화 완료");
+            LogManager.LogInitialization("ObjectPoolManager", true, $"{poolCount}개의 풀 초기화 완료");
         }
 
         private void InitializePools()
@@ -65,7 +65,7 @@ namespace InvaderInsider.Core
             // poolConfigs가 null이거나 비어있는 경우 기본 풀 생성
             if (poolConfigs == null || poolConfigs.Length == 0)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     "풀 설정이 없습니다. 런타임에 동적 풀 생성을 사용합니다.");
                 return;
             }
@@ -74,14 +74,14 @@ namespace InvaderInsider.Core
             {
                 if (config == null)
                 {
-                    DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                    LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                         "null 풀 설정을 건너뜁니다.");
                     continue;
                 }
 
                 if (config.prefab == null)
                 {
-                    DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+                    LogManager.LogError(GameConstants.LOG_PREFIX_GAME, 
                         $"풀 설정 '{config.poolName}'의 prefab이 null입니다.");
                     continue;
                 }
@@ -100,7 +100,7 @@ namespace InvaderInsider.Core
             var component = config.prefab.GetComponent<Component>();
             if (component == null)
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogError(GameConstants.LOG_PREFIX_GAME, 
                     $"프리팹 '{config.prefab.name}'에 Component가 없습니다.");
                 return;
             }
@@ -116,7 +116,7 @@ namespace InvaderInsider.Core
             pools[componentType] = pool;
             namedPools[config.poolName] = pool;
 
-            DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                 "풀 생성 완료: {0} (타입: {1}, 초기 크기: {2})", 
                 config.poolName, componentType.Name, config.initialSize);
         }
@@ -132,7 +132,7 @@ namespace InvaderInsider.Core
             var existingObject = FindObjectOfType<T>();
             if (existingObject != null)
             {
-                DebugUtils.LogInfo(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogInfo(GameConstants.LOG_PREFIX_GAME, 
                     $"씬에서 {targetType.Name} 찾음: {existingObject.name}");
                 return CreateDynamicPool(existingObject);
             }
@@ -146,7 +146,7 @@ namespace InvaderInsider.Core
                     var component = prefab.GetComponent<T>();
                     if (component != null)
                     {
-                        DebugUtils.LogInfo(GameConstants.LOG_PREFIX_GAME, 
+                        LogManager.LogInfo(GameConstants.LOG_PREFIX_GAME, 
                             $"Resources에서 {targetType.Name} 프리팹 찾음: {prefab.name}");
                         return CreateDynamicPool(component);
                     }
@@ -166,7 +166,7 @@ namespace InvaderInsider.Core
                         var component = projectilePrefab.GetComponent<T>();
                         if (component != null)
                         {
-                            DebugUtils.LogInfo(GameConstants.LOG_PREFIX_GAME, 
+                            LogManager.LogInfo(GameConstants.LOG_PREFIX_GAME, 
                                 $"Tower에서 {targetType.Name} 프리팹 찾음: {projectilePrefab.name}");
                             return CreateDynamicPool(component);
                         }
@@ -174,7 +174,7 @@ namespace InvaderInsider.Core
                 }
             }
 
-            DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                 $"타입 '{targetType.Name}'의 동적 풀 생성 실패: 어디서도 해당 타입을 찾을 수 없습니다.");
             return false;
         }
@@ -193,7 +193,7 @@ namespace InvaderInsider.Core
             }
             catch (System.Exception ex)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"Tower에서 ProjectilePrefab 접근 실패: {ex.Message}");
                 return null;
             }
@@ -227,7 +227,7 @@ namespace InvaderInsider.Core
             pools[componentType] = pool;
             namedPools[$"Dynamic_{componentType.Name}"] = pool;
 
-            DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                 "동적 풀 생성 완료: {0} (초기 크기: {1})", 
                 componentType.Name, defaultSize);
 
@@ -256,7 +256,7 @@ namespace InvaderInsider.Core
                 }
             }
 
-            DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                 $"타입 '{type.Name}'에 대한 풀을 찾을 수 없습니다.");
             return null;
         }
@@ -272,7 +272,7 @@ namespace InvaderInsider.Core
                 return pool?.GetObject();
             }
 
-            DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                 $"이름 '{poolName}'에 대한 풀을 찾을 수 없습니다.");
             return null;
         }
@@ -292,7 +292,7 @@ namespace InvaderInsider.Core
             }
             else
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"타입 '{type.Name}'에 대한 풀을 찾을 수 없어 오브젝트를 직접 제거합니다.");
                 DestroyImmediate(obj.gameObject);
             }
@@ -322,7 +322,7 @@ namespace InvaderInsider.Core
                 }
             }
 
-            DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                 "PooledObject를 적절한 풀로 반환할 수 없어 직접 제거합니다.");
             DestroyImmediate(pooledObj.gameObject);
         }
@@ -356,7 +356,7 @@ namespace InvaderInsider.Core
         /// </summary>
         public void LogAllPoolStatus()
         {
-            DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "=== 오브젝트 풀 상태 ===");
+            LogManager.Log(GameConstants.LOG_PREFIX_GAME, "=== 오브젝트 풀 상태 ===");
             
             foreach (var kvp in namedPools)
             {

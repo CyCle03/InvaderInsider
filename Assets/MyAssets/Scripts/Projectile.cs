@@ -1,6 +1,6 @@
 using System.Collections;
 using UnityEngine;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider
 {
@@ -193,7 +193,7 @@ namespace InvaderInsider
             
             if (showDebugInfo)
             {
-                DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.Log(GameConstants.LOG_PREFIX_GAME, 
                     $"투사체 컴포넌트 초기화 완료: {gameObject.name}");
             }
         }
@@ -214,7 +214,7 @@ namespace InvaderInsider
             // 파라미터 검증
             if (target == null)
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogError(GameConstants.LOG_PREFIX_GAME, 
                     "투사체 발사 실패: 타겟이 null입니다");
                 ReturnToPool();
                 return;
@@ -232,7 +232,7 @@ namespace InvaderInsider
             if (showDebugInfo)
             {
                 string targetName = GetTargetName(target);
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     LOG_MESSAGES[2], gameObject.name, targetName, damage, speed);
             }
         }
@@ -455,7 +455,7 @@ namespace InvaderInsider
                 if (showDebugInfo)
                 {
                     string targetName = GetTargetName(targetDamageable);
-                    DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                    LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                         LOG_MESSAGES[0], gameObject.name, targetName, damage);
                 }
             }
@@ -481,7 +481,7 @@ namespace InvaderInsider
             if (showDebugInfo)
             {
                 string targetName = GetTargetName(alternativeTarget);
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     LOG_MESSAGES[0], gameObject.name, targetName, damage);
             }
 
@@ -522,7 +522,7 @@ namespace InvaderInsider
         {
             if (showDebugInfo)
             {
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     LOG_MESSAGES[1], gameObject.name);
             }
 
@@ -537,7 +537,7 @@ namespace InvaderInsider
         {
             if (showDebugInfo)
             {
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     LOG_MESSAGES[3], gameObject.name);
             }
 

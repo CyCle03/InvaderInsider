@@ -8,7 +8,7 @@ using TMPro;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using System;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 
 
 namespace InvaderInsider.UI
@@ -165,7 +165,7 @@ namespace InvaderInsider.UI
 
         private void OnPauseButtonClicked()
         {
-            DebugUtils.Log(LOG_PREFIX + LOG_MESSAGES[2]);
+            LogManager.Log(LOG_PREFIX + LOG_MESSAGES[2]);
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.PauseGame();
@@ -173,14 +173,14 @@ namespace InvaderInsider.UI
             else
             {
                 #if UNITY_EDITOR
-                DebugUtils.LogError(LOG_PREFIX, "GameManager를 찾을 수 없습니다");
+                LogManager.LogError(LOG_PREFIX, "GameManager를 찾을 수 없습니다");
                 #endif
             }
         }
 
         private void OnResumeButtonClicked()
         {
-            DebugUtils.Log("[InGame] Resume 버튼이 클릭되었습니다.");
+            LogManager.Log("[InGame] Resume 버튼이 클릭되었습니다.");
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.ResumeGame();
@@ -188,7 +188,7 @@ namespace InvaderInsider.UI
             else
             {
                 #if UNITY_EDITOR
-                DebugUtils.LogError(LOG_PREFIX, "GameManager를 찾을 수 없습니다");
+                LogManager.LogError(LOG_PREFIX, "GameManager를 찾을 수 없습니다");
                 #endif
             }
         }
@@ -198,7 +198,7 @@ namespace InvaderInsider.UI
             // 이미 처리 중인 경우 즉시 반환
             if (isSummonButtonProcessing)
             {
-                DebugUtils.Log($"{LOG_PREFIX}소환 버튼이 이미 처리 중입니다. 무시됩니다.");
+                LogManager.Log($"{LOG_PREFIX}소환 버튼이 이미 처리 중입니다. 무시됩니다.");
                 return;
             }
             
@@ -206,7 +206,7 @@ namespace InvaderInsider.UI
             float currentTime = Time.unscaledTime;
             if (currentTime - lastSummonClickTime < SUMMON_CLICK_COOLDOWN)
             {
-                DebugUtils.Log($"{LOG_PREFIX}소환 버튼 쿨다운 중입니다. 남은 시간: {SUMMON_CLICK_COOLDOWN - (currentTime - lastSummonClickTime):F1}초");
+                LogManager.Log($"{LOG_PREFIX}소환 버튼 쿨다운 중입니다. 남은 시간: {SUMMON_CLICK_COOLDOWN - (currentTime - lastSummonClickTime):F1}초");
                 return;
             }
             
@@ -220,7 +220,7 @@ namespace InvaderInsider.UI
                 summonButton.interactable = false;
             }
             
-            DebugUtils.Log(LOG_PREFIX + LOG_MESSAGES[3]);
+            LogManager.Log(LOG_PREFIX + LOG_MESSAGES[3]);
             
             try
             {
@@ -254,12 +254,12 @@ namespace InvaderInsider.UI
                 summonButton.interactable = true;
             }
             
-            DebugUtils.Log($"{LOG_PREFIX}소환 버튼이 다시 활성화되었습니다.");
+            LogManager.Log($"{LOG_PREFIX}소환 버튼이 다시 활성화되었습니다.");
         }
 
         private void OnHideSummonPanelButtonClicked()
         {
-            DebugUtils.Log(LOG_PREFIX + LOG_MESSAGES[7]);
+            LogManager.Log(LOG_PREFIX + LOG_MESSAGES[7]);
             
             if (uiManager != null && uiManager.IsPanelRegistered("SummonChoice"))
             {
@@ -279,7 +279,7 @@ namespace InvaderInsider.UI
 
         private void OnShowSummonPanelButtonClicked()
         {
-            DebugUtils.Log(LOG_PREFIX + LOG_MESSAGES[8]);
+            LogManager.Log(LOG_PREFIX + LOG_MESSAGES[8]);
             
             if (uiManager != null && uiManager.IsPanelRegistered("SummonChoice"))
             {
@@ -299,7 +299,7 @@ namespace InvaderInsider.UI
 
         private void OnShowHandButtonClicked()
         {
-            DebugUtils.Log("[InGame] 핸드 보기 버튼이 클릭되었습니다.");
+            LogManager.Log("[InGame] 핸드 보기 버튼이 클릭되었습니다.");
 
             if (uiManager != null && uiManager.IsPanelRegistered("HandDisplay"))
             {
@@ -307,7 +307,7 @@ namespace InvaderInsider.UI
             }
             else
             {
-                DebugUtils.LogWarning("[InGame] HandDisplay 패널이 UIManager에 등록되지 않았습니다.");
+                LogManager.LogWarning("[InGame] HandDisplay 패널이 UIManager에 등록되지 않았습니다.");
             }
 
             // 현재 핸드 카드 목록 로깅
@@ -326,7 +326,7 @@ namespace InvaderInsider.UI
 
         private void OnClearHandButtonClicked()
         {
-            DebugUtils.Log("[InGame] 핸드 초기화 버튼이 클릭되었습니다.");
+            LogManager.Log("[InGame] 핸드 초기화 버튼이 클릭되었습니다.");
 
             if (cardManager != null && SaveDataManager.HasInstance && SaveDataManager.Instance != null)
             {
@@ -336,7 +336,7 @@ namespace InvaderInsider.UI
                     SaveDataManager.Instance.RemoveCardFromHand(cardId);
                 }
                 
-                DebugUtils.Log($"[InGame] {handCardIds.Count}개의 카드가 핸드에서 제거되었습니다.");
+                LogManager.Log($"[InGame] {handCardIds.Count}개의 카드가 핸드에서 제거되었습니다.");
             }
         }
 
@@ -347,7 +347,7 @@ namespace InvaderInsider.UI
                 int handCount = cardManager.GetHandCardCount();
                 handCardCountText.text = $"핸드: {handCount}";
                 
-                DebugUtils.Log($"[InGame] 핸드 카드 수 업데이트: {handCount}");
+                LogManager.Log($"[InGame] 핸드 카드 수 업데이트: {handCount}");
             }
         }
 
@@ -369,7 +369,7 @@ namespace InvaderInsider.UI
             }
             else
             {
-                DebugUtils.LogWarning(LOG_PREFIX + LOG_MESSAGES[0]);
+                LogManager.LogWarning(LOG_PREFIX + LOG_MESSAGES[0]);
             }
 
             if (summonButton != null)
@@ -379,7 +379,7 @@ namespace InvaderInsider.UI
             else
             {
                 #if UNITY_EDITOR
-                DebugUtils.LogWarning(LOG_PREFIX, LOG_MESSAGES[1]);
+                LogManager.LogWarning(LOG_PREFIX, LOG_MESSAGES[1]);
                 #endif
             }
 

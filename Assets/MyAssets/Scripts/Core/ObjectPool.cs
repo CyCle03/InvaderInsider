@@ -76,7 +76,7 @@ namespace InvaderInsider.Core
             // 풀이 가득 찬 경우 null 반환
             else
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"ObjectPool<{typeof(T).Name}>: 풀이 가득 참 (최대: {maxPoolSize})");
                 return null;
             }
@@ -107,7 +107,7 @@ namespace InvaderInsider.Core
             }
             else
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"ObjectPool<{typeof(T).Name}>: 풀에 속하지 않는 오브젝트를 반환하려고 했습니다.");
             }
         }
@@ -150,7 +150,7 @@ namespace InvaderInsider.Core
         /// </summary>
         public void LogPoolStatus()
         {
-            DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                 "ObjectPool<{0}> - 사용 가능: {1}, 활성: {2}, 총합: {3}/{4}", 
                 typeof(T).Name, AvailableCount, ActiveCount, TotalCount, maxPoolSize);
         }
@@ -235,7 +235,7 @@ namespace InvaderInsider.Core
             
             if (showDebugInfo)
             {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
+                LogManager.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
                     $"PooledObject 초기화: {gameObject.name}");
             }
         }
@@ -262,7 +262,7 @@ namespace InvaderInsider.Core
             
             if (showDebugInfo)
             {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
+                LogManager.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
                     $"오브젝트 스폰: {gameObject.name} (타입: {componentType?.Name})");
             }
         }
@@ -276,7 +276,7 @@ namespace InvaderInsider.Core
             {
                 if (showDebugInfo)
                 {
-                    DebugUtils.LogWarning(GameConstants.LOG_PREFIX_POOL, 
+                    LogManager.LogWarning(GameConstants.LOG_PREFIX_POOL, 
                         $"이미 풀에 있는 오브젝트를 반환하려고 시도: {gameObject.name}");
                 }
                 return;
@@ -289,7 +289,7 @@ namespace InvaderInsider.Core
             
             if (showDebugInfo)
             {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
+                LogManager.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
                     $"오브젝트 반환: {gameObject.name} (활성 시간: {ActiveTime:F2}초)");
             }
 
@@ -309,7 +309,7 @@ namespace InvaderInsider.Core
                 
                 if (showDebugInfo)
                 {
-                    DebugUtils.LogWarning(GameConstants.LOG_PREFIX_POOL, 
+                    LogManager.LogWarning(GameConstants.LOG_PREFIX_POOL, 
                         "ObjectPoolManager가 없어 직접 비활성화합니다.");
                 }
             }
@@ -327,7 +327,7 @@ namespace InvaderInsider.Core
             
             if (showDebugInfo)
             {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
+                LogManager.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
                     $"오브젝트 즉시 파괴: {gameObject.name}");
             }
             
@@ -347,7 +347,7 @@ namespace InvaderInsider.Core
             
             if (showDebugInfo)
             {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
+                LogManager.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
                     $"자동 반환 타이머 만료: {gameObject.name}");
             }
             
@@ -389,7 +389,7 @@ namespace InvaderInsider.Core
             
             if (showDebugInfo && componentType != null)
             {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
+                LogManager.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
                     $"감지된 컴포넌트 타입: {componentType.Name}");
             }
         }
@@ -402,7 +402,7 @@ namespace InvaderInsider.Core
             string status = isInPool ? "풀에 있음" : "활성 상태";
             float activeTime = isInPool ? 0f : Time.time - spawnTime;
             
-            DebugUtils.LogInfo(GameConstants.LOG_PREFIX_POOL, 
+            LogManager.LogInfo(GameConstants.LOG_PREFIX_POOL, 
                 $"[{gameObject.name}] 상태: {status}, 활성 시간: {activeTime:F2}초, 타입: {componentType?.Name}");
         }
         

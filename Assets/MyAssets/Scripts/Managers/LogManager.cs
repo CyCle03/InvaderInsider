@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Text;
 using System.Collections.Generic;
+using System.Diagnostics;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -18,123 +19,89 @@ namespace InvaderInsider.Managers
             Info = 0,
             Warning = 1,
             Error = 2,
-            Debug = 3
+            Debug = 3,
+            Verbose = 4
         }
 
-        // Cache and builder for performance
-        private static readonly Dictionary<string, string> _prefixCache = new Dictionary<string, string>();
-        private static readonly StringBuilder _stringBuilder = new StringBuilder();
+        private static readonly StringBuilder _stringBuilder = new StringBuilder(1024);
+        private static readonly object _lock = new object();
         
-        // Public properties for log control
         public static LogLevel MinimumLogLevel { get; private set; } = LogLevel.Warning;
         public static bool EnableLogs { get; private set; } = true;
         public static bool GlobalFilterEnabled { get; set; } = true;
         
-        // Blocked patterns for fine-grained control
         private static readonly HashSet<string> _blockedPatterns = new HashSet<string>
         {
-            "[ObjectPool]",
-            "Loaded shader",
-            "Shader.CreateGPUSkinningVertexTexture",
-            "RenderTexture",
-            "Preloading",
-            "Async",
-            "Texture",
-            "Material",
-            "Shader",
-            "Mesh",
-            "Animation",
-            "AudioClip"
+            "[ObjectPool]", "Loaded shader", "Shader.CreateGPUSkinningVertexTexture", "RenderTexture",
+            "Preloading", "Async", "Texture", "Material", "Shader", "Mesh", "Animation", "AudioClip"
         };
         
-        private static bool ShouldLog => EnableLogs;
-
         static LogManager()
         {
-            // Set initial log level on load
-            SetLogLevel(LogLevel.Warning);
+            EnableMinimalLogging();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            // This ensures our log level settings are applied when the game starts.
             SetLogLevel(MinimumLogLevel);
         }
         
-        // --- Log Control Methods ---
+        #region Log Control Methods
 
-        /// <summary>
-        /// Sets the minimum log level. Messages below this level will be ignored.
-        /// This also sets the global Unity logger filter.
-        /// </summary>
         public static void SetLogLevel(LogLevel level)
         {
             MinimumLogLevel = level;
-            
-            // For Debug level, we allow all logs and filter within our own Log method.
-            if (level == LogLevel.Debug)
+            if (level == LogLevel.Debug || level == LogLevel.Verbose)
             {
-                Debug.unityLogger.filterLogType = LogType.Log;
-                return;
+                UnityEngine.Debug.unityLogger.filterLogType = LogType.Log;
             }
-
-            switch (level)
+            else
             {
-                case LogLevel.Error:
-                    Debug.unityLogger.filterLogType = LogType.Error;
-                    break;
-                case LogLevel.Warning:
-                    Debug.unityLogger.filterLogType = LogType.Warning;
-                    break;
-                case LogLevel.Info:
-                    Debug.unityLogger.filterLogType = LogType.Log;
-                    break;
-                default:
-                    // Default to only the most critical logs
-                    Debug.unityLogger.filterLogType = LogType.Exception;
-                    break;
+                switch (level)
+                {
+                    case LogLevel.Error: UnityEngine.Debug.unityLogger.filterLogType = LogType.Error; break;
+                    case LogLevel.Warning: UnityEngine.Debug.unityLogger.filterLogType = LogType.Warning; break;
+                    case LogLevel.Info: UnityEngine.Debug.unityLogger.filterLogType = LogType.Log; break;
+                    default: UnityEngine.Debug.unityLogger.filterLogType = LogType.Exception; break;
+                }
             }
         }
 
-        /// <summary>
-        /// Disables all logging through this manager and Unity's logger.
-        /// </summary>
-        public static void DisableAllLogs()
-        {
-            EnableLogs = false;
-            Debug.unityLogger.logEnabled = false;
-        }
-        
-        /// <summary>
-        /// Enables logging and sets the level to Info.
-        /// </summary>
-        public static void EnableAllLogs()
+        public static void EnableDevelopmentLogging()
         {
             EnableLogs = true;
-            Debug.unityLogger.logEnabled = true;
-            SetLogLevel(LogLevel.Info);
+            UnityEngine.Debug.unityLogger.logEnabled = true;
+            SetLogLevel(LogLevel.Verbose);
         }
-        
-        /// <summary>
-        /// Enables logging for Warning and Error levels only.
-        /// </summary>
-        public static void EnableMinimalLogs()
+
+        public static void EnableMinimalLogging()
         {
             EnableLogs = true;
-            Debug.unityLogger.logEnabled = true;
+            UnityEngine.Debug.unityLogger.logEnabled = true;
             SetLogLevel(LogLevel.Warning);
         }
 
-        // --- Blocked Pattern Management ---
+        public static void EnableProductionLogging()
+        {
+            EnableLogs = true;
+            UnityEngine.Debug.unityLogger.logEnabled = true;
+            SetLogLevel(LogLevel.Error);
+        }
 
-        /// <summary>
-        /// Checks if a message should be blocked based on the pattern list.
-        /// </summary>
+        public static void DisableAllLogs()
+        {
+            EnableLogs = false;
+            UnityEngine.Debug.unityLogger.logEnabled = false;
+        }
+
+        #endregion
+
+        #region Blocked Pattern Management
+
         private static bool IsBlockedMessage(string message)
         {
-            if (!GlobalFilterEnabled || _blockedPatterns.Count == 0) return false;
-            
+            if (!GlobalFilterEnabled) return false;
             foreach (string pattern in _blockedPatterns)
             {
                 if (message.Contains(pattern)) return true;
@@ -142,115 +109,102 @@ namespace InvaderInsider.Managers
             return false;
         }
 
-        /// <summary>
-        /// Adds a pattern to the block list.
-        /// </summary>
-        public static void AddBlockedPattern(string pattern)
-        {
-            if (!string.IsNullOrEmpty(pattern))
-            {
-                _blockedPatterns.Add(pattern);
-            }
-        }
-        
-        /// <summary>
-        /// Removes a pattern from the block list.
-        /// </summary>
-        public static void RemoveBlockedPattern(string pattern)
-        {
-            _blockedPatterns.Remove(pattern);
-        }
-        
-        /// <summary>
-        /// Clears all patterns from the block list.
-        /// </summary>
-        public static void ClearBlockedPatterns()
-        {
-            _blockedPatterns.Clear();
-        }
+        public static void AddBlockedPattern(string pattern) { if (!string.IsNullOrEmpty(pattern)) _blockedPatterns.Add(pattern); }
+        public static void RemoveBlockedPattern(string pattern) => _blockedPatterns.Remove(pattern);
+        public static void ClearBlockedPatterns() => _blockedPatterns.Clear();
 
-        // --- Core Logging Methods ---
+        #endregion
 
-        /// <summary>
-        /// The main logging method.
-        /// </summary>
-        public static void Log(string tag, string message, LogLevel level = LogLevel.Info, params object[] args)
+        #region Core Logging Methods
+
+        private static void Log(LogLevel level, string prefix, string message, params object[] args)
         {
-            if (!ShouldLog || level < MinimumLogLevel) return;
-            
-            // Format first, then check for blocking.
-            string formattedMessage = FormatMessage(tag, message, args);
+            if (!EnableLogs || level < MinimumLogLevel) return;
+
+            string formattedMessage = FormatMessage(prefix, message, args);
             if (IsBlockedMessage(formattedMessage)) return;
 
             switch (level)
             {
-                case LogLevel.Info:
-                    Debug.Log(formattedMessage);
-                    break;
-                case LogLevel.Warning:
-                    Debug.LogWarning(formattedMessage);
-                    break;
-                case LogLevel.Error:
-                    Debug.LogError(formattedMessage);
-                    break;
-                case LogLevel.Debug:
-                    // We add a [DEBUG] prefix to distinguish these logs.
-                    Debug.Log($"[DEBUG] {formattedMessage}");
-                    break;
+                case LogLevel.Info: UnityEngine.Debug.Log(formattedMessage); break;
+                case LogLevel.Warning: UnityEngine.Debug.LogWarning(formattedMessage); break;
+                case LogLevel.Error: UnityEngine.Debug.LogError(formattedMessage); break;
+                case LogLevel.Debug: UnityEngine.Debug.Log(formattedMessage); break;
+                case LogLevel.Verbose: UnityEngine.Debug.Log($"[VERBOSE] {formattedMessage}"); break;
             }
         }
         
         private static string FormatMessage(string tag, string message, params object[] args)
         {
-            // Using a lock for thread safety on the shared StringBuilder
-            lock (_stringBuilder)
+            lock (_lock)
             {
                 _stringBuilder.Clear();
                 _stringBuilder.Append($"[{tag}] ");
-                
-                if (args != null && args.Length > 0)
-                {
-                    _stringBuilder.AppendFormat(message, args);
-                }
-                else
-                {
-                    _stringBuilder.Append(message);
-                }
-                
+                if (args != null && args.Length > 0) _stringBuilder.AppendFormat(message, args);
+                else _stringBuilder.Append(message);
                 return _stringBuilder.ToString();
             }
         }
 
-        /// <summary>
-        /// Logs an exception. These are always logged regardless of log level.
-        /// </summary>
         public static void LogException(Exception exception, string context = null)
         {
             if (exception == null) return;
             string message = string.IsNullOrEmpty(context) ? exception.ToString() : $"Context: {context}\n{exception}";
-            Debug.LogError(message);
+            UnityEngine.Debug.LogError(message);
         }
 
-        // --- Convenience Methods ---
+        #endregion
 
-        public static void Info(string tag, string message, params object[] args)
-        {
-            Log(tag, message, LogLevel.Info, args);
-        }
+        #region Convenience Methods
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        public static void Info(string prefix, string message, params object[] args) => Log(LogLevel.Info, prefix, message, args);
         
-        public static void Warning(string tag, string message, params object[] args)
-        {
-            Log(tag, message, LogLevel.Warning, args);
-        }
+        public static void Warning(string prefix, string message, params object[] args) => Log(LogLevel.Warning, prefix, message, args);
         
-        public static void Error(string tag, string message, params object[] args)
+        public static void Error(string prefix, string message, params object[] args) => Log(LogLevel.Error, prefix, message, args);
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        public static void Debug(string prefix, string message, params object[] args) => Log(LogLevel.Debug, prefix, message, args);
+
+        [Conditional("UNITY_EDITOR")]
+        public static void Verbose(string prefix, string message, params object[] args) => Log(LogLevel.Verbose, prefix, message, args);
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        public static void LogInitialization(string componentName, bool success, string details = "")
         {
-            Log(tag, message, LogLevel.Error, args);
+            string message = success ? $"{componentName} 초기화 성공" : $"{componentName} 초기화 실패";
+            if (!string.IsNullOrEmpty(details)) message += $": {details}";
+            
+            if (success) Info("Init", message);
+            else Error("Init", message);
         }
 
-        public static void DebugLog(string tag, string message, params object[] args)
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        public static void LogNullCheck(object obj, string objectName, string context)
         {
-            Log(tag, message, LogLevel.Debug, args);
+            if (obj == null) Error("NullCheck", $"{context}에서 {objectName}이(가) null입니다.");
         }
+
+        [Conditional("UNITY_EDITOR")]
+        public static void LogPerformance(string operation, float timeMs)
+        {
+            if (timeMs > 16.67f) Warning("Performance", $"{operation} 작업이 {timeMs:F2}ms 소요됨 (권장: 16.67ms 이하)");
+            else Verbose("Performance", $"{operation} 작업 완료 ({timeMs:F2}ms)");
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        public static void LogMemoryUsage(string context)
+        {
+            Verbose("Memory", $"{context} - 메모리 사용량: {System.GC.GetTotalMemory(false) / 1024f / 1024f:F2} MB");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        public static void LogIf(bool condition, string prefix, string message)
+        {
+            if (condition) Info(prefix, message);
+        }
+
+        #endregion
     }
 } 

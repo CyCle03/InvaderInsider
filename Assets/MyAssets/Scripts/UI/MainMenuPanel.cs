@@ -6,7 +6,7 @@ using InvaderInsider.Managers;
 using TMPro;
 using Cysharp.Threading.Tasks;
 using System;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 
 
 namespace InvaderInsider.UI
@@ -367,14 +367,14 @@ namespace InvaderInsider.UI
             saveDataManager = SaveDataManager.Instance;
             if (saveDataManager == null)
             {
-                DebugUtils.Log("[FORCE LOG] SaveDataManager가 null이므로 다시 찾기 시도");
+                LogManager.Log("[FORCE LOG] SaveDataManager가 null이므로 다시 찾기 시도");
                 
                 // 직접 검색
                 saveDataManager = FindObjectOfType<SaveDataManager>();
                 
                 if (saveDataManager == null)
                 {
-                    DebugUtils.LogError("[FORCE LOG] SaveDataManager를 찾을 수 없습니다!");
+                    LogManager.LogError("[FORCE LOG] SaveDataManager를 찾을 수 없습니다!");
                     
                     // SaveDataManager가 없으면 Continue 버튼 비활성화
                     if (continueButton != null)
@@ -385,20 +385,20 @@ namespace InvaderInsider.UI
                 }
                 else
                 {
-                    DebugUtils.Log("[FORCE LOG] SaveDataManager 찾기 성공");
+                    LogManager.Log("[FORCE LOG] SaveDataManager 찾기 성공");
                 }
             }
             
             // SaveDataManager가 있으면 데이터 강제 재로드
             if (saveDataManager != null)
             {
-                DebugUtils.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 시작");
+                LogManager.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 시작");
                 saveDataManager.LoadGameData();
-                DebugUtils.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 완료");
+                LogManager.Log("[FORCE LOG] SaveDataManager 데이터 강제 재로드 완료");
                 
                 // 저장 데이터 존재 여부 재확인
                 bool hasSaveData = saveDataManager.HasSaveData();
-                DebugUtils.Log($"[FORCE LOG] 저장 데이터 확인 결과: {hasSaveData}");
+                LogManager.Log($"[FORCE LOG] 저장 데이터 확인 결과: {hasSaveData}");
             }
             
             UpdateContinueButton();

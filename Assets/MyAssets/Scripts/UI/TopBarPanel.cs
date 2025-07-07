@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using InvaderInsider.Managers;
 using InvaderInsider.Data;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
@@ -27,7 +27,7 @@ namespace InvaderInsider.UI
         {
                     if (stageText == null || waveText == null || eDataText == null || pauseButton == null)
         {
-            DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, LOG_MESSAGES[0]);
+            LogManager.LogError(GameConstants.LOG_PREFIX_UI, LOG_MESSAGES[0]);
             return;
         }
 
@@ -78,7 +78,7 @@ namespace InvaderInsider.UI
             if (stageText == null || eDataText == null || 
                 waveText == null || pauseButton == null)
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, LOG_MESSAGES[0]);
+                LogManager.LogError(GameConstants.LOG_PREFIX_UI, LOG_MESSAGES[0]);
                 return false;
             }
             return true;
@@ -144,12 +144,12 @@ namespace InvaderInsider.UI
             if (eDataText != null)
             {
                 eDataText.text = $"eData: {amount}";
-                DebugUtils.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] EData 업데이트: {amount}");
+                LogManager.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] EData 업데이트: {amount}");
             }
             else
             {
                 #if UNITY_EDITOR
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, "UpdateEData 호출됨 - eDataText가 null!");
+                LogManager.LogError(GameConstants.LOG_PREFIX_UI, "UpdateEData 호출됨 - eDataText가 null!");
                 #endif
             }
         }
@@ -168,24 +168,24 @@ namespace InvaderInsider.UI
             if (stageText != null)
             {
                 stageText.text = $"Stage {currentStage}/{totalStages}";
-                DebugUtils.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] Stage 업데이트: {currentStage}/{totalStages}");
+                LogManager.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] Stage 업데이트: {currentStage}/{totalStages}");
             }
             else
             {
                 #if UNITY_EDITOR
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, "UpdateStageInfo 호출됨 - stageText가 null!");
+                LogManager.LogError(GameConstants.LOG_PREFIX_UI, "UpdateStageInfo 호출됨 - stageText가 null!");
                 #endif
             }
             
             if (waveText != null)
             {
                 waveText.text = $"Wave {spawnedMonsters}/{maxMonsters}";
-                DebugUtils.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] Wave 업데이트: {spawnedMonsters}/{maxMonsters}");
+                LogManager.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] Wave 업데이트: {spawnedMonsters}/{maxMonsters}");
             }
             else
             {
                 #if UNITY_EDITOR
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, "UpdateStageInfo 호출됨 - waveText가 null!");
+                LogManager.LogError(GameConstants.LOG_PREFIX_UI, "UpdateStageInfo 호출됨 - waveText가 null!");
                 #endif
             }
         }
@@ -248,7 +248,7 @@ namespace InvaderInsider.UI
             topBarCanvas.sortingOrder = 10; // 기본보다 낮은 값 (SummonChoice는 100)
             
             #if UNITY_EDITOR
-            DebugUtils.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] TopBar Canvas Sorting Order 설정 완료: {topBarCanvas.sortingOrder}");
+            LogManager.Log(GameConstants.LOG_PREFIX_UI, $"[TopBar] TopBar Canvas Sorting Order 설정 완료: {topBarCanvas.sortingOrder}");
             #endif
         }
     }

@@ -4,7 +4,7 @@ using InvaderInsider.Data;
 using InvaderInsider.Cards;
 using InvaderInsider.ScriptableObjects;
 using InvaderInsider.Managers;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider
 {
@@ -144,7 +144,7 @@ namespace InvaderInsider
             }
             else
             {
-                DebugUtils.LogErrorFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogErrorFormat(GameConstants.LOG_PREFIX_GAME, 
                     "{0}: ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.", gameObject.name);
                 // 기본값으로 폴백
                 baseConfig = ScriptableObject.CreateInstance<GameConfigSO>();
@@ -169,7 +169,7 @@ namespace InvaderInsider
         {
             if (_isInitialized)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"{gameObject.name}: 이미 초기화된 캐릭터입니다.");
                 return;
             }
@@ -182,7 +182,7 @@ namespace InvaderInsider
             
             if (showDebugInfo)
             {
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     GameConstants.LogMessages.INITIALIZATION_SUCCESS + " - 체력: {1}/{2}, 공격력: {3}", 
                     gameObject.name, currentHealth, maxHealth, attackDamage);
             }
@@ -210,14 +210,14 @@ namespace InvaderInsider
         {
             if (!_isInitialized)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"{gameObject.name}: 초기화되지 않은 상태에서 데미지를 받았습니다.");
                 return;
             }
 
             if (damage < 0)
             {
-                DebugUtils.LogWarningFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarningFormat(GameConstants.LOG_PREFIX_GAME, 
                     "{0}: 음수 데미지를 받았습니다. 데미지: {1}", gameObject.name, damage);
                 return;
             }
@@ -237,7 +237,7 @@ namespace InvaderInsider
 
             if (showDebugInfo)
             {
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     "{0}: 데미지 {1} 받음 - 체력 {2} → {3}", 
                     gameObject.name, damage, oldHealth, currentHealth);
             }
@@ -271,7 +271,7 @@ namespace InvaderInsider
 
             if (showDebugInfo)
             {
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     "{0}: 체력 {1} 회복 - 체력 {2} → {3}", 
                     gameObject.name, healAmount, oldHealth, currentHealth);
             }
@@ -284,14 +284,14 @@ namespace InvaderInsider
         {
             if (!_isInitialized)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"{gameObject.name}: 초기화되지 않은 상태에서 사망 처리를 시도했습니다.");
                 return;
             }
 
             if (showDebugInfo)
             {
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     "캐릭터 {0} 사망 처리 완료", gameObject.name);
             }
 
@@ -306,7 +306,7 @@ namespace InvaderInsider
             }
             else
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogError(GameConstants.LOG_PREFIX_GAME, 
                     "GameObject가 null입니다. 사망 처리를 완료할 수 없습니다.");
             }
         }
@@ -372,7 +372,7 @@ namespace InvaderInsider
         {
             if (!_isInitialized)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"{gameObject.name}: 초기화되지 않은 상태에서 체력 변경 이벤트를 호출했습니다.");
                 return;
             }
@@ -387,7 +387,7 @@ namespace InvaderInsider
         {
             if (!_isInitialized)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"{gameObject.name}: 초기화되지 않은 상태에서 레벨업을 시도했습니다.");
                 return;
             }
@@ -395,7 +395,7 @@ namespace InvaderInsider
             // 기본 레벨업 로직 - 상속 클래스에서 오버라이드 가능
             if (showDebugInfo)
             {
-                DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, $"{gameObject.name}: 레벨업 완료");
+                LogManager.Log(GameConstants.LOG_PREFIX_GAME, $"{gameObject.name}: 레벨업 완료");
             }
         }
         
@@ -440,21 +440,21 @@ namespace InvaderInsider
         {
             if (!_isInitialized)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"{gameObject.name}: 초기화되지 않은 상태에서 장비를 적용하려고 했습니다.");
                 return false;
             }
 
             if (equipmentCard == null)
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogError(GameConstants.LOG_PREFIX_GAME, 
                     $"{gameObject.name}: 장비 카드가 null입니다.");
                 return false;
             }
 
             if (equipmentCard.type != CardType.Equipment)
             {
-                DebugUtils.LogWarningFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogWarningFormat(GameConstants.LOG_PREFIX_GAME, 
                     "비장비 카드 {0}을(를) {1}에게 적용하려고 했습니다", equipmentCard.cardName, gameObject.name);
                 return false;
             }
@@ -502,20 +502,20 @@ namespace InvaderInsider
                 return;
             }
 
-            DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                 "장비 {0}이(가) {1}에게 적용됨. 공격력: {2}, 최대체력: {3}", equipmentCard.cardName, gameObject.name, attackDamage, maxHealth);
             
             // 변경사항 상세 로그
             if (equipmentCard.equipmentBonusAttack != 0)
             {
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     "{0}: 공격력 {1} → {2} (+{3})", 
                     gameObject.name, before.attack, attackDamage, equipmentCard.equipmentBonusAttack);
             }
             
             if (equipmentCard.equipmentBonusHealth != 0)
             {
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                     "{0}: 최대 체력 {1} → {2} (+{3})", 
                     gameObject.name, before.maxHp, maxHealth, equipmentCard.equipmentBonusHealth);
             }
@@ -531,7 +531,7 @@ namespace InvaderInsider
         [ContextMenu("Debug Character Info")]
         public void DebugCharacterInfo()
         {
-            DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                 "=== {0} 캐릭터 정보 ===\n" +
                 "체력: {1}/{2} ({3:P1})\n" +
                 "공격력: {4}\n" +

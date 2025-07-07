@@ -4,7 +4,7 @@ using TMPro; // TextMeshPro 기능을 사용하기 위해 추가
 using InvaderInsider.UI; // Changed from InvaderInsider.Managers
 using InvaderInsider; // IDamageable 인터페이스 사용을 위해 추가
 using InvaderInsider.Managers; // LogManager 사용을 위해 추가
-using InvaderInsider.Core; // DebugUtils와 GameConstants 사용을 위해 추가
+using InvaderInsider.Managers;
 using System; // Action 델리게이트 사용을 위해 추가
 
 namespace InvaderInsider
@@ -45,7 +45,7 @@ namespace InvaderInsider
         protected override void Awake()
         {
             base.Awake(); // BaseCharacter의 Awake 호출
-            DebugUtils.Log(GameConstants.LOG_PREFIX_PLAYER, "Player Awake 시작");
+            LogManager.Log(GameConstants.LOG_PREFIX_PLAYER, "Player Awake 시작");
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace InvaderInsider
             // 강제 UI 동기화 (안전장치)
             ForceUISync();
             
-            DebugUtils.Log(GameConstants.LOG_PREFIX_PLAYER, "Player 초기화 완료");
+            LogManager.Log(GameConstants.LOG_PREFIX_PLAYER, "Player 초기화 완료");
         }
 
         /// <summary>
@@ -103,14 +103,14 @@ namespace InvaderInsider
             uiManager = UIManager.Instance;
             if (uiManager == null)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
                 string.Format(GameConstants.LogMessages.MANAGER_NOT_FOUND, "UIManager"));
             }
 
             // BottomBarPanel 찾기
             if (bottomBarPanel == null)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
                 string.Format(GameConstants.LogMessages.COMPONENT_NOT_FOUND, "BottomBarPanel"));
             }
         }
@@ -153,7 +153,7 @@ namespace InvaderInsider
         /// </summary>
         private void HandlePlayerDeath()
         {
-            DebugUtils.Log(GameConstants.LOG_PREFIX_PLAYER, "플레이어 사망!");
+            LogManager.Log(GameConstants.LOG_PREFIX_PLAYER, "플레이어 사망!");
             
             // GameManager에게 게임 종료 알림 (PausePanel과 함께 게임 오버 처리)
             var gameManager = InvaderInsider.Managers.GameManager.Instance;
@@ -179,7 +179,7 @@ namespace InvaderInsider
         {
             Heal(MaxHealth); // BaseCharacter의 Heal 메서드 사용
             
-            DebugUtils.Log(GameConstants.LOG_PREFIX_PLAYER, "플레이어 체력 초기화 완료");
+            LogManager.Log(GameConstants.LOG_PREFIX_PLAYER, "플레이어 체력 초기화 완료");
         }
 
         /// <summary>
@@ -190,7 +190,7 @@ namespace InvaderInsider
         {
             base.TakeDamage(damage); // BaseCharacter의 TakeDamage 호출
             
-            DebugUtils.LogFormat(GameConstants.LOG_PREFIX_PLAYER, 
+            LogManager.LogFormat(GameConstants.LOG_PREFIX_PLAYER, 
                 GameConstants.LogMessages.DAMAGE_RECEIVED, gameObject.name, damage, CurrentHealth, MaxHealth);
         }
 
@@ -201,7 +201,7 @@ namespace InvaderInsider
         {
             if (!IsInitialized || MaxHealth <= 0)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
                     "Player가 초기화되지 않았거나 MaxHealth가 0입니다.");
                 return;
             }
@@ -219,7 +219,7 @@ namespace InvaderInsider
                 bottomBarPanel.UpdateHealthDisplay(healthRatio);
             }
 
-            DebugUtils.LogInfo(GameConstants.LOG_PREFIX_PLAYER, 
+            LogManager.LogInfo(GameConstants.LOG_PREFIX_PLAYER, 
                 $"Player HP 초기화 완료: {CurrentHealth}/{MaxHealth} ({healthRatio:F2})");
         }
 
@@ -230,7 +230,7 @@ namespace InvaderInsider
         public override void Attack(IDamageable target)
         {
             // 플레이어는 직접 공격하지 않음
-            DebugUtils.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
+            LogManager.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
                 "플레이어는 직접 공격할 수 없습니다.");
         }
         
@@ -249,7 +249,7 @@ namespace InvaderInsider
                 // H 키로 체력 10 감소 테스트
                 const float testDamage = 10f;
                 TakeDamage(testDamage);
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_PLAYER, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_PLAYER, 
                     "테스트: 체력 {0} 감소 - 현재 체력: {1}/{2}", testDamage, CurrentHealth, MaxHealth);
             }
             
@@ -257,7 +257,7 @@ namespace InvaderInsider
             {
                 // R 키로 체력 완전 회복 테스트
                 ResetHealth();
-                DebugUtils.LogFormat(GameConstants.LOG_PREFIX_PLAYER, 
+                LogManager.LogFormat(GameConstants.LOG_PREFIX_PLAYER, 
                     "테스트: 체력 완전 회복 - 현재 체력: {0}/{1}", CurrentHealth, MaxHealth);
             }
         }

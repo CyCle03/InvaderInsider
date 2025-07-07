@@ -3,7 +3,7 @@ using InvaderInsider.Data;
 using InvaderInsider.Cards;
 using InvaderInsider.Managers;
 using InvaderInsider.ScriptableObjects;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
@@ -74,7 +74,7 @@ namespace InvaderInsider
             // 성능 최적화 초기화
             InitializeOptimization();
             
-            DebugUtils.LogInitialization($"Tower ({gameObject.name})", true);
+            LogManager.LogInitialization($"Tower ({gameObject.name})", true);
         }
         
         private void InitializeDefaults()
@@ -82,7 +82,7 @@ namespace InvaderInsider
             if (partToRotate == null)
             {
                 partToRotate = transform;
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_TOWER, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_TOWER, 
                     $"{gameObject.name}: partToRotate가 설정되지 않음. transform을 기본값으로 사용합니다.");
             }
         }
@@ -97,7 +97,7 @@ namespace InvaderInsider
             enemyLayerMask = LayerMask.GetMask(layerName);
             if (enemyLayerMask == 0)
             {
-                DebugUtils.LogErrorFormat(GameConstants.LOG_PREFIX_TOWER, 
+                LogManager.LogErrorFormat(GameConstants.LOG_PREFIX_TOWER, 
                     "{0}: '{1}' 레이어를 찾을 수 없습니다. 레이어 설정을 확인해주세요.", 
                     gameObject.name, layerName);
                 enemyLayerMask = 1 << (towerConfig?.defaultEnemyLayerIndex ?? GameConstants.DEFAULT_ENEMY_LAYER_INDEX);
@@ -127,7 +127,7 @@ namespace InvaderInsider
             }
             else
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
+                LogManager.LogError(GameConstants.LOG_PREFIX_TOWER, 
                     $"{gameObject.name}: ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
                 // 기본값으로 폴백
                 towerConfig = ScriptableObject.CreateInstance<GameConfigSO>();
@@ -150,7 +150,7 @@ namespace InvaderInsider
                 // Enemy 레이어가 없으면 기본값 사용
                 int defaultLayer = towerConfig?.defaultEnemyLayerIndex ?? GameConstants.DEFAULT_ENEMY_LAYER_INDEX;
                 enemyLayer = 1 << defaultLayer;
-                DebugUtils.LogWarningFormat(GameConstants.LOG_PREFIX_TOWER, 
+                LogManager.LogWarningFormat(GameConstants.LOG_PREFIX_TOWER, 
                     "{0}: '{1}' 레이어가 존재하지 않음. 기본값 {2}번 레이어 사용", 
                     gameObject.name, layerName, defaultLayer);
             }
@@ -445,7 +445,7 @@ namespace InvaderInsider
             // projectilePrefab 필수 체크
             if (projectilePrefab == null)
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
+                LogManager.LogError(GameConstants.LOG_PREFIX_TOWER, 
                     $"{gameObject.name}: projectilePrefab이 설정되지 않았습니다!");
                 return null;
             }
@@ -460,7 +460,7 @@ namespace InvaderInsider
                 }
                 catch (System.Exception ex)
                 {
-                    DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
+                    LogManager.LogError(GameConstants.LOG_PREFIX_TOWER, 
                         $"풀에서 투사체 가져오기 실패: {ex.Message}");
                 }
             }
@@ -468,7 +468,7 @@ namespace InvaderInsider
             // 풀에서 가져오지 못한 경우 기존 방식으로 폴백
             if (projectile == null)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_TOWER, 
+                LogManager.LogWarning(GameConstants.LOG_PREFIX_TOWER, 
                     "풀에서 투사체를 가져오지 못했습니다. 직접 생성합니다.");
                 
                 try
@@ -478,7 +478,7 @@ namespace InvaderInsider
                     
                     if (projectile == null)
                     {
-                        DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
+                        LogManager.LogError(GameConstants.LOG_PREFIX_TOWER, 
                             $"프리팹 '{projectilePrefab.name}'에서 Projectile 컴포넌트를 찾을 수 없습니다.");
                         
                         // 생성된 GameObject 정리
@@ -491,7 +491,7 @@ namespace InvaderInsider
                 }
                 catch (System.Exception ex)
                 {
-                    DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
+                    LogManager.LogError(GameConstants.LOG_PREFIX_TOWER, 
                         $"투사체 직접 생성 실패: {ex.Message}");
                     return null;
                 }
@@ -516,7 +516,7 @@ namespace InvaderInsider
                 }
                 catch (System.Exception ex)
                 {
-                    DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
+                    LogManager.LogError(GameConstants.LOG_PREFIX_TOWER, 
                         $"투사체 초기화 실패: {ex.Message}");
                     
                     // 초기화 실패 시 오브젝트 정리
@@ -537,7 +537,7 @@ namespace InvaderInsider
             }
             else
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
+                LogManager.LogError(GameConstants.LOG_PREFIX_TOWER, 
                     $"{gameObject.name}: 투사체 생성에 완전히 실패했습니다. projectilePrefab을 확인하세요.");
             }
 

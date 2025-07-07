@@ -4,7 +4,7 @@ using TMPro;
 using InvaderInsider.Data;
 using InvaderInsider.Cards;
 using InvaderInsider.Managers;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
@@ -484,7 +484,7 @@ namespace InvaderInsider.UI
             Debug.Log($"equipmentBonusPanel: {(equipmentBonusPanel != null ? "할당됨" : "할당 안됨")}");
             Debug.Log($"equipmentAttackBonusText: {(equipmentAttackBonusText != null ? "할당됨" : "할당 안됨")}");
             Debug.Log($"equipmentHealthBonusText: {(equipmentHealthBonusText != null ? "할당됨" : "할당 안됨")}");
-            DebugUtils.Log("================================");
+            LogManager.Log("================================");
         }
         #endif
     }

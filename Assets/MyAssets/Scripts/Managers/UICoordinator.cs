@@ -1,6 +1,6 @@
 using UnityEngine;
 using InvaderInsider.UI;
-using InvaderInsider.Core;
+using InvaderInsider.Managers;
 using System.Collections.Generic;
 
 namespace InvaderInsider.Managers
@@ -63,14 +63,14 @@ namespace InvaderInsider.Managers
             uiManager = UIManager.Instance;
             if (uiManager == null)
             {
-                DebugUtils.LogError(LOG_PREFIX, "UIManager를 찾을 수 없습니다.");
+                LogManager.LogError(LOG_PREFIX, "UIManager를 찾을 수 없습니다.");
                 return;
             }
             
             CacheAndRegisterAllPanels();
             isInitialized = true;
             
-            DebugUtils.LogInitialization("UICoordinator", true, "UI 조정자 초기화 완료");
+            LogManager.LogInitialization("UICoordinator", true, "UI 조정자 초기화 완료");
         }
         
         #endregion
@@ -84,7 +84,7 @@ namespace InvaderInsider.Managers
         {
             if (!isInitialized)
             {
-                DebugUtils.Log(LOG_PREFIX, LOG_MESSAGES[0]);
+                LogManager.Log(LOG_PREFIX, LOG_MESSAGES[0]);
             }
             
             // 주요 패널 참조 자동 설정
@@ -102,7 +102,7 @@ namespace InvaderInsider.Managers
             registeredCount += RegisterPanelByType<SummonChoicePanel>("SummonChoice");
             registeredCount += RegisterPanelByType<HandDisplayPanel>("HandDisplay");
             
-            DebugUtils.LogFormat(LOG_PREFIX, LOG_MESSAGES[1], registeredCount);
+            LogManager.LogFormat(LOG_PREFIX, LOG_MESSAGES[1], registeredCount);
         }
         
         /// <summary>
@@ -194,7 +194,7 @@ namespace InvaderInsider.Managers
                 return panel;
             }
             
-            DebugUtils.LogWarning(LOG_PREFIX, string.Format(GameConstants.LogMessages.COMPONENT_NOT_FOUND, typeof(T).Name));
+            LogManager.LogWarning(LOG_PREFIX, string.Format(GameConstants.LogMessages.COMPONENT_NOT_FOUND, typeof(T).Name));
             return null;
         }
         
@@ -272,7 +272,7 @@ namespace InvaderInsider.Managers
             if (topBarPanel != null) topBarPanel.gameObject.SetActive(true);
             if (inGamePanel != null) inGamePanel.gameObject.SetActive(true);
             
-            DebugUtils.Log(LOG_PREFIX, LOG_MESSAGES[4]);
+            LogManager.Log(LOG_PREFIX, LOG_MESSAGES[4]);
         }
         
         /// <summary>
@@ -295,7 +295,7 @@ namespace InvaderInsider.Managers
                 }
             }
             
-            DebugUtils.Log(LOG_PREFIX, LOG_MESSAGES[5]);
+            LogManager.Log(LOG_PREFIX, LOG_MESSAGES[5]);
         }
         
         #endregion

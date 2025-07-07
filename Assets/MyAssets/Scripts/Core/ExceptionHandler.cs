@@ -73,7 +73,7 @@ namespace InvaderInsider.Core
             // Unity의 전역 예외 처리기 등록
             Application.logMessageReceived += HandleUnityLogMessage;
             
-            DebugUtils.LogInitialization("ExceptionHandler", true, "전역 예외 처리 시스템 활성화");
+            LogManager.LogInitialization("ExceptionHandler", true, "전역 예외 처리 시스템 활성화");
         }
 
         protected override void OnCleanup()
@@ -221,7 +221,7 @@ namespace InvaderInsider.Core
                     // 치명적 오류 - 긴급 복구 또는 안전 종료
                     OnCriticalErrorOccurred?.Invoke();
                     
-                    DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+                    LogManager.LogError(GameConstants.LOG_PREFIX_GAME, 
                         $"치명적 오류 발생: {errorRecord.message}");
                     
                     if (enableAutoRecovery)
@@ -237,7 +237,7 @@ namespace InvaderInsider.Core
         /// </summary>
         private void AttemptRecovery(ErrorRecord errorRecord)
         {
-            DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
                 "복구 시도: {0}", errorRecord.message);
 
             // 간단한 복구 로직 (필요에 따라 확장)
@@ -260,7 +260,7 @@ namespace InvaderInsider.Core
         /// </summary>
         private void AttemptCriticalRecovery(ErrorRecord errorRecord)
         {
-            DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogError(GameConstants.LOG_PREFIX_GAME, 
                 "치명적 오류 복구 시도 중...");
 
             try
@@ -278,11 +278,11 @@ namespace InvaderInsider.Core
                 // 안전한 상태로 복원
                 Time.timeScale = 1f;
                 
-                DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, "치명적 오류 복구 완료");
+                LogManager.Log(GameConstants.LOG_PREFIX_GAME, "치명적 오류 복구 완료");
             }
             catch (Exception e)
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.LogError(GameConstants.LOG_PREFIX_GAME, 
                     $"치명적 오류 복구 실패: {e.Message}");
                 
                 // 마지막 수단: 게임 재시작 요청
@@ -295,7 +295,7 @@ namespace InvaderInsider.Core
         /// </summary>
         private void RequestGameRestart()
         {
-            DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, 
+            LogManager.LogError(GameConstants.LOG_PREFIX_GAME, 
                 "복구 불가능한 오류로 인해 게임 재시작이 필요합니다.");
             
             #if UNITY_EDITOR
@@ -326,11 +326,11 @@ namespace InvaderInsider.Core
             switch (errorRecord.severity)
             {
                 case ErrorSeverity.Low:
-                    DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, sb.ToString());
+                    LogManager.LogWarning(GameConstants.LOG_PREFIX_GAME, sb.ToString());
                     break;
                 case ErrorSeverity.Medium:
                 case ErrorSeverity.High:
-                    DebugUtils.LogError(GameConstants.LOG_PREFIX_GAME, sb.ToString());
+                    LogManager.LogError(GameConstants.LOG_PREFIX_GAME, sb.ToString());
                     break;
                 case ErrorSeverity.Critical:
                     Debug.LogError($"[CRITICAL] {sb}");
