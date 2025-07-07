@@ -96,8 +96,8 @@ namespace InvaderInsider
             
             if (showDebugInfo)
             {
-                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                    LOG_MESSAGES[2], gameObject.name, level, CurrentHealth, MaxHealth);
+                LogManager.Info(GameConstants.LOG_PREFIX_GAME, 
+                    $"캐릭터 {gameObject.name} 초기화 완료 - 레벨: {level}, 체력: {CurrentHealth}/{MaxHealth}");
             }
         }
 
@@ -203,8 +203,8 @@ namespace InvaderInsider
                 if (showDebugInfo)
                 {
                     string targetName = target is MonoBehaviour mb ? mb.name : "Unknown";
-                    LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                        LOG_MESSAGES[1], gameObject.name, targetName, AttackDamage);
+                    LogManager.Info(GameConstants.LOG_PREFIX_GAME, 
+                        $"캐릭터 {gameObject.name}이(가) {targetName}에게 {AttackDamage} 데미지를 입혔습니다");
                 }
                 
                 PlayAttackEffect();
@@ -275,8 +275,8 @@ namespace InvaderInsider
 
             if (showDebugInfo)
             {
-                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                    LOG_MESSAGES[0], gameObject.name, level, CurrentHealth, AttackDamage);
+                LogManager.Info(GameConstants.LOG_PREFIX_GAME, 
+                    $"캐릭터 {gameObject.name}이(가) 레벨 {level}로 레벨업했습니다. 체력: {CurrentHealth}, 공격력: {AttackDamage}");
             }
         }
         

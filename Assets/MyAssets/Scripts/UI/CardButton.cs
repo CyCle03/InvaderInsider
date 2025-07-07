@@ -82,7 +82,7 @@ namespace InvaderInsider.UI
             UpdateUI();
             
             #if UNITY_EDITOR
-            Debug.Log(string.Format(LOG_MESSAGES[1], newCard.cardName));
+            LogManager.Info("CardButton", $"카드 데이터가 업데이트되었습니다: {newCard.cardName}");
             #endif
         }
 
@@ -179,8 +179,8 @@ namespace InvaderInsider.UI
             {
                 missingElements = missingElements.TrimEnd(' ', ',');
                 #if UNITY_EDITOR
-                Debug.LogWarning($"CardButton: 다음 필수 UI 요소들이 할당되지 않았습니다: {missingElements}");
-                Debug.LogWarning($"CardButton: 프리팹 경로를 확인하세요. GameObject 이름: {gameObject.name}");
+                LogManager.Warning("CardButton", $"다음 필수 UI 요소들이 할당되지 않았습니다: {missingElements}");
+                LogManager.Warning("CardButton", $"프리팹 경로를 확인하세요. GameObject 이름: {gameObject.name}");
                 #endif
             }
             
@@ -188,22 +188,22 @@ namespace InvaderInsider.UI
             #if UNITY_EDITOR
             if (cardPowerText == null)
             {
-                Debug.LogWarning("CardButton: cardPowerText가 할당되지 않았습니다. 파워 정보가 표시되지 않습니다.");
+                LogManager.Warning("CardButton", "cardPowerText가 할당되지 않았습니다. 파워 정보가 표시되지 않습니다.");
             }
             
             if (cardTypeText == null)
             {
-                Debug.LogWarning("CardButton: cardTypeText가 할당되지 않았습니다. 타입 정보가 표시되지 않습니다.");
+                LogManager.Warning("CardButton", "cardTypeText가 할당되지 않았습니다. 타입 정보가 표시되지 않습니다.");
             }
             
             if (rarityIcon == null)
             {
-                Debug.LogWarning("CardButton: rarityIcon이 할당되지 않았습니다. 등급 아이콘이 표시되지 않습니다.");
+                LogManager.Warning("CardButton", "rarityIcon이 할당되지 않았습니다. 등급 아이콘이 표시되지 않습니다.");
             }
             
             if (equipmentBonusPanel == null)
             {
-                Debug.LogWarning("CardButton: equipmentBonusPanel이 할당되지 않았습니다. 장비 보너스 정보가 표시되지 않습니다.");
+                LogManager.Warning("CardButton", "equipmentBonusPanel이 할당되지 않았습니다. 장비 보너스 정보가 표시되지 않습니다.");
             }
             #endif
             
@@ -305,14 +305,12 @@ namespace InvaderInsider.UI
                     }
                     
                     #if UNITY_EDITOR
-                    Debug.Log(LOG_MESSAGES[2]);
+                    LogManager.Info("CardButton", "장비 카드로 설정되었습니다.");
                     #endif
                 }
                 else
                 {
-                    #if UNITY_EDITOR
-                    Debug.LogWarning("CardButton: 장비 카드이지만 equipmentBonusPanel이 할당되지 않았습니다.");
-                    #endif
+                    LogManager.Warning("CardButton", "장비 카드이지만 equipmentBonusPanel이 할당되지 않았습니다.");
                 }
             }
             else
@@ -324,7 +322,7 @@ namespace InvaderInsider.UI
                 }
                 
                 #if UNITY_EDITOR
-                Debug.Log(LOG_MESSAGES[3]);
+                LogManager.Info("CardButton", "일반 카드로 설정되었습니다.");
                 #endif
             }
         }
@@ -459,9 +457,7 @@ namespace InvaderInsider.UI
             }
             catch (System.Exception ex)
             {
-                #if UNITY_EDITOR
-                Debug.LogError($"CardButton: UI 업데이트 중 예외 발생: {ex.Message}");
-                #endif
+                LogManager.Error("CardButton", $"UI 업데이트 중 예외 발생: {ex.Message}");
             }
         }
 
@@ -472,19 +468,19 @@ namespace InvaderInsider.UI
         [System.Obsolete("디버그용 메서드입니다. 프로덕션에서는 제거하세요.")]
         public void DebugUIAssignmentStatus()
         {
-            Debug.Log("=== CardButton UI 할당 상태 ===");
-            Debug.Log($"cardImage: {(cardImage != null ? "할당됨" : "할당 안됨")}");
-            Debug.Log($"cardNameText: {(cardNameText != null ? "할당됨" : "할당 안됨")}");
-            Debug.Log($"cardDescriptionText: {(cardDescriptionText != null ? "할당됨" : "할당 안됨")}");
-            Debug.Log($"cardCostText: {(cardCostText != null ? "할당됨" : "할당 안됨")}");
-            Debug.Log($"cardPowerText: {(cardPowerText != null ? "할당됨" : "할당 안됨")}");
-            Debug.Log($"cardTypeText: {(cardTypeText != null ? "할당됨" : "할당 안됨")}");
-            Debug.Log($"rarityFrame: {(rarityFrame != null ? "할당됨" : "할당 안됨")}");
-            Debug.Log($"rarityIcon: {(rarityIcon != null ? "할당됨" : "할당 안됨")}");
-            Debug.Log($"equipmentBonusPanel: {(equipmentBonusPanel != null ? "할당됨" : "할당 안됨")}");
-            Debug.Log($"equipmentAttackBonusText: {(equipmentAttackBonusText != null ? "할당됨" : "할당 안됨")}");
-            Debug.Log($"equipmentHealthBonusText: {(equipmentHealthBonusText != null ? "할당됨" : "할당 안됨")}");
-            LogManager.Log("================================");
+            LogManager.Info("CardButton", "=== CardButton UI 할당 상태 ===");
+            LogManager.Info("CardButton", $"cardImage: {(cardImage != null ? "할당됨" : "할당 안됨")}");
+            LogManager.Info("CardButton", $"cardNameText: {(cardNameText != null ? "할당됨" : "할당 안됨")}");
+            LogManager.Info("CardButton", $"cardDescriptionText: {(cardDescriptionText != null ? "할당됨" : "할당 안됨")}");
+            LogManager.Info("CardButton", $"cardCostText: {(cardCostText != null ? "할당됨" : "할당 안됨")}");
+            LogManager.Info("CardButton", $"cardPowerText: {(cardPowerText != null ? "할당됨" : "할당 안됨")}");
+            LogManager.Info("CardButton", $"cardTypeText: {(cardTypeText != null ? "할당됨" : "할당 안됨")}");
+            LogManager.Info("CardButton", $"rarityFrame: {(rarityFrame != null ? "할당됨" : "할당 안됨")}");
+            LogManager.Info("CardButton", $"rarityIcon: {(rarityIcon != null ? "할당됨" : "할당 안됨")}");
+            LogManager.Info("CardButton", $"equipmentBonusPanel: {(equipmentBonusPanel != null ? "할당됨" : "할당 안됨")}");
+            LogManager.Info("CardButton", $"equipmentAttackBonusText: {(equipmentAttackBonusText != null ? "할당됨" : "할당 안됨")}");
+            LogManager.Info("CardButton", $"equipmentHealthBonusText: {(equipmentHealthBonusText != null ? "할당됨" : "할당 안됨")}");
+            LogManager.Info("================================");
         }
         #endif
     }

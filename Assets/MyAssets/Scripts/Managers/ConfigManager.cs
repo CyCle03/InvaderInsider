@@ -15,7 +15,7 @@ namespace InvaderInsider.Managers
             {
                 if (gameConfig == null)
                 {
-                    LogManager.LogError(GameConstants.LOG_PREFIX_CONFIG, "GameConfig가 설정되지 않았습니다. Inspector에서 설정해주세요.");
+                    LogManager.Error(GameConstants.LOG_PREFIX_CONFIG, "GameConfig가 설정되지 않았습니다. Inspector에서 설정해주세요.");
                 }
                 return gameConfig;
             }
@@ -52,7 +52,7 @@ namespace InvaderInsider.Managers
                 gameConfig = Resources.Load<GameConfigSO>(path);
                 if (gameConfig != null)
                 {
-                    LogManager.LogFormat(GameConstants.LOG_PREFIX_CONFIG, "GameConfig를 Resources에서 로드했습니다: {0}", path);
+                    LogManager.Info(GameConstants.LOG_PREFIX_CONFIG, $"GameConfig를 Resources에서 로드했습니다: {path}");
                     return;
                 }
             }
@@ -78,13 +78,13 @@ namespace InvaderInsider.Managers
                 
                 if (gameConfig != null)
                 {
-                    LogManager.LogFormat(GameConstants.LOG_PREFIX_CONFIG, "GameConfig를 Assets에서 로드했습니다: {0}", assetPath);
+                    LogManager.Info(GameConstants.LOG_PREFIX_CONFIG, $"GameConfig를 Assets에서 로드했습니다: {assetPath}");
                 }
             }
             
             if (gameConfig == null)
             {
-                LogManager.LogError(GameConstants.LOG_PREFIX_CONFIG, "GameConfig를 찾을 수 없습니다. Assets/MyAssets/Scripts/ScriptableObjects/Config/GameConfig.asset을 확인해주세요.");
+                LogManager.Error(GameConstants.LOG_PREFIX_CONFIG, "GameConfig를 찾을 수 없습니다. Assets/MyAssets/Scripts/ScriptableObjects/Config/GameConfig.asset을 확인해주세요.");
             }
         }
         #endif
@@ -93,35 +93,35 @@ namespace InvaderInsider.Managers
         {
             if (gameConfig == null)
             {
-                LogManager.LogError(GameConstants.LOG_PREFIX_CONFIG, "GameConfig가 설정되지 않았습니다!");
+                LogManager.Error(GameConstants.LOG_PREFIX_CONFIG, "GameConfig가 설정되지 않았습니다!");
                 return;
             }
             
             // 설정값 유효성 검사
             if (gameConfig.targetSearchInterval <= 0)
             {
-                LogManager.LogWarningFormat(GameConstants.LOG_PREFIX_CONFIG, 
-                    "targetSearchInterval이 0 이하입니다: {0}", gameConfig.targetSearchInterval);
+                LogManager.Warning(GameConstants.LOG_PREFIX_CONFIG, 
+                    $"targetSearchInterval이 0 이하입니다: {gameConfig.targetSearchInterval}");
             }
             
             if (gameConfig.projectileSpeed <= 0)
             {
-                LogManager.LogWarningFormat(GameConstants.LOG_PREFIX_CONFIG, 
-                    "projectileSpeed가 0 이하입니다: {0}", gameConfig.projectileSpeed);
+                LogManager.Warning(GameConstants.LOG_PREFIX_CONFIG, 
+                    $"projectileSpeed가 0 이하입니다: {gameConfig.projectileSpeed}");
             }
             
             if (gameConfig.maxDetectionColliders <= 0)
             {
-                LogManager.LogWarningFormat(GameConstants.LOG_PREFIX_CONFIG, 
-                    "maxDetectionColliders가 0 이하입니다: {0}", gameConfig.maxDetectionColliders);
+                LogManager.Warning(GameConstants.LOG_PREFIX_CONFIG, 
+                    $"maxDetectionColliders가 0 이하입니다: {gameConfig.maxDetectionColliders}");
             }
             
             if (string.IsNullOrEmpty(gameConfig.enemyLayerName))
             {
-                LogManager.LogWarning(GameConstants.LOG_PREFIX_CONFIG, "enemyLayerName이 비어있습니다.");
+                LogManager.Warning(GameConstants.LOG_PREFIX_CONFIG, "enemyLayerName이 비어있습니다.");
             }
             
-            LogManager.Log(GameConstants.LOG_PREFIX_CONFIG, "설정 검증 완료");
+            LogManager.Info(GameConstants.LOG_PREFIX_CONFIG, "설정 검증 완료");
         }
         
         /// <summary>
@@ -131,14 +131,14 @@ namespace InvaderInsider.Managers
         {
             if (gameConfig == null)
             {
-                LogManager.LogError(GameConstants.LOG_PREFIX_CONFIG, "GameConfig가 null입니다.");
+                LogManager.Error(GameConstants.LOG_PREFIX_CONFIG, "GameConfig가 null입니다.");
                 return;
             }
             
             T oldValue = getter(gameConfig);
             setter(gameConfig, newValue);
             
-            LogManager.LogFormat(GameConstants.LOG_PREFIX_CONFIG, "설정값 변경: {0} → {1}", oldValue, newValue);
+            LogManager.Info(GameConstants.LOG_PREFIX_CONFIG, $"설정값 변경: {oldValue} → {newValue}");
         }
         
         /// <summary>
@@ -148,12 +148,12 @@ namespace InvaderInsider.Managers
         {
             if (gameConfig == null)
             {
-                LogManager.LogError(GameConstants.LOG_PREFIX_CONFIG, "GameConfig가 null입니다.");
+                LogManager.Error(GameConstants.LOG_PREFIX_CONFIG, "GameConfig가 null입니다.");
                 return;
             }
             
             // 기본값으로 리셋하는 로직
-            LogManager.Log(GameConstants.LOG_PREFIX_CONFIG, "설정을 기본값으로 리셋합니다.");
+            LogManager.Info(GameConstants.LOG_PREFIX_CONFIG, "설정을 기본값으로 리셋합니다.");
         }
         
         /// <summary>
@@ -163,7 +163,7 @@ namespace InvaderInsider.Managers
         {
             if (gameConfig == null)
             {
-                LogManager.LogError(GameConstants.LOG_PREFIX_CONFIG, "GameConfig가 null입니다.");
+                LogManager.Error(GameConstants.LOG_PREFIX_CONFIG, "GameConfig가 null입니다.");
                 return "";
             }
             
@@ -177,18 +177,18 @@ namespace InvaderInsider.Managers
         {
             if (string.IsNullOrEmpty(jsonData))
             {
-                LogManager.LogError(GameConstants.LOG_PREFIX_CONFIG, "JSON 데이터가 비어있습니다.");
+                LogManager.Error(GameConstants.LOG_PREFIX_CONFIG, "JSON 데이터가 비어있습니다.");
                 return;
             }
             
             try
             {
                 JsonUtility.FromJsonOverwrite(jsonData, gameConfig);
-                LogManager.Log(GameConstants.LOG_PREFIX_CONFIG, "설정을 JSON에서 불러왔습니다.");
+                LogManager.Info(GameConstants.LOG_PREFIX_CONFIG, "설정을 JSON에서 불러왔습니다.");
             }
             catch (System.Exception ex)
             {
-                LogManager.LogErrorFormat(GameConstants.LOG_PREFIX_CONFIG, "JSON 파싱 오류: {0}", ex.Message);
+                LogManager.Error(GameConstants.LOG_PREFIX_CONFIG, $"JSON 파싱 오류: {ex.Message}");
             }
         }
     }

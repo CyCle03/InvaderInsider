@@ -51,7 +51,7 @@ namespace InvaderInsider.UI
         protected override void Initialize()
         {
             #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}BottomBarPanel Initialize 시작");
+            LogManager.Info(LOG_PREFIX, "BottomBarPanel Initialize 시작");
             #endif
             
             if (isInitialized) return;
@@ -59,7 +59,7 @@ namespace InvaderInsider.UI
             if (!ValidateReferences())
             {
                 #if UNITY_EDITOR
-                Debug.LogError($"{LOG_PREFIX}UI 요소 검증 실패로 인해 초기화가 중단되었습니다.");
+                LogManager.Error(LOG_PREFIX, "UI 요소 검증 실패로 인해 초기화가 중단되었습니다.");
                 #endif
                 return;
             }
@@ -77,15 +77,14 @@ namespace InvaderInsider.UI
 
             if (player == null)
             {
-                #if UNITY_EDITOR
-                Debug.LogError($"{LOG_PREFIX}Player 컴포넌트를 찾을 수 없습니다. Player 오브젝트가 씬에 있는지 확인해주세요.");
-                Debug.LogError($"{LOG_PREFIX}Player 오브젝트에 Player 컴포넌트가 있는지, 또는 'Player' 태그가 설정되어 있는지 확인해주세요.");
+                LogManager.Error(LOG_PREFIX, "Player 컴포넌트를 찾을 수 없습니다. Player 오브젝트가 씬에 있는지 확인해주세요.");
+                LogManager.Error(LOG_PREFIX, "Player 오브젝트에 Player 컴포넌트가 있는지, 또는 'Player' 태그가 설정되어 있는지 확인해주세요.");
                 #endif
                 return;
             }
 
             #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}Player를 찾았습니다: {player.gameObject.name}");
+            LogManager.Info(LOG_PREFIX, $"Player를 찾았습니다: {player.gameObject.name}");
             #endif
 
             // healthSlider에서 Fill Image 자동 찾기
@@ -96,11 +95,11 @@ namespace InvaderInsider.UI
                 #if UNITY_EDITOR
                 if (healthFillImage != null)
                 {
-                    Debug.Log($"{LOG_PREFIX}Health Fill Image를 자동으로 찾았습니다: {healthFillImage.name}");
+                    LogManager.Info(LOG_PREFIX, $"Health Fill Image를 자동으로 찾았습니다: {healthFillImage.name}");
                 }
                 else
                 {
-                    Debug.LogWarning($"{LOG_PREFIX}Health Slider의 Fill Rect에서 Image 컴포넌트를 찾을 수 없습니다.");
+                    LogManager.Warning(LOG_PREFIX, "Health Slider의 Fill Rect에서 Image 컴포넌트를 찾을 수 없습니다.");
                 }
                 #endif
             }
@@ -114,7 +113,7 @@ namespace InvaderInsider.UI
             isInitialized = true;
             
             #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}BottomBarPanel 초기화 완료");
+            LogManager.Info(LOG_PREFIX, "BottomBarPanel 초기화 완료");
             #endif
         }
 
@@ -146,8 +145,8 @@ namespace InvaderInsider.UI
             {
                 missingElements = missingElements.TrimEnd(' ', ',');
                 #if UNITY_EDITOR
-                Debug.LogError($"{LOG_PREFIX}다음 필수 UI 요소가 할당되지 않았습니다: {missingElements}");
-                Debug.LogError($"{LOG_PREFIX}BottomBarPanel의 Inspector에서 UI 요소들을 할당해주세요.");
+                LogManager.Error(LOG_PREFIX, $"다음 필수 UI 요소가 할당되지 않았습니다: {missingElements}");
+                LogManager.Error(LOG_PREFIX, "BottomBarPanel의 Inspector에서 UI 요소들을 할당해주세요.");
                 #endif
             }
 
@@ -195,7 +194,7 @@ namespace InvaderInsider.UI
                 mainMenuButton.onClick.AddListener(OnMainMenuButtonClicked);
                 
             #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}Player 이벤트 리스너 설정 완료");
+            LogManager.Info(LOG_PREFIX, "Player 이벤트 리스너 설정 완료");
             #endif
             
             // Health Display 초기화
@@ -208,7 +207,7 @@ namespace InvaderInsider.UI
                 UpdateHealthDisplay(currentHealthRatio);
                 
                 #if UNITY_EDITOR
-                Debug.Log($"{LOG_PREFIX}Player 체력 강제 동기화: {player.CurrentHealth}/{player.MaxHealth} ({currentHealthRatio:F2})");
+                LogManager.Info(LOG_PREFIX, $"Player 체력 강제 동기화: {player.CurrentHealth}/{player.MaxHealth} ({currentHealthRatio:F2})");
                 #endif
             }
         }
@@ -251,13 +250,15 @@ namespace InvaderInsider.UI
                 UpdateHealthDisplay(healthRatio);
                 
                 #if UNITY_EDITOR
-                Debug.Log($"{LOG_PREFIX}Health Display 초기화: {healthRatio:F2} ({player.CurrentHealth}/{player.MaxHealth})");
+                LogManager.Info(LOG_PREFIX, $"Health Display 초기화: {healthRatio:F2} ({player.CurrentHealth}/{player.MaxHealth})");
                 #endif
             }
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogWarning($"{LOG_PREFIX}Health Display 초기화 실패 - Player: {player != null}, Slider: {healthSlider != null}, MaxHealth: {player?.MaxHealth ?? 0}");
+                else
+            {
+                LogManager.Warning(LOG_PREFIX, $"Health Display 초기화 실패 - Player: {player != null}, Slider: {healthSlider != null}, MaxHealth: {player?.MaxHealth ?? 0}");
                 #endif
             }
         }
@@ -268,7 +269,7 @@ namespace InvaderInsider.UI
             if (player == null) return;
 
             #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}체력 업데이트: {healthPercentage:F2} ({Mathf.RoundToInt(player?.CurrentHealth ?? 0)}/{Mathf.RoundToInt(player?.MaxHealth ?? 0)})");
+            LogManager.Info(LOG_PREFIX, $"체력 업데이트: {healthPercentage:F2} ({Mathf.RoundToInt(player?.CurrentHealth ?? 0)}/{Mathf.RoundToInt(player?.MaxHealth ?? 0)})");
             #endif
 
             // 슬라이더 업데이트
@@ -386,7 +387,7 @@ namespace InvaderInsider.UI
             }
             
             #if UNITY_EDITOR
-            LogManager.LogFormat(LOG_PREFIX, "BottomBar Canvas Sorting Order 설정 완료: {0}", bottomBarCanvas.sortingOrder);
+            LogManager.Info(LOG_PREFIX, $"BottomBar Canvas Sorting Order 설정 완료: {bottomBarCanvas.sortingOrder}");
             #endif
         }
     }

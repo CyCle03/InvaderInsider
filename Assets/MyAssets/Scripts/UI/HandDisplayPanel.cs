@@ -165,7 +165,7 @@ namespace InvaderInsider.UI
             if (Application.isPlaying)
             {
                 var cardCount = cardManager?.GetHandCardIds()?.Count ?? 0;
-                LogManager.Info(LOG_TAG, "팝업 열림 - 카드 수: {0}", cardCount);
+                LogManager.Info(LOG_TAG, $"팝업 열림 - 카드 수: {cardCount}");
             }
         }
 

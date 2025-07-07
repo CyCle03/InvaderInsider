@@ -27,7 +27,16 @@ namespace InvaderInsider.Managers
         private static readonly object _lock = new object();
         
         public static LogLevel MinimumLogLevel { get; private set; } = LogLevel.Warning;
-        public static bool EnableLogs { get; private set; } = true;
+        private static bool _enableLogs = true; // Internal flag
+        public static bool EnableLogs 
+        {
+            get => _enableLogs;
+            private set
+            {
+                _enableLogs = value;
+                UnityEngine.Debug.unityLogger.logEnabled = value; // Control Unity's logger directly
+            }
+        }
         public static bool GlobalFilterEnabled { get; set; } = true;
         
         private static readonly HashSet<string> _blockedPatterns = new HashSet<string>
@@ -52,47 +61,39 @@ namespace InvaderInsider.Managers
         public static void SetLogLevel(LogLevel level)
         {
             MinimumLogLevel = level;
-            if (level == LogLevel.Debug || level == LogLevel.Verbose)
+            // Always set Unity's logger filter based on our minimum level
+            switch (level)
             {
-                UnityEngine.Debug.unityLogger.filterLogType = LogType.Log;
-            }
-            else
-            {
-                switch (level)
-                {
-                    case LogLevel.Error: UnityEngine.Debug.unityLogger.filterLogType = LogType.Error; break;
-                    case LogLevel.Warning: UnityEngine.Debug.unityLogger.filterLogType = LogType.Warning; break;
-                    case LogLevel.Info: UnityEngine.Debug.unityLogger.filterLogType = LogType.Log; break;
-                    default: UnityEngine.Debug.unityLogger.filterLogType = LogType.Exception; break;
-                }
+                case LogLevel.Error: UnityEngine.Debug.unityLogger.filterLogType = LogType.Error; break;
+                case LogLevel.Warning: UnityEngine.Debug.unityLogger.filterLogType = LogType.Warning; break;
+                case LogLevel.Info: 
+                case LogLevel.Debug: 
+                case LogLevel.Verbose: UnityEngine.Debug.unityLogger.filterLogType = LogType.Log; break;
+                default: UnityEngine.Debug.unityLogger.filterLogType = LogType.Exception; break; // Fallback
             }
         }
 
         public static void EnableDevelopmentLogging()
         {
             EnableLogs = true;
-            UnityEngine.Debug.unityLogger.logEnabled = true;
             SetLogLevel(LogLevel.Verbose);
         }
 
         public static void EnableMinimalLogging()
         {
             EnableLogs = true;
-            UnityEngine.Debug.unityLogger.logEnabled = true;
             SetLogLevel(LogLevel.Warning);
         }
 
         public static void EnableProductionLogging()
         {
             EnableLogs = true;
-            UnityEngine.Debug.unityLogger.logEnabled = true;
             SetLogLevel(LogLevel.Error);
         }
 
         public static void DisableAllLogs()
         {
             EnableLogs = false;
-            UnityEngine.Debug.unityLogger.logEnabled = false;
         }
 
         #endregion
@@ -117,6 +118,10 @@ namespace InvaderInsider.Managers
 
         #region Core Logging Methods
 
+        // Apply Conditional attributes to the core Log method as well,
+        // to ensure it's stripped if somehow directly called in release builds.
+        // However, the primary intent is for public convenience methods to be used.
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void Log(LogLevel level, string prefix, string message, params object[] args)
         {
             if (!EnableLogs || level < MinimumLogLevel) return;
@@ -207,4 +212,4 @@ namespace InvaderInsider.Managers
 
         #endregion
     }
-} 
+}

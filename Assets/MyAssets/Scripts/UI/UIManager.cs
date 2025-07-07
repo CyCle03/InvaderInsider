@@ -52,19 +52,19 @@ namespace InvaderInsider.UI
         {
             if (string.IsNullOrEmpty(panelName) || panel == null)
             {
-                LogManager.LogError(GameConstants.LOG_PREFIX_UI, $"RegisterPanel 실패 - panelName: {panelName}, panel: {panel}");
+                LogManager.Error(GameConstants.LOG_PREFIX_UI, $"RegisterPanel 실패 - panelName: {panelName}, panel: {panel}");
                 return;
             }
 
             if (panels.ContainsKey(panelName))
             {
-                LogManager.LogWarning(GameConstants.LOG_PREFIX_UI, string.Format(GameConstants.LogMessages.PANEL_NOT_FOUND, panelName));
+                LogManager.Warning(GameConstants.LOG_PREFIX_UI, string.Format(GameConstants.LogMessages.PANEL_NOT_FOUND, panelName));
                 panels[panelName] = panel; // 덮어쓰기
             }
             else
             {
                 panels.Add(panelName, panel);
-                LogManager.Log(GameConstants.LOG_PREFIX_UI, $"패널 등록 성공: {panelName} - {panel.gameObject.name}");
+                LogManager.Info(GameConstants.LOG_PREFIX_UI, $"패널 등록 성공: {panelName} - {panel.gameObject.name}");
             }
         }
 
@@ -98,7 +98,7 @@ namespace InvaderInsider.UI
             {
                 string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
                 string registeredPanels = string.Join(", ", panels.Keys);
-                LogManager.LogError(GameConstants.LOG_PREFIX_UI, $"Panel '{panelName}' not found for showing. 현재 씬: {currentSceneName}, 등록된 패널: [{registeredPanels}]");
+                LogManager.Error(GameConstants.LOG_PREFIX_UI, $"Panel '{panelName}' not found for showing. 현재 씬: {currentSceneName}, 등록된 패널: [{registeredPanels}]");
             }
         }
 
@@ -114,7 +114,7 @@ namespace InvaderInsider.UI
             }
             else
             {
-                LogManager.LogError(GameConstants.LOG_PREFIX_UI, string.Format(GameConstants.LogMessages.PANEL_NOT_FOUND, panelName));
+                LogManager.Error(GameConstants.LOG_PREFIX_UI, string.Format(GameConstants.LogMessages.PANEL_NOT_FOUND, panelName));
             }
         }
 
@@ -154,9 +154,12 @@ namespace InvaderInsider.UI
             else
             {
                 #if UNITY_EDITOR
+                else
+            {
                 string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
                 string registeredPanels = string.Join(", ", panels.Keys);
-                Debug.LogError($"{LOG_PREFIX}Panel '{panelName}' not found for hiding. 현재 씬: {currentSceneName}, 등록된 패널: [{registeredPanels}]");
+                LogManager.Error(GameConstants.LOG_PREFIX_UI, $"Panel '{panelName}' not found for hiding. 현재 씬: {currentSceneName}, 등록된 패널: [{registeredPanels}]");
+            }
                 #endif
             }
         }
@@ -220,7 +223,7 @@ namespace InvaderInsider.UI
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
             
             #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}UIManager destroyed: {gameObject.name}");
+            LogManager.Info(LOG_PREFIX, $"UIManager destroyed: {gameObject.name}");
             
             // 에디터에서 플레이 모드 종료 시 SaveDataManager 정리
             if (!Application.isPlaying)
@@ -235,7 +238,7 @@ namespace InvaderInsider.UI
         {
             string sceneName = scene.name;
             #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}Scene loaded: {sceneName}");
+            LogManager.Info(LOG_PREFIX, $"Scene loaded: {sceneName}");
             #endif
         }
 
@@ -243,7 +246,7 @@ namespace InvaderInsider.UI
         {
             string sceneName = scene.name;
             #if UNITY_EDITOR
-            Debug.Log($"{LOG_PREFIX}Scene unloaded: {sceneName}");
+            LogManager.Info(LOG_PREFIX, $"Scene unloaded: {sceneName}");
             #endif
 
             // 파괴된 패널 참조 정리 (재사용 가능한 리스트 사용)
@@ -291,7 +294,7 @@ namespace InvaderInsider.UI
             {
                 // 메뉴 씬이 언로드될 때 메뉴 관련 패널만 정리
                 #if UNITY_EDITOR
-                Debug.Log($"{LOG_PREFIX}메뉴 씬 언로드 - 메뉴 관련 패널 정리");
+                LogManager.Info(LOG_PREFIX, "메뉴 씬 언로드 - 메뉴 관련 패널 정리");
                 #endif
                 
                 panels.Remove("MainMenu");
@@ -301,7 +304,7 @@ namespace InvaderInsider.UI
             {
                 // 게임 씬이 언로드될 때 게임 관련 패널만 정리
                 #if UNITY_EDITOR
-                Debug.Log($"{LOG_PREFIX}게임 씬 언로드 - 게임 관련 패널 정리");
+                LogManager.Info(LOG_PREFIX, "게임 씬 언로드 - 게임 관련 패널 정리");
                 #endif
                 
                 panels.Remove("InGame");
@@ -313,7 +316,7 @@ namespace InvaderInsider.UI
             #if UNITY_EDITOR
             if (tempKeysToRemove.Count > 0)
             {
-                Debug.Log($"{LOG_PREFIX}{tempKeysToRemove.Count}개의 파괴된 패널 참조가 정리되었습니다.");
+                LogManager.Info(LOG_PREFIX, $"{tempKeysToRemove.Count}개의 파괴된 패널 참조가 정리되었습니다.");
             }
             #endif
         }
@@ -322,7 +325,7 @@ namespace InvaderInsider.UI
         public void DebugPrintRegisteredPanels()
         {
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "=== 등록된 패널 목록 ===");
+            LogManager.Info(LOG_PREFIX, "=== 등록된 패널 목록 ===");
             
             // 파괴된 패널 참조 정리
             var keysToRemove = new List<string>();
@@ -334,7 +337,7 @@ namespace InvaderInsider.UI
                 }
                 else
                 {
-                    Debug.Log(string.Format(LOG_PREFIX + "Panel: {0}, Active: {1}", kvp.Key, kvp.Value.gameObject.activeSelf));
+                    LogManager.Info(LOG_PREFIX, $"Panel: {kvp.Key}, Active: {kvp.Value.gameObject.activeSelf}");
                 }
             }
             
@@ -344,7 +347,7 @@ namespace InvaderInsider.UI
                 panels.Remove(key);
             }
             
-            Debug.Log(LOG_PREFIX + string.Format("총 {0}개 패널 등록됨", panels.Count));
+            LogManager.Info(LOG_PREFIX, $"총 {panels.Count}개 패널 등록됨");
             #endif
         }
 
@@ -370,9 +373,7 @@ namespace InvaderInsider.UI
                     }
                     catch (System.Exception ex)
                     {
-                        #if UNITY_EDITOR
-                        Debug.LogWarning(LOG_PREFIX + $"등록된 패널 {kvp.Key} 정리 중 오류: {ex.Message}");
-                        #endif
+                        LogManager.Warning(LOG_PREFIX, $"등록된 패널 {kvp.Key} 정리 중 오류: {ex.Message}");
                         tempKeysToRemove.Add(kvp.Key); // 오류가 난 패널은 제거
                     }
                 }
@@ -399,7 +400,7 @@ namespace InvaderInsider.UI
         /// </summary>
         public void RestoreUIState()
         {
-            LogManager.Log(GameConstants.LOG_PREFIX_UI, "UI 상태 복구 시작");
+            LogManager.Info(GameConstants.LOG_PREFIX_UI, "UI 상태 복구 시작");
 
             try
             {
@@ -415,11 +416,11 @@ namespace InvaderInsider.UI
                 // 4. 현재 패널 상태 복구
                 RestoreCurrentPanelState();
 
-                LogManager.Log(GameConstants.LOG_PREFIX_UI, "UI 상태 복구 완료");
+                LogManager.Info(GameConstants.LOG_PREFIX_UI, "UI 상태 복구 완료");
             }
             catch (Exception e)
             {
-                LogManager.LogError(GameConstants.LOG_PREFIX_UI, 
+                LogManager.Error(GameConstants.LOG_PREFIX_UI, 
                     $"UI 상태 복구 중 예외 발생: {e.Message}");
                 
                 // 복구 실패 시 UI 리셋
@@ -432,7 +433,7 @@ namespace InvaderInsider.UI
         /// </summary>
         public void ResetUISystem()
         {
-            LogManager.LogWarning(GameConstants.LOG_PREFIX_UI, "UI 시스템 리셋 실행");
+            LogManager.Warning(GameConstants.LOG_PREFIX_UI, "UI 시스템 리셋 실행");
 
             try
             {
@@ -450,11 +451,11 @@ namespace InvaderInsider.UI
                 // 4. 기본 UI 상태로 복원
                 RestoreDefaultUIState();
 
-                LogManager.Log(GameConstants.LOG_PREFIX_UI, "UI 시스템 리셋 완료");
+                LogManager.Info(GameConstants.LOG_PREFIX_UI, "UI 시스템 리셋 완료");
             }
             catch (Exception e)
             {
-                LogManager.LogError(GameConstants.LOG_PREFIX_UI, 
+                LogManager.Error(GameConstants.LOG_PREFIX_UI, 
                     $"UI 시스템 리셋 실패: {e.Message}");
             }
         }
@@ -564,7 +565,7 @@ namespace InvaderInsider.UI
                     }
                     catch (Exception e)
                     {
-                        LogManager.LogWarning(GameConstants.LOG_PREFIX_UI, 
+                        LogManager.Warning(GameConstants.LOG_PREFIX_UI, 
                             $"패널 {kvp.Key} 숨김 중 오류: {e.Message}");
                     }
                 }

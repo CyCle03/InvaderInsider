@@ -89,7 +89,7 @@ namespace InvaderInsider.UI
 
         private void OnResumeClicked()
         {
-            LogManager.Log(LOG_PREFIX + "Resume 버튼이 클릭되었습니다.");
+            LogManager.Info(LOG_PREFIX, "Resume 버튼이 클릭되었습니다.");
             
             // 순환 참조 방지를 위해 먼저 패널 숨기고 게임 재시작
             gameObject.SetActive(false);
@@ -107,7 +107,7 @@ namespace InvaderInsider.UI
 
         private void OnRestartClicked()
         {
-            LogManager.Log(LOG_PREFIX + "Restart 버튼이 클릭되었습니다.");
+            LogManager.Info(LOG_PREFIX, "Restart 버튼이 클릭되었습니다.");
             
             // GameManager를 통해 새 게임 시작
             if (GameManager.Instance != null)
@@ -120,7 +120,7 @@ namespace InvaderInsider.UI
             }
             else
             {
-                LogManager.LogError(LOG_PREFIX + "GameManager를 찾을 수 없습니다!");
+                LogManager.Error(LOG_PREFIX, "GameManager를 찾을 수 없습니다!");
                 
                 // GameManager가 없다면 직접 Game 씬 재로드
                 Time.timeScale = 1f;
@@ -130,7 +130,7 @@ namespace InvaderInsider.UI
 
         private void OnSettingsClicked()
         {
-            LogManager.Log(LOG_PREFIX + "Settings 버튼이 클릭되었습니다.");
+            LogManager.Info(LOG_PREFIX, "Settings 버튼이 클릭되었습니다.");
             
             // Pause 패널 숨기고 Settings 패널 표시
             Hide();
@@ -139,7 +139,7 @@ namespace InvaderInsider.UI
 
         private void OnMainMenuClicked()
         {
-            LogManager.Log(LOG_PREFIX + "Main Menu 버튼이 클릭되었습니다.");
+            LogManager.Info(LOG_PREFIX, "Main Menu 버튼이 클릭되었습니다.");
             
             // GameManager가 씬 전환과 상태 관리를 모두 담당
             if (GameManager.Instance != null)

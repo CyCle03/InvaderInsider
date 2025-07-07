@@ -100,7 +100,7 @@ namespace InvaderInsider.UI
             var cardData = cardManager.GetCardById(cardId);
             if (cardData == null)
             {
-                LogManager.Warning(LOG_TAG, "카드 데이터를 찾을 수 없음 - ID: {0}", cardId);
+                LogManager.Warning(LOG_TAG, $"카드 데이터를 찾을 수 없음 - ID: {cardId}");
                 return;
             }
 
@@ -122,7 +122,7 @@ namespace InvaderInsider.UI
                 activeCardUIs.Add(cardUI);
                 cardUIDict[cardId] = cardUI;
 
-                LogManager.Info(LOG_TAG, "카드 생성됨 - ID: {0}", cardId);
+                LogManager.Info(LOG_TAG, $"카드 생성됨 - ID: {cardId}");
             }
         }
 
@@ -133,12 +133,12 @@ namespace InvaderInsider.UI
             if (isInDeck)
             {
                 saveManager.RemoveCardFromDeck(cardId);
-                LogManager.Info(LOG_TAG, "카드가 덱에서 제거됨 - ID: {0}", cardId);
+                LogManager.Info(LOG_TAG, $"카드가 덱에서 제거됨 - ID: {cardId}");
             }
             else
             {
                 saveManager.AddCardToDeck(cardId);
-                LogManager.Info(LOG_TAG, "카드가 덱에 추가됨 - ID: {0}", cardId);
+                LogManager.Info(LOG_TAG, $"카드가 덱에 추가됨 - ID: {cardId}");
             }
             
             RefreshDeckDisplay();
@@ -150,7 +150,7 @@ namespace InvaderInsider.UI
             {
                 if (cardUI != null)
                 {
-                    LogManager.Info(LOG_TAG, "카드 제거됨 - ID: {0}", cardUI.CardId);
+                    LogManager.Info(LOG_TAG, $"카드 제거됨 - ID: {cardUI.CardId}");
                     cardUI.transform.SetParent(null);
                     cardUI.gameObject.SetActive(false);
                 }

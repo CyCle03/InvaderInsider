@@ -140,11 +140,12 @@ namespace InvaderInsider.Data
             // 검증 결과 출력
             if (validationErrors.Count > 0)
             {
-                LogManager.Error("CardDatabase", "유효성 검사 실패:\n{0}", string.Join("\n", validationErrors));
+                LogManager.Error("CardDatabase", $"유효성 검사 실패:
+{string.Join("\n", validationErrors)}");
             }
             else
             {
-                LogManager.Info("CardDatabase", "유효성 검사 통과: {0}개 카드", allCards.Count);
+                LogManager.Info("CardDatabase", $"유효성 검사 통과: {allCards.Count}개 카드");
                 isValidated = true;
             }
 
@@ -204,7 +205,7 @@ namespace InvaderInsider.Data
                 return;
             }
 
-            LogManager.Info("CardDatabase", "카드 타입 분포: {0}", string.Join(", ", typeDistribution.Select(kvp => $"{kvp.Key}: {kvp.Value}개")));
+            LogManager.Info("CardDatabase", $"카드 타입 분포: {string.Join(", ", typeDistribution.Select(kvp => $"{kvp.Key}: {kvp.Value}개"))}");
         }
 
         private void BuildLookupTables()
@@ -233,7 +234,7 @@ namespace InvaderInsider.Data
                 cardsByType[card.type].Add(card);
             }
 
-            LogManager.Info("CardDatabase", "룩업 테이블 구축 완료: {0}개 카드, {1}개 타입", cardLookup.Count, cardsByType.Count);
+            LogManager.Info("CardDatabase", $"룩업 테이블 구축 완료: {cardLookup.Count}개 카드, {cardsByType.Count}개 타입");
             isLookupTableBuilt = true;
         }
 
@@ -306,7 +307,7 @@ namespace InvaderInsider.Data
                 stats.AppendLine($"{kvp.Key}: {kvp.Value.Count}개");
             }
 
-            LogManager.Info("CardDatabase", "{0}", stats.ToString());
+            LogManager.Info("CardDatabase", $"{stats.ToString()}");
         }
 
         // 캐시 무효화 메서드 (데이터 수정 시 호출)

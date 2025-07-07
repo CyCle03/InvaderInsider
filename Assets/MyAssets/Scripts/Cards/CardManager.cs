@@ -78,13 +78,13 @@ namespace InvaderInsider.Cards
             {
                 summonCount = SaveDataManager.Instance.CurrentSaveData.progressData.summonCount;
                 currentSummonCost = initialSummonCost + summonCount * summonCostIncrease;
-                LogManager.Info(LOG_TAG, "소환 데이터 로드 완료. 소환 횟수: {0}, 현재 비용: {1}", summonCount, currentSummonCost);
+                LogManager.Info(LOG_TAG, $"소환 데이터 로드 완료. 소환 횟수: {summonCount}, 현재 비용: {currentSummonCost}");
             }
             else
             {
                 summonCount = 0;
                 currentSummonCost = initialSummonCost;
-                LogManager.Info(LOG_TAG, "소환 데이터 로드 완료. 소환 횟수: {0}, 현재 비용: {1}", summonCount, currentSummonCost);
+                LogManager.Info(LOG_TAG, $"소환 데이터 로드 완료. 소환 횟수: {summonCount}, 현재 비용: {currentSummonCost}");
             }
         }
 
@@ -94,7 +94,7 @@ namespace InvaderInsider.Cards
             {
                 SaveDataManager.Instance.CurrentSaveData.progressData.summonCount = summonCount;
                 // 메모리에만 업데이트, 저장하지 않음 (스테이지 클리어/게임 종료 시에만 저장)
-                LogManager.Info(LOG_TAG, "소환 데이터 저장 완료. 소환 횟수: {0}", summonCount);
+                LogManager.Info(LOG_TAG, $"소환 데이터 저장 완료. 소환 횟수: {summonCount}");
             }
             else
             {
@@ -140,7 +140,7 @@ namespace InvaderInsider.Cards
                 
                 if (!success)
                 {
-                    LogManager.Error(LOG_TAG, "리소스가 부족합니다. 필요 리소스: {0}, 현재 리소스: {1}", currentSummonCost, currentEData);
+                    LogManager.Error(LOG_TAG, $"리소스가 부족합니다. 필요 리소스: {currentSummonCost}, 현재 리소스: {currentEData}");
                     isSummonInProgress = false;
                     return;
                 }
@@ -149,7 +149,7 @@ namespace InvaderInsider.Cards
                 summonCount++;
                 currentSummonCost = initialSummonCost + summonCount * summonCostIncrease;
 
-                LogManager.Info(LOG_TAG, "소환 비용이 {0}으로 증가했습니다.", currentSummonCost);
+                LogManager.Info(LOG_TAG, $"소환 비용이 {currentSummonCost}으로 증가했습니다.");
 
                 // 랜덤 카드 3장 선택
                 List<CardDBObject> randomCards = SelectRandomCards(3);
@@ -159,7 +159,7 @@ namespace InvaderInsider.Cards
             }
             else
             {
-                LogManager.Warning(LOG_TAG, "리소스가 부족합니다. 현재 리소스: {0}, 필요 리소스: {1}", currentEData, currentSummonCost);
+                LogManager.Warning(LOG_TAG, $"리소스가 부족합니다. 현재 리소스: {currentEData}, 필요 리소스: {currentSummonCost}");
             }
         }
 
@@ -334,7 +334,7 @@ namespace InvaderInsider.Cards
             if (SaveDataManager.Instance != null)
             {
                 SaveDataManager.Instance.RemoveCardFromHand(cardId);
-                LogManager.Info(LOG_TAG, "카드가 핸드에서 제거되었습니다: ID {0}", cardId);
+                LogManager.Info(LOG_TAG, $"카드가 핸드에서 제거되었습니다: ID {cardId}");
             }
         }
 
@@ -362,7 +362,7 @@ namespace InvaderInsider.Cards
                 if (SaveDataManager.Instance != null)
                 {
                     SaveDataManager.Instance.AddCardToHandAndOwned(randomCard.cardId);
-                    LogManager.Info(LOG_TAG, "카드가 핸드에 추가되었습니다: '{0}' (ID: {1})", randomCard.cardName, randomCard.cardId);
+                    LogManager.Info(LOG_TAG, $"카드가 핸드에 추가되었습니다: '{randomCard.cardName}' (ID: {randomCard.cardId})");
                 }
             }
         }
@@ -372,10 +372,10 @@ namespace InvaderInsider.Cards
             if (SaveDataManager.Instance != null)
             {
                 var handCards = GetHandCards();
-                LogManager.Info(LOG_TAG, "현재 핸드 상태: {0}장의 카드", handCards.Count);
+                LogManager.Info(LOG_TAG, $"현재 핸드 상태: {handCards.Count}장의 카드");
                 foreach (var card in handCards)
                 {
-                    LogManager.Info(LOG_TAG, "- {0} (ID: {1}, 타입: {2}, 등급: {3})", card.cardName, card.cardId, card.type, card.rarity);
+                    LogManager.Info(LOG_TAG, $"- {card.cardName} (ID: {card.cardId}, 타입: {card.type}, 등급: {card.rarity})");
                 }
             }
         }

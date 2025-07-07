@@ -193,7 +193,7 @@ namespace InvaderInsider
             
             if (showDebugInfo)
             {
-                LogManager.Log(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.Info(GameConstants.LOG_PREFIX_GAME, 
                     $"투사체 컴포넌트 초기화 완료: {gameObject.name}");
             }
         }
@@ -214,7 +214,7 @@ namespace InvaderInsider
             // 파라미터 검증
             if (target == null)
             {
-                LogManager.LogError(GameConstants.LOG_PREFIX_GAME, 
+                LogManager.Error(GameConstants.LOG_PREFIX_GAME, 
                     "투사체 발사 실패: 타겟이 null입니다");
                 ReturnToPool();
                 return;
@@ -232,8 +232,8 @@ namespace InvaderInsider
             if (showDebugInfo)
             {
                 string targetName = GetTargetName(target);
-                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                    LOG_MESSAGES[2], gameObject.name, targetName, damage, speed);
+                LogManager.Info(GameConstants.LOG_PREFIX_GAME, 
+                    $"투사체 {gameObject.name} 초기화 완료 - 타겟: {targetName}, 데미지: {damage}, 속도: {speed}");
             }
         }
 
@@ -455,8 +455,8 @@ namespace InvaderInsider
                 if (showDebugInfo)
                 {
                     string targetName = GetTargetName(targetDamageable);
-                    LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                        LOG_MESSAGES[0], gameObject.name, targetName, damage);
+                    LogManager.Info(GameConstants.LOG_PREFIX_GAME, 
+                        $"투사체 {gameObject.name}이(가) 타겟 {targetName}에게 {damage} 데미지를 입혔습니다");
                 }
             }
 
@@ -481,8 +481,8 @@ namespace InvaderInsider
             if (showDebugInfo)
             {
                 string targetName = GetTargetName(alternativeTarget);
-                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                    LOG_MESSAGES[0], gameObject.name, targetName, damage);
+                LogManager.Info(GameConstants.LOG_PREFIX_GAME, 
+                    $"투사체 {gameObject.name}이(가) 타겟 {targetName}에게 {damage} 데미지를 입혔습니다");
             }
 
             currentState = ProjectileState.Hit;
@@ -522,8 +522,8 @@ namespace InvaderInsider
         {
             if (showDebugInfo)
             {
-                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                    LOG_MESSAGES[1], gameObject.name);
+                LogManager.Info(GameConstants.LOG_PREFIX_GAME, 
+                    $"투사체 {gameObject.name}이(가) 타겟 손실로 인해 제거됩니다");
             }
 
             currentState = ProjectileState.Expired;
@@ -537,8 +537,8 @@ namespace InvaderInsider
         {
             if (showDebugInfo)
             {
-                LogManager.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                    LOG_MESSAGES[3], gameObject.name);
+                LogManager.Info(GameConstants.LOG_PREFIX_GAME, 
+                    $"투사체 {gameObject.name}이(가) 생명주기 만료로 제거됩니다");
             }
 
             currentState = ProjectileState.Expired;

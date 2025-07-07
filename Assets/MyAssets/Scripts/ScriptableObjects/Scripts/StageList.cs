@@ -20,7 +20,7 @@ namespace InvaderInsider
                     stages[i] = stageContainers[i] as IStageContainer;
                     if (stages[i] == null)
                     {
-                        LogManager.Error("StageList", "Stage container at index {0} does not implement IStageContainer interface!", i);
+                        LogManager.Error("StageList", $"Stage container at index {i} does not implement IStageContainer interface!");
                     }
                 }
             }

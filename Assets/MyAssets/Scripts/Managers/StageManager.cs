@@ -87,7 +87,7 @@ namespace InvaderInsider.Managers
             if (currentSceneName != "Game")
             {
                 #if UNITY_EDITOR
-                LogManager.Log(LOG_PREFIX, $"게임 씬이 아니므로 StageManager를 파괴합니다. 현재 씬: {currentSceneName}");
+                LogManager.Info(LOG_PREFIX, $"게임 씬이 아니므로 StageManager를 파괴합니다. 현재 씬: {currentSceneName}");
                 #endif
                 Destroy(gameObject);
                 return;
@@ -109,11 +109,11 @@ namespace InvaderInsider.Managers
                 stageData = stageDataObject as IStageData;
                 if (stageData == null)
                 {
-                    LogManager.LogError(LOG_PREFIX, "StageDataObject가 IStageData를 구현하지 않습니다. StageList 또는 StageDBObject를 사용하세요.");
+                    LogManager.Error(LOG_PREFIX, "StageDataObject가 IStageData를 구현하지 않습니다. StageList 또는 StageDBObject를 사용하세요.");
                 }
                 else
                 {
-                    LogManager.Log(LOG_PREFIX, "StageDataObject에서 StageData를 재설정했습니다.");
+                    LogManager.Info(LOG_PREFIX, "StageDataObject에서 StageData를 재설정했습니다.");
                 }
             }
             else
@@ -129,7 +129,7 @@ namespace InvaderInsider.Managers
                 {
                     stageDataObject = defaultStageList;
                     stageData = stageDataObject as IStageData;
-                    LogManager.Log(LOG_PREFIX, $"Resources에서 StageData를 로드했습니다: {defaultStageList.name}");
+                    LogManager.Info(LOG_PREFIX, $"Resources에서 StageData를 로드했습니다: {defaultStageList.name}");
                 }
                 else
                 {
@@ -142,11 +142,11 @@ namespace InvaderInsider.Managers
                     {
                         stageDataObject = stageDBObject;
                         stageData = stageDataObject as IStageData;
-                        LogManager.Log(LOG_PREFIX, $"Resources에서 StageDBObject를 로드했습니다: {stageDBObject.name}");
+                        LogManager.Info(LOG_PREFIX, $"Resources에서 StageDBObject를 로드했습니다: {stageDBObject.name}");
                     }
                     else
                     {
-                        LogManager.LogError(LOG_PREFIX, "StageData를 찾을 수 없습니다. 다음 경로들을 확인하세요:");
+                        LogManager.Error(LOG_PREFIX, "StageData를 찾을 수 없습니다. 다음 경로들을 확인하세요:");
                     }
                 }
             }
@@ -169,7 +169,7 @@ namespace InvaderInsider.Managers
                 if (gameManager == null)
                 {
                     #if UNITY_EDITOR
-                    Debug.LogWarning(LOG_PREFIX + "GameManager를 찾을 수 없습니다. 나중에 재시도합니다.");
+                    LogManager.Warning(LOG_PREFIX, "GameManager를 찾을 수 없습니다. 나중에 재시도합니다.");
                     #endif
                 }
             }
@@ -178,9 +178,9 @@ namespace InvaderInsider.Managers
             if (stageData == null)
             {
                 #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + "StageData가 null입니다. 다음 중 하나를 확인하세요:");
-                Debug.LogError(LOG_PREFIX + "1. StageManager Inspector에서 StageDataObject 필드에 StageList 또는 StageDBObject 할당");
-                Debug.LogError(LOG_PREFIX + "2. Resources 폴더에 StageList1.asset 또는 Stage1 Database.asset 파일 존재 확인");
+                LogManager.Error(LOG_PREFIX, "StageData가 null입니다. 다음 중 하나를 확인하세요:");
+                LogManager.Error(LOG_PREFIX, "1. StageManager Inspector에서 StageDataObject 필드에 StageList 또는 StageDBObject 할당");
+                LogManager.Error(LOG_PREFIX, "2. Resources 폴더에 StageList1.asset 또는 Stage1 Database.asset 파일 존재 확인");
                 #endif
                 
                 // StageData 재로드 시도
@@ -190,12 +190,12 @@ namespace InvaderInsider.Managers
                     if (stageData == null)
                     {
                         #if UNITY_EDITOR
-                        LogManager.LogError(LOG_PREFIX, "StageDataObject가 IStageData를 구현하지 않습니다. StageList 또는 StageDBObject를 사용하세요.");
+                        LogManager.Error(LOG_PREFIX, "StageDataObject가 IStageData를 구현하지 않습니다. StageList 또는 StageDBObject를 사용하세요.");
                         #endif
                     }
                     else
                     {
-                        LogManager.Log(LOG_PREFIX, "StageDataObject에서 StageData를 재설정했습니다.");
+                        LogManager.Info(LOG_PREFIX, "StageDataObject에서 StageData를 재설정했습니다.");
                     }
                 }
                 else
@@ -211,7 +211,7 @@ namespace InvaderInsider.Managers
                     {
                         stageDataObject = defaultStageList;
                         stageData = stageDataObject as IStageData;
-                        LogManager.Log(LOG_PREFIX, $"Resources에서 StageData를 로드했습니다: {defaultStageList.name}");
+                        LogManager.Info(LOG_PREFIX, $"Resources에서 StageData를 로드했습니다: {defaultStageList.name}");
                     }
                     else
                     {
@@ -224,11 +224,11 @@ namespace InvaderInsider.Managers
                         {
                             stageDataObject = stageDBObject;
                             stageData = stageDataObject as IStageData;
-                            LogManager.Log(LOG_PREFIX, $"Resources에서 StageDBObject를 로드했습니다: {stageDBObject.name}");
+                            LogManager.Info(LOG_PREFIX, $"Resources에서 StageDBObject를 로드했습니다: {stageDBObject.name}");
                         }
                         else
                         {
-                            LogManager.LogError(LOG_PREFIX, "StageData를 찾을 수 없습니다. 다음 경로들을 확인하세요:");
+                            LogManager.Error(LOG_PREFIX, "StageData를 찾을 수 없습니다. 다음 경로들을 확인하세요:");
                         }
                     }
                 }
@@ -242,7 +242,7 @@ namespace InvaderInsider.Managers
             string bottomBarStatus = bottomBarPanel != null ? "찾음" : "없음";
             string saveDataStatus = saveDataManager != null ? "찾음" : "없음";
             string stageDataStatus = stageData != null ? "찾음" : "없음";
-            LogManager.Log($"[Stage] 컴포넌트 초기화 - GameManager: {gameManagerStatus}, BottomBarPanel: {bottomBarStatus}, SaveDataManager: {saveDataStatus}, StageData: {stageDataStatus}");
+            LogManager.Info($"[Stage] 컴포넌트 초기화 - GameManager: {gameManagerStatus}, BottomBarPanel: {bottomBarStatus}, SaveDataManager: {saveDataStatus}, StageData: {stageDataStatus}");
             #endif
 
             activeTowers.Clear();
@@ -266,13 +266,13 @@ namespace InvaderInsider.Managers
             {
                 waypoints = GameObject.FindGameObjectsWithTag("Waypoint");
                 #if UNITY_EDITOR
-                LogManager.Log(LOG_PREFIX + $"Waypoint 태그로 {waypoints.Length}개 찾음");
+                LogManager.Info(LOG_PREFIX, $"Waypoint 태그로 {waypoints.Length}개 찾음");
                 #endif
             }
             catch (UnityException ex)
             {
                 #if UNITY_EDITOR
-                LogManager.LogWarning(LOG_PREFIX + $"Waypoint 태그가 정의되지 않았습니다: {ex.Message}");
+                LogManager.Warning(LOG_PREFIX, $"Waypoint 태그가 정의되지 않았습니다: {ex.Message}");
                 #endif
             }
             
@@ -292,14 +292,14 @@ namespace InvaderInsider.Managers
                     {
                         foundWaypoints.Add(obj);
                         #if UNITY_EDITOR
-                        LogManager.Log(LOG_PREFIX + $"이름으로 찾은 웨이포인트: {obj.name}");
+                        LogManager.Info(LOG_PREFIX, $"이름으로 찾은 웨이포인트: {obj.name}");
                         #endif
                     }
                 }
                 
                 waypoints = foundWaypoints.ToArray();
                 #if UNITY_EDITOR
-                LogManager.Log(LOG_PREFIX + $"이름으로 {waypoints.Length}개 찾음");
+                LogManager.Info(LOG_PREFIX, $"이름으로 {waypoints.Length}개 찾음");
                 #endif
             }
             
@@ -314,19 +314,19 @@ namespace InvaderInsider.Managers
                     {
                         wayPointsList.Add(waypoint.transform);
                         #if UNITY_EDITOR
-                        LogManager.Log(LOG_PREFIX + $"웨이포인트 추가됨: {waypoint.name} at {waypoint.transform.position}");
+                        LogManager.Info(LOG_PREFIX, $"웨이포인트 추가됨: {waypoint.name} at {waypoint.transform.position}");
                         #endif
                     }
                 }
                 
                 #if UNITY_EDITOR
-                LogManager.Log(LOG_PREFIX + $"{wayPointsList.Count}개의 웨이포인트를 자동으로 찾았습니다.");
+                LogManager.Info(LOG_PREFIX, $"{wayPointsList.Count}개의 웨이포인트를 자동으로 찾았습니다.");
                 #endif
             }
             else
             {
                 #if UNITY_EDITOR
-                LogManager.LogWarning(LOG_PREFIX + "웨이포인트를 찾을 수 없습니다. 수동으로 설정해주세요.");
+                LogManager.Warning(LOG_PREFIX, "웨이포인트를 찾을 수 없습니다. 수동으로 설정해주세요.");
                 #endif
             }
         }
@@ -350,11 +350,11 @@ namespace InvaderInsider.Managers
                 #if UNITY_EDITOR
                 if (gameManager != null)
                 {
-                    LogManager.Log(LOG_PREFIX + "Start에서 GameManager 참조 재설정 완료");
+                    LogManager.Info(LOG_PREFIX, "Start에서 GameManager 참조 재설정 완료");
                 }
                 else
                 {
-                    LogManager.LogWarning(LOG_PREFIX + "Start에서도 GameManager를 찾을 수 없습니다.");
+                    LogManager.Warning(LOG_PREFIX, "Start에서도 GameManager를 찾을 수 없습니다.");
                 }
                 #endif
             }
@@ -363,13 +363,13 @@ namespace InvaderInsider.Managers
             if (wayPointsList == null || wayPointsList.Count == 0)
             {
                 #if UNITY_EDITOR
-                LogManager.Log(LOG_PREFIX + "웨이포인트가 누락되어 재초기화를 시도합니다.");
+                LogManager.Info(LOG_PREFIX, "웨이포인트가 누락되어 재초기화를 시도합니다.");
                 #endif
                 AutoFindWaypoints();
                 
                 if (wayPointsList == null || wayPointsList.Count == 0)
                 {
-                    LogManager.LogWarning(LOG_PREFIX + "웨이포인트를 찾을 수 없습니다. 게임 오브젝트에 'Waypoint' 또는 'EnemyPath' 태그를 설정하세요.");
+                    LogManager.Warning(LOG_PREFIX, "웨이포인트를 찾을 수 없습니다. 게임 오브젝트에 'Waypoint' 또는 'EnemyPath' 태그를 설정하세요.");
                 }
             }
         }
@@ -390,7 +390,7 @@ namespace InvaderInsider.Managers
             if (!isInitialized)
             {
                 #if UNITY_EDITOR
-                LogManager.LogError(LOG_PREFIX + "StageManager가 초기화되지 않음");
+                LogManager.Error(LOG_PREFIX, "StageManager가 초기화되지 않음");
                 #endif
                 return;
             }
@@ -399,14 +399,14 @@ namespace InvaderInsider.Managers
             if (stageIndex >= 0 && stageData != null && stageIndex < stageData.StageCount)
             {
                 #if UNITY_EDITOR
-                LogManager.Log(LOG_PREFIX + $"스테이지 {stageIndex + 1}부터 시작합니다. (인덱스: {stageIndex})");
+                LogManager.Info(LOG_PREFIX, $"스테이지 {stageIndex + 1}부터 시작합니다. (인덱스: {stageIndex})");
                 #endif
                 StartStageInternal(stageIndex);
             }
             else
             {
                 #if UNITY_EDITOR
-                LogManager.LogWarning(LOG_PREFIX + $"무효한 스테이지 인덱스 {stageIndex} (총 스테이지: {stageData?.StageCount ?? 0}) - 0으로 시작");
+                LogManager.Warning(LOG_PREFIX, $"무효한 스테이지 인덱스 {stageIndex} (총 스테이지: {stageData?.StageCount ?? 0}) - 0으로 시작");
                 #endif
                 StartStageInternal(0);
             }
@@ -416,7 +416,7 @@ namespace InvaderInsider.Managers
         {
             if (!isInitialized)
             {
-                LogManager.LogError(LOG_PREFIX + "StageManager가 초기화되지 않았습니다.");
+                LogManager.Error(LOG_PREFIX, "StageManager가 초기화되지 않았습니다.");
                 return;
             }
 
@@ -481,7 +481,7 @@ namespace InvaderInsider.Managers
                 if (lastState != currentState)
                 {
                     #if UNITY_EDITOR
-                    LogManager.Log(LOG_PREFIX + $"스테이지 상태 변경: {lastState} -> {currentState}");
+                    LogManager.Info(LOG_PREFIX, $"스테이지 상태 변경: {lastState} -> {currentState}");
                     #endif
                     lastState = currentState;
                 }
@@ -510,7 +510,7 @@ namespace InvaderInsider.Managers
             }
             
             #if UNITY_EDITOR
-            LogManager.Log(LOG_PREFIX + "스테이지 상태 핸들러 종료");
+            LogManager.Info(LOG_PREFIX, "스테이지 상태 핸들러 종료");
             #endif
         }
 
@@ -520,7 +520,7 @@ namespace InvaderInsider.Managers
             int currentStageWaveCount = GetStageWaveCount(stageNum);
             
             #if UNITY_EDITOR
-            LogManager.Log(LOG_PREFIX + $"스테이지 {stageNum + 1} 준비 중... (총 적: {currentStageWaveCount})");
+            LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum + 1} 준비 중... (총 적: {currentStageWaveCount})");
             #endif
             
             // TopBar UI 업데이트 (현재/최대 형식) - GameManager를 통해
@@ -545,7 +545,7 @@ namespace InvaderInsider.Managers
             await UniTask.Delay(TimeSpan.FromSeconds(STAGE_START_DELAY));
             currentState = StageState.Run;
             #if UNITY_EDITOR
-            LogManager.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[4], stageNum));
+            LogManager.Info(LOG_PREFIX, string.Format(LOG_MESSAGES[4], stageNum));
             #endif
         }
 
@@ -570,7 +570,7 @@ namespace InvaderInsider.Managers
                 if (enemyCount >= currentStageWaveCount && activeEnemyCountValue <= 0)
                 {
                     #if UNITY_EDITOR
-                    LogManager.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[5], stageNum, enemyCount, currentStageWaveCount));
+                    LogManager.Info(LOG_PREFIX, string.Format(LOG_MESSAGES[5], stageNum, enemyCount, currentStageWaveCount));
                     #endif
                     clearedStageIndex = stageNum;
                     currentState = StageState.End;
@@ -593,13 +593,13 @@ namespace InvaderInsider.Managers
                 // clearedStageIndex는 0-based이므로 1-based로 변환하여 전달
                 gameManager.StageCleared(clearedStageIndex + 1);
                 #if UNITY_EDITOR
-                LogManager.Log(LOG_PREFIX + $"스테이지 {clearedStageIndex + 1} 클리어 완료 - 진행 정보 저장됨");
+                LogManager.Info(LOG_PREFIX, $"스테이지 {clearedStageIndex + 1} 클리어 완료 - 진행 정보 저장됨");
                 #endif
             }
             else
             {
                 #if UNITY_EDITOR
-                LogManager.LogWarning(LOG_PREFIX + "GameManager를 찾을 수 없어 스테이지 클리어 정보를 저장할 수 없습니다.");
+                LogManager.Warning(LOG_PREFIX, "GameManager를 찾을 수 없어 스테이지 클리어 정보를 저장할 수 없습니다.");
                 #endif
             }
 
@@ -614,7 +614,7 @@ namespace InvaderInsider.Managers
                 currentState = StageState.Over;
                 
                 #if UNITY_EDITOR
-                LogManager.Log(LOG_PREFIX + "모든 스테이지 완료 - 스테이지 진행 종료");
+                LogManager.Info(LOG_PREFIX, "모든 스테이지 완료 - 스테이지 진행 종료");
                 #endif
                 
                 return; // 코루틴 종료로 더 이상 진행하지 않음
@@ -624,7 +624,7 @@ namespace InvaderInsider.Managers
                 // 다음 스테이지 대기 상태로 전환
                 currentState = StageState.Wait;
                 #if UNITY_EDITOR
-                LogManager.Log(LOG_PREFIX + $"다음 스테이지 {stageNum + 1} 대기 중...");
+                LogManager.Info(LOG_PREFIX, $"다음 스테이지 {stageNum + 1} 대기 중...");
                 #endif
             }
 
@@ -678,7 +678,7 @@ namespace InvaderInsider.Managers
                 if (wayPointsList == null || wayPointsList.Count == 0)
                 {
                     #if UNITY_EDITOR
-                    LogManager.LogWarning(LOG_PREFIX + "웨이포인트가 없어 적을 소환할 수 없습니다.");
+                    LogManager.Warning(LOG_PREFIX, "웨이포인트가 없어 적을 소환할 수 없습니다.");
                     #endif
                     return;
                 }
@@ -702,7 +702,7 @@ namespace InvaderInsider.Managers
                 else
                 {
                     #if UNITY_EDITOR
-                    LogManager.LogError(LOG_PREFIX, "StageData가 null입니다. 에너미 프리팹을 가져올 수 없습니다.");
+                    LogManager.Error(LOG_PREFIX, "StageData가 null입니다. 에너미 프리팹을 가져올 수 없습니다.");
                     #endif
                     return;
                 }
@@ -711,7 +711,7 @@ namespace InvaderInsider.Managers
                 if (enemyPrefab == null)
                 {
                     #if UNITY_EDITOR
-                    LogManager.LogError(LOG_PREFIX, "StageData에서 에너미 프리팹을 찾을 수 없습니다. StageData를 확인해주세요.");
+                    LogManager.Error(LOG_PREFIX, "StageData에서 에너미 프리팹을 찾을 수 없습니다. StageData를 확인해주세요.");
                     #endif
                     return;
                 }
@@ -816,7 +816,7 @@ namespace InvaderInsider.Managers
             else
             {
                 #if UNITY_EDITOR
-                LogManager.LogError(LOG_PREFIX, "GameManager를 찾을 수 없어 eData 업데이트를 건너뜁니다.");
+                LogManager.Error(LOG_PREFIX, "GameManager를 찾을 수 없어 eData 업데이트를 건너뜁니다.");
                 #endif
             }
         }
@@ -845,7 +845,7 @@ namespace InvaderInsider.Managers
         protected override void OnDestroy()
         {
             #if UNITY_EDITOR
-            LogManager.Log(LOG_PREFIX + "StageManager 파괴 - 리소스 정리");
+            LogManager.Info(LOG_PREFIX, "StageManager 파괴 - 리소스 정리");
             #endif
             
             // 적 오브젝트 정리
@@ -860,7 +860,7 @@ namespace InvaderInsider.Managers
             if (_isQuitting) return;
             
             #if UNITY_EDITOR
-            LogManager.Log(LOG_PREFIX + "StageManager 비활성화 - 코루틴 정리");
+            LogManager.Info(LOG_PREFIX, "StageManager 비활성화 - 코루틴 정리");
             #endif
             
             // 씬 전환시 코루틴만 정리 (인스턴스는 유지)
@@ -933,7 +933,7 @@ namespace InvaderInsider.Managers
         public void RefreshWaypoints()
         {
             #if UNITY_EDITOR
-            LogManager.Log(LOG_PREFIX + LOG_MESSAGES[7]);
+            LogManager.Info(LOG_PREFIX, LOG_MESSAGES[7]);
             #endif
             AutoFindWaypoints();
         }
@@ -944,14 +944,14 @@ namespace InvaderInsider.Managers
             if (wayPointsList == null || wayPointsList.Count == 0)
             {
                 #if UNITY_EDITOR
-                LogManager.LogWarning(LOG_PREFIX + "웨이포인트가 설정되지 않아 자동 찾기를 시도합니다.");
+                LogManager.Warning(LOG_PREFIX, "웨이포인트가 설정되지 않아 자동 찾기를 시도합니다.");
                 #endif
                 AutoFindWaypoints();
                 
                 if (wayPointsList == null || wayPointsList.Count == 0)
                 {
                     #if UNITY_EDITOR
-                    LogManager.LogError(LOG_PREFIX + "웨이포인트를 찾을 수 없습니다. Game 씬에 WayPoint1, WayPoint2 오브젝트가 있는지 확인하세요.");
+                    LogManager.Error(LOG_PREFIX, "웨이포인트를 찾을 수 없습니다. Game 씬에 WayPoint1, WayPoint2 오브젝트가 있는지 확인하세요.");
                     #endif
                     return false;
                 }
@@ -962,7 +962,7 @@ namespace InvaderInsider.Managers
             if (wayPointsList[0] == null)
             {
                 #if UNITY_EDITOR
-                LogManager.LogWarning(LOG_PREFIX + "웨이포인트가 파괴되어 재초기화합니다.");
+                LogManager.Warning(LOG_PREFIX, "웨이포인트가 파괴되어 재초기화합니다.");
                 #endif
                 AutoFindWaypoints();
                 
@@ -970,7 +970,7 @@ namespace InvaderInsider.Managers
                 if (wayPointsList == null || wayPointsList.Count == 0 || wayPointsList[0] == null)
                 {
                     #if UNITY_EDITOR
-                    LogManager.LogError(LOG_PREFIX + "웨이포인트 자동 찾기에 실패했습니다. Game 씬에 WayPoint1, WayPoint2 오브젝트가 활성화되어 있는지 확인해주세요.");
+                    LogManager.Error(LOG_PREFIX, "웨이포인트 자동 찾기에 실패했습니다. Game 씬에 WayPoint1, WayPoint2 오브젝트가 활성화되어 있는지 확인해주세요.");
                     #endif
                     return false;
                 }

@@ -63,7 +63,7 @@ namespace InvaderInsider.Managers
             uiManager = UIManager.Instance;
             if (uiManager == null)
             {
-                LogManager.LogError(LOG_PREFIX, "UIManager를 찾을 수 없습니다.");
+                LogManager.Error(LOG_PREFIX, "UIManager를 찾을 수 없습니다.");
                 return;
             }
             
@@ -84,7 +84,7 @@ namespace InvaderInsider.Managers
         {
             if (!isInitialized)
             {
-                LogManager.Log(LOG_PREFIX, LOG_MESSAGES[0]);
+                LogManager.Info(LOG_PREFIX, LOG_MESSAGES[0]);
             }
             
             // 주요 패널 참조 자동 설정
@@ -102,7 +102,7 @@ namespace InvaderInsider.Managers
             registeredCount += RegisterPanelByType<SummonChoicePanel>("SummonChoice");
             registeredCount += RegisterPanelByType<HandDisplayPanel>("HandDisplay");
             
-            LogManager.LogFormat(LOG_PREFIX, LOG_MESSAGES[1], registeredCount);
+            LogManager.Info(LOG_PREFIX, $"UI 패널 캐싱 완료 - {registeredCount}개 패널 등록");
         }
         
         /// <summary>
@@ -117,7 +117,7 @@ namespace InvaderInsider.Managers
                 if (topBarPanel != null)
                 {
                     #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + "TopBarPanel 참조를 자동으로 찾았습니다.");
+                    LogManager.Info(LOG_PREFIX, "TopBarPanel 참조를 자동으로 찾았습니다.");
                     #endif
                 }
             }
@@ -129,7 +129,7 @@ namespace InvaderInsider.Managers
                 if (bottomBarPanel != null)
                 {
                     #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + "BottomBarPanel 참조를 자동으로 찾았습니다.");
+                    LogManager.Info(LOG_PREFIX, "BottomBarPanel 참조를 자동으로 찾았습니다.");
                     #endif
                 }
             }
@@ -141,7 +141,7 @@ namespace InvaderInsider.Managers
                 if (inGamePanel != null)
                 {
                     #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + "InGamePanel 참조를 자동으로 찾았습니다.");
+                    LogManager.Info(LOG_PREFIX, "InGamePanel 참조를 자동으로 찾았습니다.");
                     #endif
                 }
             }
@@ -194,7 +194,7 @@ namespace InvaderInsider.Managers
                 return panel;
             }
             
-            LogManager.LogWarning(LOG_PREFIX, string.Format(GameConstants.LogMessages.COMPONENT_NOT_FOUND, typeof(T).Name));
+            LogManager.Warning(LOG_PREFIX, string.Format(GameConstants.LogMessages.COMPONENT_NOT_FOUND, typeof(T).Name));
             return null;
         }
         
@@ -230,7 +230,7 @@ namespace InvaderInsider.Managers
                 if (topBarPanel == null)
                 {
                     #if UNITY_EDITOR
-                    Debug.LogWarning(LOG_PREFIX + "TopBarPanel을 찾을 수 없습니다. EData UI 업데이트를 건너뜁니다.");
+                    LogManager.Warning(LOG_PREFIX, "TopBarPanel을 찾을 수 없습니다. EData UI 업데이트를 건너뜁니다.");
                     #endif
                     return;
                 }
@@ -251,7 +251,7 @@ namespace InvaderInsider.Managers
                 if (topBarPanel == null)
                 {
                     #if UNITY_EDITOR
-                    Debug.LogWarning(LOG_PREFIX + "TopBarPanel을 찾을 수 없습니다. Stage Wave UI 업데이트를 건너뜁니다.");
+                    LogManager.Warning(LOG_PREFIX, "TopBarPanel을 찾을 수 없습니다. Stage Wave UI 업데이트를 건너뜁니다.");
                     #endif
                     return;
                 }
@@ -272,7 +272,7 @@ namespace InvaderInsider.Managers
             if (topBarPanel != null) topBarPanel.gameObject.SetActive(true);
             if (inGamePanel != null) inGamePanel.gameObject.SetActive(true);
             
-            LogManager.Log(LOG_PREFIX, LOG_MESSAGES[4]);
+            LogManager.Info(LOG_PREFIX, LOG_MESSAGES[4]);
         }
         
         /// <summary>
@@ -295,7 +295,7 @@ namespace InvaderInsider.Managers
                 }
             }
             
-            LogManager.Log(LOG_PREFIX, LOG_MESSAGES[5]);
+            LogManager.Info(LOG_PREFIX, LOG_MESSAGES[5]);
         }
         
         #endregion
