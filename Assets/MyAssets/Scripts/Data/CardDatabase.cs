@@ -140,9 +140,7 @@ namespace InvaderInsider.Data
             // 검증 결과 출력
             if (validationErrors.Count > 0)
             {
-                LogManager.Error("CardDatabase", $"유효성 검사 실패:
-{string.Join("
-", validationErrors)}");
+                LogManager.Error("CardDatabase", $"유효성 검사 실패:\n{string.Join("\n", validationErrors)}");
             }
             else
             {
