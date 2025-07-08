@@ -164,6 +164,15 @@ namespace InvaderInsider.UI
                 Time.timeScale = 1f;
             }
         }
+
+        private void OnDisable()
+        {
+            // 패널이 비활성화될 때 TimeScale을 1로 복원
+            if (Time.timeScale == 0f)
+            {
+                Time.timeScale = 1f;
+            }
+        }
         
         private void CleanupButtonEvents()
         {
