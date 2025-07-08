@@ -438,41 +438,7 @@ namespace InvaderInsider.Managers
 
         
 
-        private void ResetStageState(int startStageIndex, bool isLoadedGame)
-        {
-            // 스테이지 상태 초기화
-            stageNum = startStageIndex;
-            currentState = StageState.Ready;
-            
-            // 적 카운트 초기화
-            enemyCount = 0;
-            activeEnemyCountValue = 0;
-            
-            // 로드된 게임인 경우 저장된 데이터 기반으로 상태 복원
-            if (isLoadedGame)
-            {
-                var saveDataManager = SaveDataManager.Instance;
-                if (saveDataManager != null)
-                {
-                    // 저장된 데이터에서 현재 스테이지의 적 스폰 상태 복원
-                    int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(startStageIndex);
-                    enemyCount = currentSpawnedEnemies;
-                    
-                    #if UNITY_EDITOR
-                    LogManager.Info(LOG_PREFIX, $"로드된 게임 상태 복원 - 스테이지: {startStageIndex + 1}, 스폰된 적: {currentSpawnedEnemies}");
-                    #endif
-                }
-            }
-            
-            // 웨이브 정보 초기화
-            int maxMonsters = GetStageWaveCount(startStageIndex);
-            
-            // GameManager를 통해 UI 업데이트
-            if (gameManager != null)
-            {
-                gameManager.UpdateStageWaveUI(startStageIndex + 1, enemyCount, maxMonsters);
-            }
-        }
+        
 
         private void CleanupActiveEnemies()
         {
