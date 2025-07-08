@@ -46,7 +46,7 @@ namespace InvaderInsider.Data
         public int currentEData;
         public int highestStageCleared;
         public int summonCount;
-    }
+        public int currentStageIndex; // 현재 진행 중인 스테이지 인덱스 (0-based)
 
     [Serializable]
     public class DeckData
@@ -519,13 +519,19 @@ namespace InvaderInsider.Data
             
             try
             {
+                // 현재 게임 상태를 SaveData에 반영
+                var stageManager = StageManager.Instance;
+                if (stageManager != null)
+                {
+                    currentSaveData.progressData.currentStageIndex = stageManager.GetCurrentStageIndex();
+                }
+
                 string json = JsonConvert.SerializeObject(currentSaveData, Formatting.Indented);
                 File.WriteAllText(SAVE_KEY, json);
                 
                 LogManager.Info("SaveData", "저장 완료! 파일: {0}", SAVE_KEY);
                 LogManager.Info("SaveData", "저장된 최고 클리어 스테이지: {0}", currentSaveData?.progressData?.highestStageCleared);
-                
-                LogManager.Info(LOG_PREFIX, $"게임 데이터 저장 성공 - 파일: {SAVE_KEY}, 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared}");
+                LogManager.Info(LOG_PREFIX, $"게임 데이터 저장 성공 - 파일: {SAVE_KEY}, 최고 클리어 스테이지: {currentSaveData?.progressData?.highestStageCleared}, 현재 스테이지: {currentSaveData?.progressData?.currentStageIndex}");
             }
             catch (Exception e)
             {
@@ -834,33 +840,6 @@ namespace InvaderInsider.Data
             return currentSaveData.progressData.currentEData;
         }
 
-        public int GetCurrentSpawnedEnemyCount(int stageIndex)
-        {
-            // 현재 저장된 게임 데이터에서 해당 스테이지의 스폰된 적 수를 반환
-            if (currentSaveData != null)
-            {
-                // 스테이지 인덱스에 해당하는 스폰된 적 수를 정확히 반환
-                // 기본값은 해당 스테이지의 최대 웨이브 수로 설정
-                var stageManager = UnityEngine.Object.FindObjectOfType<InvaderInsider.Managers.StageManager>();
-                if (stageManager != null)
-                {
-                    int maxWaveCount = stageManager.GetStageWaveCount(stageIndex);
-                    
-                    // 저장된 데이터에서 현재 스테이지의 진행 상황을 확인
-                    // 만약 저장된 데이터가 있다면 그 값을 사용
-                    if (currentSaveData.progressData.highestStageCleared >= stageIndex)
-                    {
-                        // 이미 클리어한 스테이지라면 최대 웨이브 수 반환
-                        return maxWaveCount;
-                    }
-                    else
-                    {
-                        // 현재 진행 중인 스테이지라면 0으로 초기화
-                        return 0;
-                    }
-                }
-            }
-            return 0;
-        }
+        
     }
 }

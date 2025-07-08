@@ -375,7 +375,7 @@ namespace InvaderInsider.Managers
         public void InitializeStage()
         {
             if (!isInitialized) return;
-            StartStageInternal(0);
+            StartStageInternal(0, false);
         }
 
         /// <summary>
@@ -436,10 +436,7 @@ namespace InvaderInsider.Managers
             StageLoopCoroutine().Forget();
         }
 
-        private void ResetStageState(int startStageIndex)
-        {
-            ResetStageState(startStageIndex, false);
-        }
+        
 
         private void ResetStageState(int startStageIndex, bool isLoadedGame)
         {
