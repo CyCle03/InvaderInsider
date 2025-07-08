@@ -659,6 +659,15 @@ namespace InvaderInsider.Managers
         {
             if (!isInitialized || currentState != StageState.Run) return;
 
+            // 웨이포인트 유효성 검사
+            if (!ValidateWaypoints())
+            {
+                #if UNITY_EDITOR
+                LogManager.Error(LOG_PREFIX, "웨이포인트 유효성 검사 실패로 적 소환을 중단합니다.");
+                #endif
+                return;
+            }
+
             // GameManager 참조 확인 및 재참조
             if (gameManager == null)
             {
@@ -673,15 +682,6 @@ namespace InvaderInsider.Managers
             
             if (enemyCount < currentStageWaveCount && activeEnemyCountValue < MAX_ACTIVE_ENEMIES)
             {
-                // 웨이포인트가 없는 경우 처리
-                if (wayPointsList == null || wayPointsList.Count == 0)
-                {
-                    #if UNITY_EDITOR
-                    LogManager.Warning(LOG_PREFIX, "웨이포인트가 없어 적을 소환할 수 없습니다.");
-                    #endif
-                    return;
-                }
-
                 // StageData에서 에너미 프리팹 가져오기
                 GameObject enemyPrefab = null;
                 if (stageData != null)

@@ -708,6 +708,12 @@ namespace InvaderInsider.Managers
         {
             // UI 패널 캐싱 및 등록
             CacheAndRegisterAllPanels();
+
+            // PausePanel이 활성화되지 않도록 명시적으로 숨김
+            if (uiManager != null && uiManager.IsPanelRegistered("Pause"))
+            {
+                uiManager.HidePanel("Pause");
+            }
             
             // 게임플레이 패널 설정
             SetupGameplayPanels();
