@@ -287,6 +287,7 @@ namespace InvaderInsider.Data
     /// <summary>
     /// 게임 데이터 저장/로드를 담당하는 싱글턴 매니저
     /// DontDestroyOnLoad로 씬 전환과 무관하게 유지됨
+    /// 게임 데이터는 스테이지 클리어 시에만 저장됩니다.
     /// </summary>
     public class SaveDataManager : InvaderInsider.Core.SingletonManager<SaveDataManager>
     {
@@ -487,6 +488,7 @@ namespace InvaderInsider.Data
         }
 
         // 지연 저장: 여러 변경사항을 모아서 한 번에 저장
+        // 게임 데이터는 스테이지 클리어 시에만 저장됩니다.
         private void SaveGameData()
         {
             LogManager.Info("SaveData", "SaveGameData() 호출됨");
