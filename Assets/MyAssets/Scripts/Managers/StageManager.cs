@@ -444,12 +444,8 @@ namespace InvaderInsider.Managers
             activeEnemyCountValue = 0;
             stageNum = startStageIndex;
             
-            // 스테이지 시작 시 UI 초기화 (GameManager를 통해)
-            if (gameManager != null)
-            {
-                int maxMonsters = GetStageWaveCount(startStageIndex);
-                gameManager.UpdateStageWaveUI(startStageIndex + 1, 0, maxMonsters);
-            }
+            // 스테이지 시작 시 UI 초기화 (GameManager를 통해) - ResetStageState에서는 UI 업데이트를 하지 않음
+            // UI 업데이트는 HandleReadyState에서 처리
             
             if (bottomBarPanel != null)
             {
