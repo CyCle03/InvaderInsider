@@ -1211,7 +1211,7 @@ namespace InvaderInsider.Managers
             LoadGameSceneAsync().Forget();
         }
 
-        private async UniTask LoadGameSceneAsync()
+        private async UniTask LoadGameSceneAsync(bool isLoadedGame = false)
         {
             // 씬 전환 전 싱글톤 정리
             CleanupSingletonsForSceneChange();
@@ -1245,6 +1245,16 @@ namespace InvaderInsider.Managers
             // 플래그 리셋
             isStartingGame = false;
             isLoadingScene = false;
+
+            // 로드된 게임인 경우 StageManager에 알림
+            if (isLoadedGame)
+            {
+                var stageManager = StageManager.Instance;
+                if (stageManager != null)
+                {
+                    stageManager.InitializeStageFromLoadedData(requestedStartStage);
+                }
+            }
         }
 
         /// <summary>

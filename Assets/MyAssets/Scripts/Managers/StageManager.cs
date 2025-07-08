@@ -383,7 +383,7 @@ namespace InvaderInsider.Managers
         /// Continue Game 시 저장된 스테이지 정보를 기반으로 호출됩니다.
         /// </summary>
         /// <param name="stageIndex">시작할 스테이지 인덱스 (0부터 시작)</param>
-        public void StartStageFrom(int stageIndex)
+        public void StartStageFrom(int stageIndex, bool isLoadedGame = false)
         {
             if (!isInitialized)
             {
@@ -399,14 +399,14 @@ namespace InvaderInsider.Managers
                 #if UNITY_EDITOR
                 LogManager.Info(LOG_PREFIX, $"스테이지 {stageIndex + 1}부터 시작합니다. (인덱스: {stageIndex})");
                 #endif
-                StartStageInternal(stageIndex);
+                StartStageInternal(stageIndex, isLoadedGame);
             }
             else
             {
                 #if UNITY_EDITOR
                 LogManager.Warning(LOG_PREFIX, $"무효한 스테이지 인덱스 {stageIndex} (총 스테이지: {stageData?.StageCount ?? 0}) - 0으로 시작");
                 #endif
-                StartStageInternal(0);
+                StartStageInternal(0, isLoadedGame);
             }
         }
 
