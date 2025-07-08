@@ -314,7 +314,7 @@ namespace InvaderInsider.UI
         {
             base.OnHide();
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + LOG_MESSAGES[5]);
+            LogManager.Info(LOG_PREFIX, LOG_MESSAGES[5]);
             #endif
             
             // 게임 재개 (원래 일시정지 상태가 아니었던 경우에만)
