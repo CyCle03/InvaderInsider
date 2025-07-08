@@ -745,6 +745,9 @@ namespace InvaderInsider.Managers
 
             // 게임 상태 설정 후 PausePanel을 명시적으로 다시 숨김
             EnsurePausePanelHidden();
+
+            // Time.timeScale을 1로 설정하여 게임 시간이 정상적으로 흐르도록 보장
+            Time.timeScale = 1f;
             
             // #if UNITY_EDITOR
             LogManager.Info(LOG_PREFIX, "게임 초기화 완료. 게임 상태를 Playing으로 설정했습니다.");
