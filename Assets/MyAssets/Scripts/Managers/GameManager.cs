@@ -300,6 +300,13 @@ namespace InvaderInsider.Managers
 
                     case GameState.Playing:
                         Time.timeScale = gameConfig.defaultTimeScale;
+                        
+                        // Playing 상태에서 PausePanel이 활성화되어 있으면 숨김
+                        if (uiManager != null && uiManager.IsPanelActive("Pause"))
+                        {
+                            uiManager.HidePanel("Pause");
+                            LogManager.Info(LOG_PREFIX, "Playing 상태 전환 시 PausePanel을 숨겼습니다.");
+                        }
                         break;
 
                     case GameState.Paused:
@@ -718,6 +725,9 @@ namespace InvaderInsider.Managers
             // 게임플레이 패널 설정
             SetupGameplayPanels();
             
+            // 비게임플레이 패널들 숨기기 (PausePanel 포함)
+            HideNonGameplayPanels();
+            
             // TopBarPanel 초기 데이터 업데이트
             // InitializeTopBarDisplay();
             
@@ -736,14 +746,11 @@ namespace InvaderInsider.Managers
                 LogManager.Error(LOG_PREFIX, "StageManager를 찾을 수 없습니다.");
             }
             
-            // 게임 상태를 Playing으로 설정
+            // 게임 상태를 Playing으로 설정 (이 시점에서 PausePanel이 다시 활성화될 수 있음)
             SetGameState(GameState.Playing);
 
-            // PausePanel이 활성화되지 않도록 다시 한번 명시적으로 숨김
-            if (uiManager != null && uiManager.IsPanelRegistered("Pause"))
-            {
-                uiManager.HidePanel("Pause");
-            }
+            // 게임 상태 설정 후 PausePanel을 명시적으로 다시 숨김
+            EnsurePausePanelHidden();
             
             // #if UNITY_EDITOR
             LogManager.Info(LOG_PREFIX, "게임 초기화 완료. 게임 상태를 Playing으로 설정했습니다.");
@@ -768,6 +775,14 @@ namespace InvaderInsider.Managers
                 {
                     panel.gameObject.SetActive(false);
                     panel.ForceHide();
+                    
+                    // PausePanel은 추가로 확실히 숨김 처리
+                    if (panel is InvaderInsider.UI.PausePanel)
+                    {
+                        panel.Hide();
+                        LogManager.Info(LOG_PREFIX, "PausePanel을 캐싱하면서 확실히 숨겼습니다.");
+                    }
+                    
                     panelsByType[panel.GetType()] = panel;
                 }
             }
@@ -805,6 +820,37 @@ namespace InvaderInsider.Managers
                 {
                     uiManager.HidePanel(panelName);
                 }
+            }
+        }
+
+        /// <summary>
+        /// PausePanel이 활성화되지 않도록 확실히 숨기는 메서드
+        /// </summary>
+        private void EnsurePausePanelHidden()
+        {
+            // UIManager를 통한 숨김
+            if (uiManager != null && uiManager.IsPanelRegistered("Pause"))
+            {
+                uiManager.HidePanel("Pause");
+                LogManager.Info(LOG_PREFIX, "UIManager를 통해 PausePanel을 숨겼습니다.");
+            }
+            
+            // 직접 PausePanel 찾아서 숨김 (추가 보장)
+            var pausePanel = FindObjectOfType<InvaderInsider.UI.PausePanel>(true);
+            if (pausePanel != null)
+            {
+                if (pausePanel.gameObject.activeSelf)
+                {
+                    pausePanel.gameObject.SetActive(false);
+                    LogManager.Info(LOG_PREFIX, "PausePanel GameObject를 직접 비활성화했습니다.");
+                }
+                
+                pausePanel.ForceHide();
+                LogManager.Info(LOG_PREFIX, "PausePanel ForceHide를 호출했습니다.");
+            }
+            else
+            {
+                LogManager.Warning(LOG_PREFIX, "PausePanel을 찾을 수 없습니다.");
             }
         }
 
@@ -1222,6 +1268,10 @@ namespace InvaderInsider.Managers
             
             // 게임 씬 로드 완료 후 자동으로 게임 초기화
             InitializeGame();
+            
+            // 게임 초기화 완료 후 한 프레임 더 대기하고 PausePanel 최종 확인
+            await UniTask.NextFrame();
+            EnsurePausePanelHidden();
             
             // 플래그 리셋
             isStartingGame = false;

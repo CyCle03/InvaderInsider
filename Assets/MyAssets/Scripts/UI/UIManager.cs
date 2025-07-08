@@ -585,6 +585,11 @@ namespace InvaderInsider.UI
                         break;
                     case GameState.Playing:
                         ShowPanel("InGame");
+                        // Playing 상태에서는 Pause 패널이 절대 활성화되지 않도록 명시적으로 숨김
+                        if (IsPanelRegistered("Pause") && IsPanelActive("Pause"))
+                        {
+                            HidePanel("Pause");
+                        }
                         break;
                     case GameState.Paused:
                         ShowPanel("Pause");
