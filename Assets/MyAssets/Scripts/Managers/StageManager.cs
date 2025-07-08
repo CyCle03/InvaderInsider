@@ -835,17 +835,7 @@ namespace InvaderInsider.Managers
                 int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(stageIndex);
                 enemyCount = currentSpawnedEnemies;
                 
-                // UI 업데이트를 위해 UICoordinator에 알림
-                var gameManager = GameManager.Instance;
-                if (gameManager != null)
-                {
-                    var uiCoordinator = gameManager.GetUICoordinator();
-                    if (uiCoordinator != null)
-                    {
-                        int maxMonsters = GetStageWaveCount(stageIndex);
-                        uiCoordinator.UpdateStageWaveUI(stageIndex + 1, currentSpawnedEnemies, maxMonsters, GetStageCount());
-                    }
-                }
+                // UI 업데이트는 HandleReadyState에서 처리되므로 여기서는 제거
             }
         }
 
