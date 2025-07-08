@@ -70,7 +70,7 @@ namespace InvaderInsider.UI
             
             // eData는 이제 GameManager에서 직접 호출로 업데이트됨 (이벤트 구독 제거)
             
-            UpdateUI();
+            // UpdateUI(); // 초기 UI 업데이트는 GameManager에서 직접 처리하므로 여기서는 제거
         }
 
         private bool ValidateReferences()
