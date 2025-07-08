@@ -410,7 +410,7 @@ namespace InvaderInsider.Managers
             }
         }
 
-        private void StartStageInternal(int startStageIndex)
+        private void StartStageInternal(int startStageIndex, bool isLoadedGame = false)
         {
             if (!isInitialized)
             {
@@ -428,7 +428,7 @@ namespace InvaderInsider.Managers
                 stageWave = 20; // 기본값
             }
 
-            ResetStageState(startStageIndex);
+            ResetStageState(startStageIndex, isLoadedGame);
             CleanupActiveEnemies();
 
             currentState = StageState.Ready;
