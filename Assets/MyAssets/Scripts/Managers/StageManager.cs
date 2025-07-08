@@ -438,17 +438,42 @@ namespace InvaderInsider.Managers
 
         private void ResetStageState(int startStageIndex)
         {
-            currentTime = 0f;
+            ResetStageState(startStageIndex, false);
+        }
+
+        private void ResetStageState(int startStageIndex, bool isLoadedGame)
+        {
+            // 스테이지 상태 초기화
+            stageNum = startStageIndex;
+            currentState = StageState.Ready;
+            
+            // 적 카운트 초기화
             enemyCount = 0;
             activeEnemyCountValue = 0;
-            stageNum = startStageIndex;
             
-            // 스테이지 시작 시 UI 초기화 (GameManager를 통해) - ResetStageState에서는 UI 업데이트를 하지 않음
-            // UI 업데이트는 HandleReadyState에서 처리
-            
-            if (bottomBarPanel != null)
+            // 로드된 게임인 경우 저장된 데이터 기반으로 상태 복원
+            if (isLoadedGame)
             {
-                bottomBarPanel.UpdateMonsterCountDisplay(0);
+                var saveDataManager = SaveDataManager.Instance;
+                if (saveDataManager != null)
+                {
+                    // 저장된 데이터에서 현재 스테이지의 적 스폰 상태 복원
+                    int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(startStageIndex);
+                    enemyCount = currentSpawnedEnemies;
+                    
+                    #if UNITY_EDITOR
+                    LogManager.Info(LOG_PREFIX, $"로드된 게임 상태 복원 - 스테이지: {startStageIndex + 1}, 스폰된 적: {currentSpawnedEnemies}");
+                    #endif
+                }
+            }
+            
+            // 웨이브 정보 초기화
+            int maxMonsters = GetStageWaveCount(startStageIndex);
+            
+            // GameManager를 통해 UI 업데이트
+            if (gameManager != null)
+            {
+                gameManager.UpdateStageWaveUI(startStageIndex + 1, enemyCount, maxMonsters);
             }
         }
 
@@ -822,19 +847,8 @@ namespace InvaderInsider.Managers
 
         public void InitializeStageFromLoadedData(int stageIndex)
         {
-            // 기존 초기화 로직 유지
-            StartStageFrom(stageIndex);
-
-            // 저장된 데이터에서 현재 스테이지의 적 상태 복원
-            var saveDataManager = SaveDataManager.Instance;
-            if (saveDataManager != null)
-            {
-                // 현재 스테이지의 적 스폰 상태 복원
-                int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(stageIndex);
-                enemyCount = currentSpawnedEnemies;
-                
-                // UI 업데이트는 HandleReadyState에서 처리되므로 여기서는 제거
-            }
+            // 로드된 게임 상태로 스테이지 시작
+            StartStageFrom(stageIndex, true);
         }
 
         protected override void OnDestroy()
