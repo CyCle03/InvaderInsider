@@ -368,24 +368,8 @@ namespace InvaderInsider.Data
 
         protected override void OnApplicationQuit()
         {
-            // 게임 종료 시에도 저장 (데이터 보존을 위해)
-            if (currentSaveData != null && Application.isPlaying)
-            {
-                try 
-                {
-                    SaveGameDataImmediate();
-                    LogManager.Info(LOG_PREFIX, "게임 종료 - 최종 저장 완료");
-                }
-                catch (System.Exception e)
-                {
-                    LogManager.Error(LOG_PREFIX, $"게임 종료 시 저장 실패: {e.Message}");
-                }
-            }
-            else
-            {
-                LogManager.Info(LOG_PREFIX, "게임 종료 - 저장할 데이터 없음");
-            }
-            
+            // 게임 종료 시에는 저장하지 않음 (스테이지 클리어 시에만 저장)
+            LogManager.Info(LOG_PREFIX, "게임 종료 - 저장하지 않음 (스테이지 클리어 시에만 저장)");
             base.OnApplicationQuit();
         }
 
@@ -503,7 +487,7 @@ namespace InvaderInsider.Data
         }
 
         // 지연 저장: 여러 변경사항을 모아서 한 번에 저장
-        public void SaveGameData()
+        private void SaveGameData()
         {
             LogManager.Info("SaveData", "SaveGameData() 호출됨");
             
