@@ -481,57 +481,7 @@ namespace InvaderInsider.Managers
             UpdateEDataUI();
         }
 
-        /// <summary>
-        /// TopBarPanel의 초기 데이터를 설정합니다。
-        /// </summary>
-        private void InitializeTopBarDisplay()
-        {
-            // UICoordinator 참조 확인 및 재참조
-            if (uiCoordinator == null)
-            {
-                uiCoordinator = UICoordinator.Instance;
-                if (uiCoordinator == null)
-                {
-                    uiCoordinator = FindObjectOfType<UICoordinator>();
-                    if (uiCoordinator == null)
-                    {
-                        #if UNITY_EDITOR
-                        LogManager.Error(LOG_PREFIX, "UICoordinator를 찾을 수 없습니다. TopBarPanel 초기화를 건너뜁니다.");
-                        #endif
-                        return;
-                    }
-                }
-            }
-            
-            // 초기 스테이지 정보 설정
-            int currentStage = requestedStartStage + 1; // 0-based to 1-based
-            int totalStages = GetTotalStageCount();
-            
-            // StageManager에서 초기 웨이브 정보 가져오기
-            var stageManager = StageManager.Instance;
-            int spawnedMonsters = 0;
-            int maxMonsters = 0;
-            
-            if (stageManager != null)
-            {
-                maxMonsters = stageManager.GetStageWaveCount(requestedStartStage);
-            }
-            
-            // TopBarPanel 업데이트
-            uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, totalStages);
-            
-            // 초기 EData 설정
-            var resourceManager = ResourceManager.Instance;
-            if (resourceManager != null)
-            {
-                int currentEData = resourceManager.GetCurrentEData();
-                uiCoordinator.UpdateEDataUI(currentEData);
-                
-                #if UNITY_EDITOR
-                LogManager.Info(LOG_PREFIX, $"TopBarPanel 초기 데이터 설정 완료 - 스테이지: {currentStage}/{totalStages}, 웨이브: {spawnedMonsters}/{maxMonsters}, eData: {currentEData}");
-                #endif
-            }
-        }
+        
 
         private void OnEDataChanged(int newEDataAmount)
         {
@@ -722,8 +672,7 @@ namespace InvaderInsider.Managers
             // 비게임플레이 패널들 숨기기 (PausePanel 포함)
             HideNonGameplayPanels();
             
-            // TopBarPanel 초기 데이터 업데이트
-            // InitializeTopBarDisplay();
+            
             
             // StageManager 참조 찾기 및 스테이지 시작
             var stageManager = StageManager.Instance;
@@ -869,6 +818,31 @@ namespace InvaderInsider.Managers
                 ActivatePanelHierarchy(topBarPanel.transform);
                 uiManager.RegisterPanel("TopBar", topBarPanel);
                 topBarPanel.Show();
+
+                // UICoordinator를 통해 TopBarPanel 초기 데이터 업데이트
+                if (uiCoordinator != null)
+                {
+                    int currentStage = requestedStartStage + 1; // 0-based to 1-based
+                    int totalStages = GetTotalStageCount();
+                    
+                    var stageManager = StageManager.Instance;
+                    int spawnedMonsters = 0;
+                    int maxMonsters = 0;
+                    
+                    if (stageManager != null)
+                    {
+                        maxMonsters = stageManager.GetStageWaveCount(requestedStartStage);
+                    }
+                    
+                    uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, totalStages);
+                    
+                    var resourceManager = ResourceManager.Instance;
+                    if (resourceManager != null)
+                    {
+                        int currentEData = resourceManager.GetCurrentEData();
+                        uiCoordinator.UpdateEDataUI(currentEData);
+                    }
+                }
             }
 
             // BottomBar 패널 설정
