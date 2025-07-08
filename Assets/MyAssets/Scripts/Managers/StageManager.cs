@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -825,15 +824,24 @@ namespace InvaderInsider.Managers
 
         public void InitializeStageFromLoadedData(int stageIndex)
         {
-            if (!isInitialized) return;
+            // 기존 초기화 로직 유지
+            StartStageFrom(stageIndex);
 
-            if (stageIndex >= 0 && stageIndex < GetStageCount())
+            // 저장된 데이터에서 현재 스테이지의 적 상태 복원
+            var saveDataManager = SaveDataManager.Instance;
+            if (saveDataManager != null)
             {
-                StartStageFrom(stageIndex);
-            }
-            else
-            {
-                StartStageFrom(0);
+                // 현재 스테이지의 적 스폰 상태 복원
+                int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(stageIndex);
+                enemyCount = currentSpawnedEnemies;
+                
+                // UI 업데이트를 위해 UICoordinator에 알림
+                var gameManager = GameManager.Instance;
+                if (gameManager != null && gameManager.uiCoordinator != null)
+                {
+                    int maxMonsters = GetStageWaveCount(stageIndex);
+                    gameManager.uiCoordinator.UpdateStageWaveUI(stageIndex + 1, currentSpawnedEnemies, maxMonsters, GetStageCount());
+                }
             }
         }
 
@@ -921,7 +929,8 @@ namespace InvaderInsider.Managers
 
         public int GetSpawnedEnemyCount()
         {
-            return enemyCount;
+            // 현재 활성화된 적의 수와 죽은 적의 수를 합산하여 스폰된 총 몬스터 수 반환
+            return activeEnemyCountValue + enemyCount;
         }
         
         // 웨이포인트를 수동으로 재설정하는 공개 함수

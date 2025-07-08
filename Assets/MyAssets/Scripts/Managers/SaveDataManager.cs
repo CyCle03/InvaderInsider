@@ -834,6 +834,16 @@ namespace InvaderInsider.Data
             return currentSaveData.progressData.currentEData;
         }
 
-        
+        public int GetCurrentSpawnedEnemyCount(int stageIndex)
+        {
+            // 현재 저장된 게임 데이터에서 해당 스테이지의 스폰된 적 수를 반환
+            if (currentSaveData != null && currentSaveData.stageProgress != null)
+            {
+                // 스테이지 인덱스에 해당하는 스폰된 적 수 반환
+                // 만약 해당 정보가 없다면 0 반환
+                return currentSaveData.stageProgress.stageNumbers.Count;
+            }
+            return 0;
+        }
     }
 }

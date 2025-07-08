@@ -831,7 +831,10 @@ namespace InvaderInsider.Managers
                     
                     if (stageManager != null)
                     {
+                        // 현재 스테이지의 최대 몬스터 수를 정확히 가져옴
                         maxMonsters = stageManager.GetStageWaveCount(requestedStartStage);
+                        // 현재 스테이지에서 이미 스폰된 몬스터 수를 가져옴
+                        spawnedMonsters = stageManager.GetSpawnedEnemyCount();
                     }
                     
                     uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, totalStages);
