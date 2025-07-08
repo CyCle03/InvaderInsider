@@ -820,38 +820,7 @@ namespace InvaderInsider.Managers
         /// <summary>
         /// PausePanel이 활성화되지 않도록 확실히 숨기는 메서드
         /// </summary>
-        private void EnsurePausePanelHidden()
-        {
-            // UIManager를 통한 숨김
-            if (uiManager != null && uiManager.IsPanelRegistered("Pause"))
-            {
-                uiManager.HidePanel("Pause");
-                LogManager.Info(LOG_PREFIX, "UIManager를 통해 PausePanel을 숨겼습니다.");
-            }
-            
-            // 직접 PausePanel 찾아서 숨김 (추가 보장)
-            var pausePanel = FindObjectOfType<InvaderInsider.UI.PausePanel>(true);
-            if (pausePanel != null)
-            {
-                if (pausePanel.gameObject.activeSelf)
-                {
-                    pausePanel.gameObject.SetActive(false);
-                    LogManager.Info(LOG_PREFIX, "PausePanel GameObject를 직접 비활성화했습니다.");
-                }
-                
-                pausePanel.ForceHide();
-                LogManager.Info(LOG_PREFIX, "PausePanel ForceHide를 호출했습니다.");
-            }
-            else
-            {
-                LogManager.Warning(LOG_PREFIX, "PausePanel을 찾을 수 없습니다.");
-            }
-        }
-
-        /// <summary>
-        /// PausePanel이 활성화되지 않도록 확실히 숨기는 메서드
-        /// </summary>
-        private void EnsurePausePanelHidden()
+        public void EnsurePausePanelHidden()
         {
             // UIManager를 통한 숨김
             if (uiManager != null && uiManager.IsPanelRegistered("Pause"))
@@ -1278,41 +1247,7 @@ namespace InvaderInsider.Managers
                 uiManager.Cleanup();
             }
             
-                        private async UniTask LoadGameSceneAsync()
-        {
-            // 씬 전환 전 싱글톤 정리
-            CleanupSingletonsForSceneChange();
-            
-            // UI 정리
-            if (uiManager != null)
-            {
-                uiManager.Cleanup();
-            }
-            
-                        await UniTask.Yield(); // 한 프레임 대기
-            
-            // 비동기로 Game 씬 로드
-            var asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Game");
-            
-            // 씬 로딩 완료까지 대기
-            while (!asyncLoad.isDone)
-            {
-                await UniTask.Yield();
-            }
-
-            await UniTask.NextFrame(); // 모든 오브젝트 초기화 대기
-            
-            // 게임 씬 로드 완료 후 자동으로 게임 초기화
-            InitializeGame();
-            
-            // 게임 초기화 완료 후 한 프레임 더 대기하고 PausePanel 최종 확인
-            await UniTask.NextFrame();
-            EnsurePausePanelHidden();
-            
-            // 플래그 리셋
-            isStartingGame = false;
-            isLoadingScene = false;
-        }
+            await UniTask.Yield(); // 한 프레임 대기
             
             // 비동기로 Game 씬 로드
             var asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Game");
