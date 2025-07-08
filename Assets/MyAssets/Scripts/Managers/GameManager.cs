@@ -738,6 +738,12 @@ namespace InvaderInsider.Managers
             
             // 게임 상태를 Playing으로 설정
             SetGameState(GameState.Playing);
+
+            // PausePanel이 활성화되지 않도록 다시 한번 명시적으로 숨김
+            if (uiManager != null && uiManager.IsPanelRegistered("Pause"))
+            {
+                uiManager.HidePanel("Pause");
+            }
             
             // #if UNITY_EDITOR
             LogManager.Info(LOG_PREFIX, "게임 초기화 완료. 게임 상태를 Playing으로 설정했습니다.");
@@ -865,6 +871,14 @@ namespace InvaderInsider.Managers
 
         public void PauseGame(bool showPauseUI = true)
         {
+            if (CurrentGameState == GameState.Loading)
+            {
+                #if UNITY_EDITOR
+                LogManager.Warning(LOG_PREFIX, "게임 로딩 중에는 일시정지할 수 없습니다.");
+                #endif
+                return;
+            }
+
             LogManager.Info(LOG_PREFIX, $"게임 일시정지 요청 - showPauseUI: {showPauseUI}");
             
             Time.timeScale = 0f;
