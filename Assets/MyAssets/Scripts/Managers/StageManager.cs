@@ -837,10 +837,14 @@ namespace InvaderInsider.Managers
                 
                 // UI 업데이트를 위해 UICoordinator에 알림
                 var gameManager = GameManager.Instance;
-                if (gameManager != null && gameManager.uiCoordinator != null)
+                if (gameManager != null)
                 {
-                    int maxMonsters = GetStageWaveCount(stageIndex);
-                    gameManager.uiCoordinator.UpdateStageWaveUI(stageIndex + 1, currentSpawnedEnemies, maxMonsters, GetStageCount());
+                    var uiCoordinator = gameManager.GetUICoordinator();
+                    if (uiCoordinator != null)
+                    {
+                        int maxMonsters = GetStageWaveCount(stageIndex);
+                        uiCoordinator.UpdateStageWaveUI(stageIndex + 1, currentSpawnedEnemies, maxMonsters, GetStageCount());
+                    }
                 }
             }
         }

@@ -1414,6 +1414,16 @@ namespace InvaderInsider.Managers
             }
         }
         
+        public UICoordinator GetUICoordinator()
+        {
+            // UICoordinator가 null이면 찾아서 반환
+            if (uiCoordinator == null)
+            {
+                uiCoordinator = FindObjectOfType<UICoordinator>();
+            }
+            return uiCoordinator;
+        }
+        
         #endregion
     }
 } 
