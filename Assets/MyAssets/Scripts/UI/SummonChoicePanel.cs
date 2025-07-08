@@ -724,7 +724,7 @@ namespace InvaderInsider.UI
             panelCanvas.sortingOrder = 100; // HealthSlider보다 높은 값
             
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "패널 Canvas Sorting Order 설정 완료: " + panelCanvas.sortingOrder);
+            LogManager.Info(LOG_PREFIX + "패널 Canvas Sorting Order 설정 완료: " + panelCanvas.sortingOrder);
             #endif
         }
 
