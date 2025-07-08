@@ -439,24 +439,19 @@ namespace InvaderInsider.Managers
 
         public void UpdateStageWaveUI(int currentStage, int spawnedMonsters, int maxMonsters)
         {
-            // UICoordinator 참조 확인 및 재참조
-            if (uiCoordinator == null)
+            // UICoordinator를 통해 UI 업데이트
+            if (uiCoordinator != null)
             {
-                uiCoordinator = UICoordinator.Instance;
-                if (uiCoordinator == null)
-                {
-                    uiCoordinator = FindObjectOfType<UICoordinator>();
-                    if (uiCoordinator == null)
-                    {
-                        #if UNITY_EDITOR
-                        LogManager.Warning(LOG_PREFIX, "UICoordinator를 찾을 수 없습니다. Stage Wave UI 업데이트를 건너뜁니다.");
-                        #endif
-                        return;
-                    }
-                }
+                // 스폰된 몬스터 수가 최대 몬스터 수를 초과하지 않도록 보장
+                spawnedMonsters = Mathf.Min(spawnedMonsters, maxMonsters);
+                
+                // 현재 스테이지와 Wave 정보 업데이트
+                uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, GetTotalStageCount());
+                
+                #if UNITY_EDITOR
+                LogManager.Info(LOG_PREFIX, $"Wave UI 업데이트: 스테이지 {currentStage}, 소환된 몬스터 {spawnedMonsters}/{maxMonsters}");
+                #endif
             }
-            
-            uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, GetTotalStageCount());
         }
 
         public void StageCleared(int stageNum)
