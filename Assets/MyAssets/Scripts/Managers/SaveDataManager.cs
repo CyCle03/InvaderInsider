@@ -244,6 +244,9 @@ namespace InvaderInsider.Data
     {
         private HashSet<int> clearedStages = new HashSet<int>();
         
+        // 각 스테이지별 스폰된 적 수를 저장하는 딕셔너리 추가
+        private Dictionary<int, int> spawnedEnemyCounts = new Dictionary<int, int>();
+        
         // 캐시된 리스트 (메모리 할당 최소화)
         [System.NonSerialized] private List<int> cachedStageNumbers = null;
         [System.NonSerialized] private bool stageNumbersCacheDirty = true;
@@ -274,13 +277,23 @@ namespace InvaderInsider.Data
             return clearedStages.Contains(stageNum);
         }
 
+        // 스폰된 적 수를 설정하는 메서드 추가
+        public void SetSpawnedEnemyCount(int stageIndex, int count)
+        {
+            spawnedEnemyCounts[stageIndex] = count;
+        }
+
+        // 특정 스테이지의 스폰된 적 수를 가져오는 메서드 추가
+        public int GetSpawnedEnemyCount(int stageIndex)
+        {
+            return spawnedEnemyCounts.TryGetValue(stageIndex, out int count) ? count : 0;
+        }
+
         public SerializableStageProgress Clone()
         {
             var clone = new SerializableStageProgress();
-            foreach (var stage in clearedStages)
-            {
-                clone.clearedStages.Add(stage);
-            }
+            clone.clearedStages = new HashSet<int>(this.clearedStages);
+            clone.spawnedEnemyCounts = new Dictionary<int, int>(this.spawnedEnemyCounts);
             return clone;
         }
     }
@@ -841,6 +854,25 @@ namespace InvaderInsider.Data
             return currentSaveData.progressData.currentEData;
         }
 
-        
+        public int GetCurrentSpawnedEnemyCount(int stageIndex)
+        {
+            // 현재 저장된 게임 데이터에서 특정 스테이지의 스폰된 적 수를 반환
+            if (currentSaveData?.stageProgress == null)
+            {
+                #if UNITY_EDITOR
+                LogManager.Warning(LOG_PREFIX, $"현재 저장된 게임 데이터가 없습니다. 스테이지 인덱스: {stageIndex}");
+                #endif
+                return 0;
+            }
+
+            // 저장된 스테이지 진행 상황에서 스폰된 적 수 가져오기
+            int spawnedEnemyCount = currentSaveData.stageProgress.GetSpawnedEnemyCount(stageIndex);
+
+            #if UNITY_EDITOR
+            LogManager.Info(LOG_PREFIX, $"스테이지 {stageIndex}의 스폰된 적 수: {spawnedEnemyCount}");
+            #endif
+
+            return spawnedEnemyCount;
+        }
     }
 }

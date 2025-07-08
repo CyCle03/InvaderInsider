@@ -436,9 +436,62 @@ namespace InvaderInsider.Managers
             StageLoopCoroutine().Forget();
         }
 
-        
+        private void ResetStageState(int startStageIndex)
+        {
+            currentTime = 0f;
+            enemyCount = 0;
+            activeEnemyCountValue = 0;
+            stageNum = startStageIndex;
+            
+            // 스테이지 시작 시 UI 초기화 (GameManager를 통해)
+            if (bottomBarPanel != null)
+            {
+                bottomBarPanel.UpdateMonsterCountDisplay(0);
+            }
+        }
 
-        
+        private void ResetStageState(int startStageIndex, bool isLoadedGame)
+        {
+            // 기본 상태 초기화
+            currentTime = 0f;
+            stageNum = startStageIndex;
+            currentState = StageState.Ready;
+            
+            // 적 카운트 초기화
+            enemyCount = 0;
+            activeEnemyCountValue = 0;
+            
+            // 로드된 게임인 경우 저장된 데이터 기반으로 상태 복원
+            if (isLoadedGame)
+            {
+                var saveDataManager = SaveDataManager.Instance;
+                if (saveDataManager != null)
+                {
+                    // 현재 스테이지의 적 스폰 상태 복원
+                    int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(startStageIndex);
+                    enemyCount = currentSpawnedEnemies;
+                    
+                    #if UNITY_EDITOR
+                    LogManager.Info(LOG_PREFIX, $"로드된 게임 상태 복원 - 스테이지: {startStageIndex + 1}, 스폰된 적: {currentSpawnedEnemies}");
+                    #endif
+                }
+            }
+            
+            // 웨이브 정보 초기화
+            int maxMonsters = GetStageWaveCount(startStageIndex);
+            
+            // GameManager를 통해 UI 업데이트
+            if (gameManager != null)
+            {
+                gameManager.UpdateStageWaveUI(startStageIndex + 1, enemyCount, maxMonsters);
+            }
+            
+            // BottomBar UI 업데이트
+            if (bottomBarPanel != null)
+            {
+                bottomBarPanel.UpdateMonsterCountDisplay(enemyCount);
+            }
+        }
 
         private void CleanupActiveEnemies()
         {
@@ -727,6 +780,9 @@ namespace InvaderInsider.Managers
                 int maxMonsters = GetStageWaveCount(stageNum);
                 gameManager.UpdateStageWaveUI(stageNum + 1, enemyCount, maxMonsters);
             }
+
+            // 적 스폰 후 현재 스폰된 적 수 저장
+            SaveCurrentSpawnedEnemyCount();
         }
 
         public int GetStageCount()
@@ -975,6 +1031,20 @@ namespace InvaderInsider.Managers
             activeTowers.Clear();
             var towers = FindObjectsOfType<Tower>();
             activeTowers.AddRange(towers);
+        }
+
+        private void SaveCurrentSpawnedEnemyCount()
+        {
+            var saveDataManager = SaveDataManager.Instance;
+            if (saveDataManager != null && saveDataManager.CurrentSaveData != null)
+            {
+                // 현재 스테이지의 스폰된 적 수 저장
+                saveDataManager.CurrentSaveData.stageProgress.SetSpawnedEnemyCount(stageNum, enemyCount);
+                
+                #if UNITY_EDITOR
+                LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum + 1}의 스폰된 적 수 저장: {enemyCount}");
+                #endif
+            }
         }
     }
 } 
