@@ -510,37 +510,35 @@ namespace InvaderInsider.Managers
 
         private async UniTask HandleReadyState()
         {
-            // 동적으로 현재 스테이지의 웨이브 카운트 가져오기
-            int currentStageWaveCount = GetStageWaveCount(stageNum);
+            // 스테이지 준비 상태 처리
+            if (!isInitialized) return;
+
+            // 스테이지 초기화 로직
+            int maxMonsters = GetStageWaveCount(stageNum);
             
-            #if UNITY_EDITOR
-            LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum + 1} 준비 중... (총 적: {currentStageWaveCount})");
-            #endif
+            // 현재 스폰된 적의 수 계산 (저장된 데이터 기반)
+            var saveDataManager = SaveDataManager.Instance;
+            int currentSpawnedEnemies = 0;
+            if (saveDataManager != null)
+            {
+                currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(stageNum);
+            }
             
-            // TopBar UI 업데이트 (현재/최대 형식) - GameManager를 통해
+            // Wave UI 업데이트
             if (gameManager != null)
             {
-                int spawnedMonsters = enemyCount; // 현재 소환된 몬스터 수
-                int maxMonsters = currentStageWaveCount; // 현재 스테이지의 최대 몬스터 수
-                gameManager.UpdateStageWaveUI(stageNum + 1, spawnedMonsters, maxMonsters);
-            }
-            
-            // BottomBar UI 업데이트 (초기 적 수)
-            if (bottomBarPanel != null)
-            {
-                bottomBarPanel.UpdateMonsterCountDisplay(0);
-            }
-            
-            if (uiManager != null)
-            {
-                uiManager.UpdateStage(stageNum, GetStageCount());
+                gameManager.UpdateStageWaveUI(stageNum + 1, currentSpawnedEnemies, maxMonsters);
+                
+                #if UNITY_EDITOR
+                LogManager.Info(LOG_PREFIX, $"HandleReadyState에서 Wave UI 업데이트: 스테이지 {stageNum + 1}, 소환된 몬스터 {currentSpawnedEnemies}/{maxMonsters}");
+                #endif
             }
 
+            // 기존 로직 유지
             await UniTask.Delay(TimeSpan.FromSeconds(STAGE_START_DELAY));
+            
+            // 스테이지 상태를 Run으로 변경
             currentState = StageState.Run;
-            #if UNITY_EDITOR
-            LogManager.Info(LOG_PREFIX, string.Format(LOG_MESSAGES[4], stageNum));
-            #endif
         }
 
         private async UniTask HandleRunState()
