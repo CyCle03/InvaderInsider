@@ -641,7 +641,7 @@ namespace InvaderInsider.Managers
             await UniTask.Delay(TimeSpan.FromSeconds(STAGE_START_DELAY));
             
             // 다음 스테이지 시작
-            StartStageInternal(stageNum);
+            StartStageInternal(stageNum, false);
         }
 
         /// <summary>
