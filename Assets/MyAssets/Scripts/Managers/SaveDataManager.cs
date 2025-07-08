@@ -47,6 +47,7 @@ namespace InvaderInsider.Data
         public int highestStageCleared;
         public int summonCount;
         public int currentStageIndex; // 현재 진행 중인 스테이지 인덱스 (0-based)
+    }
 
     [Serializable]
     public class DeckData
