@@ -213,8 +213,7 @@ namespace InvaderInsider.UI
         {
             base.OnShow();
             
-            // 패널이 표시될 때 현재 게임 상태로 UI 업데이트
-            UpdateUI();
+            // 패널이 표시될 때 UI 업데이트는 GameManager에서 직접 처리하므로 여기서는 제거
         }
 
         protected override void OnHide()
