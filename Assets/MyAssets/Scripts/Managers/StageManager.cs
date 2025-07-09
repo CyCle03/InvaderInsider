@@ -90,7 +90,7 @@ namespace InvaderInsider.Managers
                 #endif
                 Destroy(gameObject);
                 return;
-            }
+            }   
             
             // 이미 초기화된 경우 중복 초기화 방지
             if (!isInitialized)
@@ -405,29 +405,27 @@ namespace InvaderInsider.Managers
         /// <param name="stageIndex">시작할 스테이지 인덱스 (0부터 시작)</param>
         public void StartStageFrom(int stageIndex, bool isLoadedGame = false)
         {
-            if (!isInitialized)
+            // 로그 추가
+            LogManager.Info(LOG_PREFIX, $"StartStageFrom 호출: 스테이지 {stageIndex}, 로드된 게임: {isLoadedGame}");
+
+            // 현재 SaveDataManager 인스턴스 가져오기
+            var saveDataManager = SaveDataManager.Instance;
+
+            // 스테이지 초기화 전에 상태 초기화
+            ResetStageState(stageIndex, isLoadedGame);
+
+            // 로드된 게임인 경우 스폰된 적 수와 현재 적 수 복원
+            if (isLoadedGame && saveDataManager != null && saveDataManager.CurrentSaveData != null)
             {
-                #if UNITY_EDITOR
-                LogManager.Error(LOG_PREFIX, "StageManager가 초기화되지 않음");
-                #endif
-                return;
+                // 스폰된 적 수 복원
+                int spawnedEnemyCount = saveDataManager.CurrentSaveData.stageProgress.GetSpawnedEnemyCount(stageIndex);
+                enemyCount = spawnedEnemyCount;
+
+                LogManager.Info(LOG_PREFIX, $"로드된 게임 상태 복원 - 스테이지 {stageIndex}, 스폰된 적 수: {spawnedEnemyCount}");
             }
 
-            // 스테이지 인덱스 유효성 검사
-            if (stageIndex >= 0 && stageData != null && stageIndex < stageData.StageCount)
-            {
-                #if UNITY_EDITOR
-                LogManager.Info(LOG_PREFIX, $"스테이지 {stageIndex + 1}부터 시작합니다. (인덱스: {stageIndex})");
-                #endif
-                StartStageInternal(stageIndex, isLoadedGame);
-            }
-            else
-            {
-                #if UNITY_EDITOR
-                LogManager.Warning(LOG_PREFIX, $"무효한 스테이지 인덱스 {stageIndex} (총 스테이지: {stageData?.StageCount ?? 0}) - 0으로 시작");
-                #endif
-                StartStageInternal(0, isLoadedGame);
-            }
+            // 스테이지 내부 시작 로직
+            StartStageInternal(stageIndex, isLoadedGame);
         }
 
         private void StartStageInternal(int startStageIndex, bool isLoadedGame = false)
@@ -448,7 +446,6 @@ namespace InvaderInsider.Managers
                 stageWave = 20; // 기본값
             }
 
-            ResetStageState(startStageIndex, isLoadedGame);
             CleanupActiveEnemies();
 
             currentState = StageState.Ready;
@@ -489,19 +486,20 @@ namespace InvaderInsider.Managers
                 {
                     // Check if this is a new stage (highestCleared + 1)
                     int highestClearedStage = saveDataManager.CurrentSaveData.progressData.highestStageCleared;
-                    if (startStageIndex == highestClearedStage) // If loading the same stage that was cleared
+                    
+                    // 새로운 스테이지로 진입한 경우 항상 적 카운트를 0으로 초기화
+                    if (startStageIndex > highestClearedStage)
                     {
-                        // Restore spawned enemies for the same stage
+                        enemyCount = 0;
+                    }
+                    else // 이전에 클리어한 스테이지를 다시 로드하는 경우
+                    {
                         int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(startStageIndex);
                         enemyCount = currentSpawnedEnemies;
                     }
-                    else // If loading a new stage
-                    {
-                        enemyCount = 0; // Start with 0 spawned enemies for a new stage
-                    }
                     
                     #if UNITY_EDITOR
-                    LogManager.Info(LOG_PREFIX, $"로드된 게임 상태 복원 - 스테이지: {startStageIndex + 1}, 스폰된 적: {enemyCount}");
+                    LogManager.Info(LOG_PREFIX, $"로드된 게임 상태 복원 - 스테이지: {startStageIndex + 1}, 스폰된 적: {enemyCount}, 최고 클리어 스테이지: {highestClearedStage}");
                     #endif
                 }
             }
@@ -512,13 +510,13 @@ namespace InvaderInsider.Managers
             // GameManager를 통해 UI 업데이트
             if (gameManager != null)
             {
-                gameManager.UpdateStageWaveUI(startStageIndex + 1, enemyCount, maxMonsters);
+                gameManager.UpdateStageWaveUI(startStageIndex + 1, 0, maxMonsters);
             }
             
             // BottomBar UI 업데이트
             if (bottomBarPanel != null)
             {
-                bottomBarPanel.UpdateMonsterCountDisplay(enemyCount);
+                bottomBarPanel.UpdateMonsterCountDisplay(0);
             }
         }
 
@@ -1073,10 +1071,12 @@ namespace InvaderInsider.Managers
             if (saveDataManager != null && saveDataManager.CurrentSaveData != null)
             {
                 // 현재 스테이지의 스폰된 적 수 저장
-                saveDataManager.CurrentSaveData.stageProgress.SetSpawnedEnemyCount(stageNum, enemyCount);
+                // 활성 적 수와 죽은 적 수를 합산하여 총 스폰된 적 수 계산
+                int totalSpawnedEnemies = activeEnemyCountValue + enemyCount;
+                saveDataManager.CurrentSaveData.stageProgress.SetSpawnedEnemyCount(stageNum, totalSpawnedEnemies);
                 
                 #if UNITY_EDITOR
-                LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum + 1}의 스폰된 적 수 저장: {enemyCount}");
+                LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum + 1}의 총 스폰된 적 수 저장: {totalSpawnedEnemies} (활성 적: {activeEnemyCountValue}, 소환된 적: {enemyCount})");
                 #endif
             }
         }
