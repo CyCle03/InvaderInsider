@@ -111,7 +111,7 @@ namespace InvaderInsider.Managers
                 }
                 else
                 {
-                    LogManager.Info(LOG_PREFIX, "StageDataObject에서 StageData를 재설정했습니다.");
+                    LogManager.Info(LOG_PREFIX, $"StageDataObject에서 StageData를 재설정했습니다: {stageDataObject.name}, StageCount: {stageData.StageCount}");
                 }
             }
             else
@@ -127,7 +127,7 @@ namespace InvaderInsider.Managers
                 {
                     stageDataObject = defaultStageList;
                     stageData = stageDataObject as IStageData;
-                    LogManager.Info(LOG_PREFIX, $"Resources에서 StageData를 로드했습니다: {defaultStageList.name}");
+                    LogManager.Info(LOG_PREFIX, $"Resources에서 StageData를 로드했습니다: {defaultStageList.name}, StageCount: {stageData.StageCount}");
                 }
                 else
                 {
@@ -140,7 +140,7 @@ namespace InvaderInsider.Managers
                     {
                         stageDataObject = stageDBObject;
                         stageData = stageDataObject as IStageData;
-                        LogManager.Info(LOG_PREFIX, $"Resources에서 StageDBObject를 로드했습니다: {stageDBObject.name}");
+                        LogManager.Info(LOG_PREFIX, $"Resources에서 StageDBObject를 로드했습니다: {stageDBObject.name}, StageCount: {stageData.StageCount}");
                     }
                     else
                     {
