@@ -216,6 +216,9 @@ namespace InvaderInsider.Managers
             
             // 컴포넌트 캐시 업데이트
             UpdateCachedComponents();
+
+            // 씬 로드 시마다 로깅 레벨을 강제 설정
+            LogManager.EnableDevelopmentLogging();
         }
 
         private void UpdateCachedComponents()
