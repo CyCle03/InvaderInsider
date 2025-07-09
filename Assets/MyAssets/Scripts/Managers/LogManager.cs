@@ -47,7 +47,7 @@ namespace InvaderInsider.Managers
         
         static LogManager()
         {
-            EnableMinimalLogging();
+            EnableDevelopmentLogging(); // This sets MinimumLogLevel to Verbose
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
