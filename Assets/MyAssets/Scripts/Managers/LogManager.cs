@@ -47,8 +47,17 @@ namespace InvaderInsider.Managers
         
         static LogManager()
         {
+            // 로그 레벨을 Verbose로 강제 설정
             MinimumLogLevel = LogLevel.Verbose;
-            UnityEngine.Debug.unityLogger.filterLogType = LogType.Log; // Show all logs
+            
+            // Unity 로거 필터 설정
+            UnityEngine.Debug.unityLogger.filterLogType = LogType.Log; 
+            
+            // 로그 활성화 강제 설정
+            EnableLogs = true;
+            GlobalFilterEnabled = false; // 모든 로그 패턴 허용
+            
+            // 로그 출력
             UnityEngine.Debug.Log("[LogManager] LogManager static constructor called. Verbose logging enabled.");
         }
 
@@ -123,21 +132,30 @@ namespace InvaderInsider.Managers
         // Apply Conditional attributes to the core Log method as well,
         // to ensure it's stripped if somehow directly called in release builds.
         // However, the primary intent is for public convenience methods to be used.
-        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void Log(LogLevel level, string prefix, string message, params object[] args)
         {
-            if (!EnableLogs || level < MinimumLogLevel) return;
+            // 모든 로그 레벨 허용
+            if (!EnableLogs) return;
 
             string formattedMessage = FormatMessage(prefix, message, args);
             if (IsBlockedMessage(formattedMessage)) return;
 
             switch (level)
             {
-                case LogLevel.Info: UnityEngine.Debug.Log(formattedMessage); break;
-                case LogLevel.Warning: UnityEngine.Debug.LogWarning(formattedMessage); break;
-                case LogLevel.Error: UnityEngine.Debug.LogError(formattedMessage); break;
-                case LogLevel.Debug: UnityEngine.Debug.Log(formattedMessage); break;
-                case LogLevel.Verbose: UnityEngine.Debug.Log($"[VERBOSE] {formattedMessage}"); break;
+                case LogLevel.Info: 
+                case LogLevel.Debug: 
+                case LogLevel.Verbose:
+                    // 개발 및 에디터 모드에서만 출력
+                    #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    UnityEngine.Debug.Log(level == LogLevel.Verbose ? $"[VERBOSE] {formattedMessage}" : formattedMessage);
+                    #endif
+                    break;
+                case LogLevel.Warning: 
+                    UnityEngine.Debug.LogWarning(formattedMessage); 
+                    break;
+                case LogLevel.Error: 
+                    UnityEngine.Debug.LogError(formattedMessage); 
+                    break;
             }
         }
         
@@ -164,18 +182,35 @@ namespace InvaderInsider.Managers
 
         #region Convenience Methods
 
-        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
-        public static void Info(string prefix, string message, params object[] args) => Log(LogLevel.Info, prefix, message, args);
+        // 모든 로그 레벨에 대해 조건부 컴파일 제거
+        public static void Info(string prefix, string message, params object[] args) 
+        {
+            Log(LogLevel.Info, prefix, message, args);
+        }
         
         public static void Warning(string prefix, string message, params object[] args) => Log(LogLevel.Warning, prefix, message, args);
         
         public static void Error(string prefix, string message, params object[] args) => Log(LogLevel.Error, prefix, message, args);
 
-        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
-        public static void Debug(string prefix, string message, params object[] args) => Log(LogLevel.Debug, prefix, message, args);
+        // 모든 로그 레벨에 대해 조건부 컴파일 제거
+        public static void Debug(string prefix, string message, params object[] args) 
+        {
+            Log(LogLevel.Debug, prefix, message, args);
+        }
 
-        [Conditional("UNITY_EDITOR")]
-        public static void Verbose(string prefix, string message, params object[] args) => Log(LogLevel.Verbose, prefix, message, args);
+        // 모든 로그 레벨에 대해 조건부 컴파일 제거
+        public static void Verbose(string prefix, string message, params object[] args) 
+        {
+            Log(LogLevel.Verbose, prefix, message, args);
+        }
+
+        // 강제 로깅 활성화 메서드 추가
+        public static void ForceEnableAllLogs()
+        {
+            EnableLogs = true;
+            SetLogLevel(LogLevel.Verbose);
+            GlobalFilterEnabled = false; // 모든 로그 패턴 허용
+        }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         public static void LogInitialization(string componentName, bool success, string details = "")

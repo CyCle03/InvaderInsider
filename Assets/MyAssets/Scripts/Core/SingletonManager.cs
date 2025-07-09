@@ -50,6 +50,21 @@ namespace InvaderInsider.Core
         }
 
         /// <summary>
+        /// 인스턴스가 이미 존재하는 경우에만 반환 (생성하지 않음)
+        /// </summary>
+        public static T InstanceIfExists
+        {
+            get
+            {
+                if (_isQuitting || _instance == null)
+                {
+                    return null;
+                }
+                return _instance;
+            }
+        }
+
+        /// <summary>
         /// 인스턴스가 초기화되었는지 확인
         /// </summary>
         public static bool IsInitialized => _isInitialized;

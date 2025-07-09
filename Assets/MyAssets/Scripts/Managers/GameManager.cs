@@ -106,7 +106,19 @@ namespace InvaderInsider.Managers
         {
             base.OnInitialize();
             
-            // 로깅 시스템 초기화 (개발 환경별 설정)
+            // 로깅 시스템 강제 활성화
+            LogManager.ForceEnableAllLogs();
+            
+            // 다양한 로그 레벨의 테스트 로그 (개발/에디터 모드에서만)
+            #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogManager.Verbose(LOG_PREFIX, "Verbose 로그 테스트");
+            LogManager.Debug(LOG_PREFIX, "Debug 로그 테스트");
+            LogManager.Info(LOG_PREFIX, "Info 로그 테스트");
+            LogManager.Warning(LOG_PREFIX, "Warning 로그 테스트");
+            LogManager.Error(LOG_PREFIX, "Error 로그 테스트");
+            #endif
+            
+            // 기존 로깅 초기화 로직 유지
             #if UNITY_EDITOR
             LogManager.EnableDevelopmentLogging();
             LogManager.Info(LOG_PREFIX, $"개발 모드 로깅 활성화");
@@ -247,14 +259,15 @@ namespace InvaderInsider.Managers
 
         private void CleanupEventListeners()
         {
-            OnGameStateChanged -= HandleGameStateChanged;
-            
-            // ResourceManager 이벤트 구독 해제
-            var resourceManager = ResourceManager.Instance;
+            // ResourceManager 인스턴스 안전하게 접근
+            var resourceManager = ResourceManager.InstanceIfExists;
             if (resourceManager != null)
             {
+                // 필요한 이벤트 구독 해제 로직
                 // resourceManager.OnEDataChanged -= OnEDataChanged;
             }
+
+            OnGameStateChanged -= HandleGameStateChanged;
         }
 
         private void OnEnable()
@@ -472,6 +485,21 @@ namespace InvaderInsider.Managers
                     LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum} 클리어됨! 최고 클리어 스테이지: {currentData.progressData.highestStageCleared}");
                 }
             }
+
+            // 기존 로직 유지
+            if (stageClearedProcessed)
+                return;
+
+            stageClearedProcessed = true;
+
+            // 로그 추가
+            LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum} 클리어 - 처리 시작");
+
+            // 기존 로직 계속...
+            OnStageClearedEvent?.Invoke();
+
+            // 추가 로그
+            LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum} 클리어 - 이벤트 처리 완료");
         }
 
              
