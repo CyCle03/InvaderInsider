@@ -2469,6 +2469,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 046b78f6ba1504e45b9f63886e27843c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  stageManagerReference: {fileID: 0}
+  bottomBarPanelReference: {fileID: 0}
+  playerReference: {fileID: 0}
+  topBarPanelReference: {fileID: 0}
+  cardManagerReference: {fileID: 0}
 --- !u!1 &1979721233
 GameObject:
   m_ObjectHideFlags: 0
@@ -2617,7 +2622,6 @@ GameObject:
   - component: {fileID: 2130942057}
   - component: {fileID: 2130942056}
   - component: {fileID: 2130942055}
-  - component: {fileID: 2130942054}
   m_Layer: 5
   m_Name: MainMenu
   m_TagString: Untagged
@@ -2625,25 +2629,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2130942054
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2130942053}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b7cfdd3190c2a834bb4e4dc715ecc2cd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  newGameButton: {fileID: 839342023}
-  continueButton: {fileID: 1641915355}
-  settingsButton: {fileID: 1324628655}
-  deckButton: {fileID: 42971301}
-  exitButton: {fileID: 1345484730}
-  forceActivateAllButtons: 1
-  debugButtonStates: 0
 --- !u!114 &2130942055
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2730,7 +2715,6 @@ MonoBehaviour:
   canvasGroup: {fileID: 2130942057}
   fadeTime: 0.3
   panelName: MainMenu
-  buttonHandler: {fileID: 2130942054}
   newGameButton: {fileID: 839342023}
   continueButton: {fileID: 1641915355}
   settingsButton: {fileID: 1324628655}
