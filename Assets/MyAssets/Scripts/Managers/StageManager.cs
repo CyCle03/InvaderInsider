@@ -787,6 +787,11 @@ namespace InvaderInsider.Managers
 
         public int GetStageCount()
         {
+            if (stageData == null)
+            {
+                // Try to re-initialize if stageData is null
+                PerformInitialization();
+            }
             return stageData?.StageCount ?? 0;
         }
 

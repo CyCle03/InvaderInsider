@@ -1109,7 +1109,7 @@ namespace InvaderInsider.Managers
                         SetRequestedStartStage(startStage - 1);
                         
                         // 게임 씬으로 전환
-                        LoadGameScene();
+                        LoadGameScene(true);
                     }
                     else
                     {
@@ -1198,7 +1198,7 @@ namespace InvaderInsider.Managers
             LogManager.Info("GameManager", "RefreshMainMenuAfterLoad 완료");
         }
 
-        private void LoadGameScene()
+        private void LoadGameScene(bool isLoadedGame = false)
         {
             if (isLoadingScene)
             {
@@ -1210,7 +1210,7 @@ namespace InvaderInsider.Managers
             Time.timeScale = 1f;
             CurrentGameState = GameState.Loading;
 
-            LoadGameSceneAsync().Forget();
+            LoadGameSceneAsync(isLoadedGame).Forget();
         }
 
         private async UniTask LoadGameSceneAsync(bool isLoadedGame = false)
