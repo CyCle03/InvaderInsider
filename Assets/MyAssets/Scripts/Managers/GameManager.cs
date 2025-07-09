@@ -76,6 +76,8 @@ namespace InvaderInsider.Managers
 
         public event Action<GameState> OnGameStateChanged;
 
+        public Player Player => playerReference;
+
         private SaveDataManager saveDataManager;
         private UIManager uiManager;
         private UICoordinator uiCoordinator;

@@ -125,53 +125,10 @@ namespace InvaderInsider
                 $"{gameObject.name}: Awake 완료 - Config: {(enemyConfig != null ? "로드됨" : "null")}, Agent: {(agent != null ? "찾음" : "null")}, StageManager: {(stageManager != null ? "찾음" : "null")}");
         }
 
-        private void LoadConfig()
+        protected override void LoadConfig()
         {
-            var configManager = ConfigManager.Instance;
-            if (configManager != null && configManager.GameConfig != null)
-            {
-                enemyConfig = configManager.GameConfig;
-                LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
-                    $"{gameObject.name}: 설정을 성공적으로 로드했습니다.");
-            }
-            else
-            {
-                LogManager.Warning(GameConstants.LOG_PREFIX_ENEMY, 
-                    $"{gameObject.name}: ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
-                // 기본값으로 폴백
-                enemyConfig = ScriptableObject.CreateInstance<GameConfigSO>();
-                moveSpeed = GameConstants.DEFAULT_MOVE_SPEED;
-                
-                // ConfigManager가 나중에 초기화되면 다시 시도
-                RetryLoadConfig().Forget();
-            }
-        }
-        
-        private async UniTask RetryLoadConfig()
-        {
-            int retryCount = 0;
-            
-            while ((enemyConfig == null || stageManager == null) && retryCount < GameConstants.MAX_RETRY_ATTEMPTS)
-            {
-                await UniTask.Delay(TimeSpan.FromSeconds(GameConstants.RETRY_INTERVAL));
-                retryCount++;
-                
-                var configManager = ConfigManager.Instance;
-                if (configManager != null && configManager.GameConfig != null)
-                {
-                    enemyConfig = configManager.GameConfig;
-                    moveSpeed = enemyConfig.defaultMoveSpeed;
-                    LogManager.Info(GameConstants.LOG_PREFIX_ENEMY, 
-                        $"{gameObject.name}: 재시도 후 설정을 성공적으로 로드했습니다. (시도 횟수: {retryCount})");
-                    break;
-                }
-            }
-            
-            if (enemyConfig == null)
-            {
-                LogManager.Error(GameConstants.LOG_PREFIX_ENEMY, 
-                    $"{gameObject.name}: 최대 재시도 횟수({GameConstants.MAX_RETRY_ATTEMPTS})를 초과했습니다. 기본값을 계속 사용합니다.");
-            }
+            base.LoadConfig();
+            enemyConfig = baseConfig;
         }
 
         protected override void Initialize()
@@ -213,7 +170,7 @@ namespace InvaderInsider
             // Player 참조 설정
             if (player == null)
             {
-                player = FindPlayer();
+                player = GameManager.Instance.Player;
                 LogManager.LogNullCheck(player, "Player", "EnemyObject 초기화");
             }
 
@@ -223,21 +180,6 @@ namespace InvaderInsider
                 stageManager = StageManager.Instance;
                 LogManager.LogNullCheck(stageManager, "StageManager", "EnemyObject 초기화");
             }
-        }
-
-        private Player FindPlayer()
-        {
-            // GameManager를 통해 먼저 시도
-            var gameManagerInstance = GameManager.Instance;
-            if (gameManagerInstance != null)
-            {
-                var playerFromManager = gameManagerInstance.GetComponent<Player>();
-                if (playerFromManager != null) return playerFromManager;
-            }
-            
-            // 태그로 찾기
-            GameObject playerObj = GameObject.FindWithTag(GameConstants.TAG_PLAYER);
-            return playerObj?.GetComponent<Player>();
         }
 
         protected override void OnEnable()

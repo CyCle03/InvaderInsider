@@ -117,20 +117,10 @@ namespace InvaderInsider
             cachedPosition = transform.position;
         }
         
-        private void LoadConfig()
+        protected override void LoadConfig()
         {
-            var configManager = ConfigManager.Instance;
-            if (configManager != null && configManager.GameConfig != null)
-            {
-                towerConfig = configManager.GameConfig;
-            }
-            else
-            {
-                LogManager.Error(GameConstants.LOG_PREFIX_TOWER, 
-                    $"{gameObject.name}: ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
-                // 기본값으로 폴백
-                towerConfig = ScriptableObject.CreateInstance<GameConfigSO>();
-            }
+            base.LoadConfig();
+            towerConfig = baseConfig;
         }
         
         private void SetupEnemyLayer()

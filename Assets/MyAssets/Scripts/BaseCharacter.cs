@@ -5,6 +5,7 @@ using InvaderInsider.Cards;
 using InvaderInsider.ScriptableObjects;
 using InvaderInsider.Managers;
 using InvaderInsider.Core;
+using Cysharp.Threading.Tasks;
 
 namespace InvaderInsider
 {
@@ -38,7 +39,7 @@ namespace InvaderInsider
         
         protected float nextAttackTime;
         private bool _isInitialized = false;
-        private GameConfigSO baseConfig;
+        protected GameConfigSO baseConfig;
         
         #endregion
 
@@ -125,7 +126,7 @@ namespace InvaderInsider
         /// <summary>
         /// 설정 파일에서 기본값들을 로드합니다.
         /// </summary>
-        private void LoadConfig()
+        protected virtual void LoadConfig()
         {
             var configManager = ConfigManager.Instance;
             if (configManager != null && configManager.GameConfig != null)
@@ -144,9 +145,46 @@ namespace InvaderInsider
             }
             else
             {
+                LogManager.Warning(GameConstants.LOG_PREFIX_GAME, 
+                    $"{gameObject.name}: ConfigManager 또는 GameConfig를 찾을 수 없습니다. 재시도합니다.");
+                RetryLoadConfig().Forget();
+            }
+        }
+
+        private async UniTask RetryLoadConfig()
+        {
+            int retryCount = 0;
+            
+            while (baseConfig == null && retryCount < GameConstants.MAX_RETRY_ATTEMPTS)
+            {
+                await UniTask.Delay(TimeSpan.FromSeconds(GameConstants.RETRY_INTERVAL));
+                retryCount++;
+                
+                var configManager = ConfigManager.Instance;
+                if (configManager != null && configManager.GameConfig != null)
+                {
+                    baseConfig = configManager.GameConfig;
+                    LogManager.Info(GameConstants.LOG_PREFIX_GAME, 
+                        $"{gameObject.name}: 재시도 후 설정을 성공적으로 로드했습니다. (시도 횟수: {retryCount})");
+                    
+                    // 설정 로드 후 값 다시 적용
+                    if (Mathf.Approximately(maxHealth, GameConstants.DEFAULT_MAX_HEALTH)) 
+                        maxHealth = baseConfig.defaultMaxHealth;
+                    if (Mathf.Approximately(attackDamage, GameConstants.DEFAULT_ATTACK_DAMAGE)) 
+                        attackDamage = baseConfig.defaultAttackDamage;
+                    if (Mathf.Approximately(baseAttackRange, GameConstants.DEFAULT_ATTACK_RANGE)) 
+                        baseAttackRange = baseConfig.defaultAttackRange;
+                    if (Mathf.Approximately(attackRate, GameConstants.DEFAULT_ATTACK_RATE)) 
+                        attackRate = baseConfig.defaultAttackRate;
+
+                    return; // 성공했으므로 종료
+                }
+            }
+            
+            if (baseConfig == null)
+            {
                 LogManager.Error(GameConstants.LOG_PREFIX_GAME, 
-                    $"{gameObject.name}: ConfigManager 또는 GameConfig를 찾을 수 없습니다. 기본값을 사용합니다.");
-                // 기본값으로 폴백
+                    $"{gameObject.name}: 최대 재시도 횟수({GameConstants.MAX_RETRY_ATTEMPTS})를 초과했습니다. 기본값을 생성합니다.");
                 baseConfig = ScriptableObject.CreateInstance<GameConfigSO>();
             }
         }
