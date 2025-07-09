@@ -115,38 +115,57 @@ namespace InvaderInsider.Managers
                     LogManager.Info(LOG_PREFIX, $"StageDataObject에서 StageData를 재설정했습니다: {stageDataObject.name}, StageCount: {stageData.StageCount}");
                 }
             }
-            else
+            else // Case 2: Load from Resources
             {
-                // Resources 폴더에서 로드 시도
-                var defaultStageList = Resources.Load<StageList>("StageList1") ?? 
-                                      Resources.Load<StageList>("ScriptableObjects/StageSystem/StageList1") ??
-                                      Resources.Load<StageList>("StageSystem/StageList1") ??
-                                      Resources.Load<StageList>("Stage1 Database") ??
-                                      Resources.Load<StageList>("StageSystem/Stage1 Database");
-                
-                if (defaultStageList != null)
+                IStageData loadedStageData = null;
+
+                // Prioritize loading StageList for multi-stage games
+                string[] stageListPaths = {
+                    "StageList1",
+                    "ScriptableObjects/StageSystem/StageList1",
+                    "StageSystem/StageList1"
+                };
+
+                foreach (string path in stageListPaths)
                 {
-                    stageDataObject = defaultStageList;
-                    stageData = stageDataObject as IStageData;
-                    LogManager.Info(LOG_PREFIX, $"Resources에서 StageData를 로드했습니다: {defaultStageList.name}, StageCount: {stageData.StageCount}");
+                    var list = Resources.Load<StageList>(path);
+                    if (list != null)
+                    {
+                        loadedStageData = list;
+                        LogManager.Info(LOG_PREFIX, $"Resources에서 StageList를 로드했습니다: {list.name}, StageCount: {loadedStageData.StageCount}");
+                        break;
+                    }
+                }
+
+                if (loadedStageData == null)
+                {
+                    // Fallback to StageDBObject if StageList not found
+                    string[] stageDBObjectPaths = {
+                        "Stage1 Database",
+                        "StageSystem/Stage1 Database",
+                        "ScriptableObjects/StageSystem/Stage1 Database"
+                    };
+
+                    foreach (string path in stageDBObjectPaths)
+                    {
+                        var dbObject = Resources.Load<StageDBObject>(path);
+                        if (dbObject != null)
+                        {
+                            loadedStageData = dbObject;
+                            LogManager.Info(LOG_PREFIX, $"Resources에서 StageDBObject를 로드했습니다: {dbObject.name}, StageCount: {loadedStageData.StageCount}");
+                            break;
+                        }
+                    }
+                }
+
+                if (loadedStageData != null)
+                {
+                    stageDataObject = loadedStageData as ScriptableObject; // Assign to stageDataObject for Inspector visibility
+                    stageData = loadedStageData;
                 }
                 else
                 {
-                    // StageDBObject로도 시도
-                    var stageDBObject = Resources.Load<StageDBObject>("Stage1 Database") ??
-                                       Resources.Load<StageDBObject>("StageSystem/Stage1 Database") ??
-                                       Resources.Load<StageDBObject>("ScriptableObjects/StageSystem/Stage1 Database");
-                    
-                    if (stageDBObject != null)
-                    {
-                        stageDataObject = stageDBObject;
-                        stageData = stageDataObject as IStageData;
-                        LogManager.Info(LOG_PREFIX, $"Resources에서 StageDBObject를 로드했습니다: {stageDBObject.name}, StageCount: {stageData.StageCount}");
-                    }
-                    else
-                    {
-                        LogManager.Error(LOG_PREFIX, "StageData를 찾을 수 없습니다. 다음 경로들을 확인하세요:");
-                    }
+                    LogManager.Error(LOG_PREFIX, "StageData를 찾을 수 없습니다. 다음 경로들을 확인하세요:");
                 }
             }
 
