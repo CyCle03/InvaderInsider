@@ -243,22 +243,20 @@ using System.Collections.Generic;
         /// <summary>
         /// 스테이지 관련 UI를 업데이트합니다.
         /// </summary>
-        public void UpdateStageWaveUI(int currentStage, int spawnedMonsters, int maxMonsters, int totalStages)
+        public void UpdateStageWaveUI(int stage, int spawnedMonsters, int maxMonsters, int totalStages)
         {
-            // TopBarPanel 참조 재확인
-            if (topBarPanel == null)
+            if (topBarPanel != null)
             {
-                topBarPanel = FindObjectOfType<TopBarPanel>(true);
-                if (topBarPanel == null)
-                {
-                    #if UNITY_EDITOR
-                    LogManager.Warning(LOG_PREFIX, "TopBarPanel을 찾을 수 없습니다. Stage Wave UI 업데이트를 건너뜁니다.");
-                    #endif
-                    return;
-                }
+                topBarPanel.UpdateStageInfo(stage, spawnedMonsters, maxMonsters, totalStages);
             }
-            
-            topBarPanel.UpdateStageInfo(currentStage, totalStages, spawnedMonsters, maxMonsters);
+        }
+
+        public void UpdateActiveEnemyCountUI(int count)
+        {
+            if (bottomBarPanel != null)
+            {
+                bottomBarPanel.UpdateMonsterCountDisplay(count);
+            }
         }
         
         /// <summary>

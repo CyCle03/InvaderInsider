@@ -10646,7 +10646,7 @@ MonoBehaviour:
   canvasGroup: {fileID: 1886596331}
   fadeTime: 0.3
   panelName: BottomBar
-  enemyRemainText: {fileID: 708223208}
+  activeEnemyCountText: {fileID: 708223208}
   healthSlider: {fileID: 721020621}
   lifeText: {fileID: 636028777}
   gameOverPanel: {fileID: 0}

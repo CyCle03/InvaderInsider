@@ -455,7 +455,7 @@ namespace InvaderInsider.Managers
             return stageManager?.GetStageCount() ?? 1; // 기본값 1
         }
 
-        public void UpdateStageWaveUI(int currentStage, int spawnedMonsters, int maxMonsters)
+        public void UpdateStageWaveUI(int currentStage, int spawnedMonsters, int maxMonsters, int totalStages)
         {
             // UICoordinator를 통해 UI 업데이트
             if (uiCoordinator != null)
@@ -464,11 +464,19 @@ namespace InvaderInsider.Managers
                 spawnedMonsters = Mathf.Min(spawnedMonsters, maxMonsters);
                 
                 // 현재 스테이지와 Wave 정보 업데이트
-                uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, GetTotalStageCount());
+                uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, totalStages);
                 
                 #if UNITY_EDITOR
-                LogManager.Info(LOG_PREFIX, $"Wave UI 업데이트: 스테이지 {currentStage}, 소환된 몬스터 {spawnedMonsters}/{maxMonsters}");
+                LogManager.Info(LOG_PREFIX, $"Wave UI 업데이트: 스테이지 {currentStage}/{totalStages}, 소환된 몬스터 {spawnedMonsters}/{maxMonsters}");
                 #endif
+            }
+        }
+
+        public void UpdateActiveEnemyCountUI(int count)
+        {
+            if (uiCoordinator != null)
+            {
+                uiCoordinator.UpdateActiveEnemyCountUI(count);
             }
         }
 
@@ -689,14 +697,14 @@ namespace InvaderInsider.Managers
             LoadMainMenuScene();
         }
 
-        private void InitializeGame()
+        private void InitializeGame(bool isLoadedGame = false)
         {
             LogManager.Info(LOG_PREFIX, "GameManager.InitializeGame() 호출됨");
             // UI 패널 캐싱 및 등록
             CacheAndRegisterAllPanels();
 
             // 게임플레이 패널 설정
-            SetupGameplayPanels();
+            SetupGameplayPanels(isLoadedGame);
             
             // 비게임플레이 패널들 숨기기 (PausePanel 포함)
             HideNonGameplayPanels();
@@ -708,7 +716,7 @@ namespace InvaderInsider.Managers
             if (stageManager != null)
             {
                 // Continue Game 시 저장된 스테이지 정보를 기반으로 시작
-                stageManager.StartStageFrom(requestedStartStage);
+                stageManager.StartStageFrom(requestedStartStage, isLoadedGame);
                 #if UNITY_EDITOR
                 LogManager.Info(LOG_PREFIX, $"StageManager를 통해 스테이지 {requestedStartStage + 1}부터 시작했습니다. (인덱스: {requestedStartStage})");
                 #endif
@@ -829,7 +837,7 @@ namespace InvaderInsider.Managers
             }
         }
 
-        private void SetupGameplayPanels()
+        private void SetupGameplayPanels(bool isLoadedGame = false)
         {
             // InGame 패널 설정
             var inGamePanel = FindCachedOrNewPanel<InvaderInsider.UI.InGamePanel>("InGame", "InGamePanel");
@@ -862,8 +870,11 @@ namespace InvaderInsider.Managers
                     {
                         // 현재 스테이지의 최대 몬스터 수를 정확히 가져옴
                         maxMonsters = stageManager.GetStageWaveCount(requestedStartStage);
-                        // 현재 스테이지에서 이미 스폰된 몬스터 수를 가져옴
-                        spawnedMonsters = saveDataManager?.GetCurrentSpawnedEnemyCount(requestedStartStage) ?? 0; // 저장된 데이터에서 가져옴
+                        if (isLoadedGame)
+                        {
+                            // 현재 스테이지에서 이미 스폰된 몬스터 수를 가져옴
+                            spawnedMonsters = saveDataManager?.GetCurrentSpawnedEnemyCount(requestedStartStage) ?? 0; // 저장된 데이터에서 가져옴
+                        }
                     }
                     
                     uiCoordinator.UpdateStageWaveUI(currentStage, spawnedMonsters, maxMonsters, totalStages);
@@ -1081,6 +1092,9 @@ namespace InvaderInsider.Managers
                     var saveData = saveDataManager.CurrentSaveData;
                     if (saveData != null)
                     {
+                        // ResourceManager에 로드된 EData 설정
+                        ResourceManager.Instance.SetEData(saveData.progressData.currentEData);
+
                         // Continue는 클리어한 다음 스테이지부터 시작
                         int highestCleared = saveData.progressData.highestStageCleared;
                         
@@ -1270,7 +1284,7 @@ namespace InvaderInsider.Managers
             await UniTask.NextFrame(); // 모든 오브젝트 초기화 대기
             
             // 게임 씬 로드 완료 후 자동으로 게임 초기화
-            InitializeGame();
+            InitializeGame(isLoadedGame);
             
             // 게임 초기화 완료 후 한 프레임 더 대기하고 PausePanel 최종 확인
             await UniTask.NextFrame();

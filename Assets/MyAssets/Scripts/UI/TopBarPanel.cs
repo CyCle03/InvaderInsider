@@ -161,7 +161,7 @@ namespace InvaderInsider.UI
             }
         }
 
-        public void UpdateStageInfo(int currentStage, int totalStages, int spawnedMonsters, int maxMonsters)
+        public void UpdateStageInfo(int currentStage, int spawnedMonsters, int maxMonsters, int totalStages)
         {
             if (stageText != null)
             {

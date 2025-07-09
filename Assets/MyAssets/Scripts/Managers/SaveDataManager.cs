@@ -280,13 +280,34 @@ namespace InvaderInsider.Data
         // 스폰된 적 수를 설정하는 메서드 추가
         public void SetSpawnedEnemyCount(int stageIndex, int count)
         {
-            spawnedEnemyCounts[stageIndex] = count;
+            // 스테이지 인덱스에 대한 스폰된 적 수 저장
+            if (!spawnedEnemyCounts.ContainsKey(stageIndex))
+            {
+                spawnedEnemyCounts.Add(stageIndex, count);
+            }
+            else
+            {
+                spawnedEnemyCounts[stageIndex] = count;
+            }
+
+            // 캐시 무효화
+            stageNumbersCacheDirty = true;
         }
 
-        // 특정 스테이지의 스폰된 적 수를 가져오는 메서드 추가
         public int GetSpawnedEnemyCount(int stageIndex)
         {
+            // 해당 스테이지 인덱스의 스폰된 적 수 반환, 없으면 0
             return spawnedEnemyCounts.TryGetValue(stageIndex, out int count) ? count : 0;
+        }
+
+        public void ClearSpawnedEnemyCount(int stageIndex)
+        {
+            // 특정 스테이지의 스폰된 적 수 제거
+            if (spawnedEnemyCounts.ContainsKey(stageIndex))
+            {
+                spawnedEnemyCounts.Remove(stageIndex);
+                stageNumbersCacheDirty = true;
+            }
         }
 
         public SerializableStageProgress Clone()

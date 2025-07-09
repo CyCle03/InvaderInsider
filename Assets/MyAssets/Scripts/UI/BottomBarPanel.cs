@@ -16,7 +16,7 @@ namespace InvaderInsider.UI
         };
 
         [Header("UI References")]
-        [SerializeField] private TextMeshProUGUI enemyRemainText;
+        [SerializeField] private TextMeshProUGUI activeEnemyCountText;
         [SerializeField] private Slider healthSlider;
         [SerializeField] private TextMeshProUGUI lifeText;
         
@@ -123,9 +123,9 @@ namespace InvaderInsider.UI
             string missingElements = "";
 
             // 필수 UI 요소들 체크
-            if (enemyRemainText == null)
+            if (activeEnemyCountText == null)
             {
-                missingElements += "enemyRemainText, ";
+                missingElements += "activeEnemyCountText, ";
                 isValid = false;
             }
 
@@ -223,17 +223,17 @@ namespace InvaderInsider.UI
 
         public void UpdateMonsterCountDisplay(int activeCount, int totalCount)
         {
-            if (enemyRemainText == null) return;
+            if (activeEnemyCountText == null) return;
 
-            enemyRemainText.text = $"Active Enemy: {activeCount}";
+            activeEnemyCountText.text = $"{activeCount}";
         }
         
         // 기존 메서드와의 호환성을 위한 오버로드
         public void UpdateMonsterCountDisplay(int count)
         {
-            if (enemyRemainText == null) return;
+            if (activeEnemyCountText == null) return;
 
-            enemyRemainText.text = $"Active Enemy: {count}";
+            activeEnemyCountText.text = $"{count}";
         }
 
         private void InitializeHealthDisplay()
