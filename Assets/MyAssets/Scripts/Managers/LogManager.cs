@@ -47,7 +47,9 @@ namespace InvaderInsider.Managers
         
         static LogManager()
         {
-            EnableDevelopmentLogging(); // This sets MinimumLogLevel to Verbose
+            MinimumLogLevel = LogLevel.Verbose;
+            UnityEngine.Debug.unityLogger.filterLogType = LogType.Log; // Show all logs
+            UnityEngine.Debug.Log("[LogManager] LogManager static constructor called. Verbose logging enabled.");
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
