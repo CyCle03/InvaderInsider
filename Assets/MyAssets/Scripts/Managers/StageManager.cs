@@ -468,12 +468,21 @@ namespace InvaderInsider.Managers
                 var saveDataManager = SaveDataManager.Instance;
                 if (saveDataManager != null)
                 {
-                    // 현재 스테이지의 적 스폰 상태 복원
-                    int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(startStageIndex);
-                    enemyCount = currentSpawnedEnemies;
+                    // Check if this is a new stage (highestCleared + 1)
+                    int highestClearedStage = saveDataManager.CurrentSaveData.progressData.highestStageCleared;
+                    if (startStageIndex == highestClearedStage) // If loading the same stage that was cleared
+                    {
+                        // Restore spawned enemies for the same stage
+                        int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(startStageIndex);
+                        enemyCount = currentSpawnedEnemies;
+                    }
+                    else // If loading a new stage
+                    {
+                        enemyCount = 0; // Start with 0 spawned enemies for a new stage
+                    }
                     
                     #if UNITY_EDITOR
-                    LogManager.Info(LOG_PREFIX, $"로드된 게임 상태 복원 - 스테이지: {startStageIndex + 1}, 스폰된 적: {currentSpawnedEnemies}");
+                    LogManager.Info(LOG_PREFIX, $"로드된 게임 상태 복원 - 스테이지: {startStageIndex + 1}, 스폰된 적: {enemyCount}");
                     #endif
                 }
             }
@@ -793,7 +802,7 @@ namespace InvaderInsider.Managers
                 // Try to re-initialize if stageData is null
                 PerformInitialization();
             }
-            return stageData?.StageCount ?? 0;
+            return (stageData?.StageCount ?? 0) > 0 ? (stageData?.StageCount ?? 0) : 1;
         }
 
         public int GetStageWaveCount(int stageIndex)
