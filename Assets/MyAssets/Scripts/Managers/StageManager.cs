@@ -73,6 +73,7 @@ namespace InvaderInsider.Managers
 
         protected override void Awake()
         {
+            LogManager.Info(LOG_PREFIX, "StageManager.Awake() 호출됨");
             base.Awake();
 
             // 에디터 모드에서는 초기화하지 않음

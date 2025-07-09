@@ -663,6 +663,7 @@ namespace InvaderInsider.Managers
 
         private void InitializeGame()
         {
+            LogManager.Info(LOG_PREFIX, "GameManager.InitializeGame() 호출됨");
             // UI 패널 캐싱 및 등록
             CacheAndRegisterAllPanels();
 
