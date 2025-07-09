@@ -14,8 +14,7 @@ namespace InvaderInsider.UI
     {
         private const string LOG_TAG = "MainMenu";
         
-        [Header("Components")]
-        [SerializeField] private MainMenuButtonHandler buttonHandler;
+        
 
         [Header("Menu Buttons")]
         public Button newGameButton;
