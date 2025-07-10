@@ -87,6 +87,7 @@ namespace InvaderInsider.Managers
         // 게임 시작 상태 플래그들
         private bool isStartingGame = false;
         private bool isLoadingScene = false;
+        public bool IsLoadedGame { get; private set; } = false;
 
         // 성능 최적화: Update 체크 주기 조정
         private float nextStateCheckTime = 0f;
@@ -1293,6 +1294,7 @@ namespace InvaderInsider.Managers
             // 플래그 리셋
             isStartingGame = false;
             isLoadingScene = false;
+            IsLoadedGame = isLoadedGame;
 
             // 로드된 게임인 경우 StageManager에 알림
             if (isLoadedGame)

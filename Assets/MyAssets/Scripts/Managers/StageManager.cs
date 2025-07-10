@@ -479,6 +479,7 @@ namespace InvaderInsider.Managers
             activeEnemyCountValue = 0;
             
             // 로드된 게임인 경우 저장된 데이터 기반으로 상태 복원
+            // (새로운 스테이지 시작 시 Wave 진행 상황은 항상 0으로 초기화)
             if (isLoadedGame)
             {
                 var saveDataManager = SaveDataManager.Instance;
@@ -494,8 +495,9 @@ namespace InvaderInsider.Managers
                     }
                     else // 이전에 클리어한 스테이지를 다시 로드하는 경우
                     {
-                        int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(startStageIndex);
-                        enemyCount = currentSpawnedEnemies;
+                        // 이 부분은 이제 사용하지 않음 (Wave 진행 상황은 항상 0으로 초기화)
+                        // int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(startStageIndex);
+                        // enemyCount = currentSpawnedEnemies;
                     }
                     
                     #if UNITY_EDITOR
@@ -587,7 +589,8 @@ namespace InvaderInsider.Managers
             // 현재 스폰된 적의 수 계산 (저장된 데이터 기반)
             var saveDataManager = SaveDataManager.Instance;
             int currentSpawnedEnemies = 0;
-            if (saveDataManager != null)
+            // 로드된 게임인 경우에만 저장된 스폰된 적 수를 가져옴
+            if (gameManager != null && gameManager.IsLoadedGame && saveDataManager != null)
             {
                 currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(stageNum);
             }

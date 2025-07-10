@@ -243,11 +243,11 @@ using System.Collections.Generic;
         /// <summary>
         /// 스테이지 관련 UI를 업데이트합니다.
         /// </summary>
-        public void UpdateStageWaveUI(int stage, int spawnedMonsters, int maxMonsters, int totalStages)
+        public void UpdateStageWaveUI(int currentStage, int spawnedMonsters, int maxMonsters, int totalStages)
         {
             if (topBarPanel != null)
             {
-                topBarPanel.UpdateStageInfo(stage, spawnedMonsters, maxMonsters, totalStages);
+                topBarPanel.UpdateStageInfo(currentStage, spawnedMonsters, maxMonsters, totalStages);
             }
         }
 
