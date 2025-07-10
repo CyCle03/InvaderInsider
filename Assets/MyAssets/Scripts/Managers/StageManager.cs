@@ -414,16 +414,6 @@ namespace InvaderInsider.Managers
             // 스테이지 초기화 전에 상태 초기화
             ResetStageState(stageIndex, isLoadedGame);
 
-            // 로드된 게임인 경우 스폰된 적 수와 현재 적 수 복원
-            if (isLoadedGame && saveDataManager != null && saveDataManager.CurrentSaveData != null)
-            {
-                // 스폰된 적 수 복원
-                int spawnedEnemyCount = saveDataManager.CurrentSaveData.stageProgress.GetSpawnedEnemyCount(stageIndex);
-                enemyCount = spawnedEnemyCount;
-
-                LogManager.Info(LOG_PREFIX, $"로드된 게임 상태 복원 - 스테이지 {stageIndex}, 스폰된 적 수: {spawnedEnemyCount}");
-            }
-
             // 스테이지 내부 시작 로직
             StartStageInternal(stageIndex, isLoadedGame);
         }
