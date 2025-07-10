@@ -661,6 +661,8 @@ namespace InvaderInsider.Managers
             // 다음 스테이지로 진행
             stageNum++;
             currentTime = 0f;
+            enemyCount = 0;
+            activeEnemyCountValue = 0;
 
             // 모든 스테이지 완료 여부 확인
             if (stageNum >= GetStageCount())
