@@ -510,7 +510,6 @@ namespace InvaderInsider.Managers
             // GameManager를 통해 UI 업데이트
             if (gameManager != null)
             {
-<<<<<<< HEAD
                 gameManager.UpdateStageWaveUI(startStageIndex + 1, 0, maxMonsters, GetStageCount());
             }
             
