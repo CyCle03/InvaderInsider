@@ -717,14 +717,15 @@ namespace InvaderInsider.Managers
             
             
             
-            // StageManager 참조 찾기 및 스테이지 시작
             var stageManager = StageManager.Instance;
             if (stageManager != null)
             {
-                // Continue Game 시 저장된 스테이지 정보를 기반으로 시작
+                // New Game (requestedStartStage = 0) 또는 Continue Game (requestedStartStage = saved value)
+                // 모두 동일한 메서드를 사용하도록 통일합니다.
                 stageManager.StartStageFrom(requestedStartStage, isLoadedGame);
+                
                 #if UNITY_EDITOR
-                LogManager.Info(LOG_PREFIX, $"StageManager를 통해 스테이지 {requestedStartStage + 1}부터 시작했습니다. (인덱스: {requestedStartStage})");
+                LogManager.Info(LOG_PREFIX, $"StageManager.StartStageFrom 호출: 스테이지 인덱스 {requestedStartStage}, 로드된 게임: {isLoadedGame}");
                 #endif
             }
             else
