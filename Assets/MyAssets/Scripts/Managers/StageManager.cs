@@ -405,16 +405,38 @@ namespace InvaderInsider.Managers
         /// <param name="stageIndex">시작할 스테이지 인덱스 (0부터 시작)</param>
         public void StartStageFrom(int stageIndex, bool isLoadedGame = false)
         {
-            // 로그 추가
-            LogManager.Info(LOG_PREFIX, $"StartStageFrom 호출: 스테이지 {stageIndex}, 로드된 게임: {isLoadedGame}");
+            // =================================================================
+            // 스테이지 시작 시 모든 관련 상태를 명확하게 초기화합니다.
+            // 씬 전환 시 StageManager가 파괴되지 않으므로, 이전 상태가 남아있는 것을 방지합니다.
+            // =================================================================
+            LogManager.Info(LOG_PREFIX, $"--- Stage State Reset for Stage {stageIndex} (isLoadedGame: {isLoadedGame}) ---");
+            
+            // 1. 카운터 초기화
+            this.enemyCount = 0;
+            this.activeEnemyCountValue = 0;
+            this.currentTime = 0f;
 
-            // 현재 SaveDataManager 인스턴스 가져오기
-            var saveDataManager = SaveDataManager.Instance;
+            // 2. 스테이지 정보 설정
+            this.stageNum = stageIndex;
 
-            // 스테이지 초기화 전에 상태 초기화
-            ResetStageState(stageIndex, isLoadedGame);
+            // 3. 상태 초기화
+            this.currentState = StageState.Ready;
 
-            // 스테이지 내부 시작 로직
+            // 4. 활성 객체 목록 정리
+            CleanupActiveEnemies();
+
+            // 5. UI 초기화 (GameManager를 통해)
+            var gm = GameManager.Instance;
+            if (gm != null)
+            {
+                int maxMonsters = GetStageWaveCount(stageIndex);
+                int totalStages = GetStageCount();
+                gm.UpdateStageWaveUI(stageIndex + 1, 0, maxMonsters, totalStages);
+                gm.UpdateActiveEnemyCountUI(0);
+            }
+            LogManager.Info(LOG_PREFIX, $"--- Stage State Reset Complete ---");
+
+            // 스테이지 내부 시작 로직 호출
             StartStageInternal(stageIndex, isLoadedGame);
         }
 
@@ -436,78 +458,8 @@ namespace InvaderInsider.Managers
                 stageWave = 20; // 기본값
             }
 
-            CleanupActiveEnemies();
-
-            currentState = StageState.Ready;
-
+            // 루프 시작
             StageLoopCoroutine().Forget();
-        }
-
-        private void ResetStageState(int startStageIndex)
-        {
-            currentTime = 0f;
-            enemyCount = 0;
-            activeEnemyCountValue = 0;
-            stageNum = startStageIndex;
-            
-            // 스테이지 시작 시 UI 초기화 (GameManager를 통해)
-            if (bottomBarPanel != null)
-            {
-                bottomBarPanel.UpdateMonsterCountDisplay(0);
-            }
-        }
-
-        private void ResetStageState(int startStageIndex, bool isLoadedGame)
-        {
-            // 기본 상태 초기화
-            currentTime = 0f;
-            stageNum = startStageIndex;
-            currentState = StageState.Ready;
-            
-            // 적 카운트 초기화
-            enemyCount = 0;
-            activeEnemyCountValue = 0;
-            LogManager.Info(LOG_PREFIX, $"ResetStageState: enemyCount = {enemyCount}, activeEnemyCountValue = {activeEnemyCountValue}");
-            
-            // 로드된 게임인 경우 저장된 데이터 기반으로 상태 복원
-            // (새로운 스테이지 시작 시 Wave 진행 상황은 항상 0으로 초기화)
-            if (isLoadedGame)
-            {
-                var saveDataManager = SaveDataManager.Instance;
-                if (saveDataManager != null)
-                {
-                    // Check if this is a new stage (highestCleared + 1)
-                    int highestClearedStage = saveDataManager.CurrentSaveData.progressData.highestStageCleared;
-                    
-                    enemyCount = 0; // Wave 진행 상황은 항상 0으로 초기화
-
-                    // 새로운 스테이지로 진입한 경우 항상 적 카운트를 0으로 초기화
-                    if (startStageIndex > highestClearedStage)
-                    {
-                        enemyCount = 0;
-                    }
-                    else // 이전에 클리어한 스테이지를 다시 로드하는 경우
-                    {
-                        // 이 부분은 이제 사용하지 않음 (Wave 진행 상황은 항상 0으로 초기화)
-                        // int currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(startStageIndex);
-                        // enemyCount = currentSpawnedEnemies;
-                    }
-                    
-                    #if UNITY_EDITOR
-                    LogManager.Info(LOG_PREFIX, $"로드된 게임 상태 복원 - 스테이지: {startStageIndex + 1}, 스폰된 적: {enemyCount}, 최고 클리어 스테이지: {highestClearedStage}");
-                    #endif
-                }
-            }
-            
-            // 웨이브 정보 초기화
-            int maxMonsters = GetStageWaveCount(startStageIndex);
-            
-            // GameManager를 통해 UI 업데이트
-            if (gameManager != null)
-            {
-                gameManager.UpdateStageWaveUI(startStageIndex + 1, 0, maxMonsters, GetStageCount());
-            }
-            
         }
 
         private void CleanupActiveEnemies()
