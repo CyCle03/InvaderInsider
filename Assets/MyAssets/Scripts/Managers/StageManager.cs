@@ -479,6 +479,8 @@ namespace InvaderInsider.Managers
                     // Check if this is a new stage (highestCleared + 1)
                     int highestClearedStage = saveDataManager.CurrentSaveData.progressData.highestStageCleared;
                     
+                    enemyCount = 0; // Wave 진행 상황은 항상 0으로 초기화
+
                     // 새로운 스테이지로 진입한 경우 항상 적 카운트를 0으로 초기화
                     if (startStageIndex > highestClearedStage)
                     {
@@ -820,9 +822,6 @@ namespace InvaderInsider.Managers
             {
                 activeEnemyCountValue--;
             }
-            
-            // Wave 정보를 포함한 UI 업데이트 (TopBar)
-            UpdateWaveProgressUI();
             
             // Active Enemy 카운트 UI 업데이트 (BottomBar)
             if (bottomBarPanel != null)
