@@ -395,22 +395,21 @@ namespace InvaderInsider.Managers
         public void InitializeStage()
         {
             if (!isInitialized) return;
-            StartStageInternal(0, false);
+            StartStageFrom(0, false);
         }
 
         /// <summary>
-        /// 지정된 스테이지 인덱스부터 스테이지를 시작합니다.
-        /// Continue Game 시 저장된 스테이지 정보를 기반으로 호출됩니다.
+        /// 지정된 스테이지 인덱스부터 스테이지 시퀀스를 시작합니다.
+        /// 이 메서드는 GameManager에 의해 호출되며, 스테이지 관리의 유일한 시작점입니다.
         /// </summary>
-        /// <param name="stageIndex">시작할 스테이지 인덱스 (0부터 시작)</param>
         public void StartStageFrom(int stageIndex, bool isLoadedGame = false)
         {
             // =================================================================
             // 스테이지 시작 시 모든 관련 상태를 명확하게 초기화합니다.
             // 씬 전환 시 StageManager가 파괴되지 않으므로, 이전 상태가 남아있는 것을 방지합니다.
             // =================================================================
-            LogManager.Info(LOG_PREFIX, $"--- Stage State Reset for Stage {stageIndex} (isLoadedGame: {isLoadedGame}) ---");
-            
+            LogManager.Info(LOG_PREFIX, $"--- Stage Sequence Starting from index {stageIndex} (isLoadedGame: {isLoadedGame}) ---");
+
             // 1. 카운터 초기화
             this.enemyCount = 0;
             this.activeEnemyCountValue = 0;
@@ -418,6 +417,14 @@ namespace InvaderInsider.Managers
 
             // 2. 스테이지 정보 설정
             this.stageNum = stageIndex;
+            if (stageData != null)
+            {
+                this.stageWave = stageData.GetStageWaveCount(stageIndex);
+            }
+            else
+            {
+                this.stageWave = 20; // 기본값
+            }
 
             // 3. 상태 초기화
             this.currentState = StageState.Ready;
@@ -436,29 +443,7 @@ namespace InvaderInsider.Managers
             }
             LogManager.Info(LOG_PREFIX, $"--- Stage State Reset Complete ---");
 
-            // 스테이지 내부 시작 로직 호출
-            StartStageInternal(stageIndex, isLoadedGame);
-        }
-
-        private void StartStageInternal(int startStageIndex, bool isLoadedGame = false)
-        {
-            if (!isInitialized)
-            {
-                LogManager.Error(LOG_PREFIX, "StageManager가 초기화되지 않았습니다.");
-                return;
-            }
-
-            // 스테이지 데이터에서 실제 wave 수 가져오기
-            if (stageData != null)
-            {
-                stageWave = stageData.GetStageWaveCount(startStageIndex);
-            }
-            else
-            {
-                stageWave = 20; // 기본값
-            }
-
-            // 루프 시작
+            // 스테이지 루프 시작 (단 한 번만 호출되어야 함)
             StageLoopCoroutine().Forget();
         }
 
@@ -645,8 +630,8 @@ namespace InvaderInsider.Managers
             // 다음 스테이지 시작 대기 시간
             await UniTask.Delay(TimeSpan.FromSeconds(STAGE_START_DELAY));
             
-            // 다음 스테이지 시작
-            StartStageInternal(stageNum, false);
+            // 다음 스테이지를 위해 상태를 Ready로 변경 (새로운 코루틴을 시작하지 않음)
+            currentState = StageState.Ready;
         }
 
         /// <summary>
