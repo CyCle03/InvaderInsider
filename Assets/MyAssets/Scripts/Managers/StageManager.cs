@@ -606,6 +606,7 @@ namespace InvaderInsider.Managers
                     {
                         SpawnEnemy();
                         currentTime = 0f;
+                        await UniTask.Yield(); // Ensure one spawn per frame
                     }
                 }
 
@@ -774,6 +775,13 @@ namespace InvaderInsider.Managers
                 }
                 
                 enemyCount++;
+
+                // Wave 진행상황 UI 업데이트 (GameManager를 통해)
+                if (gameManager != null)
+                {
+                    int maxMonsters = GetStageWaveCount(stageNum);
+                    gameManager.UpdateStageWaveUI(stageNum + 1, enemyCount, maxMonsters, GetStageCount());
+                }
                 
                 if (enemyCount >= currentStageWaveCount && activeEnemyCountValue <= 0)
                 {
@@ -918,9 +926,6 @@ namespace InvaderInsider.Managers
         public void IncrementEnemyCount()
         {
             activeEnemyCountValue++;
-            
-            // Wave 정보를 포함한 UI 업데이트 (TopBar)
-            UpdateWaveProgressUI();
             
             // Active Enemy 카운트 UI 업데이트 (BottomBar)
             if (bottomBarPanel != null)
