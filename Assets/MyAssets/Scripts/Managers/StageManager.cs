@@ -112,7 +112,7 @@ namespace InvaderInsider.Managers
                 }
                 else
                 {
-                    LogManager.Info(LOG_PREFIX, $"StageDataObject에서 StageData를 재설정했습니다: {stageDataObject.name}, StageCount: {stageData.StageCount}");
+                    LogManager.Info(LOG_PREFIX, $"StageDataObject에서 StageData를 재설정했습니다: {stageDataObject.name}, StageCount: {stageData.StageCount}, WaveCount(0): {stageData.GetStageWaveCount(0)}");
                 }
             }
             else // Case 2: Load from Resources
@@ -229,7 +229,7 @@ namespace InvaderInsider.Managers
                     {
                         stageDataObject = defaultStageList;
                         stageData = stageDataObject as IStageData;
-                        LogManager.Info(LOG_PREFIX, $"Resources에서 StageData를 로드했습니다: {defaultStageList.name}");
+                        LogManager.Info(LOG_PREFIX, $"Resources에서 StageData를 로드했습니다: {defaultStageList.name}, StageCount: {stageData.StageCount}, WaveCount(0): {stageData.GetStageWaveCount(0)}");
                     }
                     else
                     {
@@ -242,7 +242,7 @@ namespace InvaderInsider.Managers
                         {
                             stageDataObject = stageDBObject;
                             stageData = stageDataObject as IStageData;
-                            LogManager.Info(LOG_PREFIX, $"Resources에서 StageDBObject를 로드했습니다: {stageDBObject.name}");
+                            LogManager.Info(LOG_PREFIX, $"Resources에서 StageDBObject를 로드했습니다: {stageDBObject.name}, StageCount: {stageData.StageCount}, WaveCount(0): {stageData.GetStageWaveCount(0)}");
                         }
                         else
                         {
@@ -477,6 +477,7 @@ namespace InvaderInsider.Managers
             // 적 카운트 초기화
             enemyCount = 0;
             activeEnemyCountValue = 0;
+            LogManager.Info(LOG_PREFIX, $"ResetStageState: enemyCount = {enemyCount}, activeEnemyCountValue = {activeEnemyCountValue}");
             
             // 로드된 게임인 경우 저장된 데이터 기반으로 상태 복원
             // (새로운 스테이지 시작 시 Wave 진행 상황은 항상 0으로 초기화)
@@ -516,10 +517,10 @@ namespace InvaderInsider.Managers
             }
             
             // BottomBar UI 업데이트
-            if (bottomBarPanel != null)
-            {
-                bottomBarPanel.UpdateMonsterCountDisplay(0);
-            }
+            // if (bottomBarPanel != null)
+            // {
+            //     bottomBarPanel.UpdateMonsterCountDisplay(0);
+            // }
         }
 
         private void CleanupActiveEnemies()
@@ -586,22 +587,13 @@ namespace InvaderInsider.Managers
             // 스테이지 초기화 로직
             int maxMonsters = GetStageWaveCount(stageNum);
             
-            // 현재 스폰된 적의 수 계산 (저장된 데이터 기반)
-            var saveDataManager = SaveDataManager.Instance;
-            int currentSpawnedEnemies = 0;
-            // 로드된 게임인 경우에만 저장된 스폰된 적 수를 가져옴
-            if (gameManager != null && gameManager.IsLoadedGame && saveDataManager != null)
-            {
-                currentSpawnedEnemies = saveDataManager.GetCurrentSpawnedEnemyCount(stageNum);
-            }
-            
             // Wave UI 업데이트
             if (gameManager != null)
             {
-                gameManager.UpdateStageWaveUI(stageNum + 1, currentSpawnedEnemies, maxMonsters, GetStageCount());
+                gameManager.UpdateStageWaveUI(stageNum + 1, 0, maxMonsters, GetStageCount());
                 
                 #if UNITY_EDITOR
-                LogManager.Info(LOG_PREFIX, $"HandleReadyState에서 Wave UI 업데이트: 스테이지 {stageNum + 1}, 소환된 몬스터 {currentSpawnedEnemies}/{maxMonsters}");
+                LogManager.Info(LOG_PREFIX, $"HandleReadyState에서 Wave UI 업데이트: 스테이지 {stageNum + 1}, 소환된 몬스터 {0}/{maxMonsters}");
                 #endif
             }
 
@@ -972,7 +964,7 @@ namespace InvaderInsider.Managers
         private void UpdateWaveProgressUI()
         {
             GameManager.Instance.UpdateStageWaveUI(stageNum + 1, enemyCount, stageWave, GetStageCount());
-            GameManager.Instance.UpdateActiveEnemyCountUI(activeEnemyCountValue);
+            // GameManager.Instance.UpdateActiveEnemyCountUI(activeEnemyCountValue); // 이 호출은 이제 필요 없음
         }
 
         public int GetCurrentStageIndex()

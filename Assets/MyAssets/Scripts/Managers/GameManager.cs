@@ -453,7 +453,9 @@ namespace InvaderInsider.Managers
         public int GetTotalStageCount()
         {
             var stageManager = StageManager.Instance;
-            return stageManager?.GetStageCount() ?? 1; // 기본값 1
+            int totalStages = stageManager?.GetStageCount() ?? 1;
+            LogManager.Info(LOG_PREFIX, $"GetTotalStageCount 호출됨: {totalStages}");
+            return totalStages;
         }
 
         public void UpdateStageWaveUI(int currentStage, int spawnedMonsters, int maxMonsters, int totalStages)
@@ -703,6 +705,9 @@ namespace InvaderInsider.Managers
             LogManager.Info(LOG_PREFIX, "GameManager.InitializeGame() 호출됨");
             // UI 패널 캐싱 및 등록
             CacheAndRegisterAllPanels();
+
+            // StageManager의 StageData를 미리 로드하여 GetTotalStageCount()가 올바른 값을 반환하도록 함
+            StageManager.Instance.GetStageCount();
 
             // 게임플레이 패널 설정
             SetupGameplayPanels(isLoadedGame);
