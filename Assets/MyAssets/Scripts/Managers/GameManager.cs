@@ -1108,7 +1108,17 @@ namespace InvaderInsider.Managers
                         
                         // 스테이지 결정 로직 - StageData를 Resources에서 로드하여 총 스테이지 수 확인
                         int totalStages = 1; // 기본값
-                        
+
+                        var stageManager = StageManager.Instance;
+                        if (stageManager != null)
+                        {
+                            stageManager.ResetEnemyCount();
+                        }
+                        else
+                        {
+                            LogManager.Warning(LOG_PREFIX, "StageManager instance is null. Unable to reset enemy count.");
+                        }
+
                         // 먼저 StageList를 시도 (여러 스테이지용)
                         var stageList = Resources.Load<StageList>("StageList1");
                         if (stageList != null)

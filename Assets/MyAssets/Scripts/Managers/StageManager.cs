@@ -1059,5 +1059,10 @@ namespace InvaderInsider.Managers
                 #endif
             }
         }
+
+        public void ResetEnemyCount()
+        {
+            enemyCount = 0;
+        }
     }
 } 
