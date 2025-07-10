@@ -310,6 +310,12 @@ namespace InvaderInsider.Data
             }
         }
 
+        public void ClearAllSpawnedEnemyCounts()
+        {
+            spawnedEnemyCounts.Clear();
+            stageNumbersCacheDirty = true;
+        }
+
         public SerializableStageProgress Clone()
         {
             var clone = new SerializableStageProgress();
@@ -597,6 +603,7 @@ namespace InvaderInsider.Data
                     else
                     {
                         LogManager.Info(LOG_PREFIX, $"게임 데이터 로드 성공 - 최고 클리어 스테이지: {currentSaveData.progressData.highestStageCleared}, eData: {currentSaveData.progressData.currentEData}");
+                        currentSaveData.stageProgress.ClearAllSpawnedEnemyCounts();
                     }
                 }
                 else

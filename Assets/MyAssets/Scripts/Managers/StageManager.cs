@@ -508,11 +508,6 @@ namespace InvaderInsider.Managers
                 gameManager.UpdateStageWaveUI(startStageIndex + 1, 0, maxMonsters, GetStageCount());
             }
             
-            // BottomBar UI 업데이트
-            // if (bottomBarPanel != null)
-            // {
-            //     bottomBarPanel.UpdateMonsterCountDisplay(0);
-            // }
         }
 
         private void CleanupActiveEnemies()
