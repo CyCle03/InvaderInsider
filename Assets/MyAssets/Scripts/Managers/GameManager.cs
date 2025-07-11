@@ -702,7 +702,7 @@ namespace InvaderInsider.Managers
 
         private void InitializeGame(bool isLoadedGame = false)
         {
-            LogManager.Info(LOG_PREFIX, "GameManager.InitializeGame() 호출됨");
+            LogManager.Info(LOG_PREFIX, $"[InitializeGame] 호출됨. isLoadedGame: {isLoadedGame}, requestedStartStage: {requestedStartStage}");
             // UI 패널 캐싱 및 등록
             CacheAndRegisterAllPanels();
 
@@ -715,8 +715,7 @@ namespace InvaderInsider.Managers
             // 비게임플레이 패널들 숨기기 (PausePanel 포함)
             HideNonGameplayPanels();
             
-            
-            
+            // StageManager 참조 찾기 및 스테이지 시작
             var stageManager = StageManager.Instance;
             if (stageManager != null)
             {
@@ -725,12 +724,12 @@ namespace InvaderInsider.Managers
                 stageManager.StartStageFrom(requestedStartStage, isLoadedGame);
                 
                 #if UNITY_EDITOR
-                LogManager.Info(LOG_PREFIX, $"StageManager.StartStageFrom 호출: 스테이지 인덱스 {requestedStartStage}, 로드된 게임: {isLoadedGame}");
+                LogManager.Info(LOG_PREFIX, $"[InitializeGame] StageManager.StartStageFrom 호출: 스테이지 인덱스 {requestedStartStage}, 로드된 게임: {isLoadedGame}");
                 #endif
             }
             else
             {
-                LogManager.Error(LOG_PREFIX, "StageManager를 찾을 수 없습니다.");
+                LogManager.Error(LOG_PREFIX, "[InitializeGame] StageManager를 찾을 수 없습니다.");
             }
             
             // 게임 상태를 Playing으로 설정 (이 시점에서 PausePanel이 다시 활성화될 수 있음)
@@ -742,9 +741,7 @@ namespace InvaderInsider.Managers
             // Time.timeScale을 1로 설정하여 게임 시간이 정상적으로 흐르도록 보장
             Time.timeScale = 1f;
             
-            // #if UNITY_EDITOR
-            LogManager.Info(LOG_PREFIX, "게임 초기화 완료. 게임 상태를 Playing으로 설정했습니다.");
-            // #endif
+            LogManager.Info(LOG_PREFIX, "[InitializeGame] 게임 초기화 완료. 게임 상태를 Playing으로 설정했습니다.");
         }
 
         // 성능 최적화: FindObjectOfType 호출을 한 번에 처리
@@ -1073,116 +1070,73 @@ namespace InvaderInsider.Managers
 
         public void StartContinueGame()
         {
-            LogManager.Info("GameManager", "StartContinueGame 호출됨!");
-            LogManager.Info(LOG_PREFIX, "=== StartContinueGame 호출됨! ===");
+            LogManager.Info(LOG_PREFIX, "StartContinueGame() 호출됨!");
+            LogManager.Info(LOG_PREFIX, "[StartContinueGame] 현재 isStartingGame: " + isStartingGame + ", isLoadingScene: " + isLoadingScene);
             
-            // 이미 게임 시작 중이거나 씬 로딩 중이면 무시
             if (isStartingGame || isLoadingScene)
             {
-                LogManager.Info("GameManager", "StartContinueGame 무시됨 - 이미 진행 중");
-                LogManager.Info(LOG_PREFIX, "StartContinueGame 무시됨 - 이미 진행 중");
+                LogManager.Warning(LOG_PREFIX, "[StartContinueGame] 이미 게임 시작 중이거나 씬 로딩 중이므로 무시합니다.");
                 return;
             }
             
             isStartingGame = true;
+            LogManager.Info(LOG_PREFIX, "[StartContinueGame] isStartingGame을 true로 설정.");
             
-            LogManager.Info("GameManager", "Continue 게임 시작 시도");
-            LogManager.Info(LOG_PREFIX, "Continue 게임 시작 시도");
-
-            if (saveDataManager != null)
+            if (saveDataManager == null)
             {
-                LogManager.Info(LOG_PREFIX, "SaveDataManager 확인됨, HasSaveData 체크 중...");
+                LogManager.Error(LOG_PREFIX, "[StartContinueGame] SaveDataManager가 null입니다. Continue 게임을 시작할 수 없습니다.");
+                isStartingGame = false;
+                return;
+            }
+
+            LogManager.Info(LOG_PREFIX, "[StartContinueGame] SaveDataManager 확인됨. HasSaveData() 체크 중...");
+            if (saveDataManager.HasSaveData())
+            {
+                saveDataManager.LoadGameData();
+                var saveData = saveDataManager.CurrentSaveData;
                 
-                if (saveDataManager.HasSaveData())
+                if (saveData != null)
                 {
-                    saveDataManager.LoadGameData();
-                    var saveData = saveDataManager.CurrentSaveData;
-                    if (saveData != null)
+                    ResourceManager.Instance.SetEData(saveData.progressData.currentEData);
+
+                    int highestCleared = saveData.progressData.highestStageCleared;
+                    LogManager.Info(LOG_PREFIX, $"[StartContinueGame] 로드된 최고 클리어 스테이지: {highestCleared}, EData: {saveData.progressData.currentEData}");
+                    
+                    int totalStages = GetTotalStageCount(); // StageManager를 통해 총 스테이지 수 가져옴
+                    LogManager.Info(LOG_PREFIX, $"[StartContinueGame] 총 스테이지 수: {totalStages}");
+
+                    int startStageIndex;
+                    if (highestCleared < 0)
                     {
-                        // ResourceManager에 로드된 EData 설정
-                        ResourceManager.Instance.SetEData(saveData.progressData.currentEData);
-
-                        // Continue는 클리어한 다음 스테이지부터 시작
-                        int highestCleared = saveData.progressData.highestStageCleared;
-                        
-                        LogManager.Info(LOG_PREFIX, $"Continue 게임 시작 - 최고 클리어 스테이지: {highestCleared}, EData: {saveData.progressData.currentEData}");
-                        
-                        // 스테이지 결정 로직 - StageData를 Resources에서 로드하여 총 스테이지 수 확인
-                        int totalStages = 1; // 기본값
-
-                        // 먼저 StageList를 시도 (여러 스테이지용)
-                        var stageList = Resources.Load<StageList>("StageList1");
-                        if (stageList != null)
-                        {
-                            totalStages = stageList.StageCount;
-                            LogManager.Info(LOG_PREFIX, $"[Continue Debug] StageList에서 총 스테이지 수 로드: {totalStages}");
-                        }
-                        else
-                        {
-                            // StageList가 없으면 StageDBObject를 시도 (단일 스테이지용)
-                            var stageData = Resources.Load<StageDBObject>("Stage1 Database");
-                            if (stageData != null)
-                            {
-                                totalStages = stageData.StageCount;
-                                LogManager.Info(LOG_PREFIX, $"[Continue Debug] StageDBObject에서 총 스테이지 수 로드: {totalStages}");
-                            }
-                            else
-                            {
-                                LogManager.Warning(LOG_PREFIX, "[Continue Debug] StageData를 로드할 수 없어 기본값 1 사용");
-                            }
-                        }
-                        
-                        LogManager.Info(LOG_PREFIX, $"[Continue Debug] 총 스테이지 수 (하드코딩): {totalStages}");
-                        
-                        int startStage;
-                        if (highestCleared <= 0)
-                        {
-                            // 한 번도 클리어하지 않았다면 1스테이지부터
-                            startStage = 1;
-                            LogManager.Info(LOG_PREFIX, $"[Continue Debug] 조건1: 한 번도 클리어 안함 → 1스테이지부터 시작");
-                        }
-                        else if (highestCleared >= totalStages)
-                        {
-                            // 모든 스테이지를 클리어했다면 마지막 스테이지부터 재시작
-                            startStage = totalStages;
-                            LogManager.Info(LOG_PREFIX, $"[Continue Debug] 조건2: 모든 스테이지 클리어됨 ({highestCleared} >= {totalStages}) → 마지막 스테이지({totalStages})부터 재시작");
-                        }
-                        else
-                        {
-                            // 클리어한 다음 스테이지부터 시작
-                            startStage = highestCleared + 1;
-                            LogManager.Info(LOG_PREFIX, $"[Continue Debug] 조건3: 다음 스테이지부터 시작 ({highestCleared} + 1 = {startStage})");
-                        }
-                        
-                        LogManager.Info("GameManager", "Continue - 최고 클리어: {0}, 총 스테이지: {1}, 시작할 스테이지: {2} (인덱스: {3})", highestCleared, totalStages, startStage, startStage - 1);
-                        LogManager.Info(LOG_PREFIX, $"Continue - 최고 클리어: {highestCleared}, 총 스테이지: {totalStages}, 시작할 스테이지: {startStage} (인덱스: {startStage - 1})");
-                        
-                        // GameManager에 시작할 스테이지 설정 (인덱스는 0부터 시작하므로 startStage - 1)
-                        LogManager.Info("GameManager", "SetRequestedStartStage({0}) 호출", startStage - 1);
-                        SetRequestedStartStage(startStage - 1);
-                        
-                        // 게임 씬으로 전환
-                        LoadGameScene(true);
+                        startStageIndex = 0; // 한 번도 클리어하지 않았다면 0번 인덱스(1스테이지)부터
+                        LogManager.Info(LOG_PREFIX, "[StartContinueGame] 최고 클리어 스테이지 없음. 0번 인덱스부터 시작.");
+                    }
+                    else if (highestCleared >= totalStages)
+                    {
+                        startStageIndex = totalStages - 1; // 모든 스테이지 클리어 시 마지막 스테이지부터 재시작 (0-based)
+                        LogManager.Info(LOG_PREFIX, $"[StartContinueGame] 모든 스테이지 클리어됨. 마지막 스테이지 인덱스 {startStageIndex}부터 재시작.");
                     }
                     else
                     {
-                        #if UNITY_EDITOR
-                        LogManager.Error(LOG_PREFIX, "Continue 실패 - SaveData가 null");
-                        #endif
-                        isStartingGame = false;
+                        startStageIndex = highestCleared; // 클리어한 다음 스테이지부터 시작 (highestCleared는 1-based, requestedStartStage는 0-based)
+                        LogManager.Info(LOG_PREFIX, $"[StartContinueGame] 클리어한 다음 스테이지 인덱스 {startStageIndex}부터 시작.");
                     }
+                    
+                    SetRequestedStartStage(startStageIndex);
+                    LogManager.Info(LOG_PREFIX, $"[StartContinueGame] requestedStartStage 설정됨: {requestedStartStage}");
+                    
+                    LoadGameScene(true);
+                    LogManager.Info(LOG_PREFIX, "[StartContinueGame] LoadGameScene(true) 호출됨.");
                 }
                 else
                 {
-                    LogManager.Warning(LOG_PREFIX, "Continue 실패 - HasSaveData가 false 반환");
+                    LogManager.Error(LOG_PREFIX, "[StartContinueGame] SaveData가 null입니다. Continue 게임 실패.");
                     isStartingGame = false;
                 }
             }
             else
             {
-                #if UNITY_EDITOR
-                LogManager.Error(LOG_PREFIX, "Continue 실패 - SaveDataManager가 null");
-                #endif
+                LogManager.Warning(LOG_PREFIX, "[StartContinueGame] 저장된 게임 데이터가 없습니다. Continue 게임 실패.");
                 isStartingGame = false;
             }
         }

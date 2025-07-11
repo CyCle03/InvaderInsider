@@ -404,16 +404,13 @@ namespace InvaderInsider.Managers
         /// </summary>
         public void StartStageFrom(int stageIndex, bool isLoadedGame = false)
         {
-            // =================================================================
-            // 스테이지 시작 시 모든 관련 상태를 명확하게 초기화합니다.
-            // 씬 전환 시 StageManager가 파괴되지 않으므로, 이전 상태가 남아있는 것을 방지합니다.
-            // =================================================================
-            LogManager.Info(LOG_PREFIX, $"--- Stage Sequence Starting from index {stageIndex} (isLoadedGame: {isLoadedGame}) ---");
+            LogManager.Info(LOG_PREFIX, $"--- [StartStageFrom] 호출: 스테이지 인덱스 {stageIndex}, 로드된 게임: {isLoadedGame} ---");
 
             // 1. 카운터 초기화
             this.enemyCount = 0;
             this.activeEnemyCountValue = 0;
             this.currentTime = 0f;
+            LogManager.Info(LOG_PREFIX, $"[StartStageFrom] 초기화 후 enemyCount: {this.enemyCount}, activeEnemyCountValue: {this.activeEnemyCountValue}");
 
             // 2. 스테이지 정보 설정
             this.stageNum = stageIndex;
@@ -425,12 +422,15 @@ namespace InvaderInsider.Managers
             {
                 this.stageWave = 20; // 기본값
             }
+            LogManager.Info(LOG_PREFIX, $"[StartStageFrom] stageNum: {this.stageNum}, stageWave: {this.stageWave}");
 
             // 3. 상태 초기화
             this.currentState = StageState.Ready;
+            LogManager.Info(LOG_PREFIX, $"[StartStageFrom] currentState: {this.currentState}");
 
             // 4. 활성 객체 목록 정리
             CleanupActiveEnemies();
+            LogManager.Info(LOG_PREFIX, "[StartStageFrom] CleanupActiveEnemies 호출됨.");
 
             // 5. UI 초기화 (GameManager를 통해)
             var gm = GameManager.Instance;
@@ -440,11 +440,17 @@ namespace InvaderInsider.Managers
                 int totalStages = GetStageCount();
                 gm.UpdateStageWaveUI(stageIndex + 1, 0, maxMonsters, totalStages);
                 gm.UpdateActiveEnemyCountUI(0);
+                LogManager.Info(LOG_PREFIX, $"[StartStageFrom] UI 업데이트: 스테이지 {stageIndex + 1}, 몬스터 0/{maxMonsters}, 총 스테이지 {totalStages}");
             }
-            LogManager.Info(LOG_PREFIX, $"--- Stage State Reset Complete ---");
+            else
+            {
+                LogManager.Error(LOG_PREFIX, "[StartStageFrom] GameManager를 찾을 수 없어 UI 업데이트를 건너뜁니다.");
+            }
+            LogManager.Info(LOG_PREFIX, $"--- [StartStageFrom] 스테이지 상태 초기화 완료 ---");
 
             // 스테이지 루프 시작 (단 한 번만 호출되어야 함)
             StageLoopCoroutine().Forget();
+            LogManager.Info(LOG_PREFIX, "[StartStageFrom] StageLoopCoroutine 시작.");
         }
 
         private void CleanupActiveEnemies()
