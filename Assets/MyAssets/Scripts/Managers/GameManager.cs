@@ -407,11 +407,6 @@ namespace InvaderInsider.Managers
 
         public void AddEData(int amount)
         {
-            AddEData(amount, true);
-        }
-
-        public void AddEData(int amount, bool saveImmediately)
-        {
             if (gameConfig.enableEDataValidation)
             {
                 if (amount <= gameConfig.minEDataValue)
@@ -427,11 +422,10 @@ namespace InvaderInsider.Managers
                 }
             }
 
-            // ResourceManager로 위임
             var resourceManager = ResourceManager.Instance;
             if (resourceManager != null)
             {
-                resourceManager.AddEData(amount, saveImmediately);
+                resourceManager.AddEData(amount);
                 UpdateEDataUI();
             }
             else
@@ -876,8 +870,8 @@ namespace InvaderInsider.Managers
                         maxMonsters = stageManager.GetStageWaveCount(requestedStartStage);
                         if (isLoadedGame)
                         {
-                            // 현재 스테이지에서 이미 스폰된 몬스터 수를 가져옴
-                            spawnedMonsters = saveDataManager?.GetCurrentSpawnedEnemyCount(requestedStartStage) ?? 0; // 저장된 데이터에서 가져옴
+                            // 로드된 게임이라도 항상 0부터 시작
+                            spawnedMonsters = 0;
                         }
                     }
                     
@@ -1105,16 +1099,15 @@ namespace InvaderInsider.Managers
                     int totalStages = GetTotalStageCount(); // StageManager를 통해 총 스테이지 수 가져옴
                     LogManager.Info(LOG_PREFIX, $"[StartContinueGame] 총 스테이지 수: {totalStages}");
 
+                    var stageManager = StageManager.Instance;
+
+                    stageManager.ResetEnemyCount(); // 적 수 초기화
+
                     int startStageIndex;
-                    if (highestCleared < 0)
+                    if (highestCleared < 0 || highestCleared >= totalStages)
                     {
-                        startStageIndex = 0; // 한 번도 클리어하지 않았다면 0번 인덱스(1스테이지)부터
-                        LogManager.Info(LOG_PREFIX, "[StartContinueGame] 최고 클리어 스테이지 없음. 0번 인덱스부터 시작.");
-                    }
-                    else if (highestCleared >= totalStages)
-                    {
-                        startStageIndex = totalStages - 1; // 모든 스테이지 클리어 시 마지막 스테이지부터 재시작 (0-based)
-                        LogManager.Info(LOG_PREFIX, $"[StartContinueGame] 모든 스테이지 클리어됨. 마지막 스테이지 인덱스 {startStageIndex}부터 재시작.");
+                        startStageIndex = 0; // 한 번도 클리어하지 않았거나 모든 스테이지 클리어 시 0번 인덱스(1스테이지)부터
+                        LogManager.Info(LOG_PREFIX, "[StartContinueGame] 최고 클리어 스테이지 없음 또는 모든 스테이지 클리어됨. 0번 인덱스부터 시작.");
                     }
                     else
                     {

@@ -200,19 +200,12 @@ namespace InvaderInsider
         protected override void OnDisable()
         {
             base.OnDisable();
-            StopPathUpdateCoroutine();
         }
 
         protected override void OnDestroy()
         {
             base.OnDestroy();
             OnWaypointReached = null;
-            StopPathUpdateCoroutine();
-        }
-
-        private void StopPathUpdateCoroutine()
-        {
-            // UniTask는 별도의 Stop이 필요 없음
         }
 
         private void StartPathUpdateCoroutine()

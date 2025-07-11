@@ -735,16 +735,8 @@ namespace InvaderInsider.Managers
                 // LogManager.Log(LOG_PREFIX + string.Format(LOG_MESSAGES[5], stageNum, enemyCount, currentStageWaveCount));
                 // #endif
             }
-            
-            // Wave 진행상황 UI 업데이트 (GameManager를 통해)
-            if (gameManager != null)
-            {
-                int maxMonsters = GetStageWaveCount(stageNum);
-                gameManager.UpdateStageWaveUI(stageNum + 1, enemyCount, maxMonsters, GetStageCount());
-            }
 
-            // 적 스폰 후 현재 스폰된 적 수 저장
-            SaveCurrentSpawnedEnemyCount();
+            
         }
 
         public int GetStageCount()
@@ -810,7 +802,7 @@ namespace InvaderInsider.Managers
             // eData 업데이트는 GameManager를 통해 처리 (적 처치 시에는 저장하지 않음)
             if (gameManager != null)
             {
-                gameManager.AddEData(eDataAmount, false); // 저장하지 않음
+                gameManager.AddEData(eDataAmount); // 저장하지 않음
                 // LogManager.Log(LOG_PREFIX + $"적 처치로 eData {eDataAmount} 획득 (총 eData: {gameManager.GetCurrentEData()})");
             }
             else
@@ -987,21 +979,7 @@ namespace InvaderInsider.Managers
             activeTowers.AddRange(towers);
         }
 
-        private void SaveCurrentSpawnedEnemyCount()
-        {
-            var saveDataManager = SaveDataManager.Instance;
-            if (saveDataManager != null && saveDataManager.CurrentSaveData != null)
-            {
-                // 현재 스테이지의 스폰된 적 수 저장
-                // 활성 적 수와 죽은 적 수를 합산하여 총 스폰된 적 수 계산
-                int totalSpawnedEnemies = activeEnemyCountValue + enemyCount;
-                saveDataManager.CurrentSaveData.stageProgress.SetSpawnedEnemyCount(stageNum, totalSpawnedEnemies);
-                
-                #if UNITY_EDITOR
-                LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum + 1}의 총 스폰된 적 수 저장: {totalSpawnedEnemies} (활성 적: {activeEnemyCountValue}, 소환된 적: {enemyCount})");
-                #endif
-            }
-        }
+        
 
         public void ResetEnemyCount()
         {
