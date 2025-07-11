@@ -9,6 +9,7 @@ namespace InvaderInsider.Managers
     {
         [Header("Configuration")]
         [SerializeField] private GameConfigSO gameConfig;
+        private IStageData stageData;
         
         public GameConfigSO GameConfig
         {
@@ -22,6 +23,18 @@ namespace InvaderInsider.Managers
             }
         }
 
+        public IStageData StageData
+        {
+            get
+            {
+                if (stageData == null)
+                {
+                    LogManager.Error(GameConstants.LOG_PREFIX_CONFIG, "StageData가 설정되지 않았습니다. ConfigManager에서 로드해주세요.");
+                }
+                return stageData;
+            }
+        }
+
         protected override void OnInitialize()
         {
             base.OnInitialize();
@@ -30,6 +43,12 @@ namespace InvaderInsider.Managers
             if (gameConfig == null)
             {
                 LoadGameConfigFromResources();
+            }
+            
+            // StageData가 할당되지 않았으면 자동으로 로드 시도
+            if (stageData == null)
+            {
+                LoadStageDataFromResources();
             }
             
             ValidateConfig();
@@ -62,6 +81,62 @@ namespace InvaderInsider.Managers
             #if UNITY_EDITOR
             LoadGameConfigFromAssets();
             #endif
+        }
+
+        /// <summary>
+        /// Resources 폴더에서 StageData를 자동으로 로드
+        /// </summary>
+        private void LoadStageDataFromResources()
+        {
+            IStageData loadedStageData = null;
+
+            // Prioritize loading StageList for multi-stage games
+            string[] stageListPaths = {
+                "StageList1",
+                "ScriptableObjects/StageSystem/StageList1",
+                "StageSystem/StageList1"
+            };
+
+            foreach (string path in stageListPaths)
+            {
+                var list = Resources.Load<StageList>(path);
+                if (list != null)
+                {
+                    loadedStageData = list;
+                    LogManager.Info(GameConstants.LOG_PREFIX_CONFIG, $"Resources에서 StageList를 로드했습니다: {list.name}, StageCount: {loadedStageData.StageCount}");
+                    break;
+                }
+            }
+
+            if (loadedStageData == null)
+            {
+                // Fallback to StageDBObject if StageList not found
+                string[] stageDBObjectPaths = {
+                    "Stage1 Database",
+                    "StageSystem/Stage1 Database",
+                    "ScriptableObjects/StageSystem/Stage1 Database"
+                };
+
+                foreach (string path in stageDBObjectPaths)
+                {
+                    var dbObject = Resources.Load<StageDBObject>(path);
+                    if (dbObject != null)
+                    {
+                        loadedStageData = dbObject;
+                        LogManager.Info(GameConstants.LOG_PREFIX_CONFIG, $"Resources에서 StageDBObject를 로드했습니다: {dbObject.name}, StageCount: {loadedStageData.StageCount}");
+                        break;
+                    }
+                }
+            }
+
+            if (loadedStageData != null)
+            {
+                stageData = loadedStageData;
+            }
+            else
+            {
+                LogManager.Error(GameConstants.LOG_PREFIX_CONFIG, "StageData를 찾을 수 없습니다. 다음 경로들을 확인하세요:");
+            }
         }
         
         #if UNITY_EDITOR

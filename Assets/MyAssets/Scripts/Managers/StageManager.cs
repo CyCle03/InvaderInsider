@@ -38,7 +38,7 @@ namespace InvaderInsider.Managers
         private const float MAX_SPAWN_INTERVAL = 2f;
         private const int MAX_ACTIVE_ENEMIES = 50;
 
-        [SerializeField] private List<Transform> wayPointsList;
+        [SerializeField] private List<Transform> wayPointsList = new List<Transform>();
         public IReadOnlyList<Transform> WayPoints => wayPointsList;
         [SerializeField] private int stageNum = 0;
         [SerializeField] private int stageWave = 20;
@@ -717,6 +717,7 @@ namespace InvaderInsider.Managers
                     IncrementEnemyCount();
                 }
                 
+                LogManager.Info(LOG_PREFIX, $"[SpawnEnemy] 적 스폰 전 enemyCount: {enemyCount}"); // 추가된 로그
                 enemyCount++;
 
                 // Wave 진행상황 UI 업데이트 (GameManager를 통해)
@@ -983,7 +984,9 @@ namespace InvaderInsider.Managers
 
         public void ResetEnemyCount()
         {
+            LogManager.Info(LOG_PREFIX, $"ResetEnemyCount 호출 전 enemyCount: {enemyCount}");
             enemyCount = 0;
+            LogManager.Info(LOG_PREFIX, $"ResetEnemyCount 호출 후 enemyCount: {enemyCount}");
         }
     }
 } 
