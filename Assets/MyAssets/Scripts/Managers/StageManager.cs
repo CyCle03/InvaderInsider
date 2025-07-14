@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
@@ -51,6 +52,8 @@ namespace InvaderInsider.Managers
         
         private readonly Queue<EnemyObject> enemyPool = new Queue<EnemyObject>();
         private readonly HashSet<EnemyObject> activeEnemies = new HashSet<EnemyObject>();
+
+        private CancellationTokenSource stageLoopCts;
 
         public enum StageState
         {
@@ -406,6 +409,12 @@ namespace InvaderInsider.Managers
         {
             LogManager.Info(LOG_PREFIX, $"--- [StartStageFrom] 호출: 스테이지 인덱스 {stageIndex}, 로드된 게임: {isLoadedGame} ---");
 
+            // 이전 루프를 취소하고 새 토큰을 만듭니다.
+            stageLoopCts?.Cancel();
+            stageLoopCts?.Dispose();
+            stageLoopCts = new CancellationTokenSource();
+            var token = stageLoopCts.Token;
+
             // 1. 카운터 초기화
             this.enemyCount = 0;
             this.activeEnemyCountValue = 0;
@@ -449,8 +458,8 @@ namespace InvaderInsider.Managers
             LogManager.Info(LOG_PREFIX, $"--- [StartStageFrom] 스테이지 상태 초기화 완료 ---");
 
             // 스테이지 루프 시작 (단 한 번만 호출되어야 함)
-            StageLoopCoroutine().Forget();
-            LogManager.Info(LOG_PREFIX, "[StartStageFrom] StageLoopCoroutine 시작.");
+            StageLoopAsync(token).Forget();
+            LogManager.Info(LOG_PREFIX, "[StartStageFrom] StageLoopAsync 시작.");
         }
 
         private void CleanupActiveEnemies()
@@ -466,12 +475,20 @@ namespace InvaderInsider.Managers
             activeEnemies.Clear();
         }
 
-        private async UniTask StageLoopCoroutine()
+        private async UniTask StageLoopAsync(CancellationToken token)
         {
             StageState lastState = StageState.Ready;
             
             while (currentState != StageState.Over && !_isQuitting)
             {
+                if (token.IsCancellationRequested)
+                {
+                    #if UNITY_EDITOR
+                    LogManager.Info(LOG_PREFIX, "스테이지 루프가 취소되었습니다.");
+                    #endif
+                    return;
+                }
+
                 // 상태가 변경되었는지 확인
                 if (lastState != currentState)
                 {
@@ -484,24 +501,24 @@ namespace InvaderInsider.Managers
                 switch (currentState)
                 {
                     case StageState.Ready:
-                        await HandleReadyState();
+                        await HandleReadyState(token);
                         break;
                     case StageState.Run:
-                        await HandleRunState();
+                        await HandleRunState(token);
                         break;
                     case StageState.Wait:
-                        await HandleWaitState();
+                        await HandleWaitState(token);
                         break;
                     case StageState.End:
-                        await HandleEndState();
+                        await HandleEndState(token);
                         break;
                     default:
-                        await UniTask.Yield();
+                        await UniTask.Yield(cancellationToken: token);
                         break;
                 }
                 
                 // 프레임당 한 번씩 체크
-                await UniTask.Yield();
+                await UniTask.Yield(cancellationToken: token);
             }
             
             #if UNITY_EDITOR
@@ -509,7 +526,7 @@ namespace InvaderInsider.Managers
             #endif
         }
 
-        private async UniTask HandleReadyState()
+        private async UniTask HandleReadyState(CancellationToken token)
         {
             // 스테이지 준비 상태 처리
             if (!isInitialized) return;
@@ -528,16 +545,17 @@ namespace InvaderInsider.Managers
             }
 
             // 기존 로직 유지
-            await UniTask.Delay(TimeSpan.FromSeconds(STAGE_START_DELAY));
+            await UniTask.Delay(TimeSpan.FromSeconds(STAGE_START_DELAY), cancellationToken: token);
             
             // 스테이지 상태를 Run으로 변경
             currentState = StageState.Run;
         }
 
-        private async UniTask HandleRunState()
+        private async UniTask HandleRunState(CancellationToken token)
         {
             while (currentState == StageState.Run && !_isQuitting)
             {
+                token.ThrowIfCancellationRequested();
                 currentTime += Time.deltaTime;
 
                 // 동적으로 현재 스테이지의 웨이브 카운트 가져오기
@@ -549,7 +567,7 @@ namespace InvaderInsider.Managers
                     {
                         SpawnEnemy();
                         currentTime = 0f;
-                        await UniTask.Yield(); // Ensure one spawn per frame
+                        await UniTask.Yield(cancellationToken: token); // Ensure one spawn per frame
                     }
                 }
 
@@ -563,7 +581,7 @@ namespace InvaderInsider.Managers
                     break; // 상태가 변경되었으므로 루프 종료
                 }
 
-                await UniTask.Yield();
+                await UniTask.Yield(cancellationToken: token);
             }
         }
 
@@ -571,7 +589,7 @@ namespace InvaderInsider.Managers
         /// 스테이지 종료 상태를 처리합니다.
         /// 스테이지 클리어 시 GameManager를 통해 진행 정보를 저장하고 다음 스테이지로 진행합니다.
         /// </summary>
-        private async UniTask HandleEndState()
+        private async UniTask HandleEndState(CancellationToken token)
         {
             // GameManager를 통해 스테이지 클리어 정보 저장
             if (gameManager != null)
@@ -617,14 +635,14 @@ namespace InvaderInsider.Managers
             }
 
             // 스테이지 종료 대기 시간
-            await UniTask.Delay(TimeSpan.FromSeconds(STAGE_END_DELAY));
+            await UniTask.Delay(TimeSpan.FromSeconds(STAGE_END_DELAY), cancellationToken: token);
         }
 
         /// <summary>
         /// 스테이지 대기 상태를 처리합니다.
         /// 다음 스테이지 시작 전 대기 시간을 제공하고 UI를 업데이트합니다.
         /// </summary>
-        private async UniTask HandleWaitState()
+        private async UniTask HandleWaitState(CancellationToken token)
         {
             // 다음 스테이지 시작 전 UI 업데이트 (GameManager를 통해)
             if (gameManager != null)
@@ -634,7 +652,7 @@ namespace InvaderInsider.Managers
             }
             
             // 다음 스테이지 시작 대기 시간
-            await UniTask.Delay(TimeSpan.FromSeconds(STAGE_START_DELAY));
+            await UniTask.Delay(TimeSpan.FromSeconds(STAGE_START_DELAY), cancellationToken: token);
             
             // 다음 스테이지를 위해 상태를 Ready로 변경 (새로운 코루틴을 시작하지 않음)
             currentState = StageState.Ready;
@@ -833,8 +851,13 @@ namespace InvaderInsider.Managers
             LogManager.Info(LOG_PREFIX, "StageManager 파괴 - 리소스 정리");
             #endif
             
+            stageLoopCts?.Cancel();
+            stageLoopCts?.Dispose();
+            stageLoopCts = null;
+
             // 적 오브젝트 정리
             CleanupActiveEnemies();
+            isInitialized = false;
             
             base.OnDestroy();
         }

@@ -190,10 +190,10 @@ namespace InvaderInsider
                 Initialize();
             }
             
-            // 초기화가 완료된 후에만 코루틴 시작
+            // 초기화가 완료된 후에만 비동기 로직 시작
             if (IsInitialized && agent != null)
             {
-                StartPathUpdateCoroutine();
+                StartPathUpdateAsync();
             }
         }
 
@@ -208,15 +208,15 @@ namespace InvaderInsider
             OnWaypointReached = null;
         }
 
-        private void StartPathUpdateCoroutine()
+        private void StartPathUpdateAsync()
         {
             if (agent != null && isInitialized)
             {
-                UpdatePathRoutine().Forget();
+                UpdatePathAsync().Forget();
             }
         }
 
-        private async UniTask UpdatePathRoutine()
+        private async UniTask UpdatePathAsync()
         {
             while (enabled)
             {
@@ -317,7 +317,7 @@ namespace InvaderInsider
             }
             else
             {
-                LogManager.Error(GameConstants.LOG_PREFIX_ENEMY, $"웨이포인트 또는 NavMeshAgent가 null입니다.");
+                LogManager.Error(GameConstants.LOG_PREFIX_ENEMY, "웨이포인트 또는 NavMeshAgent가 null입니다.");
             }
         }
 
@@ -340,7 +340,7 @@ namespace InvaderInsider
             }
             else
             {
-                LogManager.Error(GameConstants.LOG_PREFIX_ENEMY, $"Player 참조가 null입니다.");
+                LogManager.Error(GameConstants.LOG_PREFIX_ENEMY, "Player 참조가 null입니다.");
             }
             
             base.Die();
@@ -351,7 +351,7 @@ namespace InvaderInsider
             }
             else
             {
-                LogManager.Error(GameConstants.LOG_PREFIX_ENEMY, $"StageManager 참조가 null입니다.");
+                LogManager.Error(GameConstants.LOG_PREFIX_ENEMY, "StageManager 참조가 null입니다.");
             }
         }
 
@@ -389,7 +389,7 @@ namespace InvaderInsider
             }
             else
             {
-                LogManager.Error(GameConstants.LOG_PREFIX_ENEMY, $"StageManager 참조가 null입니다.");
+                LogManager.Error(GameConstants.LOG_PREFIX_ENEMY, "StageManager 참조가 null입니다.");
             }
         }
 
@@ -532,10 +532,10 @@ namespace InvaderInsider
             
             isInitialized = true;
             
-            // NavMeshAgent가 있고 게임 오브젝트가 활성화된 상태라면 코루틴 시작
+            // NavMeshAgent가 있고 게임 오브젝트가 활성화된 상태라면 비동기 로직 시작
             if (agent != null && gameObject.activeInHierarchy)
             {
-                StartPathUpdateCoroutine();
+                StartPathUpdateAsync();
             }
         }
         
@@ -602,7 +602,7 @@ namespace InvaderInsider
         /// </summary>
         private void Update()
         {
-            // NavMeshAgent가 있는 경우에는 UpdatePathRoutine에서 처리하므로 여기서는 건너뜀
+            // NavMeshAgent가 있는 경우에는 UpdatePathAsync에서 처리하므로 여기서는 건너뜀
             if (agent != null) return;
             
             // NavMeshAgent가 없는 경우에만 직접 Transform 이동 처리
@@ -653,7 +653,7 @@ namespace InvaderInsider
             }
             else
             {
-                LogManager.Error(GameConstants.LOG_PREFIX_ENEMY, $"StageManager 참조가 null입니다.");
+                LogManager.Error(GameConstants.LOG_PREFIX_ENEMY, "StageManager 참조가 null입니다.");
             }
             
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -668,4 +668,4 @@ namespace InvaderInsider
         
         #endregion
     }
-} 
+}
