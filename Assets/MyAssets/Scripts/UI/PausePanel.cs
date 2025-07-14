@@ -8,7 +8,7 @@ namespace InvaderInsider.UI
 {
     public class PausePanel : BasePanel
     {
-        private const string LOG_PREFIX = "[Pause] ";
+        private new const string LOG_PREFIX = "[Pause] ";
         
         [Header("Pause Panel UI")]
         public Button resumeButton;
@@ -17,10 +17,15 @@ namespace InvaderInsider.UI
         public Button mainMenuButton;
 
         private bool wasPaused = false;
+        private bool buttonsSetup = false; // 버튼 이벤트 등록 완료 플래그
 
         private void Start()
         {
-            SetupButtons();
+            if (!buttonsSetup)
+            {
+                SetupButtons();
+                buttonsSetup = true;
+            }
         }
 
         private void SetupButtons()
@@ -84,7 +89,7 @@ namespace InvaderInsider.UI
         private void OnResumeClicked()
         {
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "Resume 버튼 클릭됨");
+            Debug.Log(LOG_PREFIX + "Resume 버튼이 클릭되었습니다.");
             #endif
             
             // 순환 참조 방지를 위해 먼저 패널 숨기고 게임 재시작
@@ -104,30 +109,34 @@ namespace InvaderInsider.UI
         private void OnRestartClicked()
         {
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "Restart 버튼 클릭됨 - 저장된 상태에서 다시 시작");
+            Debug.Log(LOG_PREFIX + "Restart 버튼이 클릭되었습니다.");
             #endif
             
-            // GameManager를 통해 Continue Game과 동일한 방식으로 재시작
+            // GameManager를 통해 새 게임 시작
             if (GameManager.Instance != null)
             {
                 // 시간 스케일 복구
                 Time.timeScale = 1f;
                 
-                // Continue Game과 동일한 로직 사용
-                GameManager.Instance.StartContinueGame();
+                // 새 게임 시작 (현재 게임을 처음부터 다시)
+                GameManager.Instance.StartNewGame();
             }
             else
             {
                 #if UNITY_EDITOR
                 Debug.LogError(LOG_PREFIX + "GameManager를 찾을 수 없습니다!");
                 #endif
+                
+                // GameManager가 없다면 직접 Game 씬 재로드
+                Time.timeScale = 1f;
+                UnityEngine.SceneManagement.SceneManager.LoadScene("Game");
             }
         }
 
         private void OnSettingsClicked()
         {
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "설정 버튼 클릭됨");
+            Debug.Log(LOG_PREFIX + "Settings 버튼이 클릭되었습니다.");
             #endif
             
             // Pause 패널 숨기고 Settings 패널 표시
@@ -138,7 +147,7 @@ namespace InvaderInsider.UI
         private void OnMainMenuClicked()
         {
             #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "메인 메뉴로 이동");
+            Debug.Log(LOG_PREFIX + "Main Menu 버튼이 클릭되었습니다.");
             #endif
             
             // GameManager가 씬 전환과 상태 관리를 모두 담당
@@ -156,10 +165,30 @@ namespace InvaderInsider.UI
 
         private void OnDestroy()
         {
+            // 버튼 이벤트 정리
+            CleanupButtonEvents();
+            
             // 게임이 종료될 때 시간 스케일 복구
             if (Time.timeScale == 0f)
             {
                 Time.timeScale = 1f;
+            }
+        }
+        
+        private void CleanupButtonEvents()
+        {
+            if (buttonsSetup)
+            {
+                if (resumeButton != null)
+                    resumeButton.onClick.RemoveListener(OnResumeClicked);
+                if (restartButton != null)
+                    restartButton.onClick.RemoveListener(OnRestartClicked);
+                if (settingsButton != null)
+                    settingsButton.onClick.RemoveListener(OnSettingsClicked);
+                if (mainMenuButton != null)
+                    mainMenuButton.onClick.RemoveListener(OnMainMenuClicked);
+                
+                buttonsSetup = false;
             }
         }
     }

@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using InvaderInsider.Managers;
 using InvaderInsider.Data;
+using InvaderInsider.Core;
 
 namespace InvaderInsider.UI
 {
@@ -24,13 +25,11 @@ namespace InvaderInsider.UI
 
         private void Start()
         {
-            if (stageText == null || waveText == null || eDataText == null || pauseButton == null)
-            {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_MESSAGES[0]);
-                #endif
-                return;
-            }
+                    if (stageText == null || waveText == null || eDataText == null || pauseButton == null)
+        {
+            DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, LOG_MESSAGES[0]);
+            return;
+        }
 
             InitializeUI();
         }
@@ -66,6 +65,9 @@ namespace InvaderInsider.UI
             uiManager = UIManager.Instance;
             pauseButton.onClick.AddListener(HandlePauseClick);
             
+            // Canvas Sorting Order 설정 (다른 UI보다 낮게)
+            SetupCanvasSortingOrder();
+            
             // eData는 이제 GameManager에서 직접 호출로 업데이트됨 (이벤트 구독 제거)
             
             UpdateUI();
@@ -76,7 +78,7 @@ namespace InvaderInsider.UI
             if (stageText == null || eDataText == null || 
                 waveText == null || pauseButton == null)
             {
-                Debug.LogError(LOG_MESSAGES[0]);
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, LOG_MESSAGES[0]);
                 return false;
             }
             return true;
@@ -84,20 +86,48 @@ namespace InvaderInsider.UI
 
         private void UpdateUI()
         {
-            // eData는 GameManager에서 직접 호출로 업데이트됨
-            
-            // 초기 스테이지 정보 표시 (기본값)
-            if (stageText != null)
+            // GameManager에서 현재 게임 상태를 가져와서 UI 업데이트
+            var gameManager = GameManager.Instance;
+            if (gameManager != null)
             {
-                stageText.text = "Stage 1/1";
+                // 현재 스테이지 정보 가져오기
+                var stageManager = StageManager.Instance;
+                if (stageManager != null)
+                {
+                    int currentStage = stageManager.GetCurrentStageIndex() + 1; // 0-based to 1-based
+                    int totalStages = stageManager.GetStageCount();
+                    int spawnedMonsters = stageManager.GetSpawnedEnemyCount();
+                    int maxMonsters = stageManager.GetStageWaveCount(stageManager.GetCurrentStageIndex());
+                    
+                    UpdateStageInfo(currentStage, totalStages, spawnedMonsters, maxMonsters);
+                }
+                
+                // 현재 EData 가져오기
+                var resourceManager = ResourceManager.Instance;
+                if (resourceManager != null)
+                {
+                    int currentEData = resourceManager.GetCurrentEData();
+                    UpdateEData(currentEData);
+                }
             }
-            
-            if (waveText != null)
+            else
             {
-                waveText.text = "Wave 0/0";  // 몬스터 소환 수/최대 몬스터 수
+                // GameManager가 없는 경우 기본값 설정
+                if (stageText != null)
+                {
+                    stageText.text = "Stage 1/1";
+                }
+                
+                if (waveText != null)
+                {
+                    waveText.text = "Wave 0/0";
+                }
+                
+                if (eDataText != null)
+                {
+                    eDataText.text = "eData: 0";
+                }
             }
-            
-
         }
 
         private void HandlePauseClick()
@@ -114,11 +144,14 @@ namespace InvaderInsider.UI
             if (eDataText != null)
             {
                 eDataText.text = $"eData: {amount}";
+                // #if UNITY_EDITOR
+                // Debug.Log($"[TopBar] EData 업데이트: {amount}");
+                // #endif
             }
             else
             {
                 #if UNITY_EDITOR
-                Debug.LogError("[TopBarPanel] UpdateEData 호출됨 - eDataText가 null!");
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, "UpdateEData 호출됨 - eDataText가 null!");
                 #endif
             }
         }
@@ -132,33 +165,36 @@ namespace InvaderInsider.UI
             }
         }
 
-        public void UpdateStageInfo(int stage, int wave)
-        {
-            if (stageText != null)
-            {
-                stageText.text = $"Stage {stage}";
-            }
-            
-            if (waveText != null)
-            {
-                waveText.text = $"Wave {wave}";
-            }
-        }
-
         public void UpdateStageInfo(int currentStage, int totalStages, int spawnedMonsters, int maxMonsters)
         {
             if (stageText != null)
             {
                 stageText.text = $"Stage {currentStage}/{totalStages}";
+                // #if UNITY_EDITOR
+                // Debug.Log($"[TopBar] Stage 업데이트: {currentStage}/{totalStages}");
+                // #endif
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, "UpdateStageInfo 호출됨 - stageText가 null!");
+                #endif
             }
             
             if (waveText != null)
             {
                 waveText.text = $"Wave {spawnedMonsters}/{maxMonsters}";
+                // #if UNITY_EDITOR
+                // Debug.Log($"[TopBar] Wave 업데이트: {spawnedMonsters}/{maxMonsters}");
+                // #endif
+            }
+            else
+            {
+                #if UNITY_EDITOR
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_UI, "UpdateStageInfo 호출됨 - waveText가 null!");
+                #endif
             }
         }
-
-
 
         public int GetCurrentEData()
         {
@@ -189,12 +225,37 @@ namespace InvaderInsider.UI
         {
             base.OnShow();
             
-            // eData는 GameManager에서 직접 호출로 업데이트됨 (이벤트 재구독 제거)
+            // 패널이 표시될 때 현재 게임 상태로 UI 업데이트
+            UpdateUI();
         }
 
         protected override void OnHide()
         {
             base.OnHide();
+        }
+
+        private void SetupCanvasSortingOrder()
+        {
+            // TopBar의 Canvas를 확인하고 없으면 추가
+            Canvas topBarCanvas = GetComponent<Canvas>();
+            if (topBarCanvas == null)
+            {
+                topBarCanvas = gameObject.AddComponent<Canvas>();
+                
+                // GraphicRaycaster도 필요
+                if (GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+                {
+                    gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+                }
+            }
+            
+            // Sorting Order를 낮게 설정하여 다른 UI 아래에 표시
+            topBarCanvas.overrideSorting = true;
+            topBarCanvas.sortingOrder = 10; // 기본보다 낮은 값 (SummonChoice는 100)
+            
+            #if UNITY_EDITOR
+            Debug.Log("[TopBar] TopBar Canvas Sorting Order 설정 완료: " + topBarCanvas.sortingOrder);
+            #endif
         }
     }
 } 

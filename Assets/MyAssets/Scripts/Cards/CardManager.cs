@@ -11,19 +11,7 @@ namespace InvaderInsider.Cards
 {
     public class CardManager : MonoBehaviour
     {
-        private const string LOG_PREFIX = "[CardManager] ";
-        private static readonly string[] LOG_MESSAGES = new string[]
-        {
-            "Card Database Scriptable Object is not assigned in the inspector!",
-            "소환 데이터 로드: 횟수 = {0}, 비용 = {1}",
-            "소환 데이터 없음: 횟수 = {0}, 비용 = {1}",
-            "소환 데이터 저장: 횟수 = {0}",
-            "SaveDataManager 인스턴스를 찾을 수 없습니다. 소환 데이터 저장 실패.",
-            "SaveDataManager 인스턴스를 찾을 수 없습니다.",
-            "eData 부족! 현재 eData: {0}, 필요 비용: {1}",
-            "소환 성공! 현재 횟수: {0}, 다음 소환 비용: {1}",
-            "Summon Choice Panel Prefab is not assigned!"
-        };
+        private const string LOG_TAG = "CardManager";
 
         private static CardManager instance;
         private static readonly object _lock = new object();
@@ -63,40 +51,42 @@ namespace InvaderInsider.Cards
         [SerializeField] private CardDatabase cardDatabase;
         
         [Header("Gacha Settings")]
-        [SerializeField] private int singleDrawCost = 10;
-        [SerializeField] private int multiDrawCost = 45;  // 5회 뽑기 (10% 할인)
+        [SerializeField] private int drawCost = 10;
         [SerializeField] private float[] rarityRates = { 0.60f, 0.30f, 0.08f, 0.02f };  // Common, Rare, Epic, Legendary
 
         [Header("Summon Settings")]
         [SerializeField] private int initialSummonCost = 10;
         [SerializeField] private int summonCostIncrease = 1;
-        [SerializeField] private GameObject summonChoicePanelPrefab;
 
         private int currentSummonCost;
         private int summonCount = 0;
-        private SummonChoicePanel currentSummonChoicePanel;
+        private bool isSummonInProgress = false; // 소환 진행 중 플래그
 
         // Events
         public UnityEvent<CardDBObject> OnCardDrawn = new UnityEvent<CardDBObject>();
-        public UnityEvent<List<CardDBObject>> OnMultipleCardsDrawn = new UnityEvent<List<CardDBObject>>();
 
         private void Awake()
         {
+            // 에디터 모드에서는 초기화하지 않음
+            #if UNITY_EDITOR
+            if (!Application.isPlaying) return;
+            #endif
+            
             if (instance == null)
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
                 
                 // HideFlags 명시적 설정 (에디터에서 편집 가능하도록)
-                #if UNITY_EDITOR
                 gameObject.hideFlags = HideFlags.None;
-                #endif
+                LogManager.Info(LOG_TAG, "인스턴스 생성됨");
                 
                 PerformInitialization();
                 LoadSummonData();
             }
             else if (instance != this)
             {
+                LogManager.Info(LOG_TAG, "중복 인스턴스 파괴됨");
                 Destroy(gameObject);
                 return;
             }
@@ -112,13 +102,9 @@ namespace InvaderInsider.Cards
                     cardDatabase = Resources.Load<CardDatabase>("ScriptableObjects/CardSystem/CardDatabase");
                     if (cardDatabase == null)
                     {
-                        #if UNITY_EDITOR
-                        Debug.LogError(LOG_PREFIX + LOG_MESSAGES[0]);
-                        #endif
+                        LogManager.Error(LOG_TAG, "카드 데이터베이스가 설정되지 않았습니다.");
                         cardDatabase = ScriptableObject.CreateInstance<CardDatabase>();
-                        #if UNITY_EDITOR
-                        Debug.LogWarning(LOG_PREFIX + "빈 CardDatabase를 생성했습니다. Inspector에서 올바른 CardDatabase를 할당하세요.");
-                        #endif
+                        LogManager.Warning(LOG_TAG, "빈 CardDatabase를 생성했습니다. Inspector에서 올바른 CardDatabase를 할당하세요.");
                     }
                 }
             }
@@ -130,11 +116,6 @@ namespace InvaderInsider.Cards
         {
             if (instance == this)
             {
-                if (currentSummonChoicePanel != null)
-                {
-                    Destroy(currentSummonChoicePanel.gameObject);
-                    currentSummonChoicePanel = null;
-                }
                 instance = null;
                 isInitialized = false;
             }
@@ -152,17 +133,13 @@ namespace InvaderInsider.Cards
             {
                 summonCount = SaveDataManager.Instance.CurrentSaveData.progressData.summonCount;
                 currentSummonCost = initialSummonCost + summonCount * summonCostIncrease;
-                #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[1], summonCount, currentSummonCost));
-                #endif
+                LogManager.Info(LOG_TAG, "소환 데이터 로드 완료. 소환 횟수: {0}, 현재 비용: {1}", summonCount, currentSummonCost);
             }
             else
             {
                 summonCount = 0;
                 currentSummonCost = initialSummonCost;
-                #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[2], summonCount, currentSummonCost));
-                #endif
+                LogManager.Info(LOG_TAG, "소환 데이터 로드 완료. 소환 횟수: {0}, 현재 비용: {1}", summonCount, currentSummonCost);
             }
         }
 
@@ -171,75 +148,82 @@ namespace InvaderInsider.Cards
             if (SaveDataManager.Instance != null && SaveDataManager.Instance.CurrentSaveData != null)
             {
                 SaveDataManager.Instance.CurrentSaveData.progressData.summonCount = summonCount;
-                SaveDataManager.Instance.SaveGameData();
-                #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[3], summonCount));
-                #endif
+                // 메모리에만 업데이트, 저장하지 않음 (스테이지 클리어/게임 종료 시에만 저장)
+                LogManager.Info(LOG_TAG, "소환 데이터 저장 완료. 소환 횟수: {0}", summonCount);
             }
             else
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[4]);
-                #endif
+                LogManager.Error(LOG_TAG, "SaveDataManager가 없습니다.");
             }
         }
 
         public void Summon()
         {
-            if (SaveDataManager.Instance == null)
+            // 중복 호출 방지
+            if (isSummonInProgress)
             {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[5]);
-                #endif
+                LogManager.Warning(LOG_TAG, "소환 진행 중입니다. 잠시 후 다시 시도하세요.");
                 return;
             }
 
-            if (SaveDataManager.Instance.CurrentSaveData.progressData.currentEData >= currentSummonCost)
+            if (SaveDataManager.Instance == null)
             {
-                // 소환 시에는 저장하지 않고 eData만 감소 (스테이지 클리어 시 저장됨)
-                SaveDataManager.Instance.UpdateEDataWithoutSave(-currentSummonCost);
+                LogManager.Error(LOG_TAG, "SaveDataManager가 없습니다.");
+                return;
+            }
+
+            // ResourceManager 우선 사용, 없으면 SaveDataManager 사용
+            var resourceManager = ResourceManager.Instance;
+            int currentEData = resourceManager?.GetCurrentEData() ?? 
+                              SaveDataManager.Instance?.GetCurrentEData() ?? 0;
+            
+            if (currentEData >= currentSummonCost)
+            {
+                isSummonInProgress = true; // 소환 시작
                 
-                // TopBarPanel에 직접 eData 업데이트 (Stage/Wave UI와 동일한 방식)
-                var topBarPanel = FindObjectOfType<InvaderInsider.UI.TopBarPanel>();
-                if (topBarPanel != null)
+                // ResourceManager를 통한 EData 소모
+                bool success = false;
+                if (resourceManager != null)
                 {
-                    int currentEData = SaveDataManager.Instance.GetCurrentEData();
-                    topBarPanel.UpdateEData(currentEData);
+                    success = resourceManager.TrySpendEData(currentSummonCost);
+                }
+                else if (SaveDataManager.Instance != null)
+                {
+                    SaveDataManager.Instance.UpdateEDataWithoutSave(-currentSummonCost);
+                    success = true;
                 }
                 
-                // CardDrawUI 버튼 상태도 업데이트
-                var cardDrawUI = FindObjectOfType<CardDrawUI>();
-                if (cardDrawUI != null)
+                if (!success)
                 {
-                    int currentEData = SaveDataManager.Instance.GetCurrentEData();
-                    cardDrawUI.UpdateButtonStates(currentEData);
+                    LogManager.Error(LOG_TAG, "리소스가 부족합니다. 필요 리소스: {0}, 현재 리소스: {1}", currentSummonCost, currentEData);
+                    isSummonInProgress = false;
+                    return;
                 }
-                
+
+                // 소환 횟수 증가 및 다음 비용 계산
                 summonCount++;
                 currentSummonCost = initialSummonCost + summonCount * summonCostIncrease;
-                #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[7], summonCount, currentSummonCost));
-                #endif
 
-                List<CardDBObject> selectedCards = SelectRandomCards(3);
-                DisplaySummonChoices(selectedCards);
+                LogManager.Info(LOG_TAG, "소환 비용이 {0}으로 증가했습니다.", currentSummonCost);
+
+                // 랜덤 카드 3장 선택
+                List<CardDBObject> randomCards = SelectRandomCards(3);
+                
+                // 선택된 카드들을 UI로 표시
+                DisplaySummonChoices(randomCards); // UI 표시는 UIManager를 통해서만
             }
             else
             {
-                #if UNITY_EDITOR
-                Debug.Log(string.Format(LOG_PREFIX + LOG_MESSAGES[6], 
-                    SaveDataManager.Instance.CurrentSaveData.progressData.currentEData, 
-                    currentSummonCost));
-                #endif
+                LogManager.Warning(LOG_TAG, "리소스가 부족합니다. 현재 리소스: {0}, 필요 리소스: {1}", currentEData, currentSummonCost);
             }
         }
 
         private List<CardDBObject> SelectRandomCards(int count)
         {
             List<CardDBObject> result = new List<CardDBObject>();
-            if (cardDatabase == null || cardDatabase.cards.Count == 0) return result;
+            if (cardDatabase == null || cardDatabase.AllCards.Count == 0) return result;
 
-            List<CardDBObject> availableCards = new List<CardDBObject>(cardDatabase.cards);
+            List<CardDBObject> availableCards = new List<CardDBObject>(cardDatabase.AllCards);
             float totalWeight = availableCards.Sum(card => card.summonWeight);
 
             System.Random rng = new System.Random();
@@ -270,159 +254,48 @@ namespace InvaderInsider.Cards
             // UIManager를 통해 등록된 SummonChoice 패널 사용
             if (InvaderInsider.UI.UIManager.Instance != null && InvaderInsider.UI.UIManager.Instance.IsPanelRegistered("SummonChoice"))
             {
-                // 등록된 패널을 직접 가져와서 사용
+                // UIManager에서 SummonChoice 패널 가져오기
                 var summonChoicePanel = InvaderInsider.UI.UIManager.Instance.GetPanel("SummonChoice") as SummonChoicePanel;
                 if (summonChoicePanel != null)
                 {
-                    currentSummonChoicePanel = summonChoicePanel;
-                    currentSummonChoicePanel.SetupCards(choices);
+                    summonChoicePanel.SetupCards(choices);
                     InvaderInsider.UI.UIManager.Instance.ShowPanel("SummonChoice");
-                    #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + "UIManager를 통해 SummonChoice 패널을 표시했습니다.");
-                    #endif
+                    LogManager.Info(LOG_TAG, "UIManager를 통해 SummonChoice 패널을 표시했습니다.");
                     return;
                 }
             }
-            
-            // 백업: UIManager에 등록되지 않은 경우 씬에서 직접 찾기
-            if (currentSummonChoicePanel == null)
-            {
-                currentSummonChoicePanel = FindObjectOfType<SummonChoicePanel>(true);
-            }
-            
-            if (currentSummonChoicePanel != null)
-            {
-                currentSummonChoicePanel.SetupCards(choices);
-                currentSummonChoicePanel.Show();
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "씬에서 SummonChoice 패널을 찾아 표시했습니다.");
-                #endif
-                return;
-            }
-            
-            // 최후의 백업: 동적 생성
-            #if UNITY_EDITOR
-            Debug.LogWarning(LOG_PREFIX + "SummonChoice 패널을 찾을 수 없어 동적 생성을 시도합니다.");
-            #endif
-            
-            if (summonChoicePanelPrefab == null)
-            {
-                #if UNITY_EDITOR
-                Debug.LogError(LOG_PREFIX + LOG_MESSAGES[8]);
-                #endif
-                return;
-            }
 
-            // 적절한 Canvas 찾기
-            Canvas targetCanvas = null;
-            Canvas[] allCanvases = FindObjectsOfType<Canvas>();
-            
-            foreach (Canvas canvas in allCanvases)
-            {
-                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                {
-                    string canvasName = canvas.name.ToLower();
-                    if (!canvasName.Contains("topbar") && !canvasName.Contains("bottombar"))
-                    {
-                        targetCanvas = canvas;
-                        break;
-                    }
-                }
-            }
-            
-            if (targetCanvas != null)
-            {
-                GameObject panelObj = Instantiate(summonChoicePanelPrefab, targetCanvas.transform);
-                currentSummonChoicePanel = panelObj.GetComponent<SummonChoicePanel>();
-                if (currentSummonChoicePanel != null)
-                {
-                    currentSummonChoicePanel.SetupCards(choices);
-                    currentSummonChoicePanel.Show();
-                    #if UNITY_EDITOR
-                    Debug.Log(LOG_PREFIX + $"Canvas({targetCanvas.name})에 소환 선택 패널을 동적 생성했습니다.");
-                    #endif
-                }
-            }
+            LogManager.Error(LOG_TAG, "카드 데이터베이스에 카드가 없습니다.");
         }
 
         public void OnCardChoiceSelected(CardDBObject selectedCard)
         {
+            // 소환 진행 플래그 해제
+            isSummonInProgress = false;
+
             // UIManager를 통해 패널 숨기기
             if (InvaderInsider.UI.UIManager.Instance != null && InvaderInsider.UI.UIManager.Instance.IsPanelRegistered("SummonChoice"))
             {
                 InvaderInsider.UI.UIManager.Instance.HidePanel("SummonChoice");
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "UIManager를 통해 SummonChoice 패널을 숨겼습니다.");
-                #endif
-            }
-            else if (currentSummonChoicePanel != null)
-            {
-                // 백업: 동적 생성된 패널 제거
-                currentSummonChoicePanel.Hide();
-                Destroy(currentSummonChoicePanel.gameObject);
-                currentSummonChoicePanel = null;
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "동적 생성된 소환 선택 패널을 제거했습니다.");
-                #endif
+                LogManager.Info(LOG_TAG, "UIManager를 통해 SummonChoice 패널을 숨겼습니다.");
             }
             
-            // 패널 참조 정리
-            currentSummonChoicePanel = null;
-            
-            // 선택된 카드를 이벤트로 전달
-            if (selectedCard != null)
+            // null 체크 추가
+            if (selectedCard == null)
             {
-                OnCardDrawn?.Invoke(selectedCard);
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + $"플레이어가 카드를 선택했습니다: {selectedCard.cardName}");
-                #endif
-            }
-            else
-            {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "카드 선택이 취소되었습니다.");
-                #endif
+                LogManager.Info(LOG_TAG, "카드 선택이 취소되었습니다 (Close 버튼 클릭).");
+                return;
             }
             
-            SaveSummonData();
+            if (SaveDataManager.Instance != null)
+            {
+                SaveDataManager.Instance.AddCardToHandAndOwned(selectedCard.cardId);
+                LogManager.Info(LOG_TAG, "카드가 핸드에 추가되었습니다: '{0}'", selectedCard.cardName);
+            }
+            
+            OnCardDrawn?.Invoke(selectedCard);
         }
         #endregion
-
-        #region Gacha System
-        public bool DrawSingleCard()
-        {
-            if (!GameManager.Instance.TrySpendEData(singleDrawCost))
-            {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "Not enough eData to draw a card!");
-                #endif
-                return false;
-            }
-
-            CardDBObject drawnCard = DrawCardByRarity();
-            OnCardDrawn?.Invoke(drawnCard);
-            return true;
-        }
-
-        public bool DrawMultipleCards(int count = 5)
-        {
-            if (!GameManager.Instance.TrySpendEData(multiDrawCost))
-            {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "Not enough eData to draw multiple cards!");
-                #endif
-                return false;
-            }
-
-            List<CardDBObject> drawnCards = new List<CardDBObject>();
-            for (int i = 0; i < count; i++)
-            {
-                drawnCards.Add(DrawCardByRarity());
-            }
-
-            OnMultipleCardsDrawn?.Invoke(drawnCards);
-            return true;
-        }
 
         private CardDBObject DrawCardByRarity()
         {
@@ -440,46 +313,117 @@ namespace InvaderInsider.Cards
                 }
             }
 
-            var cardsOfRarity = cardDatabase.cards.Where(card => card.rarity == selectedRarity).ToList();
+            var cardsOfRarity = cardDatabase.AllCards.Where(card => card.rarity == selectedRarity).ToList();
             if (cardsOfRarity.Count == 0)
             {
-                #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + $"No cards found for rarity: {selectedRarity}");
-                #endif
-                return cardDatabase.cards[0];
+                return cardDatabase.AllCards[0];
             }
 
             return cardsOfRarity[Random.Range(0, cardsOfRarity.Count)];
         }
-        #endregion
 
         #region Card Database Access
         public CardDBObject GetCardById(int cardId)
         {
-            if (cardId >= 0 && cardId < cardDatabase.cards.Count)
-                return cardDatabase.cards[cardId];
+            if (cardId >= 0 && cardId < cardDatabase.AllCards.Count)
+                return cardDatabase.AllCards[cardId];
             return null;
         }
 
-        public List<CardDBObject> GetAllCards() => cardDatabase.cards;
+        public List<CardDBObject> GetAllCards() => cardDatabase.AllCards;
 
         public List<CardDBObject> GetCardsByType(CardType type) =>
-            cardDatabase.cards.Where(card => card.type == type).ToList();
+            cardDatabase.AllCards.Where(card => card.type == type).ToList();
 
         public List<CardDBObject> GetCardsByRarity(CardRarity rarity) =>
-            cardDatabase.cards.Where(card => card.rarity == rarity).ToList();
+            cardDatabase.AllCards.Where(card => card.rarity == rarity).ToList();
 
         public void AddCard(CardDBObject card)
         {
-            if (!cardDatabase.cards.Any(c => c.cardId == card.cardId))
+            if (!cardDatabase.AllCards.Any(c => c.cardId == card.cardId))
             {
-                cardDatabase.cards.Add(card);
+                cardDatabase.AddCard(card);
             }
         }
 
-        public int GetSingleDrawCost() => singleDrawCost;
-        public int GetMultiDrawCost() => multiDrawCost;
+        public int GetDrawCost() => drawCost;
         public int GetCurrentSummonCost() => currentSummonCost;
+
+        // 핸드 관련 편의 메서드들
+        public List<int> GetHandCardIds()
+        {
+            if (SaveDataManager.Instance?.CurrentSaveData != null)
+            {
+                return SaveDataManager.Instance.CurrentSaveData.deckData.handCardIds;
+            }
+            return new List<int>();
+        }
+
+        public List<CardDBObject> GetHandCards()
+        {
+            var handCardIds = GetHandCardIds();
+            var handCards = new List<CardDBObject>();
+            
+            foreach (int cardId in handCardIds)
+            {
+                var cardData = GetCardById(cardId);
+                if (cardData != null)
+                {
+                    handCards.Add(cardData);
+                }
+            }
+            return handCards;
+        }
+
+        public void RemoveCardFromHand(int cardId)
+        {
+            if (SaveDataManager.Instance != null)
+            {
+                SaveDataManager.Instance.RemoveCardFromHand(cardId);
+                LogManager.Info(LOG_TAG, "카드가 핸드에서 제거되었습니다: ID {0}", cardId);
+            }
+        }
+
+        public bool IsCardInHand(int cardId)
+        {
+            if (SaveDataManager.Instance?.CurrentSaveData != null)
+            {
+                return SaveDataManager.Instance.CurrentSaveData.deckData.IsInHand(cardId);
+            }
+            return false;
+        }
+
+        public int GetHandCardCount()
+        {
+            return GetHandCardIds().Count;
+        }
         #endregion
+
+        // 디모/테스트 메서드들
+        public void DemoAddRandomCardToHand()
+        {
+            if (cardDatabase != null && cardDatabase.AllCards.Count > 0)
+            {
+                var randomCard = cardDatabase.AllCards[UnityEngine.Random.Range(0, cardDatabase.AllCards.Count)];
+                if (SaveDataManager.Instance != null)
+                {
+                    SaveDataManager.Instance.AddCardToHandAndOwned(randomCard.cardId);
+                    LogManager.Info(LOG_TAG, "카드가 핸드에 추가되었습니다: '{0}' (ID: {1})", randomCard.cardName, randomCard.cardId);
+                }
+            }
+        }
+
+        public void DemoShowHandStatus()
+        {
+            if (SaveDataManager.Instance != null)
+            {
+                var handCards = GetHandCards();
+                LogManager.Info(LOG_TAG, "현재 핸드 상태: {0}장의 카드", handCards.Count);
+                foreach (var card in handCards)
+                {
+                    LogManager.Info(LOG_TAG, "- {0} (ID: {1}, 타입: {2}, 등급: {3})", card.cardName, card.cardId, card.type, card.rarity);
+                }
+            }
+        }
     }
 } 

@@ -6,7 +6,7 @@ namespace InvaderInsider.UI
 {
     public class SettingsPanel : BasePanel
     {
-        private const string LOG_PREFIX = "[Settings] ";
+        private new const string LOG_PREFIX = "[Settings] ";
         
         [Header("Audio Settings")]
         public Slider masterVolumeSlider;

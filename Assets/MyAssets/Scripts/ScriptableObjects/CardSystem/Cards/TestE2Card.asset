@@ -16,12 +16,12 @@ MonoBehaviour:
   cardName: TestE2
   description: 
   artwork: {fileID: 0}
-  cost: 0
-  power: 0
+  cost: 1
+  power: 1
   rarity: 0
   type: 1
   equipmentTarget: 2
-  equipmentBonusAttack: 0
+  equipmentBonusAttack: 1
   equipmentBonusHealth: 0
   summonWeight: 1
   cardPrefab: {fileID: 0}
