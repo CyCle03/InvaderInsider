@@ -482,51 +482,53 @@ namespace InvaderInsider.Managers
             }
         }
 
-        public void StageCleared(int stageNum)
+        public void StageCleared(int stageNum) // Called from StageManager, stageNum is 1-based
         {
-            if (saveDataManager != null)
-            {
-                // 스테이지 클리어 시 진행상황 저장
-                saveDataManager.UpdateStageProgress(stageNum);
-                
-                var currentData = saveDataManager.CurrentSaveData;
-                if (currentData != null)
-                {
-                    LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum} 클리어됨! 최고 클리어 스테이지: {currentData.progressData.highestStageCleared}");
-                }
-            }
-
-            // 기존 로직 유지
             if (stageClearedProcessed)
+            {
+                LogManager.Warning(LOG_PREFIX, $"Stage {stageNum} 클리어 중복 처리 방지.");
                 return;
-
+            }
             stageClearedProcessed = true;
 
-            // 로그 추가
-            LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum} 클리어 - 처리 시작");
+            LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum} 클리어 처리 시작...");
 
-            // 기존 로직 계속...
+            // 1. Save Progress
+            if (saveDataManager != null)
+            {
+                saveDataManager.UpdateStageProgress(stageNum);
+                LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum} 진행 상황 저장됨.");
+            }
+
+            // 2. Invoke Event for other systems
             OnStageClearedEvent?.Invoke();
 
-            // 추가 로그
-            LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum} 클리어 - 이벤트 처리 완료");
+            // 3. Check for game completion
+            if (stageManagerReference != null)
+            {
+                int totalStages = stageManagerReference.GetStageCount();
+                if (stageNum >= totalStages)
+                {
+                    LogManager.Info(LOG_PREFIX, "모든 스테이지 완료! PausePanel을 표시합니다.");
+                    PauseGame(true);
+                }
+            }
+            LogManager.Info(LOG_PREFIX, $"스테이지 {stageNum} 클리어 처리 완료.");
         }
 
-             
+        public void PrepareForNextStage()
+        {
+            LogManager.Info(LOG_PREFIX, "다음 스테이지 준비. 클리어 플래그 리셋.");
+            stageClearedProcessed = false;
+        }
 
         public void InitializeEDataDisplay()
         {
             UpdateEDataUI();
         }
 
-        
-
         private void OnEDataChanged(int newEDataAmount)
         {
-            // #if UNITY_EDITOR
-            // LogManager.Log(LOG_PREFIX + $"EData changed: {newEDataAmount}");
-            // #endif
-            
             UpdateEDataUI(newEDataAmount);
         }
 
@@ -546,7 +548,6 @@ namespace InvaderInsider.Managers
 
         private void UpdateEDataUI(int currentEData)
         {
-            // UICoordinator 참조 확인 및 재참조
             if (uiCoordinator == null)
             {
                 uiCoordinator = UICoordinator.Instance;
@@ -575,121 +576,18 @@ namespace InvaderInsider.Managers
                 
                 if (CurrentGameState == GameState.Playing)
                 {
-                    LogManager.Info(LOG_PREFIX, $"게임 중 ESC - PauseGame 호출");
+                    LogManager.Info(LOG_PREFIX, "게임 중 ESC - PauseGame 호출");
                     PauseGame(true);
                 }
                 else if (CurrentGameState == GameState.Paused)
                 {
-                    LogManager.Info(LOG_PREFIX, $"일시정지 중 ESC - ResumeGame 호출");
+                    LogManager.Info(LOG_PREFIX, "일시정지 중 ESC - ResumeGame 호출");
                     ResumeGame();
                 }
                 else
                 {
                     LogManager.Info(LOG_PREFIX, $"현재 상태({CurrentGameState})에서는 ESC 무시");
                 }
-            }
-            
-            if (CurrentGameState != GameState.Playing) return;
-
-            // 상태 체크 주기 최적화
-            if (Time.time >= nextStateCheckTime)
-            {
-                CheckStageCompletion();
-                nextStateCheckTime = Time.time + gameConfig.stateCheckInterval;
-            }
-        }
-
-        private void CheckStageCompletion()
-        {
-            if (stageManagerReference == null) return;
-
-            bool allEnemiesSpawned = AllEnemiesSpawned();
-            int activeEnemyCount = stageManagerReference.ActiveEnemyCount;
-            
-            if (allEnemiesSpawned && activeEnemyCount == 0)
-            {
-                if (!stageClearedProcessed)
-                {
-                    LogManager.Info(LOG_PREFIX, $"스테이지 클리어 조건 만족 - 모든 적 스폰됨: {allEnemiesSpawned}, 활성 적 수: {activeEnemyCount}");
-                    HandleStageCleared();
-                    stageClearedProcessed = true;
-                }
-            }
-            else if (activeEnemyCount > 0)
-            {
-                // 적이 다시 생기면 플래그 리셋 (다음 스테이지를 위해)
-                stageClearedProcessed = false;
-            }
-        }
-
-        private bool AllEnemiesSpawned()
-        {
-            if (stageManagerReference == null) return false;
-            
-            // 메모리 할당 최적화 - 메서드 호출 최소화하고 변수로 캐시
-            int currentStageIndex = stageManagerReference.GetCurrentStageIndex();
-            int spawnedCount = stageManagerReference.GetSpawnedEnemyCount();
-            int maxCount = stageManagerReference.GetStageWaveCount(currentStageIndex);
-            
-            return spawnedCount >= maxCount;
-        }
-
-        private void HandleStageCleared()
-        {
-            if (stageManagerReference == null) 
-            {
-                LogManager.Error("GameManager", "stageManagerReference가 null입니다!");
-                return;
-            }
-
-            // 스테이지 클리어 처리
-            int clearedStageIndex = stageManagerReference.GetCurrentStageIndex(); // 0-based 인덱스
-            
-            // 방어 코드: 잘못된 스테이지 인덱스 체크
-            if (clearedStageIndex < 0)
-            {
-                LogManager.Error("GameManager", $"잘못된 스테이지 인덱스: {clearedStageIndex}. 스테이지 클리어 처리를 중단합니다.");
-                return;
-            }
-            
-            int stageNumber = clearedStageIndex + 1; // 1-based 스테이지 번호
-            
-            // 스테이지 클리어 시 축적된 EData와 스테이지 진행을 한 번에 저장
-            if (saveDataManager != null)
-            {
-                // SaveDataManager는 1-based 스테이지 번호를 기대함
-                saveDataManager.UpdateStageProgress(stageNumber);
-            }
-            else
-            {
-                LogManager.Error("GameManager", "SaveDataManager를 찾을 수 없어 스테이지 진행을 저장할 수 없습니다!");
-            }
-            
-            // 스테이지 클리어 이벤트 호출 (1-based 스테이지 번호로)
-            this.StageCleared(stageNumber);
-            OnStageClearedEvent?.Invoke();
-            
-            // 모든 스테이지 완료 체크 (0-based 인덱스로)
-            CheckAllStagesCompleted(clearedStageIndex);
-        }
-
-        // 모든 스테이지 완료 시 일시정지 패널 활성화
-        private void CheckAllStagesCompleted(int clearedStageIndex)
-        {
-            if (stageManagerReference == null) return;
-            
-            int totalStages = stageManagerReference.GetStageCount();
-            bool allStagesCompleted = (clearedStageIndex + 1) >= totalStages;
-            
-            if (allStagesCompleted)
-            {
-                LogManager.Info(LOG_PREFIX, "모든 스테이지 완료! PausePanel을 표시합니다.");
-                
-                // 게임 일시정지 및 PausePanel 표시
-                PauseGame(true);
-                
-                // 3초 후 자동으로 메인 메뉴로 돌아가는 옵션을 제공하는 대신
-                // 사용자가 직접 선택할 수 있도록 PausePanel만 표시
             }
         }
         
@@ -1438,4 +1336,4 @@ namespace InvaderInsider.Managers
         
         #endregion
     }
-} 
+}

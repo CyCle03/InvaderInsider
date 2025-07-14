@@ -607,14 +607,8 @@ namespace InvaderInsider.Managers
                 #endif
             }
 
-            // 다음 스테이지로 진행
-            stageNum++;
-            currentTime = 0f;
-            enemyCount = 0;
-            activeEnemyCountValue = 0;
-
-            // 모든 스테이지 완료 여부 확인
-            if (stageNum >= GetStageCount())
+            // 모든 스테이지 완료 여부 확인 (가장 먼저)
+            if ((clearedStageIndex + 1) >= GetStageCount())
             {
                 // 모든 스테이지 완료 시 Over 상태로 변경하고 스테이지 진행 중단
                 currentState = StageState.Over;
@@ -623,16 +617,20 @@ namespace InvaderInsider.Managers
                 LogManager.Info(LOG_PREFIX, "모든 스테이지 완료 - 스테이지 진행 종료");
                 #endif
                 
-                return; // 코루틴 종료로 더 이상 진행하지 않음
+                return; // 여기서 함수를 완전히 종료하여 아래 로직을 실행하지 않음
             }
-            else
-            {
-                // 다음 스테이지 대기 상태로 전환
-                currentState = StageState.Wait;
-                #if UNITY_EDITOR
-                LogManager.Info(LOG_PREFIX, $"다음 스테이지 {stageNum + 1} 대기 중...");
-                #endif
-            }
+
+            // 다음 스테이지로 진행
+            stageNum++;
+            currentTime = 0f;
+            enemyCount = 0;
+            activeEnemyCountValue = 0;
+
+            // 다음 스테이지 대기 상태로 전환
+            currentState = StageState.Wait;
+            #if UNITY_EDITOR
+            LogManager.Info(LOG_PREFIX, $"다음 스테이지 {stageNum + 1} 대기 중...");
+            #endif
 
             // 스테이지 종료 대기 시간
             await UniTask.Delay(TimeSpan.FromSeconds(STAGE_END_DELAY), cancellationToken: token);
@@ -647,6 +645,7 @@ namespace InvaderInsider.Managers
             // 다음 스테이지 시작 전 UI 업데이트 (GameManager를 통해)
             if (gameManager != null)
             {
+                gameManager.PrepareForNextStage(); // 클리어 플래그 리셋 요청
                 int maxMonsters = GetStageWaveCount(stageNum);
                 gameManager.UpdateStageWaveUI(stageNum + 1, 0, maxMonsters, GetStageCount()); // 새 스테이지는 0부터 시작
             }
