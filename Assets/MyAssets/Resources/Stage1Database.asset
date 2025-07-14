@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 98e3f0fb86bfdfb48b168fe6eaf18038, type: 3}
-  m_Name: Stage1Database
+  m_Name: Stage1 Database
   m_EditorClassIdentifier: 
   stageID: 1
   container:
