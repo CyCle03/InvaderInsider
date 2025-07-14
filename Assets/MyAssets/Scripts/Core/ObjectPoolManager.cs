@@ -389,7 +389,7 @@ namespace InvaderInsider.Core
         {
             if (!showDebugInfo || !Application.isPlaying) return;
 
-            GUILayout.BeginArea(new Rect(10, 10, 300, 200));
+            GUILayout.BeginArea(new Rect(10, 310, 300, 200));
             GUILayout.Label("Object Pool Manager", GUI.skin.box);
             
             foreach (var kvp in namedPools)
