@@ -383,7 +383,7 @@ namespace InvaderInsider.Core
 
         #if UNITY_EDITOR
         [Header("Editor Tools")]
-        [SerializeField] private bool showDebugInfo = true;
+        [SerializeField] private bool showDebugInfo = false;
 
         private void OnGUI()
         {
