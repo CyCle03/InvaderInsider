@@ -3,6 +3,7 @@ using System;
 using InvaderInsider.Data;
 using UnityEngine.SceneManagement;
 using InvaderInsider.Cards;
+using InvaderInsider.UI; // UIManager 네임스페이스 추가
 
 namespace InvaderInsider.Managers
 {
@@ -41,6 +42,8 @@ namespace InvaderInsider.Managers
         public GameState CurrentGameState { get; private set; }
         public event Action<GameState> OnGameStateChanged;
 
+        private UIManager uiManager; // UIManager 참조 추가
+
         private void Awake()
         {
             if (_instance != null && _instance != this)
@@ -50,11 +53,59 @@ namespace InvaderInsider.Managers
             }
             _instance = this;
             DontDestroyOnLoad(gameObject);
+
+            SceneManager.sceneLoaded += OnSceneLoaded; // 씬 로드 이벤트 구독
+        }
+
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded; // 이벤트 구독 해제
         }
 
         private void Start()
         {
             SetGameState(GameState.MainMenu);
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            // UIManager 인스턴스를 직접 찾습니다.
+            uiManager = FindObjectOfType<UIManager>();
+            if (uiManager == null)
+            {
+                Debug.LogError($"{LOG_PREFIX}UIManager를 찾을 수 없습니다.");
+                return;
+            }
+
+            InitializeUIForScene(scene.name); // 씬에 맞는 UI 초기화
+        }
+
+        private void InitializeUIForScene(string sceneName)
+        {
+            // 모든 BasePanel 컴포넌트를 찾습니다.
+            BasePanel[] allPanels = FindObjectsOfType<BasePanel>(true);
+
+            // UIManager에 패널들을 등록하고 초기 상태를 설정합니다.
+            foreach (BasePanel panel in allPanels)
+            {
+                if (panel != null)
+                {
+                    // 패널을 비활성화 상태로 시작
+                    panel.gameObject.SetActive(false);
+                    uiManager.RegisterPanel(panel.name, panel); // 패널의 GameObject 이름을 키로 사용
+                }
+            }
+
+            // 씬에 따라 초기 표시할 패널을 결정합니다.
+            if (sceneName == "Main")
+            {
+                uiManager.ShowPanel("MainMenuPanel"); // MainMenuPanel의 GameObject 이름이 "MainMenuPanel"이라고 가정
+            }
+            else if (sceneName == "Game")
+            {
+                uiManager.ShowPanel("InGamePanel"); // InGamePanel의 GameObject 이름이 "InGamePanel"이라고 가정
+            }
+            // 다른 씬에 대한 초기화 로직 추가 가능
         }
 
         public void SetGameState(GameState newState)
@@ -105,7 +156,7 @@ namespace InvaderInsider.Managers
             if (CurrentGameState != GameState.Playing) return;
             Time.timeScale = 0f;
             SetGameState(GameState.Paused);
-            // UI 표시 로직은 각 UI Panel에서 OnGameStateChanged 이벤트를 받아 처리
+            if (showPauseUI) uiManager?.ShowPanel("PausePanel"); // PausePanel의 GameObject 이름이 "PausePanel"이라고 가정
         }
 
         public void ResumeGame()
@@ -113,6 +164,7 @@ namespace InvaderInsider.Managers
             if (CurrentGameState != GameState.Paused) return;
             Time.timeScale = 1f;
             SetGameState(GameState.Playing);
+            uiManager?.HidePanel("PausePanel");
         }
 
         public void GameOver()
@@ -120,7 +172,7 @@ namespace InvaderInsider.Managers
             Time.timeScale = 0f;
             SetGameState(GameState.GameOver);
             Debug.Log($"{LOG_PREFIX} 게임 오버");
-            // GameOver UI 표시 로직 필요
+            // 게임 오버 UI 표시 로직 추가
         }
 
         public void StageCleared(int clearedStageNumber)
@@ -140,8 +192,13 @@ namespace InvaderInsider.Managers
 
         public void UpdateStageWaveUI(int stage, int currentWave, int maxWave)
         {
-            // TopBarPanel 같은 UI가 이 정보를 표시하도록 이벤트를 만들거나 직접 참조하여 업데이트 할 수 있습니다.
-            // 예: UIManager.Instance.UpdateWaveInfo(stage, currentWave, maxWave);
+            // UIManager를 통해 TopBarPanel의 UI를 업데이트하는 예시
+            // TopBarPanel의 GameObject 이름이 "TopBarPanel"이라고 가정
+            var topBarPanel = uiManager?.GetPanel("TopBarPanel") as TopBarPanel;
+            if (topBarPanel != null)
+            {
+                topBarPanel.UpdateStageWaveUI(stage, currentWave, maxWave);
+            }
         }
 
         public void AddEData(int amount, bool saveImmediately)
