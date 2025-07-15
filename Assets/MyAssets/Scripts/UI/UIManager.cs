@@ -272,7 +272,7 @@ namespace InvaderInsider.UI
             // 에디터에서 플레이 모드 종료 시 SaveDataManager 정리
             if (!Application.isPlaying)
             {
-                InvaderInsider.Data.SaveDataManager.ForceDestroy();
+                // InvaderInsider.Data.SaveDataManager.ForceDestroy(); // 제거된 메서드
             }
             #endif
         }

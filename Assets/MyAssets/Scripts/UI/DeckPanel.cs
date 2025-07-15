@@ -1,174 +1,97 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using TMPro;
-using InvaderInsider.Data;
 using InvaderInsider.Cards;
+using InvaderInsider.Data;
 using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
     public class DeckPanel : BasePanel
     {
-        private const string LOG_TAG = "Deck";
+        private const string LOG_TAG = "DeckPanel";
 
-        [Header("Card Containers")]
-        [SerializeField] private Transform deckCardContainer;
-        [SerializeField] private Transform ownedCardContainer;
+        [Header("UI Elements")]
+        [SerializeField] private Transform cardContainer;
         [SerializeField] private GameObject cardPrefab;
         [SerializeField] private Button backButton;
 
-        private readonly List<CardUI> activeCardUIs = new List<CardUI>();
-        private readonly Dictionary<int, CardUI> cardUIDict = new Dictionary<int, CardUI>();
-        private UIManager uiManager;
-        private SaveDataManager saveManager;
+        private readonly List<GameObject> activeCardObjects = new List<GameObject>();
         private CardManager cardManager;
         private bool isInitialized = false;
 
-        protected override void Awake()
-        {
-            base.Awake();
-            
-            uiManager = UIManager.Instance;
-            saveManager = SaveDataManager.Instance;
-            cardManager = CardManager.Instance;
-            
-            Initialize();
-        }
-
         protected override void Initialize()
         {
-            if (isInitialized)
+            if (isInitialized) return;
+
+            cardManager = CardManager.Instance;
+            if (cardManager == null)
             {
-                LogManager.Info(LOG_TAG, "패널이 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
+                Debug.LogError($"{LOG_TAG}: CardManager 인스턴스를 찾을 수 없습니다.");
                 return;
             }
 
-            if (backButton != null)
-            {
-                backButton.onClick.RemoveAllListeners();
-                backButton.onClick.AddListener(OnBackButtonClicked);
-            }
-            
+            backButton?.onClick.AddListener(OnBackButtonClicked);
             isInitialized = true;
         }
 
         private void OnBackButtonClicked()
         {
-            uiManager.GoBack();
+            // UIManager를 통해 이전 패널로 돌아가는 로직 (필요 시 UIManager에 구현)
+            // 예: UIManager.Instance.GoBack();
+            gameObject.SetActive(false);
         }
 
         protected override void OnShow()
         {
             base.OnShow();
-            LogManager.Info(LOG_TAG, "패널 표시됨");
-            RefreshDeckDisplay();
+            if (!isInitialized) Initialize();
+            RefreshCardDisplay();
         }
 
         protected override void OnHide()
         {
             base.OnHide();
-            LogManager.Info(LOG_TAG, "패널 숨김");
             ClearCardDisplays();
         }
 
-        private void RefreshDeckDisplay()
+        private void RefreshCardDisplay()
         {
-            if (saveManager == null) return;
-            
+            if (!isInitialized) return;
+
             ClearCardDisplays();
-            var saveData = saveManager.CurrentSaveData;
 
-            foreach (int cardId in saveData.deckData.deckCardIds)
-            {
-                CreateCardUI(cardId, deckCardContainer, true);
-            }
+            List<CardDBObject> allCards = cardManager.GetHandCards();
 
-            foreach (int cardId in saveData.deckData.ownedCardIds)
+            foreach (var cardData in allCards)
             {
-                if (!saveData.deckData.deckCardIds.Contains(cardId))
-                {
-                    CreateCardUI(cardId, ownedCardContainer, false);
-                }
+                CreateCardUI(cardData, cardContainer);
             }
         }
 
-        private void CreateCardUI(int cardId, Transform container, bool isInDeck)
+        private void CreateCardUI(CardDBObject cardData, Transform container)
         {
-            if (container == null || cardPrefab == null || cardManager == null) return;
+            if (container == null || cardPrefab == null) return;
 
-            var cardData = cardManager.GetCardById(cardId);
-            if (cardData == null)
-            {
-                LogManager.Warning(LOG_TAG, "카드 데이터를 찾을 수 없음 - ID: {0}", cardId);
-                return;
-            }
-
-            if (cardUIDict.TryGetValue(cardId, out var existingCardUI))
-            {
-                existingCardUI.transform.SetParent(container);
-                existingCardUI.transform.localScale = Vector3.one;
-                activeCardUIs.Add(existingCardUI);
-                return;
-            }
-
-            var cardObj = Instantiate(cardPrefab, container);
+            GameObject cardObj = Instantiate(cardPrefab, container);
             var cardUI = cardObj.GetComponent<CardUI>();
             
             if (cardUI != null)
             {
                 cardUI.SetCard(cardData);
-                cardUI.OnCardClicked += () => HandleCardClick(cardId, isInDeck);
-                activeCardUIs.Add(cardUI);
-                cardUIDict[cardId] = cardUI;
-
-                LogManager.Info(LOG_TAG, "카드 생성됨 - ID: {0}", cardId);
+                // 카드 클릭 시 상세 정보를 보여주거나 하는 로직을 여기에 추가할 수 있습니다.
+                // cardUI.OnCardClicked += () => ShowCardDetails(cardData);
             }
-        }
-
-        private void HandleCardClick(int cardId, bool isInDeck)
-        {
-            if (saveManager == null) return;
-
-            if (isInDeck)
-            {
-                saveManager.RemoveCardFromDeck(cardId);
-                LogManager.Info(LOG_TAG, "카드가 덱에서 제거됨 - ID: {0}", cardId);
-            }
-            else
-            {
-                saveManager.AddCardToDeck(cardId);
-                LogManager.Info(LOG_TAG, "카드가 덱에 추가됨 - ID: {0}", cardId);
-            }
-            
-            RefreshDeckDisplay();
+            activeCardObjects.Add(cardObj);
         }
 
         private void ClearCardDisplays()
         {
-            foreach (var cardUI in activeCardUIs)
+            foreach (var cardObj in activeCardObjects)
             {
-                if (cardUI != null)
-                {
-                    LogManager.Info(LOG_TAG, "카드 제거됨 - ID: {0}", cardUI.CardId);
-                    cardUI.transform.SetParent(null);
-                    cardUI.gameObject.SetActive(false);
-                }
+                Destroy(cardObj);
             }
-            activeCardUIs.Clear();
-        }
-
-        private void OnDestroy()
-        {
-            foreach (var cardUI in cardUIDict.Values)
-            {
-                if (cardUI != null)
-                {
-                    Destroy(cardUI.gameObject);
-                }
-            }
-            cardUIDict.Clear();
-            activeCardUIs.Clear();
+            activeCardObjects.Clear();
         }
     }
-} 
+}

@@ -53,16 +53,10 @@ namespace InvaderInsider.Managers
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "ResourceManager 인스턴스 생성됨");
-                #endif
                 InitializeManager();
             }
             else if (instance != this)
             {
-                #if UNITY_EDITOR
-                Debug.Log(LOG_PREFIX + "중복 ResourceManager 인스턴스 파괴됨");
-                #endif
                 Destroy(gameObject);
                 return;
             }
@@ -80,7 +74,7 @@ namespace InvaderInsider.Managers
             int currentEData = saveDataManager.GetCurrentEData();
             if (currentEData < amount) return false;
 
-            saveDataManager.UpdateEData(-amount);
+            saveDataManager.UpdateEData(-amount, false); // 즉시 저장 안함
             OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
             return true;
         }
@@ -94,16 +88,7 @@ namespace InvaderInsider.Managers
         {
             if (saveDataManager == null || amount <= 0) return;
 
-            if (saveImmediately)
-            {
-                saveDataManager.UpdateEData(amount);
-            }
-            else
-            {
-                // 저장하지 않고 EData만 업데이트 (적 처치 시 사용)
-                saveDataManager.UpdateEDataWithoutSave(amount);
-            }
-            
+            saveDataManager.UpdateEData(amount, saveImmediately);
             OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
         }
 
@@ -112,9 +97,6 @@ namespace InvaderInsider.Managers
             return saveDataManager?.GetCurrentEData() ?? 0;
         }
 
-        /// <summary>
-        /// EData를 특정 값으로 설정 (SaveDataManager에 이 기능이 없으므로 직접 계산)
-        /// </summary>
         public void SetEData(int amount)
         {
             if (saveDataManager == null) return;
@@ -124,7 +106,7 @@ namespace InvaderInsider.Managers
             
             if (difference != 0)
             {
-                saveDataManager.UpdateEData(difference);
+                saveDataManager.UpdateEData(difference, true); // 즉시 저장
                 OnEDataChanged?.Invoke(saveDataManager.GetCurrentEData());
             }
         }
@@ -139,4 +121,4 @@ namespace InvaderInsider.Managers
             isQuitting = true;
         }
     }
-} 
+}
