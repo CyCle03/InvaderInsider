@@ -40,10 +40,29 @@ namespace InvaderInsider.UI
 
         public enum HandSortType { None, ByType, ByCost, ByRarity, ByName }
 
+        public void OpenPopup()
+        {
+            if (isPopupOpen || !isInitialized) return;
+
+            Show(); // BasePanel의 Show() 호출
+            isPopupOpen = true;
+            UpdatePopupContent(cardManager.GetHandCardIds());
+        }
+
+        public void ClosePopup()
+        {
+            if (!isPopupOpen) return;
+
+            Hide(); // BasePanel의 Hide() 호출
+            isPopupOpen = false;
+            ClearHandItems();
+        }
+
         protected override void Initialize()
         {
             if (isInitialized) return;
 
+            base.Initialize();
             cardManager = CardManager.Instance;
             if (cardManager == null)
             {
@@ -57,58 +76,20 @@ namespace InvaderInsider.UI
                 return;
             }
             
+            // UIManager를 통해 CardDetailView 가져오기
+            cardDetailView = UIManager.Instance?.GetPanel("CardDetailView") as CardDetailView;
             if (cardDetailView == null)
             {
-                cardDetailView = FindObjectOfType<CardDetailView>(true);
-                if (cardDetailView == null)
-                {
-                    Debug.LogError($"{LOG_TAG} CardDetailView를 찾을 수 없습니다.");
-                    return;
-                }
+                Debug.LogError($"{LOG_TAG} CardDetailView를 찾을 수 없습니다.");
+                return;
             }
 
             InitializeCardDisplayPool();
             SetupButtons();
-            popupOverlay.SetActive(false);
 
             cardManager.OnHandCardsChanged += OnHandDataChanged;
 
             isInitialized = true;
-        }
-
-        private void OnDestroy()
-        {
-            if (cardManager != null)
-            {
-                cardManager.OnHandCardsChanged -= OnHandDataChanged;
-            }
-        }
-
-        private void SetupButtons()
-        {
-            closeButton?.onClick.AddListener(ClosePopup);
-            sortByTypeButton?.onClick.AddListener(() => SortHand(HandSortType.ByType));
-            sortByCostButton?.onClick.AddListener(() => SortHand(HandSortType.ByCost));
-            sortByRarityButton?.onClick.AddListener(() => SortHand(HandSortType.ByRarity));
-            sortByNameButton?.onClick.AddListener(() => SortHand(HandSortType.ByName));
-        }
-
-        public void OpenPopup()
-        {
-            if (isPopupOpen || !isInitialized) return;
-
-            popupOverlay.SetActive(true);
-            isPopupOpen = true;
-            UpdatePopupContent(cardManager.GetHandCardIds());
-        }
-
-        public void ClosePopup()
-        {
-            if (!isPopupOpen) return;
-
-            popupOverlay.SetActive(false);
-            isPopupOpen = false;
-            ClearHandItems();
         }
 
         private void OnHandDataChanged(List<int> handCardIds)

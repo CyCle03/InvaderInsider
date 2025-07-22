@@ -166,7 +166,7 @@ namespace InvaderInsider.Managers
             if (CurrentGameState != GameState.Playing) return;
             Time.timeScale = 0f;
             SetGameState(GameState.Paused);
-            if (showPauseUI) uiManager?.ShowPanel("PausePanel"); // PausePanel의 GameObject 이름이 "PausePanel"이라고 가정
+            if (showPauseUI) uiManager?.ShowPanelConcurrent("Pause");
         }
 
         public void ResumeGame()
@@ -174,7 +174,7 @@ namespace InvaderInsider.Managers
             if (CurrentGameState != GameState.Paused) return;
             Time.timeScale = 1f;
             SetGameState(GameState.Playing);
-            uiManager?.HidePanel("PausePanel");
+            uiManager?.HidePanel("Pause");
         }
 
         public void GameOver()
