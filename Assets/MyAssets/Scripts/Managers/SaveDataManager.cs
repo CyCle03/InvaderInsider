@@ -453,6 +453,10 @@ namespace InvaderInsider.Data
         {
             if (amount == 0) return;
             currentSaveData.progressData.currentEData += amount;
+
+            // GameManager를 통해 UI 업데이트 요청
+            GameManager.Instance?.UpdateEData(currentSaveData.progressData.currentEData, false);
+
             if (saveImmediately)
             {
                 SaveGameData();

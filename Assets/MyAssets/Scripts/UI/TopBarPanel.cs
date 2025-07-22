@@ -50,11 +50,30 @@ namespace InvaderInsider.UI
             }
         }
 
+        protected override void OnShow()
+        {
+            base.OnShow();
+            UpdateUI();
+        }
+
         private void UpdateUI()
         {
-            // 초기 UI 업데이트 (GameManager에서 호출될 때까지 기본값 표시)
-            UpdateStageWaveUI(1, 0, 0); // 예시: Stage 1, Wave 0/0
-            UpdateEData(0); // 예시: eData: 0
+            // SaveDataManager에서 EData 가져오기
+            int currentEData = SaveDataManager.Instance?.CurrentSaveData?.currencyData.eData ?? 0;
+            UpdateEData(currentEData);
+
+            // StageManager에서 스테이지 및 웨이브 정보 가져오기
+            // StageManager가 게임 씬에만 존재하므로 null 체크 필요
+            StageManager stageManager = StageManager.Instance;
+            if (stageManager != null)
+            {
+                UpdateStageWaveUI(stageManager.CurrentStageNumber, stageManager.CurrentWaveNumber, stageManager.MaxWaveNumber);
+            }
+            else
+            {
+                // StageManager가 없을 경우 (예: 메인 메뉴 씬) 기본값 표시
+                UpdateStageWaveUI(1, 0, 0);
+            }
         }
     }
 }
