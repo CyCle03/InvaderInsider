@@ -58,41 +58,41 @@ namespace InvaderInsider.Managers
         private static void Initialize()
         {
             // Unity 로그 시스템 완전 비활성화 - 더 강력한 방법
-            try 
-            {
-                Debug.unityLogger.logEnabled = false;
-                Debug.unityLogger.filterLogType = LogType.Exception;
-                Debug.unityLogger.logEnabled = false;
+            // try 
+            // {
+            //     Debug.unityLogger.logEnabled = false;
+            //     Debug.unityLogger.filterLogType = LogType.Exception;
+            //     Debug.unityLogger.logEnabled = false;
                 
-                // 리플렉션을 통한 추가 차단 시도
-                var unityLoggerType = typeof(UnityEngine.Logger);
-                var logEnabledProperty = unityLoggerType.GetProperty("logEnabled");
-                if (logEnabledProperty != null)
-                {
-                    logEnabledProperty.SetValue(Debug.unityLogger, false);
-                    logEnabledProperty.SetValue(Debug.unityLogger, false);
-                }
-            }
-            catch (System.Exception)
-            {
-                // 리플렉션 실패 시 무시
-            }
+            //     // 리플렉션을 통한 추가 차단 시도
+            //     var unityLoggerType = typeof(UnityEngine.Logger);
+            //     var logEnabledProperty = unityLoggerType.GetProperty("logEnabled");
+            //     if (logEnabledProperty != null)
+            //     {
+            //         logEnabledProperty.SetValue(Debug.unityLogger, false);
+            //         logEnabledProperty.SetValue(Debug.unityLogger, false);
+            //     }
+            // }
+            // catch (System.Exception)
+            // {
+            //     // 리플렉션 실패 시 무시
+            // }
             
             // 추가 안전장치 - 로그 수신기로 차단
-            Application.logMessageReceived -= OnLogReceived;
-            Application.logMessageReceived += OnLogReceived;
+            // Application.logMessageReceived -= OnLogReceived;
+            // Application.logMessageReceived += OnLogReceived;
         }
         
         // Unity 로그 메시지 필터링
-        private static void OnLogReceived(string logString, string stackTrace, LogType type)
-        {
-            // Force 로그가 아닌 모든 로그 차단
-            if (!logString.StartsWith("[FORCE]") && !logString.StartsWith("=== FORCE LOG:"))
-            {
-                // 강제로 로그 출력 차단 - 이미 출력된 후지만 추가 처리 방지
-                return;
-            }
-        }
+        // private static void OnLogReceived(string logString, string stackTrace, LogType type)
+        // {
+        //     // Force 로그가 아닌 모든 로그 차단
+        //     if (!logString.StartsWith("[FORCE]") && !logString.StartsWith("=== FORCE LOG:"))
+        //     {
+        //         // 강제로 로그 출력 차단 - 이미 출력된 후지만 추가 처리 방지
+        //         return;
+        //     }
+        // }
         
         // 전역 로그 필터링 토글
         public static void SetGlobalLogLevel(LogLevel level)
