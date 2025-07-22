@@ -213,5 +213,14 @@ namespace InvaderInsider.Managers
         {
             SaveDataManager.Instance?.UpdateEData(amount, saveImmediately);
         }
+
+        public void UpdateEDataUI(int amount)
+        {
+            var topBarPanel = uiManager?.GetPanel("TopBar") as TopBarPanel;
+            if (topBarPanel != null)
+            {
+                topBarPanel.UpdateEData(amount);
+            }
+        }
     }
 }

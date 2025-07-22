@@ -350,22 +350,24 @@ namespace InvaderInsider.Data
         public bool HasSaveData()
         {
             bool fileExists = File.Exists(SAVE_KEY);
-            if (!fileExists) return false;
-
-            try
+            if (fileExists)
             {
-                LoadGameData();
-                bool hasGameProgress = currentSaveData != null && 
-                    (currentSaveData.progressData.highestStageCleared >= 0 || 
-                     currentSaveData.progressData.currentEData > 100);
-                
-                return hasGameProgress;
+                try
+                {
+                    LoadGameData();
+                    bool hasGameProgress = currentSaveData != null && 
+                        (currentSaveData.progressData.highestStageCleared >= 0 || 
+                         currentSaveData.progressData.currentEData > 100);
+                    
+                    return hasGameProgress;
+                }
+                catch (Exception e)
+                {
+                    LogManager.LogSave("데이터 확인", e.Message, true);
+                    return false;
+                }
             }
-            catch (Exception e)
-            {
-                LogManager.LogSave("데이터 확인", e.Message, true);
-                return false;
-            }
+            return false;
         }
 
         public void ResetGameData()
@@ -455,7 +457,7 @@ namespace InvaderInsider.Data
             currentSaveData.progressData.currentEData += amount;
 
             // GameManager를 통해 UI 업데이트 요청
-            GameManager.Instance?.UpdateEData(currentSaveData.progressData.currentEData, false);
+            GameManager.Instance?.UpdateEDataUI(currentSaveData.progressData.currentEData);
 
             if (saveImmediately)
             {

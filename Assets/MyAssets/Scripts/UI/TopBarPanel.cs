@@ -59,7 +59,7 @@ namespace InvaderInsider.UI
         private void UpdateUI()
         {
             // SaveDataManager에서 EData 가져오기
-            int currentEData = SaveDataManager.Instance?.CurrentSaveData?.currencyData.eData ?? 0;
+            int currentEData = SaveDataManager.Instance?.CurrentSaveData?.progressData.currentEData ?? 0;
             UpdateEData(currentEData);
 
             // StageManager에서 스테이지 및 웨이브 정보 가져오기
@@ -67,7 +67,7 @@ namespace InvaderInsider.UI
             StageManager stageManager = StageManager.Instance;
             if (stageManager != null)
             {
-                UpdateStageWaveUI(stageManager.CurrentStageNumber, stageManager.CurrentWaveNumber, stageManager.MaxWaveNumber);
+                UpdateStageWaveUI(stageManager.GetCurrentStageIndex() + 1, stageManager.GetSpawnedEnemyCount(), stageManager.GetStageWaveCount(stageManager.GetCurrentStageIndex()));
             }
             else
             {
