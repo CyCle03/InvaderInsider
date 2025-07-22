@@ -151,6 +151,8 @@ namespace InvaderInsider.Managers
                 {
                     stageManager.StartStageFrom(startStageIndex);
                     SetGameState(GameState.Playing);
+                    // 스테이지 시작 후 UI를 즉시 업데이트
+                    UpdateStageWaveUI(stageManager.GetCurrentStageIndex() + 1, stageManager.GetSpawnedEnemyCount(), stageManager.GetStageWaveCount(stageManager.GetCurrentStageIndex()));
                 }
                 else
                 {
@@ -202,7 +204,7 @@ namespace InvaderInsider.Managers
         {
             // UIManager를 통해 TopBarPanel의 UI를 업데이트하는 예시
             // TopBarPanel의 GameObject 이름이 "TopBarPanel"이라고 가정
-            var topBarPanel = uiManager?.GetPanel("TopBarPanel") as TopBarPanel;
+            var topBarPanel = uiManager?.GetPanel("TopBar") as TopBarPanel;
             if (topBarPanel != null)
             {
                 topBarPanel.UpdateStageWaveUI(stage, currentWave, maxWave);
