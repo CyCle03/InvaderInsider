@@ -94,16 +94,26 @@ namespace InvaderInsider.Managers
                 }
             }
 
-            // 씬에 따라 초기 표시할 패널을 결정합니다.
+            // 모든 패널을 비활성화합니다.
+            foreach (BasePanel panel in allPanels)
+            {
+                if (panel != null)
+                {
+                    panel.gameObject.SetActive(false);
+                }
+            }
+
+            // 씬에 따라 필요한 패널만 활성화합니다.
             if (sceneName == "Main")
             {
-                uiManager.ShowPanel("MainMenuPanel"); // MainMenuPanel의 GameObject 이름이 "MainMenuPanel"이라고 가정
+                uiManager.ShowPanel("MainMenu");
             }
             else if (sceneName == "Game")
             {
-                uiManager.ShowPanel("InGamePanel"); // InGamePanel의 GameObject 이름이 "InGamePanel"이라고 가정
+                uiManager.ShowPanelConcurrent("TopBar");
+                uiManager.ShowPanelConcurrent("BottomBar");
+                uiManager.ShowPanelConcurrent("InGame");
             }
-            // 다른 씬에 대한 초기화 로직 추가 가능
         }
 
         public void SetGameState(GameState newState)
