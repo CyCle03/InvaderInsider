@@ -6,12 +6,11 @@ using InvaderInsider.Cards;
 
 namespace InvaderInsider.UI
 {
-    public class CardDetailView : MonoBehaviour
+    public class CardDetailView : BasePanel
     {
         private const string LOG_TAG = "[CardDetailView]";
 
         [Header("UI Elements")]
-        [SerializeField] private GameObject detailViewOverlay;
         [SerializeField] private Image cardArtwork;
         [SerializeField] private TextMeshProUGUI cardNameText;
         [SerializeField] private TextMeshProUGUI cardDescriptionText;
@@ -22,19 +21,9 @@ namespace InvaderInsider.UI
         private CardDBObject currentCard;
         private CardManager cardManager;
 
-        void Start()
+        protected override void Initialize()
         {
-            Initialize();
-        }
-
-        private void OnDestroy()
-        {
-            closeButton?.onClick.RemoveListener(HideView);
-            playButton?.onClick.RemoveListener(PlayCard);
-        }
-
-        private void Initialize()
-        {
+            base.Initialize();
             cardManager = CardManager.Instance;
             if (cardManager == null)
             {
@@ -43,7 +32,12 @@ namespace InvaderInsider.UI
 
             closeButton?.onClick.AddListener(HideView);
             playButton?.onClick.AddListener(PlayCard);
-            detailViewOverlay.SetActive(false);
+        }
+
+        private void OnDestroy()
+        {
+            closeButton?.onClick.RemoveListener(HideView);
+            playButton?.onClick.RemoveListener(PlayCard);
         }
 
         public void ShowCard(CardDBObject cardData)
@@ -65,16 +59,16 @@ namespace InvaderInsider.UI
                 cardDescriptionText.text = cardData.description;
             }
             if (cardStatsText != null)
-            {
+            { 
                 cardStatsText.text = $"Cost: {cardData.cost} | Rarity: {cardData.rarity}";
             }
 
-            detailViewOverlay.SetActive(true);
+            Show();
         }
 
         private void HideView()
         {
-            detailViewOverlay.SetActive(false);
+            Hide();
             currentCard = null;
         }
 
@@ -86,9 +80,6 @@ namespace InvaderInsider.UI
                 return;
             }
 
-            // CardManager에 카드 사용 요청
-            // 이 부분은 CardManager의 기능에 따라 구현이 달라질 수 있습니다.
-            // 예를 들어, OnCardChoiceSelected를 재사용하거나 새로운 메서드를 호출할 수 있습니다.
             cardManager.OnCardChoiceSelected(currentCard);
 
             HideView();

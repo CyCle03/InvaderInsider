@@ -155,7 +155,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00026253125}
+  m_AnchoredPosition: {x: 0, y: -0.00002142514}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &12717312
@@ -9013,6 +9013,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc28007e40c325b40810c0ebdafa5836, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  canvasGroup: {fileID: 1542351017}
+  fadeTime: 0.3
+  panelName: HandIconDisplay
   iconContainer: {fileID: 1542351013}
   cardIconPrefab: {fileID: 8648927465063959935, guid: e393e27e19af07b46a32f9437841b8c8, type: 3}
   openHandPanelButton: {fileID: 1542351020}
@@ -9673,6 +9676,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1649682369}
   - component: {fileID: 1649682370}
+  - component: {fileID: 1649682371}
   m_Layer: 5
   m_Name: CardDetailView
   m_TagString: Untagged
@@ -9714,13 +9718,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e171132f1aeb6d343b0831e7fa80f39e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  detailViewOverlay: {fileID: 0}
+  canvasGroup: {fileID: 1649682371}
+  fadeTime: 0.3
+  panelName: CardDetailView
   cardArtwork: {fileID: 6467282149869894230}
   cardNameText: {fileID: 2172910406947669433}
   cardDescriptionText: {fileID: 0}
   cardStatsText: {fileID: 0}
   closeButton: {fileID: 603425936}
   playButton: {fileID: 673708793}
+--- !u!225 &1649682371
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1649682368}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1001 &1667510110
 PrefabInstance:
   m_ObjectHideFlags: 0

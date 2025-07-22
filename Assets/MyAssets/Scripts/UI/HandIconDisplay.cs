@@ -7,7 +7,7 @@ using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
-    public class HandIconDisplay : MonoBehaviour
+    public class HandIconDisplay : BasePanel
     {
         private const string LOG_TAG = "[HandIconDisplay]";
 
@@ -23,22 +23,9 @@ namespace InvaderInsider.UI
         private readonly List<GameObject> currentIconItems = new List<GameObject>();
         private bool isInitialized = false;
 
-        void Start()
+        protected override void Initialize()
         {
-            Initialize();
-        }
-
-        private void OnDestroy()
-        {
-            if (cardManager != null)
-            {
-                cardManager.OnHandCardsChanged -= OnHandDataChanged;
-            }
-            openHandPanelButton?.onClick.RemoveListener(OpenHandDisplayPanel);
-        }
-
-        private void Initialize()
-        {
+            base.Initialize();
             if (isInitialized) return;
 
             cardManager = CardManager.Instance;
@@ -65,6 +52,15 @@ namespace InvaderInsider.UI
             OnHandDataChanged(cardManager.GetHandCardIds());
 
             isInitialized = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (cardManager != null)
+            {
+                cardManager.OnHandCardsChanged -= OnHandDataChanged;
+            }
+            openHandPanelButton?.onClick.RemoveListener(OpenHandDisplayPanel);
         }
 
         private void OnHandDataChanged(List<int> handCardIds)
