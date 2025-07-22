@@ -126,7 +126,7 @@ namespace InvaderInsider.Cards
             if (summonChoicePanel != null)
             {
                 summonChoicePanel.SetupCards(choices);
-                summonChoicePanel.gameObject.SetActive(true);
+                UIManager.Instance?.ShowPanel("SummonChoice");
             }
             else
             {
@@ -139,7 +139,7 @@ namespace InvaderInsider.Cards
             var summonChoicePanel = FindObjectOfType<SummonChoicePanel>();
             if (summonChoicePanel != null)
             {
-                summonChoicePanel.gameObject.SetActive(false);
+                UIManager.Instance?.HidePanel("SummonChoice");
             }
 
             if (selectedCard != null)
