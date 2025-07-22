@@ -68,6 +68,7 @@ namespace InvaderInsider.UI
             }
             else
             {
+                Debug.LogError($"{LOG_TAG} cardButtonPrefab에 CardButton 컴포넌트 또는 Button 컴포넌트가 없습니다. 프리팹을 확인하세요. (CardButton: {cardButtonComponent != null}, Button: {button != null})");
                 Destroy(buttonObj);
             }
         }

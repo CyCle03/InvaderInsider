@@ -55,19 +55,16 @@ namespace InvaderInsider.UI
             cardData = card;
 
             // UI 요소 유효성 검사 (경고만 출력, 계속 진행)
-            ValidateRequiredReferences();
+            if (!ValidateRequiredReferences())
+            {
+                LogManager.Error("CardButton", $"필수 UI 요소가 누락되어 카드 버튼 초기화에 실패했습니다. 카드: {card.cardName}");
+                return; // 필수 요소가 없으면 더 이상 진행하지 않음
+            }
 
             // UI 업데이트 실행 (필수 요소가 없어도 가능한 부분만 업데이트)
             UpdateUIWithNullCheck();
 
-            if (HasMissingRequiredElements())
-            {
-                LogManager.Warning("CardButton", $"필수 요소 누락으로 제한된 초기화를 수행했습니다. 카드: {card.cardName}");
-            }
-            else
-            {
-                LogManager.Info("CardButton", $"초기화 완료 - {card.cardName}");
-            }
+            LogManager.Info("CardButton", $"초기화 완료 - {card.cardName}");
         }
 
         /// <summary>
