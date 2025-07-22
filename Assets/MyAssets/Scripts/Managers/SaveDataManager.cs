@@ -229,7 +229,6 @@ namespace InvaderInsider.Data
             if (ENABLE_LOGS) Debug.Log(LOG_PREFIX + message);
 #endif
         }
-        
         private static string SAVE_KEY => Path.Combine(Application.persistentDataPath, "GameSaveData.json");
         private static string SETTINGS_SAVE_KEY => Path.Combine(Application.persistentDataPath, "GameSettings.json");
         
@@ -329,6 +328,11 @@ namespace InvaderInsider.Data
 
         private void OnApplicationQuit()
         {
+            if (_instance == this)
+            {
+                _instance = null;
+            }
+
             if (currentSaveData != null && Application.isPlaying)
             {
                 try 
@@ -339,11 +343,6 @@ namespace InvaderInsider.Data
                 {
                     Debug.LogError(LOG_PREFIX + "게임 종료 시 저장 실패: " + e.Message);
                 }
-            }
-            
-            if (_instance == this)
-            {
-                _instance = null;
             }
         }
 
