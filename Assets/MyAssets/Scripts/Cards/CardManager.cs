@@ -122,7 +122,7 @@ namespace InvaderInsider.Cards
 
         private void DisplaySummonChoices(List<CardDBObject> choices)
         {
-            var summonChoicePanel = FindObjectOfType<SummonChoicePanel>();
+            var summonChoicePanel = UIManager.Instance?.GetPanel("SummonChoice") as SummonChoicePanel;
             if (summonChoicePanel != null)
             {
                 summonChoicePanel.SetupCards(choices);
