@@ -90,8 +90,6 @@ namespace InvaderInsider.Managers
             {
                 if (panel != null)
                 {
-                    // 패널을 비활성화 상태로 시작
-                    panel.gameObject.SetActive(false);
                     uiManager.RegisterPanel(panel.name, panel); // 패널의 GameObject 이름을 키로 사용
                 }
             }

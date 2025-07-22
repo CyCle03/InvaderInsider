@@ -28,6 +28,9 @@ namespace InvaderInsider.UI
         [Header("Data References")]
         [SerializeField] private CardDatabase cardDatabase;
 
+        [Header("Panel References")]
+        [SerializeField] private CardDetailView cardDetailView;
+
         private readonly List<GameObject> currentHandItems = new List<GameObject>();
         private readonly Queue<GameObject> cardDisplayPool = new Queue<GameObject>();
         private CardManager cardManager;
@@ -52,6 +55,16 @@ namespace InvaderInsider.UI
             {
                 Debug.LogError($"{LOG_TAG} CardDatabase가 할당되지 않았습니다.");
                 return;
+            }
+            
+            if (cardDetailView == null)
+            {
+                cardDetailView = FindObjectOfType<CardDetailView>(true);
+                if (cardDetailView == null)
+                {
+                    Debug.LogError($"{LOG_TAG} CardDetailView를 찾을 수 없습니다.");
+                    return;
+                }
             }
 
             InitializeCardDisplayPool();
@@ -129,15 +142,22 @@ namespace InvaderInsider.UI
                 var display = cardObj.GetComponent<CardDisplay>();
                 display?.SetupCard(cardData);
 
-                var handler = cardObj.GetComponent<CardInteractionHandler>();
-                if (handler != null)
+                // Handle interaction via a simple button click to show details
+                var cardButton = cardObj.GetComponent<Button>();
+                if (cardButton != null)
                 {
-                    handler.OnCardPlayInteractionCompleted.RemoveAllListeners(); // 기존 리스너 제거
-                    handler.OnCardPlayInteractionCompleted.AddListener(HandleCardPlayInteractionCompleted);
+                    cardButton.onClick.RemoveAllListeners();
+                    cardButton.onClick.AddListener(() => ShowCardDetails(cardData));
                 }
 
                 currentHandItems.Add(cardObj);
             }
+        }
+
+        private void ShowCardDetails(CardDBObject cardData)
+        {
+            cardDetailView.ShowCard(cardData);
+            ClosePopup();
         }
 
         private void UpdateTitle(int handCount)
@@ -182,47 +202,21 @@ namespace InvaderInsider.UI
             return sortedIds;
         }
 
-        private void HandleCardPlayInteractionCompleted(CardDisplay playedCardDisplay, CardPlacementResult result)
-        {
-            if (!isInitialized || cardManager == null) return;
-
-            var playedCardData = playedCardDisplay.GetCardData();
-            if (playedCardData == null) return;
-
-            if (result == CardPlacementResult.Success_Place || result == CardPlacementResult.Success_Upgrade)
-            {
-                // 핸드에서 카드를 제거하는 로직은 이제 필요 없습니다.
-                // 카드는 항상 핸드에 남아있습니다.
-            }
-        }
-
         private void ClearHandItems()
         {
             foreach (var item in currentHandItems)
             {
                 if (item != null)
                 {
-                    var handler = item.GetComponent<CardInteractionHandler>();
-                    if (handler != null)
+                    var button = item.GetComponent<Button>();
+                    if (button != null)
                     {
-                        handler.OnCardPlayInteractionCompleted.RemoveAllListeners();
+                        button.onClick.RemoveAllListeners();
                     }
                     ReturnPooledCard(item);
                 }
             }
             currentHandItems.Clear();
-        }
-
-        protected override void OnShow()
-        {
-            base.OnShow();
-            OpenPopup();
-        }
-
-        protected override void OnHide()
-        {
-            base.OnHide();
-            ClosePopup();
         }
 
         #region Object Pool
