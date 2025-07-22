@@ -92,6 +92,15 @@ namespace InvaderInsider.UI
             isInitialized = true;
         }
 
+        private void SetupButtons()
+        {
+            closeButton?.onClick.AddListener(ClosePopup);
+            sortByTypeButton?.onClick.AddListener(() => SortHand(HandSortType.ByType));
+            sortByCostButton?.onClick.AddListener(() => SortHand(HandSortType.ByCost));
+            sortByRarityButton?.onClick.AddListener(() => SortHand(HandSortType.ByRarity));
+            sortByNameButton?.onClick.AddListener(() => SortHand(HandSortType.ByName));
+        }
+
         private void OnHandDataChanged(List<int> handCardIds)
         {
             if (isPopupOpen)
