@@ -49,7 +49,12 @@ namespace InvaderInsider.UI
             Show(); // BasePanel의 Show() 호출
             isPopupOpen = true;
             UpdatePopupContent(cardManager.GetHandCardIds());
-            LogManager.Log($"{LOG_TAG} Popup opened.");
+            LogManager.Log($"{LOG_TAG} Popup opened. CloseButton interactable: {closeButton?.interactable}, PopupOverlay active: {popupOverlay?.activeSelf}");
+            CanvasGroup popupCanvasGroup = popupOverlay?.GetComponent<CanvasGroup>();
+            if (popupCanvasGroup != null)
+            {
+                LogManager.Log($"{LOG_TAG} PopupOverlay CanvasGroup blocksRaycasts: {popupCanvasGroup.blocksRaycasts}");
+            }
         }
 
         public void ClosePopup()
