@@ -77,7 +77,16 @@ namespace InvaderInsider.UI
             }
             currentIconItems.Clear();
 
-            if (iconContainer == null || cardIconPrefab == null) return;
+            if (iconContainer == null)
+            {
+                LogManager.LogError($"{LOG_TAG} iconContainer가 할당되지 않았습니다. Inspector를 확인하세요.");
+                return;
+            }
+            if (cardIconPrefab == null)
+            {
+                LogManager.LogError($"{LOG_TAG} cardIconPrefab이 할당되지 않았습니다. Inspector를 확인하세요.");
+                return;
+            }
 
             if (handCardIds.Count > 0)
             {
@@ -111,6 +120,7 @@ namespace InvaderInsider.UI
 
         private void OpenHandDisplayPanel()
         {
+            LogManager.Log($"{LOG_TAG} OpenHandDisplayPanel called.");
             handDisplayPanel?.OpenPopup();
         }
     }

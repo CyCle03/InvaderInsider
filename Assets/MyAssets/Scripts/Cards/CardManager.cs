@@ -145,6 +145,17 @@ namespace InvaderInsider.Cards
 
             if (selectedCard != null)
             {
+                // eData 차감
+                if (SaveDataManager.Instance != null)
+                {
+                    SaveDataManager.Instance.UpdateEData(-selectedCard.cost, true);
+                    LogManager.Log($"{LOG_TAG} eData {selectedCard.cost} 차감됨. 현재 eData: {SaveDataManager.Instance.CurrentSaveData.progressData.currentEData}");
+                }
+                else
+                {
+                    LogManager.LogError($"{LOG_TAG} SaveDataManager 인스턴스를 찾을 수 없어 eData를 차감할 수 없습니다.");
+                }
+
                 AddCardToHand(selectedCard.cardId);
             }
         }

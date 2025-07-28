@@ -22,6 +22,7 @@ namespace InvaderInsider.UI
 
         protected override void Initialize()
         {
+            LogManager.Log($"[SettingsPanel] Initialize called. audioMixer is null: {audioMixer == null}");
             base.Initialize();
             SetupUI();
             LoadSettings();
@@ -39,6 +40,7 @@ namespace InvaderInsider.UI
 
         private void LoadSettings()
         {
+            LogManager.Log($"[SettingsPanel] LoadSettings called. audioMixer is null: {audioMixer == null}");
             if (masterVolumeSlider != null) masterVolumeSlider.value = PlayerPrefs.GetFloat("MasterVolume", 0.75f);
             if (musicVolumeSlider != null) musicVolumeSlider.value = PlayerPrefs.GetFloat("MusicVolume", 0.75f);
             if (sfxVolumeSlider != null) sfxVolumeSlider.value = PlayerPrefs.GetFloat("SfxVolume", 0.75f);
@@ -47,16 +49,19 @@ namespace InvaderInsider.UI
 
         private void OnMasterVolumeChanged(float volume)
         {
+            LogManager.Log($"[SettingsPanel] OnMasterVolumeChanged called. audioMixer is null: {audioMixer == null}");
             if (audioMixer != null) audioMixer.SetFloat("MasterVolume", Mathf.Log10(volume) * 20f);
         }
 
         private void OnMusicVolumeChanged(float volume)
         {
+            LogManager.Log($"[SettingsPanel] OnMusicVolumeChanged called. audioMixer is null: {audioMixer == null}");
             if (audioMixer != null) audioMixer.SetFloat("MusicVolume", Mathf.Log10(volume) * 20f);
         }
 
         private void OnSfxVolumeChanged(float volume)
         {
+            LogManager.Log($"[SettingsPanel] OnSfxVolumeChanged called. audioMixer is null: {audioMixer == null}");
             if (audioMixer != null) audioMixer.SetFloat("SfxVolume", Mathf.Log10(volume) * 20f);
         }
 
