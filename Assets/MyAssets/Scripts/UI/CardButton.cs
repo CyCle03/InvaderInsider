@@ -33,14 +33,14 @@ namespace InvaderInsider.UI
          {
              if (card == null)
              {
-                 LogManager.Error("CardButton", "초기화할 카드 데이터가 null입니다.");
+                 LogManager.LogError("[CardButton] 초기화할 카드 데이터가 null입니다.");
                  return;
              }
 
              // 시각적 업데이트는 CardDisplay에 위임
              cardDisplay?.SetupCard(card);
 
-             LogManager.Info("CardButton", $"초기화 완료 - {card.cardName}");
+             LogManager.Log($"[CardButton] 초기화 완료 - {card.cardName}");
          }
 
          public void SetInteractable(bool interactable)

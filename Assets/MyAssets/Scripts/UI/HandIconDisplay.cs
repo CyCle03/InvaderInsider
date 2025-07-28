@@ -32,7 +32,7 @@ namespace InvaderInsider.UI
             cardManager = CardManager.Instance;
             if (cardManager == null)
             {
-                Debug.LogError($"{LOG_TAG} CardManager 인스턴스를 찾을 수 없습니다.");
+                LogManager.LogError($"{LOG_TAG} CardManager 인스턴스를 찾을 수 없습니다.");
                 return;
             }
 
@@ -41,7 +41,7 @@ namespace InvaderInsider.UI
                 handDisplayPanel = FindObjectOfType<HandDisplayPanel>(true);
                  if (handDisplayPanel == null)
                  {
-                    Debug.LogError($"{LOG_TAG} HandDisplayPanel을 찾을 수 없습니다.");
+                    LogManager.LogError($"{LOG_TAG} HandDisplayPanel을 찾을 수 없습니다.");
                     return;
                  }
             }

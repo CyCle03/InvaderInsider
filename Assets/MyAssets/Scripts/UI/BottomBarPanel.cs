@@ -154,7 +154,7 @@ namespace InvaderInsider.UI
             #if UNITY_EDITOR
             if (gameOverPanel == null)
             {
-                LogManager.Warning("BottomBar", "gameOverPanel이 할당되지 않았습니다. 게임 오버 UI가 표시되지 않습니다.");
+                LogManager.LogWarning("[BottomBar] gameOverPanel이 할당되지 않았습니다. 게임 오버 UI가 표시되지 않습니다.");
             }
             #endif
 

@@ -314,7 +314,7 @@ namespace InvaderInsider.Data
             
             if (currentSaveData == null)
             {
-                LogManager.LogSave("초기화", "currentSaveData가 null입니다", true);
+                LogManager.LogError("초기화: currentSaveData가 null입니다");
             }
         }
 
@@ -362,7 +362,7 @@ namespace InvaderInsider.Data
                 }
                 catch (Exception e)
                 {
-                    LogManager.LogSave("데이터 확인", e.Message, true);
+                    LogManager.LogError($"데이터 확인: {e.Message}");
                     return false;
                 }
             }
@@ -393,7 +393,7 @@ namespace InvaderInsider.Data
             }
             catch (Exception e)
             {
-                LogManager.LogSave("데이터 저장", e.Message, true);
+                LogManager.LogError($"데이터 저장: {e.Message}");
             }
         }
 
@@ -410,7 +410,7 @@ namespace InvaderInsider.Data
                     
                     if (currentSaveData == null)
                     {
-                        LogManager.LogSave("로드", "역직렬화 실패", true);
+                        LogManager.LogError("로드: 역직렬화 실패");
                         currentSaveData = new SaveData();
                     }
                 }
@@ -421,7 +421,7 @@ namespace InvaderInsider.Data
             }
             catch (Exception e)
             {
-                LogManager.LogSave("데이터 로드", e.Message, true);
+                LogManager.LogError($"데이터 로드: {e.Message}");
                 currentSaveData = new SaveData();
             }
         }

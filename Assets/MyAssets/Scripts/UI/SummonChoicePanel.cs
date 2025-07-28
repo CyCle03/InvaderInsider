@@ -31,7 +31,7 @@ namespace InvaderInsider.UI
             cardManager = CardManager.Instance;
             if (cardManager == null)
             {
-                Debug.LogError($"{LOG_TAG} CardManager 인스턴스를 찾을 수 없습니다.");
+                LogManager.LogError($"{LOG_TAG} CardManager 인스턴스를 찾을 수 없습니다.");
                 return;
             }
 
@@ -68,7 +68,7 @@ namespace InvaderInsider.UI
             }
             else
             {
-                Debug.LogError($"{LOG_TAG} cardButtonPrefab에 CardButton 컴포넌트 또는 Button 컴포넌트가 없습니다. 프리팹을 확인하세요. (CardButton: {cardButtonComponent != null}, Button: {button != null})");
+                LogManager.LogError($"{LOG_TAG} cardButtonPrefab에 CardButton 컴포넌트 또는 Button 컴포넌트가 없습니다. 프리팹을 확인하세요. (CardButton: {cardButtonComponent != null}, Button: {button != null})");
                 Destroy(buttonObj);
             }
         }

@@ -47,17 +47,17 @@ namespace InvaderInsider.UI
 
         private void OnMasterVolumeChanged(float volume)
         {
-            audioMixer?.SetFloat("MasterVolume", Mathf.Log10(volume) * 20f);
+            if (audioMixer != null) audioMixer.SetFloat("MasterVolume", Mathf.Log10(volume) * 20f);
         }
 
         private void OnMusicVolumeChanged(float volume)
         {
-            audioMixer?.SetFloat("MusicVolume", Mathf.Log10(volume) * 20f);
+            if (audioMixer != null) audioMixer.SetFloat("MusicVolume", Mathf.Log10(volume) * 20f);
         }
 
         private void OnSfxVolumeChanged(float volume)
         {
-            audioMixer?.SetFloat("SfxVolume", Mathf.Log10(volume) * 20f);
+            if (audioMixer != null) audioMixer.SetFloat("SfxVolume", Mathf.Log10(volume) * 20f);
         }
 
         private void OnFullscreenToggleChanged(bool isFullscreen)

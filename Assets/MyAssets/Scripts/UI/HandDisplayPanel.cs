@@ -5,6 +5,7 @@ using InvaderInsider.Data;
 using InvaderInsider.Cards;
 using TMPro;
 using System;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
@@ -66,13 +67,13 @@ namespace InvaderInsider.UI
             cardManager = CardManager.Instance;
             if (cardManager == null)
             {
-                Debug.LogError($"{LOG_TAG} CardManager 인스턴스를 찾을 수 없습니다.");
+                LogManager.LogError($"{LOG_TAG} CardManager 인스턴스를 찾을 수 없습니다.");
                 return;
             }
 
             if (cardDatabase == null)
             {
-                Debug.LogError($"{LOG_TAG} CardDatabase가 할당되지 않았습니다.");
+                LogManager.LogError($"{LOG_TAG} CardDatabase가 할당되지 않았습니다.");
                 return;
             }
 
@@ -83,10 +84,10 @@ namespace InvaderInsider.UI
                 // CardDetailView를 찾지 못하면 비활성화된 오브젝트를 포함해서 다시 찾기
                 cardDetailView = FindObjectOfType<CardDetailView>(true);
                 if (cardDetailView == null)
-                {
-                    Debug.LogError($"{LOG_TAG} CardDetailView를 찾을 수 없습니다.");
-                    return;
-                }
+            {
+                LogManager.LogError($"{LOG_TAG} CardDetailView를 찾을 수 없습니다.");
+                return;
+            }
             }
 
             InitializeCardDisplayPool();

@@ -28,7 +28,7 @@ namespace InvaderInsider.Core
         public static void Log(string message)
         {
             if (!EnableBasicLogs) return;
-            LogManager.Info("Debug", message);
+            LogManager.Log($"[Debug] {message}");
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace InvaderInsider.Core
         public static void Log(string prefix, string message)
         {
             if (!EnableBasicLogs) return;
-            LogManager.Info(prefix, message);
+            LogManager.Log($"[{prefix}] {message}");
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace InvaderInsider.Core
         public static void LogFormat(string prefix, string format, params object[] args)
         {
             if (!EnableBasicLogs) return;
-            LogManager.Info(prefix, string.Format(format, args));
+            LogManager.Log($"[{prefix}] {string.Format(format, args)}");
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace InvaderInsider.Core
         public static void LogWarning(string message)
         {
             if (!EnableWarningLogs) return;
-            LogManager.Warning("Warning", message);
+            LogManager.LogWarning($"[Warning] {message}");
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace InvaderInsider.Core
         public static void LogWarning(string prefix, string message)
         {
             if (!EnableWarningLogs) return;
-            LogManager.Warning(prefix, message);
+            LogManager.LogWarning($"[{prefix}] {message}");
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace InvaderInsider.Core
         public static void LogWarningFormat(string prefix, string format, params object[] args)
         {
             if (!EnableWarningLogs) return;
-            LogManager.Warning(prefix, string.Format(format, args));
+            LogManager.LogWarning($"[{prefix}] {string.Format(format, args)}");
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace InvaderInsider.Core
         public static void LogError(string message)
         {
             if (!EnableErrorLogs) return;
-            LogManager.Error("Error", message);
+            LogManager.LogError($"[Error] {message}");
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace InvaderInsider.Core
         public static void LogError(string prefix, string message)
         {
             if (!EnableErrorLogs) return;
-            LogManager.Error(prefix, message);
+            LogManager.LogError($"[{prefix}] {message}");
         }
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace InvaderInsider.Core
         public static void LogErrorFormat(string prefix, string format, params object[] args)
         {
             if (!EnableErrorLogs) return;
-            LogManager.Error(prefix, string.Format(format, args));
+            LogManager.LogError($"[{prefix}] {string.Format(format, args)}");
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace InvaderInsider.Core
         public static void LogInfo(string message)
         {
             if (!EnableInfoLogs) return;
-            LogManager.Info("Info", message);
+            LogManager.Log($"[Info] {message}");
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace InvaderInsider.Core
         public static void LogInfo(string prefix, string message)
         {
             if (!EnableInfoLogs) return;
-            LogManager.Info(prefix, message);
+            LogManager.Log($"[{prefix}] {message}");
         }
 
         /// <summary>
@@ -132,7 +132,7 @@ namespace InvaderInsider.Core
         public static void LogVerbose(string prefix, string message)
         {
             if (!EnableVerboseLogs) return;
-            LogManager.Info($"[VERBOSE]{prefix}", message);
+            LogManager.Log($"[VERBOSE]{prefix} {message}");
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace InvaderInsider.Core
         public static void LogVerboseFormat(string prefix, string format, params object[] args)
         {
             if (!EnableVerboseLogs) return;
-            LogManager.Info($"[VERBOSE]{prefix}", string.Format(format, args));
+            LogManager.Log($"[VERBOSE]{prefix} {string.Format(format, args)}");
         }
 
         /// <summary>
@@ -163,9 +163,9 @@ namespace InvaderInsider.Core
             }
             
             if (success)
-                LogManager.Info("Init", message);
+                LogManager.Log($"[Init] {message}");
             else
-                LogManager.Error("Init", message);
+                LogManager.LogError($"[Init] {message}");
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace InvaderInsider.Core
         {
             if (obj == null && EnableErrorLogs)
             {
-                LogManager.Error("NullCheck", $"{context}에서 {objectName}이(가) null입니다.");
+                LogManager.LogError($"[NullCheck] {context}에서 {objectName}이(가) null입니다.");
             }
         }
 
@@ -190,11 +190,11 @@ namespace InvaderInsider.Core
             
             if (timeMs > 16.67f) // 60 FPS 기준
             {
-                LogManager.Warning("Performance", $"{operation} 작업이 {timeMs:F2}ms 소요됨 (권장: 16.67ms 이하)");
+                LogManager.LogWarning($"[Performance] {operation} 작업이 {timeMs:F2}ms 소요됨 (권장: 16.67ms 이하)");
             }
             else
             {
-                LogManager.Info("Performance", $"{operation} 작업 완료 ({timeMs:F2}ms)");
+                LogManager.Log($"[Performance] {operation} 작업 완료 ({timeMs:F2}ms)");
             }
         }
 
@@ -207,7 +207,7 @@ namespace InvaderInsider.Core
             if (!EnableVerboseLogs) return;
             
             long memoryUsage = System.GC.GetTotalMemory(false);
-            LogManager.Info("Memory", $"{context} - 메모리 사용량: {memoryUsage / 1024f / 1024f:F2} MB");
+            LogManager.Log($"[Memory] {context} - 메모리 사용량: {memoryUsage / 1024f / 1024f:F2} MB");
         }
 
         /// <summary>
@@ -218,7 +218,7 @@ namespace InvaderInsider.Core
         {
             if (condition && EnableBasicLogs)
             {
-                LogManager.Info(prefix, message);
+                LogManager.Log($"[{prefix}] {message}");
             }
         }
 
@@ -234,7 +234,7 @@ namespace InvaderInsider.Core
             EnableWarningLogs = true;
             EnableErrorLogs = true;
             EnableVerboseLogs = true;
-            LogManager.EnableAllLogs();
+            // LogManager.EnableAllLogs();
         }
 
         /// <summary>
@@ -247,7 +247,7 @@ namespace InvaderInsider.Core
             EnableWarningLogs = true;
             EnableErrorLogs = true;
             EnableVerboseLogs = false;
-            LogManager.EnableMinimalLogs();
+            // LogManager.EnableMinimalLogs();
         }
 
         /// <summary>
@@ -260,7 +260,7 @@ namespace InvaderInsider.Core
             EnableWarningLogs = false;
             EnableErrorLogs = true;
             EnableVerboseLogs = false;
-            LogManager.DisableAllLogs();
+            // LogManager.DisableAllLogs();
         }
 
         /// <summary>
@@ -273,7 +273,7 @@ namespace InvaderInsider.Core
             EnableWarningLogs = false;
             EnableErrorLogs = false;
             EnableVerboseLogs = false;
-            LogManager.DisableAllLogs();
+            // LogManager.DisableAllLogs();
         }
 
         #endregion

@@ -41,7 +41,7 @@ namespace InvaderInsider.Cards
         {
             if (data == null)
             {
-                LogManager.Error("CardDisplay", "SetupCard에 전달된 카드 데이터가 null입니다.");
+                LogManager.LogError("[CardDisplay] SetupCard에 전달된 카드 데이터가 null입니다.");
                 return;
             }
             cardData = data;

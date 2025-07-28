@@ -5,6 +5,7 @@ using UnityEngine.Events;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
 using System; 
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.Cards
 {
@@ -81,7 +82,7 @@ namespace InvaderInsider.Cards
             if (SaveDataManager.Instance != null && SaveDataManager.Instance.CurrentSaveData != null)
             {
                 ownedCardIds = new List<int>(SaveDataManager.Instance.CurrentSaveData.deckData.cardIds);
-                Debug.Log($"{LOG_TAG} 카드 로드 완료: {ownedCardIds.Count}장");
+                LogManager.Log($"{LOG_TAG} 카드 로드 완료: {ownedCardIds.Count}장");
                 OnHandCardsChanged?.Invoke(ownedCardIds);
             }
         }
@@ -93,7 +94,7 @@ namespace InvaderInsider.Cards
             {
                 SaveDataManager.Instance.SetOwnedCards(ownedCardIds);
                 SaveDataManager.Instance.SaveGameData(); // 즉시 파일에 저장
-                Debug.Log($"{LOG_TAG} 카드 저장 완료: {ownedCardIds.Count}장");
+                LogManager.Log($"{LOG_TAG} 카드 저장 완료: {ownedCardIds.Count}장");
             }
         }
 
@@ -130,7 +131,7 @@ namespace InvaderInsider.Cards
             }
             else
             {
-                Debug.LogError($"{LOG_TAG} SummonChoicePanel을 찾을 수 없습니다.");
+                LogManager.LogError($"{LOG_TAG} SummonChoicePanel을 찾을 수 없습니다.");
             }
         }
 
@@ -182,8 +183,8 @@ namespace InvaderInsider.Cards
             if (!ownedCardIds.Contains(cardId))
             {
                 ownedCardIds.Add(cardId);
-                Debug.Log($"{LOG_TAG} 카드가 핸드에 추가되었습니다: ID {cardId}");
-                Debug.Log($"{LOG_TAG} Firing OnHandCardsChanged event.");
+                LogManager.Log($"{LOG_TAG} 카드가 핸드에 추가되었습니다: ID {cardId}");
+                LogManager.Log($"{LOG_TAG} Firing OnHandCardsChanged event.");
                 OnHandCardsChanged?.Invoke(ownedCardIds);
             }
         }
@@ -192,7 +193,7 @@ namespace InvaderInsider.Cards
         {
             if (ownedCardIds.Remove(cardId))
             {
-                Debug.Log($"{LOG_TAG} 카드가 핸드에서 제거되었습니다: ID {cardId}");
+                LogManager.Log($"{LOG_TAG} 카드가 핸드에서 제거되었습니다: ID {cardId}");
                 OnHandCardsChanged?.Invoke(ownedCardIds);
             }
         }

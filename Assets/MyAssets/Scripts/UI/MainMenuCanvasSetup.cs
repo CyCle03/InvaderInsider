@@ -53,7 +53,7 @@ namespace InvaderInsider.UI
             
             if (mainCanvas == null)
             {
-                LogManager.Error(LOG_TAG, "Main Canvas not found in scene");
+                LogManager.LogError($"[{LOG_TAG}] Main Canvas not found in scene");
                 return;
             }
 
