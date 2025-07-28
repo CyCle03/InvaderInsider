@@ -25,7 +25,7 @@ namespace InvaderInsider.UI
 
         protected override void Initialize()
         {
-            Debug.Log($"{LOG_TAG} Initialize called. Is panel active and enabled? {gameObject.activeInHierarchy}");
+            Debug.Log($"{LOG_TAG} Initialize called. HandIconDisplay active: {gameObject.activeSelf}, in hierarchy: {gameObject.activeInHierarchy}");
             base.Initialize();
             if (isInitialized) return;
 
@@ -47,7 +47,7 @@ namespace InvaderInsider.UI
             }
 
             openHandPanelButton?.onClick.AddListener(OpenHandDisplayPanel);
-            Debug.Log($"{LOG_TAG} Subscribing to OnHandCardsChanged.");
+            Debug.Log($"{LOG_TAG} Subscribing to OnHandCardsChanged. IconContainer active: {iconContainer?.gameObject.activeSelf}, in hierarchy: {iconContainer?.gameObject.activeInHierarchy}");
             cardManager.OnHandCardsChanged += OnHandDataChanged;
 
             // Initial population
@@ -85,6 +85,12 @@ namespace InvaderInsider.UI
                 if (cardData == null) continue;
 
                 GameObject iconObj = Instantiate(cardIconPrefab, iconContainer);
+                iconObj.name = $"CardIcon_{cardData.cardId}"; // Add name for easier debugging
+                var iconRectTransform = iconObj.GetComponent<RectTransform>();
+                if (iconRectTransform != null)
+                {
+                    Debug.Log($"{LOG_TAG} Created icon {iconObj.name} at position {iconRectTransform.anchoredPosition} with size {iconRectTransform.sizeDelta}");
+                }
                 var iconImage = iconObj.GetComponent<Image>();
                 if (iconImage != null && cardData.artwork != null)
                 {
