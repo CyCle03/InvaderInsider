@@ -183,6 +183,7 @@ namespace InvaderInsider.Cards
             {
                 ownedCardIds.Add(cardId);
                 Debug.Log($"{LOG_TAG} 카드가 핸드에 추가되었습니다: ID {cardId}");
+                Debug.Log($"{LOG_TAG} Firing OnHandCardsChanged event.");
                 OnHandCardsChanged?.Invoke(ownedCardIds);
             }
         }

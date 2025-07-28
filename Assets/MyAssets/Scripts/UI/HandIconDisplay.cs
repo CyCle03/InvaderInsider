@@ -25,6 +25,7 @@ namespace InvaderInsider.UI
 
         protected override void Initialize()
         {
+            Debug.Log($"{LOG_TAG} Initialize called. Is panel active and enabled? {gameObject.activeInHierarchy}");
             base.Initialize();
             if (isInitialized) return;
 
@@ -46,12 +47,14 @@ namespace InvaderInsider.UI
             }
 
             openHandPanelButton?.onClick.AddListener(OpenHandDisplayPanel);
+            Debug.Log($"{LOG_TAG} Subscribing to OnHandCardsChanged.");
             cardManager.OnHandCardsChanged += OnHandDataChanged;
 
             // Initial population
             OnHandDataChanged(cardManager.GetHandCardIds());
 
             isInitialized = true;
+            Debug.Log($"{LOG_TAG} Initialization complete.");
         }
 
         private void OnDestroy()
@@ -65,6 +68,7 @@ namespace InvaderInsider.UI
 
         private void OnHandDataChanged(List<int> handCardIds)
         {
+            Debug.Log($"{LOG_TAG} OnHandDataChanged called with {handCardIds.Count} cards.");
             if (!isInitialized || cardManager == null) return;
             
             foreach (var item in currentIconItems)
@@ -88,6 +92,7 @@ namespace InvaderInsider.UI
                 }
                 currentIconItems.Add(iconObj);
             }
+            Debug.Log($"{LOG_TAG} OnHandDataChanged finished. {currentIconItems.Count} icons created.");
         }
 
         private void OpenHandDisplayPanel()

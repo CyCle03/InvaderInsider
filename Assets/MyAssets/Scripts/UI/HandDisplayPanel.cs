@@ -75,13 +75,18 @@ namespace InvaderInsider.UI
                 Debug.LogError($"{LOG_TAG} CardDatabase가 할당되지 않았습니다.");
                 return;
             }
-            
+
             // UIManager를 통해 CardDetailView 가져오기
             cardDetailView = UIManager.Instance?.GetPanel("CardDetailView") as CardDetailView;
             if (cardDetailView == null)
             {
-                Debug.LogError($"{LOG_TAG} CardDetailView를 찾을 수 없습니다.");
-                return;
+                // CardDetailView를 찾지 못하면 비활성화된 오브젝트를 포함해서 다시 찾기
+                cardDetailView = FindObjectOfType<CardDetailView>(true);
+                if (cardDetailView == null)
+                {
+                    Debug.LogError($"{LOG_TAG} CardDetailView를 찾을 수 없습니다.");
+                    return;
+                }
             }
 
             InitializeCardDisplayPool();
