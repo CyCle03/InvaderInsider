@@ -79,26 +79,34 @@ namespace InvaderInsider.UI
 
             if (iconContainer == null || cardIconPrefab == null) return;
 
-            foreach (int cardId in handCardIds)
+            if (handCardIds.Count > 0)
             {
-                var cardData = cardManager.GetCardById(cardId);
-                if (cardData == null) continue;
+                Show(); // 핸드에 카드가 있으면 활성화
+                foreach (int cardId in handCardIds)
+                {
+                    var cardData = cardManager.GetCardById(cardId);
+                    if (cardData == null) continue;
 
-                GameObject iconObj = Instantiate(cardIconPrefab, iconContainer);
-                iconObj.name = $"CardIcon_{cardData.cardId}"; // Add name for easier debugging
-                var iconRectTransform = iconObj.GetComponent<RectTransform>();
-                if (iconRectTransform != null)
-                {
-                    Debug.Log($"{LOG_TAG} Created icon {iconObj.name} at position {iconRectTransform.anchoredPosition} with size {iconRectTransform.sizeDelta}");
+                    GameObject iconObj = Instantiate(cardIconPrefab, iconContainer);
+                    iconObj.name = $"CardIcon_{cardData.cardId}"; // Add name for easier debugging
+                    var iconRectTransform = iconObj.GetComponent<RectTransform>();
+                    if (iconRectTransform != null)
+                    {
+                        Debug.Log($"{LOG_TAG} Created icon {iconObj.name} at position {iconRectTransform.anchoredPosition} with size {iconRectTransform.sizeDelta}");
+                    }
+                    var iconImage = iconObj.GetComponent<Image>();
+                    if (iconImage != null && cardData.artwork != null)
+                    {
+                        iconImage.sprite = cardData.artwork; 
+                    }
+                    currentIconItems.Add(iconObj);
                 }
-                var iconImage = iconObj.GetComponent<Image>();
-                if (iconImage != null && cardData.artwork != null)
-                {
-                    iconImage.sprite = cardData.artwork; 
-                }
-                currentIconItems.Add(iconObj);
             }
-            Debug.Log($"{LOG_TAG} OnHandDataChanged finished. {currentIconItems.Count} icons created.");
+            else
+            {
+                Hide(); // 핸드에 카드가 없으면 비활성화
+            }
+            Debug.Log($"{LOG_TAG} OnHandDataChanged finished. {currentIconItems.Count} icons created. Panel active: {gameObject.activeSelf}");
         }
 
         private void OpenHandDisplayPanel()

@@ -43,20 +43,24 @@ namespace InvaderInsider.UI
 
         public void OpenPopup()
         {
+            LogManager.Log($"{LOG_TAG} OpenPopup called. isPopupOpen: {isPopupOpen}, isInitialized: {isInitialized}");
             if (isPopupOpen || !isInitialized) return;
 
             Show(); // BasePanel의 Show() 호출
             isPopupOpen = true;
             UpdatePopupContent(cardManager.GetHandCardIds());
+            LogManager.Log($"{LOG_TAG} Popup opened.");
         }
 
         public void ClosePopup()
         {
+            LogManager.Log($"{LOG_TAG} ClosePopup called. isPopupOpen: {isPopupOpen}");
             if (!isPopupOpen) return;
 
             Hide(); // BasePanel의 Hide() 호출
             isPopupOpen = false;
             ClearHandItems();
+            LogManager.Log($"{LOG_TAG} Popup closed.");
         }
 
         protected override void Initialize()
@@ -100,7 +104,15 @@ namespace InvaderInsider.UI
 
         private void SetupButtons()
         {
-            closeButton?.onClick.AddListener(ClosePopup);
+            if (closeButton == null)
+            {
+                LogManager.LogError($"{LOG_TAG} closeButton이 할당되지 않았습니다. Inspector를 확인하세요.");
+            }
+            else
+            {
+                closeButton.onClick.AddListener(ClosePopup);
+                LogManager.Log($"{LOG_TAG} closeButton 이벤트 리스너 추가됨.");
+            }
             sortByTypeButton?.onClick.AddListener(() => SortHand(HandSortType.ByType));
             sortByCostButton?.onClick.AddListener(() => SortHand(HandSortType.ByCost));
             sortByRarityButton?.onClick.AddListener(() => SortHand(HandSortType.ByRarity));
