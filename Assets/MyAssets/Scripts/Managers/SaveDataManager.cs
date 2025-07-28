@@ -226,7 +226,9 @@ namespace InvaderInsider.Data
         private static void LogOnly(string message)
         {
 #if UNITY_EDITOR && !DISABLE_LOGS
-            if (ENABLE_LOGS) Debug.Log(LOG_PREFIX + message);
+#if ENABLE_LOGS
+    Debug.Log(LOG_PREFIX + message);
+#endif
 #endif
         }
         private static string SAVE_KEY => Path.Combine(Application.persistentDataPath, "GameSaveData.json");
