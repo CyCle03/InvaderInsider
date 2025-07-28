@@ -51,9 +51,15 @@ namespace InvaderInsider.UI
             UpdatePopupContent(cardManager.GetHandCardIds());
             LogManager.Log($"{LOG_TAG} Popup opened. CloseButton interactable: {closeButton?.interactable}, PopupOverlay active: {popupOverlay?.activeSelf}");
             CanvasGroup popupCanvasGroup = popupOverlay?.GetComponent<CanvasGroup>();
+            if (popupCanvasGroup == null && popupOverlay != null)
+            {
+                popupCanvasGroup = popupOverlay.AddComponent<CanvasGroup>();
+                LogManager.Log($"{LOG_TAG} Added CanvasGroup to popupOverlay.");
+            }
             if (popupCanvasGroup != null)
             {
-                LogManager.Log($"{LOG_TAG} PopupOverlay CanvasGroup blocksRaycasts: {popupCanvasGroup.blocksRaycasts}");
+                popupCanvasGroup.blocksRaycasts = true;
+                LogManager.Log($"{LOG_TAG} PopupOverlay CanvasGroup blocksRaycasts set to true.");
             }
         }
 
@@ -65,6 +71,13 @@ namespace InvaderInsider.UI
             Hide(); // BasePanel의 Hide() 호출
             isPopupOpen = false;
             ClearHandItems();
+
+            CanvasGroup popupCanvasGroup = popupOverlay?.GetComponent<CanvasGroup>();
+            if (popupCanvasGroup != null)
+            {
+                popupCanvasGroup.blocksRaycasts = false;
+                LogManager.Log($"{LOG_TAG} PopupOverlay CanvasGroup blocksRaycasts set to false.");
+            }
             LogManager.Log($"{LOG_TAG} Popup closed.");
         }
 
