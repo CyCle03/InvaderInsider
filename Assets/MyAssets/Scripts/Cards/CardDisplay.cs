@@ -57,7 +57,14 @@ namespace InvaderInsider.Cards
                 artworkImage.sprite = cardData.artwork;
 
             if (nameText != null)
+            {
                 nameText.text = cardData.cardName;
+                LogManager.Log($"[CardDisplay] 카드 '{cardData.cardName}'의 이름이 UI에 설정되었습니다. 실제 UI 텍스트: {nameText.text}");
+            }
+            else
+            {
+                LogManager.LogError($"[CardDisplay] nameText가 할당되지 않았습니다. 카드 '{cardData.cardName}'의 이름을 표시할 수 없습니다.");
+            }
 
             if (descriptionText != null)
             {

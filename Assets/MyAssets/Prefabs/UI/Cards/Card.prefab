@@ -217,11 +217,20 @@ MonoBehaviour:
   descriptionText: {fileID: 0}
   costText: {fileID: 0}
   powerText: {fileID: 0}
-  cardFrame: {fileID: 0}
+  typeText: {fileID: 0}
+  rarityFrame: {fileID: 0}
+  rarityIcon: {fileID: 0}
   typeIcon: {fileID: 0}
+  cardFrame: {fileID: 0}
   highlightPanel: {fileID: 0}
-  cardBackPanel: {fileID: 0}
+  equipmentBonusPanel: {fileID: 0}
+  equipmentAttackBonusText: {fileID: 0}
+  equipmentHealthBonusText: {fileID: 0}
   rarityColors: []
+  commonIcon: {fileID: 0}
+  rareIcon: {fileID: 0}
+  epicIcon: {fileID: 0}
+  legendaryIcon: {fileID: 0}
   typeIcons: []
   typeFrames: []
   maxDescriptionLength: 100
@@ -252,21 +261,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f030f56f28253e4499bf9c9eb89864ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cardImage: {fileID: 0}
-  cardNameText: {fileID: 0}
-  cardDescriptionText: {fileID: 0}
-  cardCostText: {fileID: 0}
-  cardPowerText: {fileID: 0}
-  cardTypeText: {fileID: 0}
-  rarityFrame: {fileID: 0}
-  rarityIcon: {fileID: 0}
-  equipmentBonusPanel: {fileID: 0}
-  equipmentAttackBonusText: {fileID: 0}
-  equipmentHealthBonusText: {fileID: 0}
-  commonIcon: {fileID: 0}
-  rareIcon: {fileID: 0}
-  epicIcon: {fileID: 0}
-  legendaryIcon: {fileID: 0}
+  cardDisplay: {fileID: 1036546205514542455}
 --- !u!1 &9014869993597294867
 GameObject:
   m_ObjectHideFlags: 0
