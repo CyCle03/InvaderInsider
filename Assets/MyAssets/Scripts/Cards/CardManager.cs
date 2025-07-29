@@ -100,8 +100,14 @@ namespace InvaderInsider.Cards
 
         public void Summon()
         {
-            List<CardDBObject> randomCards = SelectRandomCards(3);
-            DisplaySummonChoices(randomCards);
+            int summonCost = 10 + SaveDataManager.Instance.CurrentSaveData.progressData.summonCount;
+            if (SaveDataManager.Instance.CurrentSaveData.progressData.currentEData > summonCost)
+            {
+                SaveDataManager.Instance.CurrentSaveData.progressData.summonCount++;
+                SaveDataManager.Instance.UpdateEData(-summonCost, true);
+                List<CardDBObject> randomCards = SelectRandomCards(3);
+                DisplaySummonChoices(randomCards);
+            }
         }
 
         private List<CardDBObject> SelectRandomCards(int count)
