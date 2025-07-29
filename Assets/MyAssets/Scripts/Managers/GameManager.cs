@@ -127,6 +127,7 @@ namespace InvaderInsider.Managers
         public void StartNewGame()
         {
             SaveDataManager.Instance?.ResetGameData();
+            CardManager.Instance?.ClearHand();
             StartGame(0);
         }
 

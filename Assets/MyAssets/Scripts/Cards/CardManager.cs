@@ -224,6 +224,13 @@ namespace InvaderInsider.Cards
         {
             return ownedCardIds.Count;
         }
+
+        public void ClearHand()
+        {
+            ownedCardIds.Clear();
+            OnHandCardsChanged?.Invoke(ownedCardIds);
+            LogManager.Log($"{LOG_TAG} 핸드의 모든 카드를 제거했습니다.");
+        }
         #endregion
     }
 }
