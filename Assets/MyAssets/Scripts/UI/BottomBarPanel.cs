@@ -26,6 +26,10 @@ namespace InvaderInsider.UI
         [SerializeField] private Button mainMenuButton;
         [SerializeField] private TextMeshProUGUI gameOverMessageText;
 
+        [Header("Tower Buttons")]
+        [SerializeField] private Button tower1Button;
+        [SerializeField] private GameObject tower1Prefab;
+
         [Header("UI Elements")]
         [SerializeField] private Image healthFillImage;
         [SerializeField] private TextMeshProUGUI healthText;
@@ -192,6 +196,9 @@ namespace InvaderInsider.UI
             
             if (mainMenuButton != null)
                 mainMenuButton.onClick.AddListener(OnMainMenuButtonClicked);
+
+            if (tower1Button != null)
+                tower1Button.onClick.AddListener(() => SelectTower(tower1Prefab));
                 
             #if UNITY_EDITOR
             Debug.Log($"{LOG_PREFIX}Player 이벤트 리스너 설정 완료");
@@ -387,6 +394,11 @@ namespace InvaderInsider.UI
             #if UNITY_EDITOR
             Debug.Log(LOG_PREFIX + "BottomBar Canvas Sorting Order 설정 완료: " + bottomBarCanvas.sortingOrder);
             #endif
+        }
+
+        private void SelectTower(GameObject towerPrefab)
+        {
+            GameManager.Instance.SelectedTowerPrefab = towerPrefab;
         }
     }
 } 

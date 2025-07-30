@@ -42,6 +42,8 @@ namespace InvaderInsider.Managers
         public GameState CurrentGameState { get; private set; }
         public event Action<GameState> OnGameStateChanged;
 
+        public GameObject SelectedTowerPrefab { get; set; }
+
         private UIManager uiManager; // UIManager 참조 추가
 
         private void Awake()

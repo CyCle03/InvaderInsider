@@ -1106,5 +1106,18 @@ namespace InvaderInsider.Managers
             var towers = FindObjectsOfType<Tower>();
             activeTowers.AddRange(towers);
         }
+
+        public void CreateTower(GameObject towerPrefab, Vector3 position)
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(position, Vector3.down, out hit))
+            {
+                Tile tile = hit.collider.GetComponent<Tile>();
+                if (tile != null && tile.tileType == TileType.Spawn)
+                {
+                    Instantiate(towerPrefab, hit.point, Quaternion.identity);
+                }
+            }
+        }
     }
 } 

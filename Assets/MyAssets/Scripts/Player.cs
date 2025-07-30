@@ -81,6 +81,17 @@ namespace InvaderInsider
         #if UNITY_EDITOR
         private void Update()
         {
+            if (Input.GetMouseButtonDown(0) && GameManager.Instance.SelectedTowerPrefab != null)
+            {
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                RaycastHit hit;
+                if (Physics.Raycast(ray, out hit))
+                {
+                    StageManager.Instance.CreateTower(GameManager.Instance.SelectedTowerPrefab, hit.point);
+                    GameManager.Instance.SelectedTowerPrefab = null; // 타워를 생성한 후 선택 해제
+                }
+            }
+
             if (!enableTestKeys || !Application.isEditor)
             {
                 return;
