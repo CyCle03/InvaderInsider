@@ -82,8 +82,12 @@ namespace InvaderInsider.Cards
             if (SaveDataManager.Instance != null && SaveDataManager.Instance.CurrentSaveData != null)
             {
                 ownedCardIds = new List<int>(SaveDataManager.Instance.CurrentSaveData.deckData.cardIds);
-                LogManager.Log($"{LOG_TAG} 카드 로드 완료: {ownedCardIds.Count}장");
+                LogManager.Log($"{LOG_TAG} SaveDataManager로부터 카드 로드 완료: {ownedCardIds.Count}장");
                 OnHandCardsChanged?.Invoke(ownedCardIds);
+            }
+            else
+            {
+                LogManager.LogWarning($"{LOG_TAG} SaveDataManager 인스턴스 또는 CurrentSaveData가 null입니다. 카드 로드 건너뜀.");
             }
         }
 
@@ -226,7 +230,7 @@ namespace InvaderInsider.Cards
         {
             ownedCardIds.Clear();
             OnHandCardsChanged?.Invoke(ownedCardIds);
-            LogManager.Log($"{LOG_TAG} 핸드의 모든 카드를 제거했습니다.");
+            LogManager.Log($"{LOG_TAG} 핸드의 모든 카드를 제거했습니다. 현재 카드 수: {ownedCardIds.Count}");
         }
         #endregion
     }

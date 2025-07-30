@@ -291,7 +291,7 @@ namespace InvaderInsider.Data
 
         public static bool HasInstance => _instance != null;
 
-        public SaveData CurrentSaveData => currentSaveData?.Clone();
+        public SaveData CurrentSaveData => currentSaveData;
 
         private void Awake()
         {
@@ -377,13 +377,16 @@ namespace InvaderInsider.Data
             if (File.Exists(SAVE_KEY))
             {
                 File.Delete(SAVE_KEY);
+                LogManager.Log($"{LOG_PREFIX}기존 저장 파일 삭제 완료: {SAVE_KEY}");
             }
+            LogManager.Log($"{LOG_PREFIX}게임 데이터 초기화 완료. 현재 카드 수: {currentSaveData.deckData.cardIds.Count}");
         }
 
         public void SaveGameData()
         {
             if (!Application.isPlaying || currentSaveData == null) return;
             SaveGameDataImmediate();
+            LogManager.Log($"{LOG_PREFIX}게임 데이터 저장 요청 완료. 현재 카드 수: {currentSaveData.deckData.cardIds.Count}");
         }
         
         private void SaveGameDataImmediate()
@@ -415,10 +418,12 @@ namespace InvaderInsider.Data
                         LogManager.LogError("로드: 역직렬화 실패");
                         currentSaveData = new SaveData();
                     }
+                    LogManager.Log($"{LOG_PREFIX}게임 데이터 로드 완료. 현재 카드 수: {currentSaveData.deckData.cardIds.Count}");
                 }
                 else
                 {
                     currentSaveData = new SaveData();
+                    LogManager.Log($"{LOG_PREFIX}저장 파일 없음. 새 게임 데이터 생성. 현재 카드 수: {currentSaveData.deckData.cardIds.Count}");
                 }
             }
             catch (Exception e)
