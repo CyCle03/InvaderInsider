@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using InvaderInsider.Managers;
+using InvaderInsider.Data;
+using InvaderInsider.Cards;
 
 namespace InvaderInsider.UI
 {
@@ -19,16 +21,10 @@ namespace InvaderInsider.UI
         [SerializeField] private TextMeshProUGUI enemyRemainText;
         [SerializeField] private Slider healthSlider;
         [SerializeField] private TextMeshProUGUI lifeText;
-        
-        [Header("Game Over UI")]
-        [SerializeField] private GameObject gameOverPanel;
-        [SerializeField] private Button restartButton;
-        [SerializeField] private Button mainMenuButton;
-        [SerializeField] private TextMeshProUGUI gameOverMessageText;
 
-        [Header("Tower Buttons")]
-        [SerializeField] private Button tower1Button;
-        [SerializeField] private GameObject tower1Prefab;
+        [Header("Card Hand UI")]
+        [SerializeField] private Transform cardHandContainer;
+        [SerializeField] private GameObject cardButtonPrefab;
 
         [Header("UI Elements")]
         [SerializeField] private Image healthFillImage;
@@ -44,7 +40,6 @@ namespace InvaderInsider.UI
         private ResourceManager resourceManager;
 
         private bool isInitialized = false;
-        private bool isGameOverUIVisible = false;
         
         // 색상 캐싱
         private static readonly Color normalHealthColor = Color.green;
@@ -108,10 +103,6 @@ namespace InvaderInsider.UI
                 #endif
             }
 
-            // Canvas Sorting Order 설정 (다른 UI보다 낮게)
-            SetupCanvasSortingOrder();
-
-            SetupEventListeners();
             InitializeHealthDisplay();
 
             isInitialized = true;
@@ -154,14 +145,6 @@ namespace InvaderInsider.UI
                 #endif
             }
 
-            // 선택적 UI 요소들에 대한 경고
-            #if UNITY_EDITOR
-            if (gameOverPanel == null)
-            {
-                LogManager.LogWarning("[BottomBar] gameOverPanel이 할당되지 않았습니다. 게임 오버 UI가 표시되지 않습니다.");
-            }
-            #endif
-
             return isValid;
         }
 
@@ -188,18 +171,10 @@ namespace InvaderInsider.UI
             if (player == null) return;
 
             player.OnHealthChanged += UpdateHealthDisplay;
-            player.OnDeath += HandlePlayerDeath;
+
+            CardManager.Instance.OnHandCardsChanged += UpdateCardHandUI;
 
             // 게임 오버 버튼 이벤트 설정
-            if (restartButton != null)
-                restartButton.onClick.AddListener(OnRestartButtonClicked);
-            
-            if (mainMenuButton != null)
-                mainMenuButton.onClick.AddListener(OnMainMenuButtonClicked);
-
-            if (tower1Button != null)
-                tower1Button.onClick.AddListener(() => SelectTower(tower1Prefab));
-                
             #if UNITY_EDITOR
             Debug.Log($"{LOG_PREFIX}Player 이벤트 리스너 설정 완료");
             #endif
@@ -224,7 +199,10 @@ namespace InvaderInsider.UI
             if (player != null)
             {
                 player.OnHealthChanged -= UpdateHealthDisplay;
-                player.OnDeath -= HandlePlayerDeath;
+            }
+            if (CardManager.Instance != null)
+            {
+                CardManager.Instance.OnHandCardsChanged -= UpdateCardHandUI;
             }
         }
 
@@ -308,97 +286,39 @@ namespace InvaderInsider.UI
             healthFillImage.color = targetColor;
         }
 
-        private void HandlePlayerDeath()
-        {
-            if (!isInitialized || isGameOverUIVisible) return;
+        
 
-            isGameOverUIVisible = true;
-            
-            // 게임 일시 정지
-            Time.timeScale = 0f;
-            
-            // 게임 오버 UI 표시 (GameState를 통해 간접적으로)
-            if (GameManager.Instance != null)
+        private void UpdateCardHandUI(System.Collections.Generic.List<int> cardIds)
+        {
+            foreach (Transform child in cardHandContainer)
             {
-                GameManager.Instance.SetGameState(GameState.GameOver);
+                Destroy(child.gameObject);
             }
-        }
 
-        private void ShowGameOverUI()
-        {
-            if (gameOverPanel != null)
+            foreach (int cardId in cardIds)
             {
-                gameOverPanel.SetActive(true);
-                
-                // 게임 오버 메시지 설정
-                if (gameOverMessageText != null)
+                CardDBObject cardData = CardManager.Instance.GetCardById(cardId);
+                if (cardData != null)
                 {
-                    gameOverMessageText.text = "게임 오버\n다시 시도하시겠습니까?";
+                    GameObject cardButtonObj = Instantiate(cardButtonPrefab, cardHandContainer);
+                    CardButton cardButton = cardButtonObj.GetComponent<CardButton>();
+                    if (cardButton != null)
+                    {
+                        cardButton.Initialize(cardData);
+                    }
+
+                    cardButtonObj.GetComponent<Button>().onClick.AddListener(() => OnCardButtonClicked(cardData));
                 }
             }
         }
 
-        private void HideGameOverUI()
+        private void OnCardButtonClicked(CardDBObject cardData)
         {
-            if (gameOverPanel != null)
+            if (cardData.type == CardType.Tower)
             {
-                gameOverPanel.SetActive(false);
+                GameManager.Instance.SelectedTowerPrefab = cardData.cardPrefab;
             }
-            isGameOverUIVisible = false;
-        }
-
-        private void OnRestartButtonClicked()
-        {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.StartNewGame();
-            }
-        }
-
-        private void OnMainMenuButtonClicked()
-        {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.LoadMainMenuScene();
-            }
-        }
-
-        private void SetupCanvasSortingOrder()
-        {
-            // BottomBar의 Canvas를 확인하고 없으면 추가
-            Canvas bottomBarCanvas = GetComponent<Canvas>();
-            if (bottomBarCanvas == null)
-            {
-                bottomBarCanvas = gameObject.AddComponent<Canvas>();
-                
-                // GraphicRaycaster도 필요
-                if (GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
-                {
-                    gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
-                }
-            }
-            
-            // Sorting Order를 낮게 설정하여 다른 UI 아래에 표시
-            bottomBarCanvas.overrideSorting = true;
-            bottomBarCanvas.sortingOrder = 10; // 기본보다 낮은 값 (SummonChoice는 100)
-            
-            // GraphicRaycaster의 우선순위를 낮춰서 다른 UI가 우선되도록 설정
-            UnityEngine.UI.GraphicRaycaster graphicRaycaster = GetComponent<UnityEngine.UI.GraphicRaycaster>();
-            if (graphicRaycaster != null)
-            {
-                // Raycast Priority를 낮게 설정 (기본값 0보다 낮음)
-                // 이렇게 하면 다른 UI 요소들이 우선적으로 클릭 이벤트를 받습니다
-                graphicRaycaster.blockingObjects = UnityEngine.UI.GraphicRaycaster.BlockingObjects.None;
-            }
-            
-            #if UNITY_EDITOR
-            Debug.Log(LOG_PREFIX + "BottomBar Canvas Sorting Order 설정 완료: " + bottomBarCanvas.sortingOrder);
-            #endif
-        }
-
-        private void SelectTower(GameObject towerPrefab)
-        {
-            GameManager.Instance.SelectedTowerPrefab = towerPrefab;
+            // TODO: 다른 카드 타입(예: 스펠)에 대한 처리 추가
         }
     }
 } 

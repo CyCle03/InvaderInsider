@@ -80,6 +80,15 @@ namespace InvaderInsider.Managers
             }
 
             InitializeUIForScene(scene.name); // 씬에 맞는 UI 초기화
+
+            if (scene.name == "Game")
+            {
+                Player player = FindObjectOfType<Player>();
+                if (player != null)
+                {
+                    player.OnDeath += HandlePlayerDeath;
+                }
+            }
         }
 
         private void InitializeUIForScene(string sceneName)
@@ -146,6 +155,10 @@ namespace InvaderInsider.Managers
 
         public void StartGame(int startStageIndex)
         {
+            // 기존 Player의 OnDeath 이벤트 구독 해제 (새 게임 시작 시)
+            Player existingPlayer = FindObjectOfType<Player>();
+            if (existingPlayer != null) existingPlayer.OnDeath -= HandlePlayerDeath;
+
             SetGameState(GameState.Loading);
             SceneManager.LoadSceneAsync("Game").completed += (asyncOperation) =>
             {
@@ -156,6 +169,13 @@ namespace InvaderInsider.Managers
                     SetGameState(GameState.Playing);
                     // 스테이지 시작 후 UI를 즉시 업데이트
                     UpdateStageWaveUI(stageManager.GetCurrentStageIndex() + 1, stageManager.GetSpawnedEnemyCount(), stageManager.GetStageWaveCount(stageManager.GetCurrentStageIndex()));
+
+                    // 새 Player 인스턴스의 OnDeath 이벤트 구독
+                    Player newPlayer = FindObjectOfType<Player>();
+                    if (newPlayer != null)
+                    {
+                        newPlayer.OnDeath += HandlePlayerDeath;
+                    }
                 }
                 else
                 {
@@ -182,10 +202,16 @@ namespace InvaderInsider.Managers
 
         public void GameOver()
         {
-            Time.timeScale = 0f;
+            if (CurrentGameState == GameState.GameOver) return;
+
             SetGameState(GameState.GameOver);
             Debug.Log($"{LOG_PREFIX} 게임 오버");
-            // 게임 오버 UI 표시 로직 추가
+            uiManager?.ShowPanel("GameOver"); // UIManager를 통해 패널 표시
+        }
+
+        private void HandlePlayerDeath()
+        {
+            GameOver();
         }
 
         public void StageCleared(int clearedStageNumber)
@@ -197,6 +223,9 @@ namespace InvaderInsider.Managers
 
         public void LoadMainMenuScene()
         {
+            Player player = FindObjectOfType<Player>();
+            if (player != null) player.OnDeath -= HandlePlayerDeath;
+
             Time.timeScale = 1f;
             SetGameState(GameState.Loading);
             SceneManager.LoadScene("Main");
