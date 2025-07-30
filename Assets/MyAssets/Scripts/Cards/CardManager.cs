@@ -197,13 +197,10 @@ namespace InvaderInsider.Cards
 
         public void AddCardToHand(int cardId)
         {
-            if (!ownedCardIds.Contains(cardId))
-            {
-                ownedCardIds.Add(cardId);
-                LogManager.Log($"{LOG_TAG} 카드가 핸드에 추가되었습니다: ID {cardId}");
-                LogManager.Log($"{LOG_TAG} Firing OnHandCardsChanged event.");
-                OnHandCardsChanged?.Invoke(ownedCardIds);
-            }
+            ownedCardIds.Add(cardId);
+            LogManager.Log($"{LOG_TAG} 카드가 핸드에 추가되었습니다: ID {cardId}");
+            LogManager.Log($"{LOG_TAG} Firing OnHandCardsChanged event.");
+            OnHandCardsChanged?.Invoke(ownedCardIds);
         }
 
         public void RemoveCardFromHand(int cardId)
