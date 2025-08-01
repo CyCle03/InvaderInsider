@@ -317,6 +317,7 @@ namespace InvaderInsider.UI
             if (cardData.type == CardType.Tower)
             {
                 GameManager.Instance.SelectedTowerPrefab = cardData.cardPrefab;
+                CardManager.Instance.RemoveCardFromHand(cardData.cardId);
             }
             // TODO: 다른 카드 타입(예: 스펠)에 대한 처리 추가
         }
