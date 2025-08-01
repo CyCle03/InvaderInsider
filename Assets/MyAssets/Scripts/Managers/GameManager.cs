@@ -256,5 +256,23 @@ namespace InvaderInsider.Managers
                 topBarPanel.UpdateEData(amount);
             }
         }
+
+        public void PlayCard(CardDBObject card)
+        {
+            if (card == null) return;
+
+            switch (card.type)
+            {
+                case CardType.Tower:
+                    SelectedTowerPrefab = card.cardPrefab;
+                    break;
+                case CardType.Character:
+                    // TODO: Implement character card logic
+                    break;
+                case CardType.Equipment:
+                    // TODO: Implement equipment card logic
+                    break;
+            }
+        }
     }
 }

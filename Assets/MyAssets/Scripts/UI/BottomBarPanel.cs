@@ -317,13 +317,11 @@ namespace InvaderInsider.UI
             if (cardData.type == CardType.Tower)
             {
                 GameManager.Instance.SelectedTowerPrefab = cardData.cardPrefab;
-                CardManager.Instance.RemoveCardFromHand(cardData.cardId);
             }
             else if (cardData.type == CardType.Character || cardData.type == CardType.Equipment)
             {
                 // For now, just remove the card from hand. 
                 // Actual character/equipment logic will be implemented elsewhere.
-                CardManager.Instance.RemoveCardFromHand(cardData.cardId);
             }
             // TODO: 다른 카드 타입(예: 스펠)에 대한 처리 추가
         }

@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using InvaderInsider.Data;
 using InvaderInsider.Cards;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.UI
 {
@@ -80,7 +81,18 @@ namespace InvaderInsider.UI
                 return;
             }
 
-            cardManager.OnCardChoiceSelected(currentCard);
+            // GameManager를 통해 카드를 사용하도록 변경
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.PlayCard(currentCard);
+            }
+            else
+            {
+                Debug.LogError($"{LOG_TAG} GameManager 인스턴스를 찾을 수 없습니다.");
+            }
+
+            // 핸드에서 카드 제거
+            cardManager.RemoveCardFromHand(currentCard.cardId);
 
             HideView();
         }
