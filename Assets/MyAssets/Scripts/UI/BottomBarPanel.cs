@@ -172,7 +172,7 @@ namespace InvaderInsider.UI
 
             player.OnHealthChanged += UpdateHealthDisplay;
 
-            CardManager.Instance.OnHandCardsChanged += UpdateCardHandUI;
+            // CardManager.Instance.OnHandCardsChanged += UpdateCardHandUI;
 
             // 게임 오버 버튼 이벤트 설정
             #if UNITY_EDITOR
