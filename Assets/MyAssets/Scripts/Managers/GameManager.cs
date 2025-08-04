@@ -257,6 +257,107 @@ namespace InvaderInsider.Managers
             }
         }
 
+        [Header("Card Placement Settings")]
+        [SerializeField] private LayerMask tileLayerMask; // 타일 오브젝트들이 속한 레이어를 설정합니다.
+        [SerializeField] private Material validPlacementMaterial; // 배치 가능 시 프리뷰에 적용할 반투명 초록색 재질
+        [SerializeField] private Material invalidPlacementMaterial; // 배치 불가능 시 프리뷰에 적용할 반투명 빨간색 재질
+
+        private GameObject placementPreviewInstance;
+        private CardDBObject cardDataForPlacement;
+        private Tile currentTargetTile;
+
+
+        private void Update()
+        {
+            if (placementPreviewInstance != null)
+            {
+                UpdatePlacementPreview();
+            }
+        }
+
+        #region Card Placement Methods
+
+        public void StartPlacementPreview(CardDBObject cardData)
+        {
+            if (cardData == null || cardData.cardPrefab == null) return;
+
+            if (placementPreviewInstance != null) Destroy(placementPreviewInstance);
+
+            cardDataForPlacement = cardData;
+            placementPreviewInstance = Instantiate(cardData.cardPrefab);
+
+            // 프리뷰가 게임 로직에 영향을 주지 않도록 주요 컴포넌트 비활성화
+            if (placementPreviewInstance.TryGetComponent<UnityEngine.AI.NavMeshAgent>(out var agent)) agent.enabled = false;
+            if (placementPreviewInstance.TryGetComponent<BaseCharacter>(out var character)) character.enabled = false;
+            foreach (var col in placementPreviewInstance.GetComponentsInChildren<Collider>()) col.enabled = false;
+        }
+
+        private void UpdatePlacementPreview()
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, 200f, tileLayerMask))
+            {
+                placementPreviewInstance.transform.position = hit.collider.transform.position; // 타일 중앙에 스냅
+                currentTargetTile = hit.collider.GetComponent<Tile>();
+            }
+            else
+            {
+                currentTargetTile = null;
+                placementPreviewInstance.transform.position = new Vector3(0, -1000, 0); // 타일이 아니면 화면 밖으로
+            }
+            UpdatePreviewVisuals();
+        }
+
+        private void UpdatePreviewVisuals()
+        {
+            bool isValid = currentTargetTile != null && currentTargetTile.tileType == TileType.Spawn && !currentTargetTile.IsOccupied;
+            Material materialToApply = isValid ? validPlacementMaterial : invalidPlacementMaterial;
+
+            if (materialToApply != null)
+            {
+                foreach (var renderer in placementPreviewInstance.GetComponentsInChildren<Renderer>())
+                {
+                    renderer.material = materialToApply;
+                }
+            }
+        }
+
+        public bool ConfirmPlacement()
+        {
+            if (placementPreviewInstance == null) return false;
+
+            bool isValid = currentTargetTile != null && currentTargetTile.tileType == TileType.Spawn && !currentTargetTile.IsOccupied;
+
+            if (isValid)
+            {
+                SpawnObject(cardDataForPlacement, currentTargetTile);
+                CardManager.Instance.RemoveCardFromHand(cardDataForPlacement.cardId);
+                Destroy(placementPreviewInstance);
+                ResetPlacementState();
+                return true;
+            }
+            else
+            {
+                CancelPlacement();
+                return false;
+            }
+        }
+
+        public void CancelPlacement()
+        {
+            if (placementPreviewInstance != null) Destroy(placementPreviewInstance);
+            ResetPlacementState();
+        }
+
+        private void ResetPlacementState()
+        {
+            placementPreviewInstance = null;
+            cardDataForPlacement = null;
+            currentTargetTile = null;
+        }
+
+        #endregion
+
         public GameObject SpawnObject(CardDBObject cardData, Tile tile)
         {
             if (cardData == null || cardData.cardPrefab == null)

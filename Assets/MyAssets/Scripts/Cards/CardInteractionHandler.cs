@@ -4,6 +4,7 @@ using InvaderInsider.Cards; // CardDisplay 참조를 위해 추가
 using System; // Action 이벤트를 위해 추가
 using InvaderInsider.UI; // CardDropZone 참조를 위해 추가
 using UnityEngine.Events; // UnityEvent 참조를 위해 추가
+using InvaderInsider.Managers; // GameManager 참조를 위해 추가
 
 namespace InvaderInsider.Cards
 {
@@ -14,8 +15,7 @@ namespace InvaderInsider.Cards
         private CardDisplay cardDisplay; // CardDisplay 컴포넌트 참조
         public event Action OnCardClicked; // 카드 클릭 이벤트
 
-        // 카드의 플레이/업그레이드 상호작용 완료 시 발생 (HandDisplayPanel 등에서 구독하여 처리)
-        public UnityEvent<CardDisplay, InvaderInsider.UI.CardPlacementResult> OnCardPlayInteractionCompleted = new UnityEvent<CardDisplay, InvaderInsider.UI.CardPlacementResult>();
+        
 
         private RectTransform rectTransform; // 카드 UI의 RectTransform
         private Canvas canvas; // 상위 Canvas 참조 (드래그 위치 계산용)
@@ -67,80 +67,32 @@ namespace InvaderInsider.Cards
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            // 드래그 시작 시 원래 위치와 부모 저장
-            originalParent = rectTransform.parent;
-            originalLocalPosition = rectTransform.localPosition;
+            if (cardDisplay == null || cardDisplay.GetCardData() == null) return;
 
-            // 드래그 중에는 Canvas의 최상위로 이동하여 다른 UI 위에 렌더링되도록 함
-            rectTransform.SetParent(canvas.transform, true);
-            cardDisplay.SetHighlight(false); // 드래그 시작 시 하이라이트 해제
+            // GameManager에 프리뷰 생성 요청
+            GameManager.Instance.StartPlacementPreview(cardDisplay.GetCardData());
+
+            // 카드 UI는 비활성화
+            cardDisplay.gameObject.SetActive(false);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            // 마우스 포인터를 따라 카드 이동
-            if (rectTransform != null && canvas != null)
-            {
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    canvas.GetComponent<RectTransform>(),
-                    eventData.position,
-                    eventData.pressEventCamera,
-                    out Vector2 localPoint
-                );
-                rectTransform.localPosition = localPoint;
-            }
+            // 이 메소드는 이제 GameManager가 처리하므로 비워둡니다.
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            GameObject droppedOn = eventData.pointerCurrentRaycast.gameObject;
-            CardDropZone dropZone = null;
-            CardPlacementResult result = CardPlacementResult.Failed_InvalidZone; // 기본값은 유효하지 않은 존
+            // GameManager에 배치 확정 요청
+            bool success = GameManager.Instance.ConfirmPlacement();
 
-            if (droppedOn != null)
+            if (!success)
             {
-                dropZone = droppedOn.GetComponent<CardDropZone>();
+                // 배치 실패 시 카드 UI 다시 활성화
+                cardDisplay.gameObject.SetActive(true);
             }
-
-            if (dropZone != null && dropZone.IsPlayableZone)
-            {
-                // 플레이 가능한 존에 드롭된 경우, TryPlaceCard 호출하여 결과 얻기
-                result = dropZone.TryPlaceCard(cardDisplay); // cardDisplay는 이 핸들러가 붙은 카드
-            }
-
-            switch (result)
-            {
-                case CardPlacementResult.Success_Place:
-                    // 성공적으로 배치된 경우
-                    rectTransform.SetParent(dropZone.CardPlacementParent != null ? dropZone.CardPlacementParent : droppedOn.transform);
-                    rectTransform.localPosition = Vector3.zero; // 필드의 중앙에 위치 (필요시 조정)
-                    rectTransform.localScale = Vector3.one; // 크기 초기화
-                    Debug.Log($"Card {cardDisplay?.GetCardData()?.cardName} successfully placed on playable zone: {droppedOn.name}");
-                    break;
-
-                case CardPlacementResult.Success_Upgrade:
-                    // 성공적으로 업그레이드된 경우, 현재 드래그된 카드는 소모됨 (풀로 반환 또는 비활성화)
-                    // 기존 카드는 CardDropZone에서 이미 처리됨
-                    this.gameObject.SetActive(false); // 드래그된 카드 비활성화 (풀로 반환될 준비)
-                    Debug.Log($"Card {cardDisplay?.GetCardData()?.cardName} successfully upgraded an existing card.");
-                    break;
-
-                case CardPlacementResult.Failed_InvalidZone:
-                case CardPlacementResult.Failed_AlreadyExists:
-                case CardPlacementResult.Failed_InvalidTarget:
-                case CardPlacementResult.Failed_OtherReason:
-                default:
-                    // 실패한 경우, 원래 위치로 복귀
-                    rectTransform.SetParent(originalParent);
-                    rectTransform.localPosition = originalLocalPosition;
-                    Debug.Log($"Card {cardDisplay?.GetCardData()?.cardName} returned to original position. Reason: {result}");
-                    break;
-            }
-
-            rectTransform.SetAsLastSibling(); // 드래그 종료 시 렌더링 순서 재조정 (옵션)
-
-            // 카드의 플레이/업그레이드 상호작용 완료 이벤트 발생
-            OnCardPlayInteractionCompleted?.Invoke(cardDisplay, result);
+            // 성공 시에는 GameManager가 핸드에서 카드를 제거하므로
+            // 이 카드 오브젝트는 그대로 비활성화 상태를 유지하거나 풀로 반환됩니다.
         }
     }
 } 
