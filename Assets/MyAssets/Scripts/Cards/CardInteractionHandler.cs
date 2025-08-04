@@ -1,114 +1,48 @@
 using UnityEngine;
-using UnityEngine.EventSystems; // EventSystems 네임스페이스 추가
-using UnityEngine.UI; // ScrollRect 참조를 위해 추가
-using InvaderInsider.Cards; // CardDisplay 참조를 위해 추가
-using System; // Action 이벤트를 위해 추가
-using InvaderInsider.UI; // CardDropZone 참조를 위해 추가
-using UnityEngine.Events; // UnityEvent 참조를 위해 추가
-using InvaderInsider.Managers; // GameManager 참조를 위해 추가
+using UnityEngine.EventSystems;
+using InvaderInsider.Cards;
+using InvaderInsider.Managers;
 
 namespace InvaderInsider.Cards
 {
-    [RequireComponent(typeof(CardDisplay))] // CardDisplay 요구
-    public class CardInteractionHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+    [RequireComponent(typeof(CardDisplay))]
+    public class CardInteractionHandler : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
-        private CardDisplay cardDisplay; // CardDisplay 컴포넌트 참조
-        public event Action OnCardClicked; // 카드 클릭 이벤트
-
-        private RectTransform rectTransform;
-        private Canvas canvas;
-        private ScrollRect parentScrollRect;
-        private bool isDraggingCard = false; // 현재 카드 드래그 중인지, 아니면 스크롤 중인지 상태를 저장
+        private CardDisplay cardDisplay;
 
         private void Awake()
         {
             cardDisplay = GetComponent<CardDisplay>();
-            if (cardDisplay == null)
-            {
-                Debug.LogError("CardDisplay component not found on this GameObject!", this);
-            }
-            rectTransform = GetComponent<RectTransform>();
-            canvas = GetComponentInParent<Canvas>();
-            if (canvas == null)
-            {
-                Debug.LogError("Canvas not found in parents! Dragging may not work correctly.", this);
-            }
-            parentScrollRect = GetComponentInParent<ScrollRect>();
-        }
-
-        public void OnPointerEnter(PointerEventData eventData)
-        {
-            if (cardDisplay != null)
-            {
-                cardDisplay.SetHighlight(true);
-            }
-        }
-
-        public void OnPointerExit(PointerEventData eventData)
-        {
-            if (cardDisplay != null)
-            {
-                cardDisplay.SetHighlight(false);
-            }
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (eventData.dragging == false)
+            // 드래그 중이 아닐 때만 클릭으로 간주합니다.
+            if (!eventData.dragging)
             {
-                OnCardClicked?.Invoke();
                 Debug.Log($"Card Clicked: {cardDisplay?.GetCardData()?.cardName}");
+                // TODO: 여기에 카드를 클릭했을 때 상세 정보 패널을 여는 로직을 추가할 수 있습니다.
             }
         }
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (parentScrollRect == null) return;
-
-            // 드래그 방향을 확인합니다.
-            if (Mathf.Abs(eventData.delta.x) < Mathf.Abs(eventData.delta.y))
-            {
-                // 수직 드래그가 더 크면 => 카드 배치 시작
-                isDraggingCard = true;
-                parentScrollRect.OnBeginDrag(eventData); // 스크롤뷰의 드래그 시작을 막기 위해 이벤트를 한번 넘겨주고 비활성화
-                parentScrollRect.enabled = false;
-
-                GameManager.Instance.StartPlacementPreview(cardDisplay.GetCardData());
-            }
-            else
-            {
-                // 수평 드래그가 더 크면 => 스크롤 시작
-                isDraggingCard = false;
-                parentScrollRect.OnBeginDrag(eventData);
-            }
+            // 카드 아이콘 위에서 시작된 드래그는 항상 카드 배치로 취급합니다.
+            if (cardDisplay?.GetCardData() == null) return;
+            GameManager.Instance.StartPlacementPreview(cardDisplay.GetCardData());
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (!isDraggingCard && parentScrollRect != null)
-            {
-                // 스크롤 중일 때만 이벤트를 전달합니다.
-                parentScrollRect.OnDrag(eventData);
-            }
-            // 카드 드래그 중에는 GameManager가 프리뷰를 움직이므로 아무것도 하지 않습니다.
+            // 카드 배치 중에는 GameManager가 프리뷰 위치를 업데이트하므로 이 메소드는 비워둡니다.
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            if (isDraggingCard)
-            {
-                // 카드 배치 시도
-                GameManager.Instance.ConfirmPlacement();
-            }
-            else if (parentScrollRect != null)
-            {
-                // 스크롤 종료
-                parentScrollRect.OnEndDrag(eventData);
-            }
-
-            // 상태 초기화 및 스크롤뷰 활성화
-            isDraggingCard = false;
-            if (parentScrollRect != null) parentScrollRect.enabled = true;
+            // 드래그가 끝나면 배치를 확정하거나 취소합니다.
+            GameManager.Instance.ConfirmPlacement();
         }
     }
-} 
+}
+
+ 
