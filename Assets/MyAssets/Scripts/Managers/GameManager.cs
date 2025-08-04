@@ -326,18 +326,31 @@ namespace InvaderInsider.Managers
         {
             if (placementPreviewInstance == null) return false;
 
-            bool isValid = currentTargetTile != null && currentTargetTile.tileType == TileType.Spawn && !currentTargetTile.IsOccupied;
+            bool isValidTile = currentTargetTile != null && currentTargetTile.tileType == TileType.Spawn && !currentTargetTile.IsOccupied;
 
-            if (isValid)
+            if (isValidTile)
             {
-                SpawnObject(cardDataForPlacement, currentTargetTile);
-                CardManager.Instance.RemoveCardFromHand(cardDataForPlacement.cardId);
-                Destroy(placementPreviewInstance);
-                ResetPlacementState();
-                return true;
+                GameObject spawnedObject = SpawnObject(cardDataForPlacement, currentTargetTile);
+
+                if (spawnedObject != null)
+                {
+                    // 생성에 성공한 경우에만 카드를 제거하고 프리뷰를 정리합니다.
+                    CardManager.Instance.RemoveCardFromHand(cardDataForPlacement.cardId);
+                    Destroy(placementPreviewInstance);
+                    ResetPlacementState();
+                    return true;
+                }
+                else
+                {
+                    // 생성에 실패하면 프리뷰만 취소하고 카드는 핸드에 남겨둡니다.
+                    Debug.LogError($"{LOG_PREFIX}Placement confirmed, but SpawnObject failed. Card will not be removed from hand.");
+                    CancelPlacement();
+                    return false;
+                }
             }
             else
             {
+                // 유효하지 않은 타일이므로 프리뷰를 취소합니다.
                 CancelPlacement();
                 return false;
             }
@@ -372,7 +385,6 @@ namespace InvaderInsider.Managers
                 return null;
             }
 
-            // 'Spawn' 타입의 타일에만 배치 가능
             if (tile.tileType != TileType.Spawn)
             {
                 Debug.LogWarning($"{LOG_PREFIX}배치할 수 없는 타일입니다. (타일 타입: {tile.tileType})");
@@ -385,8 +397,16 @@ namespace InvaderInsider.Managers
                 return null;
             }
 
-            GameObject prefabToSpawn = cardData.cardPrefab;
-            GameObject spawnedObject = Instantiate(prefabToSpawn, tile.transform.position, Quaternion.identity);
+            Debug.Log($"{LOG_PREFIX}Attempting to spawn '{cardData.cardName}' on tile '{tile.name}'.");
+
+            GameObject spawnedObject = Instantiate(cardData.cardPrefab, tile.transform.position, Quaternion.identity);
+            if (spawnedObject == null)
+            {
+                Debug.LogError($"{LOG_PREFIX}Failed to instantiate prefab for card '{cardData.cardName}'.");
+                return null;
+            }
+
+            Debug.Log($"{LOG_PREFIX}Successfully instantiated prefab '{spawnedObject.name}'. Now initializing...");
 
             switch (cardData.type)
             {
@@ -395,7 +415,14 @@ namespace InvaderInsider.Managers
                     if (towerComponent != null)
                     {
                         towerComponent.Initialize(cardData);
-                        tile.SetOccupied(true); // 타일 점유 상태 변경
+                        tile.SetOccupied(true);
+                        Debug.Log($"{LOG_PREFIX}Initialized '{spawnedObject.name}' as Tower.");
+                    }
+                    else
+                    {
+                        Debug.LogError($"{LOG_PREFIX}Spawned object for '{cardData.cardName}' is missing the 'Tower' component. Destroying object.");
+                        Destroy(spawnedObject);
+                        return null;
                     }
                     break;
                 case CardType.Character:
@@ -403,12 +430,19 @@ namespace InvaderInsider.Managers
                     if (characterComponent != null)
                     {
                         characterComponent.Initialize(cardData);
-                        // 캐릭터는 타일을 점유하지 않을 수 있음 (게임 기획에 따라 다름)
+                        tile.SetOccupied(true); // 캐릭터도 타일을 점유하도록 변경
+                        Debug.Log($"{LOG_PREFIX}Initialized '{spawnedObject.name}' as Character.");
+                    }
+                    else
+                    {
+                        Debug.LogError($"{LOG_PREFIX}Spawned object for '{cardData.cardName}' is missing a 'BaseCharacter' (or subclass) component. Destroying object.");
+                        Destroy(spawnedObject);
+                        return null;
                     }
                     break;
             }
 
-            Debug.Log($"{LOG_PREFIX}{cardData.cardName}이(가) {tile.name} 타일에 소환되었습니다.");
+            Debug.Log($"{LOG_PREFIX}{cardData.cardName} was successfully summoned on tile {tile.name}.");
             return spawnedObject;
         }
 

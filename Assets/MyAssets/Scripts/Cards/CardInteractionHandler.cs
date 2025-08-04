@@ -72,8 +72,7 @@ namespace InvaderInsider.Cards
             // GameManager에 프리뷰 생성 요청
             GameManager.Instance.StartPlacementPreview(cardDisplay.GetCardData());
 
-            // 카드 UI는 비활성화
-            cardDisplay.gameObject.SetActive(false);
+            // 드래그 중에도 카드 UI는 그대로 보이도록 비활성화 코드를 제거합니다.
         }
 
         public void OnDrag(PointerEventData eventData)
@@ -86,13 +85,9 @@ namespace InvaderInsider.Cards
             // GameManager에 배치 확정 요청
             bool success = GameManager.Instance.ConfirmPlacement();
 
-            if (!success)
-            {
-                // 배치 실패 시 카드 UI 다시 활성화
-                cardDisplay.gameObject.SetActive(true);
-            }
-            // 성공 시에는 GameManager가 핸드에서 카드를 제거하므로
-            // 이 카드 오브젝트는 그대로 비활성화 상태를 유지하거나 풀로 반환됩니다.
+            // 성공 시 GameManager가 CardManager를 통해 핸드에서 카드를 제거하고 UI를 갱신합니다.
+            // 실패 시에는 프리뷰만 사라지고 핸드의 카드는 그대로 유지됩니다.
+            // 따라서 이 메소드에서는 추가적인 처리가 필요 없습니다.
         }
     }
 } 
