@@ -64,7 +64,6 @@ namespace InvaderInsider
         {
             // 플레이어 특화 초기화 (이벤트 리스너 먼저 설정)
             InitializePlayerComponents();
-            SetupEventListeners();
             
             // BaseCharacter의 Initialize 호출 (이벤트 발생시킴)
             base.Initialize(null);
@@ -81,6 +80,8 @@ namespace InvaderInsider
         #if UNITY_EDITOR
         private void Update()
         {
+            FindAndAttackEnemies();
+
             if (Input.GetMouseButtonDown(0) && GameManager.Instance.SelectedTowerPrefab != null)
             {
                 Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -103,8 +104,12 @@ namespace InvaderInsider
         
         #endregion
 
-        #region Initialization
-        
+        #region Attack Logic
+
+        private IDamageable currentTarget;
+        private int enemyLayerMask;
+        private readonly Collider[] detectionBuffer = new Collider[50]; // 최대 50개의 적을 감지
+
         /// <summary>
         /// 플레이어 전용 컴포넌트들을 초기화합니다.
         /// </summary>
@@ -124,18 +129,67 @@ namespace InvaderInsider
                 DebugUtils.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
                 string.Format(GameConstants.LogMessages.COMPONENT_NOT_FOUND, "BottomBarPanel"));
             }
-        }
 
-        /// <summary>
-        /// 이벤트 리스너들을 설정합니다.
-        /// </summary>
-        private void SetupEventListeners()
-        {
-            // BaseCharacter의 이벤트 구독
+            // 공격을 위한 적 레이어 마스크 설정
+            enemyLayerMask = LayerMask.GetMask(GameConstants.ENEMY_LAYER_NAME);
+
+            // 이벤트 리스너 설정
             OnHealthChanged += HandleHealthChanged;
             OnDeath += HandlePlayerDeath;
         }
-        
+
+        /// <summary>
+        /// 주변의 적을 찾아 공격합니다.
+        /// </summary>
+        private void FindAndAttackEnemies()
+        {
+            if (!CanAttack()) return; // BaseCharacter의 공격 속도 체크
+
+            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, AttackRange, detectionBuffer, enemyLayerMask);
+
+            if (hitCount > 0)
+            {
+                // 가장 가까운 적을 찾습니다.
+                float closestDistance = float.MaxValue;
+                IDamageable nearestEnemy = null;
+
+                for (int i = 0; i < hitCount; i++)
+                {
+                    if (detectionBuffer[i].TryGetComponent<IDamageable>(out var enemy))
+                    {
+                        float distance = Vector3.Distance(transform.position, detectionBuffer[i].transform.position);
+                        if (distance < closestDistance)
+                        {
+                            closestDistance = distance;
+                            nearestEnemy = enemy;
+                        }
+                    }
+                }
+
+                if (nearestEnemy != null)
+                {
+                    currentTarget = nearestEnemy;
+                    Attack(currentTarget);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 플레이어는 직접 공격합니다.
+        /// </summary>
+        public override void Attack(IDamageable target)
+        {
+            if (target == null) return;
+
+            target.TakeDamage(AttackDamage);
+            SetNextAttackTime(); // 다음 공격 딜레이 설정
+
+            if (showDebugInfo)
+            {
+                Debug.Log($"Player attacks {((MonoBehaviour)target).gameObject.name} for {AttackDamage} damage.");
+            }
+        }
+
         #endregion
 
         #region Event Handlers
@@ -234,16 +288,7 @@ namespace InvaderInsider
                 $"Player HP 초기화 완료: {CurrentHealth}/{MaxHealth} ({healthRatio:F2})");
         }
 
-        /// <summary>
-        /// 플레이어는 공격하지 않으므로 빈 구현
-        /// </summary>
-        /// <param name="target">공격할 대상</param>
-        public override void Attack(IDamageable target)
-        {
-            // 플레이어는 직접 공격하지 않음
-            DebugUtils.LogWarning(GameConstants.LOG_PREFIX_PLAYER, 
-                "플레이어는 직접 공격할 수 없습니다.");
-        }
+        
         
         #endregion
 
