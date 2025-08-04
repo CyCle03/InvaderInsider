@@ -24,4 +24,4 @@ MonoBehaviour:
   equipmentBonusAttack: 0
   equipmentBonusHealth: 0
   summonWeight: 1
-  cardPrefab: {fileID: 0}
+  cardPrefab: {fileID: 7708301464856593053, guid: 6a91e5ecbd1293644b1b9f5eeb148ec1, type: 3}

@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 7042809132880381946}
   - component: {fileID: 5421653909292880812}
   - component: {fileID: 6312397712653005016}
+  - component: {fileID: 6311305574256924173}
+  - component: {fileID: 3755615563184157268}
   m_Layer: 5
   m_Name: CardIconPrefab
   m_TagString: Untagged
@@ -75,3 +77,49 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &6311305574256924173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8648927465063959935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0baf0581fd1175140a86c41d224dc660, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  artworkImage: {fileID: 0}
+  nameText: {fileID: 0}
+  descriptionText: {fileID: 0}
+  costText: {fileID: 0}
+  powerText: {fileID: 0}
+  typeText: {fileID: 0}
+  rarityFrame: {fileID: 0}
+  rarityIcon: {fileID: 0}
+  typeIcon: {fileID: 0}
+  cardFrame: {fileID: 0}
+  highlightPanel: {fileID: 0}
+  equipmentBonusPanel: {fileID: 0}
+  equipmentAttackBonusText: {fileID: 0}
+  equipmentHealthBonusText: {fileID: 0}
+  rarityColors: []
+  commonIcon: {fileID: 0}
+  rareIcon: {fileID: 0}
+  epicIcon: {fileID: 0}
+  legendaryIcon: {fileID: 0}
+  typeIcons: []
+  typeFrames: []
+  maxDescriptionLength: 100
+--- !u!114 &3755615563184157268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8648927465063959935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1068490a5c0a934b931972971d57fa2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

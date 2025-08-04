@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: TestE2Card
   m_EditorClassIdentifier: 
   cardId: 3
-  cardName: TestE2
+  cardName: TestE2(T)
   description: 
   artwork: {fileID: 0}
   cost: 1

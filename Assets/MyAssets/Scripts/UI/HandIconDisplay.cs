@@ -108,6 +108,18 @@ namespace InvaderInsider.UI
                     {
                         iconImage.sprite = cardData.artwork; 
                     }
+
+                    // 아이콘에 카드 데이터 설정 (CardDisplay와 CardInteractionHandler가 프리팹에 추가되었다고 가정)
+                    var cardDisplay = iconObj.GetComponent<CardDisplay>();
+                    if (cardDisplay != null)
+                    {
+                        cardDisplay.SetupCard(cardData);
+                    }
+                    else
+                    {
+                        LogManager.LogWarning($"{LOG_TAG} {iconObj.name}에서 CardDisplay 컴포넌트를 찾을 수 없습니다. 프리팹 설정을 확인하세요.");
+                    }
+
                     currentIconItems.Add(iconObj);
                 }
             }
