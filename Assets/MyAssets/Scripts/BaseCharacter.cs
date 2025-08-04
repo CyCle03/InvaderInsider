@@ -165,13 +165,20 @@ namespace InvaderInsider
         /// <summary>
         /// 캐릭터를 초기화합니다. 자식 클래스에서 적절한 타이밍에 호출해야 합니다.
         /// </summary>
-        protected virtual void Initialize()
+        public virtual void Initialize(CardDBObject cardData)
         {
             if (_isInitialized)
             {
                 DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"{gameObject.name}: 이미 초기화된 캐릭터입니다.");
                 return;
+            }
+
+            if (cardData != null)
+            {
+                // 카드의 power 값을 기반으로 스탯 설정 (기획에 따라 변경 필요)
+                this.maxHealth = cardData.power; 
+                this.attackDamage = 1; // 기본 공격력 또는 다른 값으로 설정
             }
 
             currentHealth = maxHealth;

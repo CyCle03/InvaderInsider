@@ -400,6 +400,14 @@ namespace InvaderInsider
             partToRotate.rotation = Quaternion.Euler(0, newY, 0);
         }
 
+        public override void Initialize(CardDBObject cardData)
+        {
+            base.Initialize(cardData);
+            // 타워의 공격 범위나 투사체 프리팹 등은
+            // 카드 데이터가 아닌 타워 프리팹 자체에 설정되어야 합니다.
+            // 따라서 여기서는 추가적인 로직이 필요 없습니다.
+        }
+
         public override void Attack(IDamageable target)
         {
             if (target == null || projectilePrefab == null) return;

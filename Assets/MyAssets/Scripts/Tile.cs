@@ -11,5 +11,11 @@ namespace InvaderInsider
     public class Tile : MonoBehaviour
     {
         public TileType tileType;
+        public bool IsOccupied { get; private set; }
+
+        public void SetOccupied(bool isOccupied)
+        {
+            IsOccupied = isOccupied;
+        }
     }
 }

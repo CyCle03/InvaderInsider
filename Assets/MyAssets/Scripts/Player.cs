@@ -67,7 +67,7 @@ namespace InvaderInsider
             SetupEventListeners();
             
             // BaseCharacter의 Initialize 호출 (이벤트 발생시킴)
-            base.Initialize();
+            base.Initialize(null);
             
             // 강제 UI 동기화 (안전장치)
             ForceUISync();

@@ -257,6 +257,60 @@ namespace InvaderInsider.Managers
             }
         }
 
+        public GameObject SpawnObject(CardDBObject cardData, Tile tile)
+        {
+            if (cardData == null || cardData.cardPrefab == null)
+            {
+                Debug.LogError($"{LOG_PREFIX}카드 데이터 또는 프리팹이 유효하지 않습니다.");
+                return null;
+            }
+
+            if (tile == null)
+            {
+                Debug.LogWarning($"{LOG_PREFIX}타일이 유효하지 않습니다.");
+                return null;
+            }
+
+            // 'Spawn' 타입의 타일에만 배치 가능
+            if (tile.tileType != TileType.Spawn)
+            {
+                Debug.LogWarning($"{LOG_PREFIX}배치할 수 없는 타일입니다. (타일 타입: {tile.tileType})");
+                return null;
+            }
+
+            if (tile.IsOccupied)
+            {
+                Debug.LogWarning($"{LOG_PREFIX}이미 점유된 타일입니다.");
+                return null;
+            }
+
+            GameObject prefabToSpawn = cardData.cardPrefab;
+            GameObject spawnedObject = Instantiate(prefabToSpawn, tile.transform.position, Quaternion.identity);
+
+            switch (cardData.type)
+            {
+                case CardType.Tower:
+                    Tower towerComponent = spawnedObject.GetComponent<Tower>();
+                    if (towerComponent != null)
+                    {
+                        towerComponent.Initialize(cardData);
+                        tile.SetOccupied(true); // 타일 점유 상태 변경
+                    }
+                    break;
+                case CardType.Character:
+                    BaseCharacter characterComponent = spawnedObject.GetComponent<BaseCharacter>();
+                    if (characterComponent != null)
+                    {
+                        characterComponent.Initialize(cardData);
+                        // 캐릭터는 타일을 점유하지 않을 수 있음 (게임 기획에 따라 다름)
+                    }
+                    break;
+            }
+
+            Debug.Log($"{LOG_PREFIX}{cardData.cardName}이(가) {tile.name} 타일에 소환되었습니다.");
+            return spawnedObject;
+        }
+
         public void PlayCard(CardDBObject card)
         {
             if (card == null) return;
