@@ -80,9 +80,15 @@ namespace InvaderInsider.UI
             {
                 cardUI.SetCard(cardData);
                 // 카드 클릭 시 상세 정보를 보여주거나 하는 로직을 여기에 추가할 수 있습니다.
-                // cardUI.OnCardClicked += () => ShowCardDetails(cardData);
+                cardUI.OnCardClicked += () => ShowCardDetails(cardData);
             }
             activeCardObjects.Add(cardObj);
+        }
+
+        private void ShowCardDetails(CardDBObject cardData)
+        {
+            Debug.Log($"Card clicked: {cardData.cardName}");
+            // 여기에 카드 상세 정보 UI를 표시하는 로직을 추가합니다.
         }
 
         private void ClearCardDisplays()
