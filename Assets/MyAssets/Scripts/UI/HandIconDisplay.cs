@@ -120,6 +120,12 @@ namespace InvaderInsider.UI
                         LogManager.LogWarning($"{LOG_TAG} {iconObj.name}에서 CardDisplay 컴포넌트를 찾을 수 없습니다. 프리팹 설정을 확인하세요.");
                     }
 
+                    var cardInteractionHandler = iconObj.GetComponent<CardInteractionHandler>();
+                    if (cardInteractionHandler != null)
+                    {
+                        cardInteractionHandler.OnCardClicked += () => ShowCardDetails(cardData);
+                    }
+
                     currentIconItems.Add(iconObj);
                 }
             }
@@ -128,6 +134,12 @@ namespace InvaderInsider.UI
                 Hide(); // 핸드에 카드가 없으면 비활성화
             }
             Debug.Log($"{LOG_TAG} OnHandDataChanged finished. {currentIconItems.Count} icons created. Panel active: {gameObject.activeSelf}");
+        }
+
+        private void ShowCardDetails(CardDBObject cardData)
+        {
+            Debug.Log($"Card icon clicked: {cardData.cardName}");
+            // 상세 정보 패널을 열거나 다른 동작을 수행할 수 있습니다.
         }
 
         private void OpenHandDisplayPanel()
