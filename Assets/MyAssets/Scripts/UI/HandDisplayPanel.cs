@@ -168,12 +168,15 @@ namespace InvaderInsider.UI
                 var display = cardObj.GetComponent<CardDisplay>();
                 display?.SetupCard(cardData);
 
-                // Handle interaction via a simple button click to show details
-                var cardButton = cardObj.GetComponent<Button>();
-                if (cardButton != null)
+                // Handle interaction via CardInteractionHandler
+                var cardInteractionHandler = cardObj.GetComponent<CardInteractionHandler>();
+                if (cardInteractionHandler != null)
                 {
-                    cardButton.onClick.RemoveAllListeners();
-                    cardButton.onClick.AddListener(() => ShowCardDetails(cardData));
+                    cardInteractionHandler.OnCardClicked += () => ShowCardDetails(cardData);
+                }
+                else
+                {
+                    LogManager.LogWarning($"{LOG_TAG} CardInteractionHandler를 찾을 수 없습니다. 카드 클릭 이벤트가 작동하지 않을 수 있습니다.");
                 }
 
                 currentHandItems.Add(cardObj);

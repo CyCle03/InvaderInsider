@@ -60,15 +60,24 @@ namespace InvaderInsider.UI
             var cardButtonComponent = buttonObj.GetComponent<CardButton>();
             var button = buttonObj.GetComponent<Button>();
 
-            if (cardButtonComponent != null && button != null)
+            if (cardButtonComponent != null)
             {
                 cardButtonComponent.Initialize(card);
-                button.onClick.AddListener(() => HandleCardSelect(card));
+                // CardInteractionHandler를 통해 클릭 이벤트 처리
+                var cardInteractionHandler = buttonObj.GetComponent<CardInteractionHandler>();
+                if (cardInteractionHandler != null)
+                {
+                    cardInteractionHandler.OnCardClicked += () => HandleCardSelect(card);
+                }
+                else
+                {
+                    LogManager.LogWarning($"{LOG_TAG} CardInteractionHandler를 찾을 수 없습니다. 소환 카드 선택 클릭 이벤트가 작동하지 않을 수 있습니다.");
+                }
                 cardButtonObjects.Add(buttonObj);
             }
             else
             {
-                LogManager.LogError($"{LOG_TAG} cardButtonPrefab에 CardButton 컴포넌트 또는 Button 컴포넌트가 없습니다. 프리팹을 확인하세요. (CardButton: {cardButtonComponent != null}, Button: {button != null})");
+                LogManager.LogError($"{LOG_TAG} cardButtonPrefab에 CardButton 컴포넌트가 없습니다. 프리팹을 확인하세요. (CardButton: {cardButtonComponent != null})");
                 Destroy(buttonObj);
             }
         }
