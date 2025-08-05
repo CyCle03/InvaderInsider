@@ -10,6 +10,7 @@ namespace InvaderInsider.UI
 
         public override void OnBeginDrag(PointerEventData eventData)
         {
+            Debug.Log($"[CustomScrollRect] OnBeginDrag called. pointerPress: {eventData.pointerPress?.gameObject.name}");
             // 드래그 대상이 IDragHandler를 가지고 있는지 확인합니다.
             // 자기 자신(ScrollRect) 외의 다른 핸들러를 찾습니다.
             var dragHandlers = eventData.pointerPress.GetComponents<IDragHandler>();

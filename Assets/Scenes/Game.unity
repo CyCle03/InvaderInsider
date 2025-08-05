@@ -6745,7 +6745,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe38b2e65d4c25a42bc4a02c6507ca27, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Content: {fileID: 0}
+  m_Content: {fileID: 12717311}
   m_Horizontal: 1
   m_Vertical: 1
   m_MovementType: 1
@@ -6753,7 +6753,7 @@ MonoBehaviour:
   m_Inertia: 1
   m_DecelerationRate: 0.135
   m_ScrollSensitivity: 1
-  m_Viewport: {fileID: 12717311}
+  m_Viewport: {fileID: 1416510256}
   m_HorizontalScrollbar: {fileID: 0}
   m_VerticalScrollbar: {fileID: 2020628834}
   m_HorizontalScrollbarVisibility: 0
@@ -12500,7 +12500,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1342691731}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999981
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
