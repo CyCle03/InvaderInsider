@@ -2399,17 +2399,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cardDatabase: {fileID: 11400000, guid: df9ff1e2e262f36489a19dc9b27dd5d7, type: 2}
-  drawCost: 10
-  rarityRates:
-  - 0.6
-  - 0.3
-  - 0.08
-  - 0.02
-  initialSummonCost: 10
-  summonCostIncrease: 1
-  OnCardDrawn:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!4 &1910797351
 Transform:
   m_ObjectHideFlags: 0
@@ -2469,6 +2458,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 046b78f6ba1504e45b9f63886e27843c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tileLayerMask:
+    serializedVersion: 2
+    m_Bits: 128
+  validPlacementMaterial: {fileID: 0}
+  invalidPlacementMaterial: {fileID: 0}
+  placementYOffset: 1
 --- !u!1 &1979721233
 GameObject:
   m_ObjectHideFlags: 0

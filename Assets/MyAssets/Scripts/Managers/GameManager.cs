@@ -261,6 +261,7 @@ namespace InvaderInsider.Managers
         [SerializeField] private LayerMask tileLayerMask; // 타일 오브젝트들이 속한 레이어를 설정합니다.
         [SerializeField] private Material validPlacementMaterial; // 배치 가능 시 프리뷰에 적용할 반투명 초록색 재질
         [SerializeField] private Material invalidPlacementMaterial; // 배치 불가능 시 프리뷰에 적용할 반투명 빨간색 재질
+        [SerializeField] private float placementYOffset = 0.0f; // 유닛 배치 시 Y축 오프셋
 
         private GameObject placementPreviewInstance;
         private CardDBObject cardDataForPlacement;
@@ -295,9 +296,10 @@ namespace InvaderInsider.Managers
         private void UpdatePlacementPreview()
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit, 200f, tileLayerMask))
+            RaycastHit hit;
+            if (Physics.Raycast(ray, out hit, 200f, tileLayerMask))
             {
-                placementPreviewInstance.transform.position = hit.collider.transform.position; // 타일 중앙에 스냅
+                placementPreviewInstance.transform.position = hit.collider.transform.position + new Vector3(0, placementYOffset, 0); // 타일 중앙에 스냅 및 Y축 오프셋 적용
                 currentTargetTile = hit.collider.GetComponent<Tile>();
             }
             else
@@ -399,7 +401,10 @@ namespace InvaderInsider.Managers
 
             Debug.Log($"{LOG_PREFIX}Attempting to spawn '{cardData.cardName}' on tile '{tile.name}'.");
 
-            GameObject spawnedObject = Instantiate(cardData.cardPrefab, tile.transform.position, Quaternion.identity);
+            Vector3 spawnPosition = tile.transform.position;
+            spawnPosition.y += placementYOffset; // Y축 오프셋 적용
+
+            GameObject spawnedObject = Instantiate(cardData.cardPrefab, spawnPosition, Quaternion.identity);
             if (spawnedObject == null)
             {
                 Debug.LogError($"{LOG_PREFIX}Failed to instantiate prefab for card '{cardData.cardName}'.");

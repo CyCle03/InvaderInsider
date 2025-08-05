@@ -28,7 +28,6 @@ namespace InvaderInsider.Cards
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            Debug.Log($"[CardInteractionHandler] OnBeginDrag called for {gameObject.name}");
             if (cardDisplay?.GetCardData() == null) return;
             // GameManager를 통해 모델 미리보기 시작
             GameManager.Instance.StartPlacementPreview(cardDisplay.GetCardData());
