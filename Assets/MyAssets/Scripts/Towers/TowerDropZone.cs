@@ -19,13 +19,18 @@ namespace InvaderInsider.Towers
 
         public void OnDrop(PointerEventData eventData)
         {
+            Debug.Log($"[TowerDropZone] OnDrop called on {gameObject.name}");
             CardDBObject draggedCard = GameManager.Instance.DraggedCardData;
 
             if (draggedCard != null && tower != null)
             {
+                Debug.Log($"[TowerDropZone] Dragged Card: {draggedCard.cardName} (ID: {draggedCard.cardId}, Level: {draggedCard.level})");
+                Debug.Log($"[TowerDropZone] Target Tower: {tower.gameObject.name} (ID: {tower.CardId}, Level: {tower.Level})");
+
                 // 업그레이드 조건 확인: ID와 레벨이 모두 같아야 함
                 if (tower.CardId == draggedCard.cardId && tower.Level == draggedCard.level)
                 {
+                    Debug.Log($"[TowerDropZone] Upgrade conditions met! Upgrading {tower.gameObject.name}.");
                     // 업그레이드 실행
                     tower.LevelUp();
 
@@ -38,9 +43,17 @@ namespace InvaderInsider.Towers
                         Destroy(eventData.pointerDrag);
                     }
                 }
+                else
+                {
+                    Debug.Log($"[TowerDropZone] Upgrade conditions NOT met. ID Match: {tower.CardId == draggedCard.cardId}, Level Match: {tower.Level == draggedCard.level}");
+                }
 
                 // 드래그 상태 초기화
                 GameManager.Instance.DraggedCardData = null;
+            }
+            else
+            {
+                Debug.Log($"[TowerDropZone] Dragged card or target tower is null. DraggedCard: {draggedCard != null}, TargetTower: {tower != null}");
             }
         }
     }

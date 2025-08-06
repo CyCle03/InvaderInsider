@@ -125,6 +125,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7794190278614578308}
   - component: {fileID: 7249492047539252826}
+  - component: {fileID: -8205347774286955399}
   m_Layer: 0
   m_Name: Turret_Ver2
   m_TagString: Untagged
@@ -161,13 +162,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f50d618e8ab69543af0905f494ff957, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  range: 5
-  fireRate: 1
-  dmg: 1
+  level: 1
+  maxHealth: 100
+  currentHealth: 0
+  attackDamage: 10
+  baseAttackRange: 5
+  attackRate: 1
+  showDebugInfo: 0
+  cardId: -1
   projectilePrefab: {fileID: 2265586970664229171, guid: dd54440be1886dd4f932f338a5c3efad, type: 3}
-  partToRotate: {fileID: 2858478541685189268}
-  turnSpeed: 10
   firePoint: {fileID: 6830325756573255305}
+  partToRotate: {fileID: 2858478541685189268}
+  towerAttackRange: 5
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  muzzleFlash: {fileID: 0}
+  fireSound: {fileID: 0}
+  upgradeEffect: {fileID: 0}
+--- !u!65 &-8205347774286955399
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3895847430265433294}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &4481920288028269151
 GameObject:
   m_ObjectHideFlags: 0

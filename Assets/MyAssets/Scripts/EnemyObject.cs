@@ -389,7 +389,7 @@ namespace InvaderInsider
             if (currentWaypoint != null && agent != null)
             {
                 agent.SetDestination(currentWaypoint.position);
-                Debug.Log($"{LOG_PREFIX}{gameObject.name}: {string.Format(LOG_MESSAGES[4], currentWaypoint.name)}");
+                
             }
             else
             {

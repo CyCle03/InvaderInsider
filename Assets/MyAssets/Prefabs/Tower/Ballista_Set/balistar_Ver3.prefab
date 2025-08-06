@@ -127,6 +127,7 @@ GameObject:
   m_Component:
   - component: {fileID: 645857447005334333}
   - component: {fileID: 9198415564173367379}
+  - component: {fileID: -6805112078869842550}
   m_Layer: 0
   m_Name: balistar_Ver3
   m_TagString: Untagged
@@ -163,13 +164,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f50d618e8ab69543af0905f494ff957, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  range: 5
-  fireRate: 1
-  dmg: 1
+  level: 1
+  maxHealth: 100
+  currentHealth: 0
+  attackDamage: 10
+  baseAttackRange: 5
+  attackRate: 1
+  showDebugInfo: 0
+  cardId: -1
   projectilePrefab: {fileID: 2265586970664229171, guid: dd54440be1886dd4f932f338a5c3efad, type: 3}
-  partToRotate: {fileID: 5276029972270949409}
-  turnSpeed: 10
   firePoint: {fileID: 1175395841191989582}
+  partToRotate: {fileID: 5276029972270949409}
+  towerAttackRange: 5
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  muzzleFlash: {fileID: 0}
+  fireSound: {fileID: 0}
+  upgradeEffect: {fileID: 0}
+--- !u!65 &-6805112078869842550
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 269471889640616327}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &2854988152080660714
 GameObject:
   m_ObjectHideFlags: 0

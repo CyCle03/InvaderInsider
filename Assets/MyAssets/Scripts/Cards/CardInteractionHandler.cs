@@ -38,6 +38,7 @@ namespace InvaderInsider.Cards
 
         public void OnBeginDrag(PointerEventData eventData)
         {
+            Debug.Log($"[CardInteractionHandler] OnBeginDrag called for {cardDisplay?.GetCardData()?.cardName}");
             if (cardDisplay?.GetCardData() == null) return;
 
             originalPosition = transform.position;
