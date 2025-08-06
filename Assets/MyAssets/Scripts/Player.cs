@@ -27,6 +27,8 @@ namespace InvaderInsider
         [SerializeField] private BottomBarPanel bottomBarPanel; // FindObjectOfType 대신 직접 할당
         
         [Header("Player Settings")]
+        [SerializeField] private GameObject projectilePrefab;
+        [SerializeField] private Transform projectileSpawnPoint;
         [SerializeField] private bool enableTestKeys = true;
         
         #endregion
@@ -179,14 +181,26 @@ namespace InvaderInsider
         /// </summary>
         public override void Attack(IDamageable target)
         {
-            if (target == null) return;
+            if (target == null || projectilePrefab == null) return;
 
-            target.TakeDamage(AttackDamage);
+            GameObject projectileGO = Instantiate(projectilePrefab, projectileSpawnPoint.position, Quaternion.identity);
+            Projectile projectile = projectileGO.GetComponent<Projectile>();
+
+            if (projectile != null)
+            {
+                projectile.Launch(target, AttackDamage);
+            }
+            else
+            {
+                Debug.LogError("Projectile prefab is missing the Projectile component.");
+                Destroy(projectileGO); // Cleanup if component is missing
+            }
+
             SetNextAttackTime(); // 다음 공격 딜레이 설정
 
             if (showDebugInfo)
             {
-                Debug.Log($"Player attacks {((MonoBehaviour)target).gameObject.name} for {AttackDamage} damage.");
+                Debug.Log($"Player attacks {((MonoBehaviour)target).gameObject.name} by launching a projectile.");
             }
         }
 
