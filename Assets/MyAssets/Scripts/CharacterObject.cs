@@ -22,7 +22,7 @@ namespace InvaderInsider
         [SerializeField] private bool isDestinationPoint = true;
         [SerializeField] private ParticleSystem attackEffect;
         [SerializeField] private ParticleSystem damageEffect;
-        [SerializeField] private int level = 1;
+        
 
         private readonly Collider[] hitColliders = new Collider[MAX_HIT_COLLIDERS];
         private float nextAttackCheckTime = 0f;
@@ -30,7 +30,6 @@ namespace InvaderInsider
 
         public event Action<int> OnLevelUp;
         public bool IsDestinationPoint => isDestinationPoint;
-        public int Level => level;
 
         protected override void Awake()
         {
@@ -142,18 +141,19 @@ namespace InvaderInsider
         {
             if (!IsInitialized) return;
 
-            level++;
+            base.LevelUp(); // BaseCharacter의 LevelUp 호출
+            
             float healthIncrease = MaxHealth * LEVEL_UP_HEALTH_MULTIPLIER;
             float damageIncrease = AttackDamage * LEVEL_UP_DAMAGE_MULTIPLIER;
 
             Heal(healthIncrease);
             attackDamage += damageIncrease;
 
-            OnLevelUp?.Invoke(level);
+            OnLevelUp?.Invoke(Level); // BaseCharacter의 Level 프로퍼티 사용
 
             if (showDebugInfo)
             {
-                Debug.Log($"{GameConstants.LOG_PREFIX_GAME} {string.Format(LOG_MESSAGES[0], gameObject.name, level, CurrentHealth, AttackDamage)}");
+                Debug.Log($"{GameConstants.LOG_PREFIX_GAME} {string.Format(LOG_MESSAGES[0], gameObject.name, Level, CurrentHealth, AttackDamage)}");
             }
         }
 

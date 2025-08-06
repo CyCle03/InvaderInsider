@@ -1107,43 +1107,45 @@ namespace InvaderInsider.Managers
             activeTowers.AddRange(towers);
         }
 
-        public bool CreateTower(GameObject towerPrefab, Vector3 position)
+        public bool CreateTower(CardDBObject cardData, Vector3 position)
         {
+            if (cardData == null || cardData.cardPrefab == null) return false;
+
             RaycastHit hit;
             if (Physics.Raycast(position, Vector3.down, out hit))
             {
                 Tile tile = hit.collider.GetComponent<Tile>();
                 if (tile != null && tile.tileType == TileType.Spawn)
                 {
-                    // Check if there is already a tower on the tile
                     Collider[] colliders = Physics.OverlapSphere(hit.point, 0.1f);
                     Tower existingTower = null;
                     foreach (var collider in colliders)
                     {
                         existingTower = collider.GetComponent<Tower>();
-                        if (existingTower != null)
-                        {
-                            break;
-                        }
+                        if (existingTower != null) break;
                     }
 
                     if (existingTower != null)
                     {
-                        // If the same type of tower exists, upgrade it
-                        if (existingTower.name.StartsWith(towerPrefab.name))
+                        // ID와 레벨이 모두 같을 때만 업그레이드
+                        if (existingTower.CardId == cardData.cardId && existingTower.Level == cardData.level) // cardData에 level이 있다고 가정
                         {
                             existingTower.LevelUp();
                             return true; // Upgrade success
                         }
                         else
                         {
-                            return false; // Different tower type, do nothing
+                            return false; // Different tower type or level, do nothing
                         }
                     }
                     else
                     {
-                        // If no tower exists, create a new one
-                        Instantiate(towerPrefab, hit.point, Quaternion.identity);
+                        GameObject newTowerObject = Instantiate(cardData.cardPrefab, hit.point, Quaternion.identity);
+                        Tower newTower = newTowerObject.GetComponent<Tower>();
+                        if (newTower != null)
+                        {
+                            newTower.Initialize(cardData);
+                        }
                         return true; // Creation success
                     }
                 }

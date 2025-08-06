@@ -43,6 +43,8 @@ namespace InvaderInsider.Managers
         public event Action<GameState> OnGameStateChanged;
 
         public GameObject SelectedTowerPrefab { get; set; }
+        public int SelectedCardId { get; set; } = -1; // -1 indicates no card is selected
+        public CardDBObject DraggedCardData { get; set; }
 
         private UIManager uiManager; // UIManager 참조 추가
 
@@ -459,6 +461,7 @@ namespace InvaderInsider.Managers
             {
                 case CardType.Tower:
                     SelectedTowerPrefab = card.cardPrefab;
+                    SelectedCardId = card.cardId;
                     break;
                 case CardType.Character:
                     // TODO: Implement character card logic

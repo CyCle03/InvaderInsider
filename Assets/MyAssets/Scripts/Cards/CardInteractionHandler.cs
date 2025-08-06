@@ -1,24 +1,34 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
-using InvaderInsider.Cards;
+using InvaderInsider.Data;
 using InvaderInsider.Managers;
 
 namespace InvaderInsider.Cards
 {
     [RequireComponent(typeof(CardDisplay))]
+    [RequireComponent(typeof(CanvasGroup))]
     public class CardInteractionHandler : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         private CardDisplay cardDisplay;
+        private CanvasGroup canvasGroup;
+        private Transform originalParent;
+        private Vector3 originalPosition;
+
         public event System.Action OnCardClicked;
 
         private void Awake()
         {
             cardDisplay = GetComponent<CardDisplay>();
+            canvasGroup = GetComponent<CanvasGroup>();
+        }
+
+        public void Initialize(Transform parent)
+        {
+            originalParent = parent;
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            // 드래그 중이 아닐 때만 클릭으로 간주합니다.
             if (!eventData.dragging)
             {
                 Debug.Log($"Card Clicked: {cardDisplay?.GetCardData()?.cardName}");
@@ -29,19 +39,37 @@ namespace InvaderInsider.Cards
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (cardDisplay?.GetCardData() == null) return;
-            // GameManager를 통해 모델 미리보기 시작
-            GameManager.Instance.StartPlacementPreview(cardDisplay.GetCardData());
+
+            originalPosition = transform.position;
+            originalParent = transform.parent;
+
+            canvasGroup.alpha = 0.6f;
+            canvasGroup.blocksRaycasts = false;
+
+            GameManager.Instance.DraggedCardData = cardDisplay.GetCardData();
+            GameManager.Instance.StartPlacementPreview(cardDisplay.GetCardData()); // 미리보기 시작
+
+            transform.SetParent(GetComponentInParent<Canvas>().transform, true);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            // GameManager가 미리보기 위치를 업데이트하므로 비워둡니다.
+            if (GameManager.Instance.DraggedCardData == null) return;
+            transform.position = eventData.position;
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            // GameManager를 통해 배치 확정 또는 취소
-            GameManager.Instance.ConfirmPlacement();
+            if (gameObject != null)
+            {
+                transform.position = originalPosition;
+                transform.SetParent(originalParent, true);
+                canvasGroup.alpha = 1.0f;
+                canvasGroup.blocksRaycasts = true;
+            }
+
+            GameManager.Instance.ConfirmPlacement(); // 배치 확정 또는 취소
+            GameManager.Instance.DraggedCardData = null;
         }
     }
 }

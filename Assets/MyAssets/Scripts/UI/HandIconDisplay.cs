@@ -123,6 +123,7 @@ namespace InvaderInsider.UI
                     var cardInteractionHandler = iconObj.GetComponent<CardInteractionHandler>();
                     if (cardInteractionHandler != null)
                     {
+                        cardInteractionHandler.Initialize(iconContainer);
                         cardInteractionHandler.OnCardClicked += () => ShowCardDetails(cardData);
                     }
 

@@ -9,6 +9,7 @@ namespace InvaderInsider.Data
     {
         [Header("Card Information")]
         public int cardId; // 카드를 식별할 고유 ID
+        public int level = 1; // 카드 레벨
         public string cardName; // 카드 이름
         [TextArea(3, 5)]
         public string description; // 카드 설명

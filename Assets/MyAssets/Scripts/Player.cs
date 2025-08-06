@@ -6,6 +6,8 @@ using InvaderInsider; // IDamageable 인터페이스 사용을 위해 추가
 using InvaderInsider.Managers; // LogManager 사용을 위해 추가
 using InvaderInsider.Core; // DebugUtils와 GameConstants 사용을 위해 추가
 using System; // Action 델리게이트 사용을 위해 추가
+using InvaderInsider.Data;
+using InvaderInsider.Cards;
 
 namespace InvaderInsider
 {
@@ -88,11 +90,14 @@ namespace InvaderInsider
             {
                 Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
                 RaycastHit hit;
-                if (Physics.Raycast(ray, out hit))
+                if (Physics.Raycast(ray, out hit) && GameManager.Instance.SelectedCardId != -1)
                 {
-                    if (StageManager.Instance.CreateTower(GameManager.Instance.SelectedTowerPrefab, hit.point))
+                    CardDBObject cardData = CardManager.Instance.GetCardById(GameManager.Instance.SelectedCardId);
+                    if (cardData != null && StageManager.Instance.CreateTower(cardData, hit.point))
                     {
+                        CardManager.Instance.RemoveCardFromHand(GameManager.Instance.SelectedCardId);
                         GameManager.Instance.SelectedTowerPrefab = null; // 타워를 생성한 후 선택 해제
+                        GameManager.Instance.SelectedCardId = -1; // 선택 카드 ID 초기화
                     }
                 }
             }

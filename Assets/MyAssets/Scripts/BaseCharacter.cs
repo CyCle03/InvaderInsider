@@ -23,6 +23,8 @@ namespace InvaderInsider
         #region Inspector Fields
         
         [Header("Base Stats")]
+        [SerializeField] protected int level = 1;
+        public int Level { get; private set; }
         [SerializeField] protected float maxHealth = GameConstants.DEFAULT_MAX_HEALTH;
         [SerializeField] protected float currentHealth;
         [SerializeField] protected float attackDamage = GameConstants.DEFAULT_ATTACK_DAMAGE;
