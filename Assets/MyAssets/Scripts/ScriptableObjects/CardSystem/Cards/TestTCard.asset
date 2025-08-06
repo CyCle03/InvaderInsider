@@ -13,11 +13,12 @@ MonoBehaviour:
   m_Name: TestTCard
   m_EditorClassIdentifier: 
   cardId: 4
+  level: 1
   cardName: TestT
   description: 
   artwork: {fileID: 0}
   cost: 0
-  power: 0
+  power: 3
   rarity: 0
   type: 2
   equipmentTarget: 0

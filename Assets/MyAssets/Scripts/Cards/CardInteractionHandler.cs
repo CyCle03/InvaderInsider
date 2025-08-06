@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using InvaderInsider.Data;
 using InvaderInsider.Managers;
-using InvaderInsider.Towers; // TowerDropZone 사용을 위해 추가
 
 namespace InvaderInsider.Cards
 {
@@ -70,35 +69,71 @@ namespace InvaderInsider.Cards
                 canvasGroup.blocksRaycasts = true;
             }
 
-            bool droppedOnTower = false;
+            bool droppedOnUnit = false;
             RaycastHit hit;
             // 마우스 위치에서 3D 월드로 레이캐스트 수행
             Ray ray = Camera.main.ScreenPointToRay(eventData.position);
+            
+            Debug.Log($"[CardInteractionHandler] Performing raycast from {ray.origin} in direction {ray.direction}");
+
             if (Physics.Raycast(ray, out hit))
             {
-                TowerDropZone dropZone = hit.collider.GetComponent<TowerDropZone>();
-                if (dropZone != null)
+                Debug.Log($"[CardInteractionHandler] Raycast hit: {hit.collider.gameObject.name} on layer {LayerMask.LayerToName(hit.collider.gameObject.layer)}");
+                
+                UnitMergeTarget mergeTarget = hit.collider.GetComponent<UnitMergeTarget>();
+
+                // 레이캐스트가 직접 UnitMergeTarget을 가진 오브젝트를 감지한 경우
+                if (mergeTarget != null)
                 {
-                    // TowerDropZone의 OnDrop 메서드를 수동으로 호출
-                    dropZone.OnDrop(eventData);
-                    // OnDrop이 성공적으로 업그레이드를 처리했는지 GameManager 플래그로 확인
-                    droppedOnTower = GameManager.Instance.WasCardDroppedOnTower;
+                    Debug.Log($"[CardInteractionHandler] UnitMergeTarget found directly on {hit.collider.gameObject.name}. Calling OnDrop.");
+                    mergeTarget.OnDrop(eventData);
+                    droppedOnUnit = GameManager.Instance.WasCardDroppedOnTower; // 플래그 이름은 그대로 사용
+                }
+                // 레이캐스트가 타일을 감지했지만, 그 위에 유닛이 있을 수 있는 경우
+                else if (hit.collider.GetComponent<Tile>() != null)
+                {
+                    Debug.Log($"[CardInteractionHandler] Raycast hit a Tile. Checking for UnitMergeTarget on top of it.");
+                    // 타일 위치에서 OverlapSphere를 사용하여 주변 유닛을 찾음
+                    // 타워와 캐릭터의 크기를 고려하여 반경 조절 필요
+                    Collider[] collidersInArea = Physics.OverlapSphere(hit.point, 1.0f); 
+                    foreach (Collider col in collidersInArea)
+                    {
+                        mergeTarget = col.GetComponent<UnitMergeTarget>();
+                        if (mergeTarget != null)
+                        {
+                            Debug.Log($"[CardInteractionHandler] UnitMergeTarget found on {col.gameObject.name} near the tile. Calling OnDrop.");
+                            mergeTarget.OnDrop(eventData);
+                            droppedOnUnit = GameManager.Instance.WasCardDroppedOnTower;
+                            break; // 찾았으면 루프 종료
+                        }
+                    }
+                    if (mergeTarget == null)
+                    {
+                        Debug.Log($"[CardInteractionHandler] No UnitMergeTarget found on or near the hit tile.");
+                    }
+                }
+                else
+                {
+                    Debug.Log($"[CardInteractionHandler] Raycast hit {hit.collider.gameObject.name}, but it's not a UnitMergeTarget or a Tile.");
                 }
             }
-
-            if (droppedOnTower)
+            else
             {
-                // 타워에 성공적으로 드롭(업그레이드)되었다면, UI 카드 아이콘을 파괴
-                // (TowerDropZone.OnDrop에서 이미 처리될 수 있지만, 안전장치)
+                Debug.Log("[CardInteractionHandler] Raycast hit nothing.");
+            }
+
+            if (droppedOnUnit)
+            {
+                // 유닛에 성공적으로 드롭(업그레이드)되었다면, UI 카드 아이콘을 파괴
                 if (eventData.pointerDrag != null)
                 {
-                    Destroy(eventData.pointerDrag.gameObject); // .gameObject 추가
+                    Destroy(eventData.pointerDrag.gameObject); 
                 }
                 GameManager.Instance.CancelPlacement(); // 배치 미리보기 제거
             }
             else
             {
-                // 타워에 드롭되지 않았다면, 일반적인 배치 로직 진행
+                // 유닛에 드롭되지 않았다면, 일반적인 배치 로직 진행
                 GameManager.Instance.ConfirmPlacement();
             }
             

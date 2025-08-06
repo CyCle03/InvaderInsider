@@ -23,8 +23,9 @@ namespace InvaderInsider
         #region Inspector Fields
         
         [Header("Base Stats")]
-        [SerializeField] protected int level = 1;
-        public int Level { get; private set; }
+        protected CardDBObject sourceCardData; // 이 캐릭터를 생성한 CardDBObject 참조
+        public int Level { get; protected set; } // CardDBObject에서 레벨 가져오기
+        public int CardId { get; protected set; } // CardDBObject에서 ID 가져오기
         [SerializeField] protected float maxHealth = GameConstants.DEFAULT_MAX_HEALTH;
         [SerializeField] protected float currentHealth;
         [SerializeField] protected float attackDamage = GameConstants.DEFAULT_ATTACK_DAMAGE;
@@ -178,9 +179,25 @@ namespace InvaderInsider
 
             if (cardData != null)
             {
-                // 카드의 power 값을 기반으로 스탯 설정 (기획에 따라 변경 필요)
+                this.sourceCardData = cardData; // CardDBObject 참조 저장
+                this.Level = cardData.level; // Level 프로퍼티에 직접 할당
+                this.CardId = cardData.cardId; // CardId 프로퍼티에 직접 할당
+                this.Level = cardData.level; // Level 프로퍼티에 직접 할당
+                this.CardId = cardData.cardId; // CardId 프로퍼티에 직접 할당
+
+                // CardDBObject의 power 값을 기반으로 스탯 설정
                 this.maxHealth = cardData.power; 
-                this.attackDamage = 1; // 기본 공격력 또는 다른 값으로 설정
+                this.attackDamage = cardData.attackDamage; // CardDBObject에 attackDamage 필드가 있다고 가정
+
+                Debug.Log($"[BaseCharacter] {gameObject.name} Initialized with CardData - ID: {this.CardId}, Level: {this.Level}");
+            }
+            else
+            {
+                Debug.LogWarning($"[BaseCharacter] {gameObject.name} initialized without CardData. Using default stats.");
+                // 기본 스탯 설정 (예: 적 캐릭터의 경우)
+                this.maxHealth = GameConstants.DEFAULT_MAX_HEALTH;
+                this.attackDamage = GameConstants.DEFAULT_ATTACK_DAMAGE;
+                this.sourceCardData = null;
             }
 
             currentHealth = maxHealth;

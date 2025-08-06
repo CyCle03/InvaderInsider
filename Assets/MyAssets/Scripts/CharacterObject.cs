@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using InvaderInsider.Core;
+using InvaderInsider.Data;
 
 namespace InvaderInsider
 {
@@ -43,12 +44,18 @@ namespace InvaderInsider
             InitializeCharacterComponents();
         }
 
+        public override void Initialize(CardDBObject cardData)
+        {
+            base.Initialize(cardData);
+        }
+
         private void Start()
         {
-            // CharacterObject는 카드를 통해 생성되므로, 외부(예: GameManager)에서
-            // Initialize(cardData)를 호출해주는 것을 가정합니다.
-            // 만약 씬에 직접 배치된 캐릭터라면, 테스트용 데이터를 만들어주거나
-            // 다른 초기화 방법을 찾아야 합니다.
+            // SetupEnemy는 StageManager에서 SpawnEnemy 시 호출되므로 여기서는 중복 호출 방지
+            if (!IsInitialized)
+            {
+                // Initialize(); // 모든 컴포넌트가 준비된 후 초기화
+            }
         }
 
         private void Update()

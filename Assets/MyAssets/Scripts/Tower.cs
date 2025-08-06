@@ -21,8 +21,6 @@ namespace InvaderInsider
         #region Inspector Fields
         
         [Header("Tower Specific")]
-        [SerializeField] private int cardId = -1;
-        public int CardId { get { return cardId; } }
         [SerializeField] private GameObject projectilePrefab;
         [SerializeField] private Transform firePoint;
         [SerializeField] private Transform partToRotate; // 회전할 포탑 파트
@@ -406,10 +404,6 @@ namespace InvaderInsider
         public override void Initialize(CardDBObject cardData)
         {
             base.Initialize(cardData);
-            if (cardData != null)
-            {
-                this.cardId = cardData.cardId;
-            }
             // 타워의 공격 범위나 투사체 프리팹 등은
             // 카드 데이터가 아닌 타워 프리팹 자체에 설정되어야 합니다.
             // 따라서 여기서는 추가적인 로직이 필요 없습니다.
@@ -476,6 +470,13 @@ namespace InvaderInsider
                 try
                 {
                     projectile = poolManager.GetObject<Projectile>();
+                    // 풀에서 가져온 오브젝트가 유효한지 확인
+                    if (projectile == null || projectile.gameObject == null)
+                    {
+                        DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
+                            $"풀에서 가져온 투사체 오브젝트가 유효하지 않습니다.");
+                        projectile = null; // 유효하지 않으면 null로 설정하여 직접 생성 로직으로 폴백
+                    }
                 }
                 catch (System.Exception ex)
                 {
@@ -614,12 +615,12 @@ namespace InvaderInsider
         public override void LevelUp()
         {
             base.LevelUp();
-            level++; // 레벨 증가
+            Level++; // 레벨 증가
             // 타워 레벨업 시 추가 로직
             attackDamage *= 1.1f;
             maxHealth *= 1.1f;
             currentHealth = maxHealth;
-            Debug.Log($"{gameObject.name} has leveled up! New Level: {level}, New Attack: {attackDamage}, New Max Health: {maxHealth}");
+            Debug.Log($"{gameObject.name} has leveled up! New Level: {Level}, New Attack: {attackDamage}, New Max Health: {maxHealth}");
 
             if (upgradeEffect != null)
             {

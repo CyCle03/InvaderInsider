@@ -142,8 +142,14 @@ namespace InvaderInsider
 
         private void ReturnToPool()
         {
-            if (pooledObject != null) pooledObject.ReturnToPool();
-            else Destroy(gameObject);
+            if (pooledObject != null)
+            {
+                pooledObject.ReturnToPool();
+            }
+            else if (gameObject != null) // pooledObject가 없지만 오브젝트가 아직 파괴되지 않았다면
+            {
+                Destroy(gameObject);
+            }
         }
 
         private void OnDisable()

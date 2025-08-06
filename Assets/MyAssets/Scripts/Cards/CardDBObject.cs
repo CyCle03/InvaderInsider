@@ -16,6 +16,7 @@ namespace InvaderInsider.Data
         public Sprite artwork; // 카드 아트워크
         public int cost; // 카드 비용
         public int power; // 카드 능력치
+        public int attackDamage; // 카드 공격력
         public CardRarity rarity; // 카드 등급
         public CardType type; // 카드 종류
         public EquipmentTargetType equipmentTarget; // 장비 아이템 적용 대상 추가

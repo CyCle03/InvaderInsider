@@ -128,6 +128,7 @@ GameObject:
   - component: {fileID: 645857447005334333}
   - component: {fileID: 9198415564173367379}
   - component: {fileID: -6805112078869842550}
+  - component: {fileID: -7313976135165030222}
   m_Layer: 0
   m_Name: balistar_Ver3
   m_TagString: Untagged
@@ -165,13 +166,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   level: 1
+  cardId: -1
   maxHealth: 100
   currentHealth: 0
   attackDamage: 10
   baseAttackRange: 5
   attackRate: 1
   showDebugInfo: 0
-  cardId: -1
   projectilePrefab: {fileID: 2265586970664229171, guid: dd54440be1886dd4f932f338a5c3efad, type: 3}
   firePoint: {fileID: 1175395841191989582}
   partToRotate: {fileID: 5276029972270949409}
@@ -203,6 +204,18 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-7313976135165030222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 269471889640616327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe75d2415c06fff49ab9339450387ee5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2854988152080660714
 GameObject:
   m_ObjectHideFlags: 0

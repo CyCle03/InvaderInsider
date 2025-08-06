@@ -243,6 +243,7 @@ GameObject:
   - component: {fileID: 2528508146373618527}
   - component: {fileID: 7144315098053755926}
   - component: {fileID: 2242220454003563313}
+  - component: {fileID: -2364217326514013500}
   m_Layer: 0
   m_Name: Turret_Ver1
   m_TagString: Untagged
@@ -280,13 +281,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   level: 1
+  cardId: 4
   maxHealth: 100
   currentHealth: 0
   attackDamage: 10
   baseAttackRange: 5
   attackRate: 1
   showDebugInfo: 0
-  cardId: -1
   projectilePrefab: {fileID: 2265586970664229171, guid: dd54440be1886dd4f932f338a5c3efad, type: 3}
   firePoint: {fileID: 4545828692854338583}
   partToRotate: {fileID: 6928262406412832021}
@@ -318,3 +319,15 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-2364217326514013500
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6382133390007148712}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe75d2415c06fff49ab9339450387ee5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
