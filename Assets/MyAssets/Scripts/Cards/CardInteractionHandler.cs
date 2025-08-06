@@ -2,46 +2,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using InvaderInsider.Data;
 using InvaderInsider.Managers;
-
-namespace InvaderInsider.Cards
-{
-    [RequireComponent(typeof(CardDisplay))]
-    [RequireComponent(typeof(CanvasGroup))]
-    public class CardInteractionHandler : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
-    {
-        private CardDisplay cardDisplay;
-        private CanvasGroup canvasGroup;
-        private Transform originalParent;
-        private Vector3 originalPosition;
-
-        public event System.Action OnCardClicked;
-
-        private void Awake()
-        {
-            cardDisplay = GetComponent<CardDisplay>();
-            canvasGroup = GetComponent<CanvasGroup>();
-        }
-
-        public void Initialize(Transform parent)
-        {
-            originalParent = parent;
-        }
-
-        public void OnPointerClick(PointerEventData eventData)
-        {
-            if (!eventData.dragging)
-            {
-                Debug.Log($"Card Clicked: {cardDisplay?.GetCardData()?.cardName}");
-                OnCardClicked?.Invoke();
-            }
-        }
-
-        public void OnBeginDrag(PointerEventData eventData)
-        {
-            using UnityEngine;
-using UnityEngine.EventSystems;
-using InvaderInsider.Data;
-using InvaderInsider.Managers;
 using InvaderInsider.Towers; // TowerDropZone 사용을 위해 추가
 
 namespace InvaderInsider.Cards
@@ -148,52 +108,3 @@ namespace InvaderInsider.Cards
         }
     }
 }
-            if (cardDisplay?.GetCardData() == null) return;
-
-            originalPosition = transform.position;
-            originalParent = transform.parent;
-
-            canvasGroup.alpha = 0.6f;
-            canvasGroup.blocksRaycasts = false;
-
-            GameManager.Instance.DraggedCardData = cardDisplay.GetCardData();
-            GameManager.Instance.StartPlacementPreview(cardDisplay.GetCardData()); // 미리보기 시작
-
-            transform.SetParent(GetComponentInParent<Canvas>().transform, true);
-        }
-
-        public void OnDrag(PointerEventData eventData)
-        {
-            if (GameManager.Instance.DraggedCardData == null) return;
-            transform.position = eventData.position;
-        }
-
-        public void OnEndDrag(PointerEventData eventData)
-        {
-            if (gameObject != null)
-            {
-                transform.position = originalPosition;
-                transform.SetParent(originalParent, true);
-                canvasGroup.alpha = 1.0f;
-                canvasGroup.blocksRaycasts = true;
-            }
-
-            // 타워에 드롭되지 않았을 때만 배치 로직 실행
-            if (!GameManager.Instance.WasCardDroppedOnTower)
-            {
-                GameManager.Instance.ConfirmPlacement(); // 배치 확정 또는 취소
-            }
-            else
-            {
-                // 타워에 드롭된 경우 미리보기만 취소
-                GameManager.Instance.CancelPlacement();
-            }
-            
-            // 드래그 상태 초기화
-            GameManager.Instance.DraggedCardData = null;
-            GameManager.Instance.WasCardDroppedOnTower = false; // 플래그 초기화
-        }
-    }
-}
-
- 
