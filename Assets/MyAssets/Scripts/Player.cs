@@ -90,8 +90,10 @@ namespace InvaderInsider
                 RaycastHit hit;
                 if (Physics.Raycast(ray, out hit))
                 {
-                    StageManager.Instance.CreateTower(GameManager.Instance.SelectedTowerPrefab, hit.point);
-                    GameManager.Instance.SelectedTowerPrefab = null; // 타워를 생성한 후 선택 해제
+                    if (StageManager.Instance.CreateTower(GameManager.Instance.SelectedTowerPrefab, hit.point))
+                    {
+                        GameManager.Instance.SelectedTowerPrefab = null; // 타워를 생성한 후 선택 해제
+                    }
                 }
             }
 

@@ -1107,7 +1107,7 @@ namespace InvaderInsider.Managers
             activeTowers.AddRange(towers);
         }
 
-        public void CreateTower(GameObject towerPrefab, Vector3 position)
+        public bool CreateTower(GameObject towerPrefab, Vector3 position)
         {
             RaycastHit hit;
             if (Physics.Raycast(position, Vector3.down, out hit))
@@ -1133,16 +1133,22 @@ namespace InvaderInsider.Managers
                         if (existingTower.name.StartsWith(towerPrefab.name))
                         {
                             existingTower.LevelUp();
+                            return true; // Upgrade success
                         }
-                        // If a different type of tower exists, do nothing
+                        else
+                        {
+                            return false; // Different tower type, do nothing
+                        }
                     }
                     else
                     {
                         // If no tower exists, create a new one
                         Instantiate(towerPrefab, hit.point, Quaternion.identity);
+                        return true; // Creation success
                     }
                 }
             }
+            return false; // Failed to create or upgrade
         }
     }
 } 

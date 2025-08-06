@@ -30,6 +30,7 @@ namespace InvaderInsider
         [Header("Visual Effects")]
         [SerializeField] private ParticleSystem muzzleFlash;
         [SerializeField] private AudioSource fireSound;
+        [SerializeField] private ParticleSystem upgradeEffect;
 
         // 성능 최적화용 캐시된 변수들
         private EnemyObject currentTarget;
@@ -612,6 +613,11 @@ namespace InvaderInsider
             maxHealth *= 1.1f;
             currentHealth = maxHealth;
             Debug.Log($"{gameObject.name} has leveled up! New Attack: {attackDamage}, New Max Health: {maxHealth}");
+
+            if (upgradeEffect != null)
+            {
+                upgradeEffect.Play();
+            }
         }
         
         #endregion
