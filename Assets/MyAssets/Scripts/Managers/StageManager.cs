@@ -1115,7 +1115,32 @@ namespace InvaderInsider.Managers
                 Tile tile = hit.collider.GetComponent<Tile>();
                 if (tile != null && tile.tileType == TileType.Spawn)
                 {
-                    Instantiate(towerPrefab, hit.point, Quaternion.identity);
+                    // Check if there is already a tower on the tile
+                    Collider[] colliders = Physics.OverlapSphere(hit.point, 0.1f);
+                    Tower existingTower = null;
+                    foreach (var collider in colliders)
+                    {
+                        existingTower = collider.GetComponent<Tower>();
+                        if (existingTower != null)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (existingTower != null)
+                    {
+                        // If the same type of tower exists, upgrade it
+                        if (existingTower.name.StartsWith(towerPrefab.name))
+                        {
+                            existingTower.LevelUp();
+                        }
+                        // If a different type of tower exists, do nothing
+                    }
+                    else
+                    {
+                        // If no tower exists, create a new one
+                        Instantiate(towerPrefab, hit.point, Quaternion.identity);
+                    }
                 }
             }
         }

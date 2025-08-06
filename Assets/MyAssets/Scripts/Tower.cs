@@ -608,6 +608,10 @@ namespace InvaderInsider
         {
             base.LevelUp();
             // 타워 레벨업 시 추가 로직
+            attackDamage *= 1.1f;
+            maxHealth *= 1.1f;
+            currentHealth = maxHealth;
+            Debug.Log($"{gameObject.name} has leveled up! New Attack: {attackDamage}, New Max Health: {maxHealth}");
         }
         
         #endregion
