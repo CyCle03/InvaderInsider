@@ -69,8 +69,20 @@ namespace InvaderInsider.Cards
                 canvasGroup.blocksRaycasts = true;
             }
 
-            GameManager.Instance.ConfirmPlacement(); // 배치 확정 또는 취소
+            // 타워에 드롭되지 않았을 때만 배치 로직 실행
+            if (!GameManager.Instance.WasCardDroppedOnTower)
+            {
+                GameManager.Instance.ConfirmPlacement(); // 배치 확정 또는 취소
+            }
+            else
+            {
+                // 타워에 드롭된 경우 미리보기만 취소
+                GameManager.Instance.CancelPlacement();
+            }
+            
+            // 드래그 상태 초기화
             GameManager.Instance.DraggedCardData = null;
+            GameManager.Instance.WasCardDroppedOnTower = false; // 플래그 초기화
         }
     }
 }

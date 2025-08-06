@@ -45,6 +45,7 @@ namespace InvaderInsider.Managers
         public GameObject SelectedTowerPrefab { get; set; }
         public int SelectedCardId { get; set; } = -1; // -1 indicates no card is selected
         public CardDBObject DraggedCardData { get; set; }
+        public bool WasCardDroppedOnTower { get; set; } = false;
 
         private UIManager uiManager; // UIManager 참조 추가
 

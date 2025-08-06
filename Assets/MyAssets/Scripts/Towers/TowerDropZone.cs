@@ -42,6 +42,7 @@ namespace InvaderInsider.Towers
                     {
                         Destroy(eventData.pointerDrag);
                     }
+                    GameManager.Instance.WasCardDroppedOnTower = true; // 성공적으로 타워에 드롭되었음을 알림
                 }
                 else
                 {
