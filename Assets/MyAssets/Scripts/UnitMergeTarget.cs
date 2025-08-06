@@ -30,7 +30,12 @@ namespace InvaderInsider
                 Debug.Log($"[UnitMergeTarget] OnDrop called on {gameObject.name}");
                 Debug.Log($"[UnitMergeTarget] Dragged Card: {draggedCard.cardName} (ID: {draggedCard.cardId}, Level: {draggedCard.level})");
                 
-                // targetCharacter.sourceCardData == null 체크 로직 제거 (public 프로퍼티 사용)
+                if (!targetCharacter.IsInitialized)
+                {
+                    Debug.LogWarning($"[UnitMergeTarget] Target character {targetCharacter.gameObject.name} is not initialized. Cannot upgrade.");
+                    GameManager.Instance.WasCardDroppedOnTower = false; // 업그레이드 실패
+                    return;
+                }
 
                 Debug.Log($"[UnitMergeTarget] Target Character: {targetCharacter.gameObject.name} (ID: {targetCharacter.CardId}, Level: {targetCharacter.Level})");
 

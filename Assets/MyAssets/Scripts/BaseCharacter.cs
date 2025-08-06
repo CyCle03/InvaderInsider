@@ -76,7 +76,7 @@ namespace InvaderInsider
         public virtual float AttackRange => baseAttackRange;
         
         /// <summary>초기화 여부</summary>
-        protected bool IsInitialized => _isInitialized;
+        public bool IsInitialized => _isInitialized;
         
         /// <summary>생존 여부</summary>
         public bool IsAlive => _isInitialized && currentHealth > 0f;
@@ -168,7 +168,7 @@ namespace InvaderInsider
         /// <summary>
         /// 캐릭터를 초기화합니다. 자식 클래스에서 적절한 타이밍에 호출해야 합니다.
         /// </summary>
-        public virtual void Initialize(CardDBObject cardData)
+                        public virtual void Initialize(CardDBObject cardData)
         {
             if (_isInitialized)
             {
@@ -180,8 +180,6 @@ namespace InvaderInsider
             if (cardData != null)
             {
                 this.sourceCardData = cardData; // CardDBObject 참조 저장
-                this.Level = cardData.level; // Level 프로퍼티에 직접 할당
-                this.CardId = cardData.cardId; // CardId 프로퍼티에 직접 할당
                 this.Level = cardData.level; // Level 프로퍼티에 직접 할당
                 this.CardId = cardData.cardId; // CardId 프로퍼티에 직접 할당
 
@@ -198,6 +196,8 @@ namespace InvaderInsider
                 this.maxHealth = GameConstants.DEFAULT_MAX_HEALTH;
                 this.attackDamage = GameConstants.DEFAULT_ATTACK_DAMAGE;
                 this.sourceCardData = null;
+                this.Level = 0; // 기본값 설정
+                this.CardId = -1; // 기본값 설정
             }
 
             currentHealth = maxHealth;
