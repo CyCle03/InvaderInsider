@@ -163,8 +163,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f50d618e8ab69543af0905f494ff957, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  level: 1
-  cardId: -1
   maxHealth: 100
   currentHealth: 0
   attackDamage: 10
@@ -200,8 +198,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 2, z: 1}
+  m_Center: {x: 0, y: 0.75, z: 0}
 --- !u!114 &-6091984869964350300
 MonoBehaviour:
   m_ObjectHideFlags: 0
