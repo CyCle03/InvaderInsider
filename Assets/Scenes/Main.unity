@@ -2458,12 +2458,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 046b78f6ba1504e45b9f63886e27843c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tileLayerMask:
+  TileLayerMask:
     serializedVersion: 2
-    m_Bits: 128
-  validPlacementMaterial: {fileID: 0}
-  invalidPlacementMaterial: {fileID: 0}
-  placementYOffset: 1
+    m_Bits: 0
+  ValidPlacementMaterial: {fileID: 0}
+  InvalidPlacementMaterial: {fileID: 0}
+  PlacementYOffset: 1
 --- !u!1 &1979721233
 GameObject:
   m_ObjectHideFlags: 0

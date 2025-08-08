@@ -299,6 +299,12 @@ namespace InvaderInsider.Managers
             if (placementPreviewInstance.TryGetComponent<UnityEngine.AI.NavMeshAgent>(out var agent)) agent.enabled = false;
             if (placementPreviewInstance.TryGetComponent<BaseCharacter>(out var character)) character.enabled = false;
             foreach (var col in placementPreviewInstance.GetComponentsInChildren<Collider>()) col.enabled = false;
+
+            // 프리뷰 모델의 렌더러를 활성화합니다.
+            foreach (var renderer in placementPreviewInstance.GetComponentsInChildren<Renderer>())
+            {
+                renderer.enabled = true;
+            }
         }
 
         private void UpdatePlacementPreview()
@@ -332,15 +338,15 @@ namespace InvaderInsider.Managers
             }
         }
 
-        public bool ConfirmPlacement()
+        public bool ConfirmPlacement(Tile placementTile)
         {
             if (placementPreviewInstance == null) return false;
 
-            bool isValidTile = currentTargetTile != null && currentTargetTile.tileType == TileType.Spawn && !currentTargetTile.IsOccupied;
+            bool isValidTile = placementTile != null && placementTile.tileType == TileType.Spawn && !placementTile.IsOccupied;
 
             if (isValidTile)
             {
-                GameObject spawnedObject = SpawnObject(cardDataForPlacement, currentTargetTile);
+                GameObject spawnedObject = SpawnObject(cardDataForPlacement, placementTile);
 
                 if (spawnedObject != null)
                 {

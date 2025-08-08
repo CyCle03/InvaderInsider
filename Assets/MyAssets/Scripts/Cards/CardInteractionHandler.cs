@@ -60,7 +60,11 @@ namespace InvaderInsider.Cards
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            // UI 상태를 먼저 원래대로 되돌립니다.
+            // 드래그 상태 초기화
+            GameManager.Instance.DraggedCardData = null;
+            GameManager.Instance.WasCardDroppedOnTower = false; // 플래그 초기화
+
+            // UI 상태를 마지막에 원래대로 되돌립니다.
             if (gameObject != null)
             {
                 transform.position = originalPosition;
@@ -134,7 +138,8 @@ namespace InvaderInsider.Cards
             else
             {
                 // 유닛에 드롭되지 않았다면, 일반적인 배치 로직 진행
-                bool placementSuccessful = GameManager.Instance.ConfirmPlacement();
+                Tile targetTile = hit.collider != null ? hit.collider.GetComponent<Tile>() : null;
+                bool placementSuccessful = GameManager.Instance.ConfirmPlacement(targetTile);
                 if (placementSuccessful)
                 {
                     if (eventData.pointerDrag != null)
