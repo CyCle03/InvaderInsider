@@ -466,11 +466,8 @@ namespace InvaderInsider.Managers
             switch (card.type)
             {
                 case CardType.Tower:
-                    SelectedTowerPrefab = card.cardPrefab;
-                    SelectedCardId = card.cardId;
-                    break;
                 case CardType.Character:
-                    // TODO: Implement character card logic
+                    StartPlacementPreview(card);
                     break;
                 case CardType.Equipment:
                     // TODO: Implement equipment card logic

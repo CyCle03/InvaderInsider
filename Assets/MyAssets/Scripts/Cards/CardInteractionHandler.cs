@@ -134,7 +134,14 @@ namespace InvaderInsider.Cards
             else
             {
                 // 유닛에 드롭되지 않았다면, 일반적인 배치 로직 진행
-                GameManager.Instance.ConfirmPlacement();
+                bool placementSuccessful = GameManager.Instance.ConfirmPlacement();
+                if (placementSuccessful)
+                {
+                    if (eventData.pointerDrag != null)
+                    {
+                        Destroy(eventData.pointerDrag.gameObject);
+                    }
+                }
             }
             
             // 드래그 상태 초기화
