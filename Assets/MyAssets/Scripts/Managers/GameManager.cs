@@ -334,6 +334,7 @@ namespace InvaderInsider.Managers
                 foreach (var renderer in placementPreviewInstance.GetComponentsInChildren<Renderer>())
                 {
                     renderer.material = materialToApply;
+                    Debug.Log($"{LOG_PREFIX}Applying material {materialToApply.name} to renderer on {renderer.gameObject.name}");
                 }
             }
         }

@@ -2460,7 +2460,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   TileLayerMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
   ValidPlacementMaterial: {fileID: 0}
   InvalidPlacementMaterial: {fileID: 0}
   PlacementYOffset: 1

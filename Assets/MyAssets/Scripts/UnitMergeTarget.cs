@@ -25,6 +25,8 @@ namespace InvaderInsider
             CardDBObject draggedCard = GameManager.Instance.DraggedCardData;
             BaseCharacter draggedUnit = GameManager.Instance.DraggedUnit;
 
+            Debug.Log($"[UnitMergeTarget] OnDrop - DraggedCardData: {(draggedCard != null ? draggedCard.cardName : "null")}, DraggedUnit: {(draggedUnit != null ? draggedUnit.gameObject.name : "null")}");
+
             if (targetCharacter == null) return; // 타겟 캐릭터가 없으면 처리하지 않음
 
             // 1. 카드 아이콘을 드래그한 경우

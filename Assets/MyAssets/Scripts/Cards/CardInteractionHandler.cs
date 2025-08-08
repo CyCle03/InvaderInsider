@@ -47,6 +47,7 @@ namespace InvaderInsider.Cards
             canvasGroup.blocksRaycasts = false;
 
             GameManager.Instance.DraggedCardData = cardDisplay.GetCardData();
+            Debug.Log($"[CardInteractionHandler] OnBeginDrag - DraggedCardData set to: {GameManager.Instance.DraggedCardData?.cardName}");
             GameManager.Instance.StartPlacementPreview(cardDisplay.GetCardData()); // 미리보기 시작
 
             transform.SetParent(GetComponentInParent<Canvas>().transform, true);
@@ -60,10 +61,6 @@ namespace InvaderInsider.Cards
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            // 드래그 상태 초기화
-            GameManager.Instance.DraggedCardData = null;
-            GameManager.Instance.WasCardDroppedOnTower = false; // 플래그 초기화
-
             // UI 상태를 마지막에 원래대로 되돌립니다.
             if (gameObject != null)
             {
@@ -99,9 +96,11 @@ namespace InvaderInsider.Cards
                     Debug.Log($"[CardInteractionHandler] Raycast hit a Tile. Checking for UnitMergeTarget on top of it.");
                     // 타일 위치에서 OverlapSphere를 사용하여 주변 유닛을 찾음
                     // 타워와 캐릭터의 크기를 고려하여 반경 조절 필요
-                    Collider[] collidersInArea = Physics.OverlapSphere(hit.point, 1.0f); 
+                    Collider[] collidersInArea = Physics.OverlapSphere(hit.point, 2.0f); 
+                    Debug.Log($"[CardInteractionHandler] OverlapSphere found {collidersInArea.Length} colliders.");
                     foreach (Collider col in collidersInArea)
                     {
+                        Debug.Log($"[CardInteractionHandler] OverlapSphere detected: {col.gameObject.name} on layer {LayerMask.LayerToName(col.gameObject.layer)}");
                         mergeTarget = col.GetComponent<UnitMergeTarget>();
                         if (mergeTarget != null)
                         {
@@ -149,9 +148,7 @@ namespace InvaderInsider.Cards
                 }
             }
             
-            // 드래그 상태 초기화
-            GameManager.Instance.DraggedCardData = null;
-            GameManager.Instance.WasCardDroppedOnTower = false; // 플래그 초기화
+            // 드래그 상태 초기화는 여기서 하지 않습니다. OnDrop에서 처리됩니다.
         }
     }
 }
