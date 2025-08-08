@@ -243,7 +243,20 @@ namespace InvaderInsider.Core
             if (pools.TryGetValue(type, out object poolObj))
             {
                 var pool = poolObj as ObjectPool<T>;
-                return pool?.GetObject();
+                T obj = pool?.GetObject();
+                
+                // 풀에서 가져온 오브젝트가 유효한지 확인
+                if (obj != null && obj.gameObject != null)
+                {
+                    return obj;
+                }
+                else
+                {
+                    DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                        $"풀에서 가져온 타입 '{type.Name}'의 오브젝트가 유효하지 않습니다. 풀에서 제거합니다.");
+                    // 유효하지 않은 오브젝트는 풀에서 제거 (ObjectPool 클래스에 RemoveInvalidObject 메서드가 있다고 가정)
+                    // pool?.RemoveInvalidObject(obj); // 이 기능은 ObjectPool에 구현되어야 함
+                }
             }
 
             // 풀이 없는 경우 동적으로 생성 시도
@@ -252,7 +265,11 @@ namespace InvaderInsider.Core
                 if (pools.TryGetValue(type, out poolObj))
                 {
                     var pool = poolObj as ObjectPool<T>;
-                    return pool?.GetObject();
+                    T obj = pool?.GetObject();
+                    if (obj != null && obj.gameObject != null)
+                    {
+                        return obj;
+                    }
                 }
             }
 

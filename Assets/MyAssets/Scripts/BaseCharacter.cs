@@ -75,7 +75,7 @@ namespace InvaderInsider
         /// <summary>공격 사거리 (가상 메서드로 자식 클래스에서 오버라이드 가능)</summary>
         public virtual float AttackRange => baseAttackRange;
         
-        /// <summary>초기화 여부</summary>
+                /// <summary>초기화 여부</summary>
         public bool IsInitialized => _isInitialized;
         
         /// <summary>생존 여부</summary>
@@ -186,6 +186,8 @@ namespace InvaderInsider
                 // CardDBObject의 power 값을 기반으로 스탯 설정
                 this.maxHealth = cardData.power; 
                 this.attackDamage = cardData.attackDamage; // CardDBObject에 attackDamage 필드가 있다고 가정
+
+                Debug.Log($"[BaseCharacter] {gameObject.name} Initial Max Health set to: {this.maxHealth} from CardData.Power: {cardData.power}");
 
                 Debug.Log($"[BaseCharacter] {gameObject.name} Initialized with CardData - ID: {this.CardId}, Level: {this.Level}");
             }

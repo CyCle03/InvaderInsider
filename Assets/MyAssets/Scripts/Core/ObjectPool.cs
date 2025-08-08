@@ -59,7 +59,7 @@ namespace InvaderInsider.Core
         /// </summary>
         public T GetObject()
         {
-            T obj;
+            T obj = null;
 
             // 사용 가능한 오브젝트가 있는 경우
             if (availableObjects.Count > 0)
@@ -70,7 +70,6 @@ namespace InvaderInsider.Core
             else if (expandPool && TotalCount < maxPoolSize)
             {
                 obj = CreateNewObject();
-                availableObjects.Dequeue(); // 방금 생성한 객체를 다시 꺼냄
             }
             // 풀이 가득 찬 경우 null 반환
             else
@@ -78,6 +77,16 @@ namespace InvaderInsider.Core
                 DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                     $"ObjectPool<{typeof(T).Name}>: 풀이 가득 참 (최대: {maxPoolSize})");
                 return null;
+            }
+
+            // 가져온 오브젝트가 유효한지 확인
+            if (obj == null || obj.gameObject == null)
+            {
+                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                    $"ObjectPool<{typeof(T).Name}>: 풀에서 가져온 오브젝트가 유효하지 않습니다. 재시도합니다.");
+                // 유효하지 않은 오브젝트는 풀에서 제거 (필요하다면)
+                // DestroyImmediate(obj.gameObject); // 이미 null일 수 있으므로 주의
+                return GetObject(); // 재귀 호출하여 유효한 오브젝트를 다시 시도
             }
 
             activeObjects.Add(obj);

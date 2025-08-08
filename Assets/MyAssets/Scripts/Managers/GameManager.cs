@@ -260,11 +260,16 @@ namespace InvaderInsider.Managers
             }
         }
 
+        // DraggableUnit을 위한 필드 추가
+        public BaseCharacter DraggedUnit { get; set; }
+        public BaseCharacter DroppedOnUnitTarget { get; set; }
+
+        // Placement Settings를 public으로 변경
         [Header("Card Placement Settings")]
-        [SerializeField] private LayerMask tileLayerMask; // 타일 오브젝트들이 속한 레이어를 설정합니다.
-        [SerializeField] private Material validPlacementMaterial; // 배치 가능 시 프리뷰에 적용할 반투명 초록색 재질
-        [SerializeField] private Material invalidPlacementMaterial; // 배치 불가능 시 프리뷰에 적용할 반투명 빨간색 재질
-        [SerializeField] private float placementYOffset = 0.0f; // 유닛 배치 시 Y축 오프셋
+        public LayerMask TileLayerMask; // 타일 오브젝트들이 속한 레이어를 설정합니다.
+        public Material ValidPlacementMaterial; // 배치 가능 시 프리뷰에 적용할 반투명 초록색 재질
+        public Material InvalidPlacementMaterial; // 배치 불가능 시 프리뷰에 적용할 반투명 빨간색 재질
+        public float PlacementYOffset = 0.0f; // 유닛 배치 시 Y축 오프셋
 
         private GameObject placementPreviewInstance;
         private CardDBObject cardDataForPlacement;
@@ -300,9 +305,9 @@ namespace InvaderInsider.Managers
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
-            if (Physics.Raycast(ray, out hit, 200f, tileLayerMask))
+            if (Physics.Raycast(ray, out hit, 200f, TileLayerMask))
             {
-                placementPreviewInstance.transform.position = hit.collider.transform.position + new Vector3(0, placementYOffset, 0); // 타일 중앙에 스냅 및 Y축 오프셋 적용
+                placementPreviewInstance.transform.position = hit.collider.transform.position + new Vector3(0, PlacementYOffset, 0); // 타일 중앙에 스냅 및 Y축 오프셋 적용
                 currentTargetTile = hit.collider.GetComponent<Tile>();
             }
             else
@@ -316,7 +321,7 @@ namespace InvaderInsider.Managers
         private void UpdatePreviewVisuals()
         {
             bool isValid = currentTargetTile != null && currentTargetTile.tileType == TileType.Spawn && !currentTargetTile.IsOccupied;
-            Material materialToApply = isValid ? validPlacementMaterial : invalidPlacementMaterial;
+            Material materialToApply = isValid ? ValidPlacementMaterial : InvalidPlacementMaterial;
 
             if (materialToApply != null)
             {
@@ -405,7 +410,7 @@ namespace InvaderInsider.Managers
             Debug.Log($"{LOG_PREFIX}Attempting to spawn '{cardData.cardName}' on tile '{tile.name}'.");
 
             Vector3 spawnPosition = tile.transform.position;
-            spawnPosition.y += placementYOffset; // Y축 오프셋 적용
+            spawnPosition.y += PlacementYOffset; // Y축 오프셋 적용
 
             GameObject spawnedObject = Instantiate(cardData.cardPrefab, spawnPosition, Quaternion.identity);
             if (spawnedObject == null)
