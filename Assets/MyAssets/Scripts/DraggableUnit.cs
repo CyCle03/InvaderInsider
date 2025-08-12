@@ -12,6 +12,7 @@ namespace InvaderInsider
         private Vector3 originalPosition;
         private Collider unitCollider;
         private Rigidbody unitRigidbody;
+        private bool isDragging = false;
 
         private void Awake()
         {
@@ -20,10 +21,19 @@ namespace InvaderInsider
             unitRigidbody = GetComponent<Rigidbody>();
         }
 
+        private void Update()
+        {
+            if (isDragging && Input.GetMouseButtonDown(1)) // 1 for right mouse button
+            {
+                CancelDrag();
+            }
+        }
+
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (draggedCharacter == null) return;
 
+            isDragging = true;
             originalPosition = transform.position;
 
             // 드래그 중에는 물리 영향을 받지 않도록 설정
@@ -45,7 +55,7 @@ namespace InvaderInsider
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (draggedCharacter == null) return;
+            if (draggedCharacter == null || !isDragging) return;
 
             // 마우스 위치를 3D 월드 좌표로 변환
             Ray ray = Camera.main.ScreenPointToRay(eventData.position);
@@ -65,7 +75,8 @@ namespace InvaderInsider
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            if (draggedCharacter == null) return;
+            if (draggedCharacter == null || !isDragging) return;
+            isDragging = false;
 
             // 드래그 종료 시 물리 설정 복원
             if (unitRigidbody != null)
@@ -108,6 +119,28 @@ namespace InvaderInsider
             GameManager.Instance.DroppedOnUnitTarget = null; // 플래그 초기화
 
             Debug.Log($"[DraggableUnit] Ended dragging: {draggedCharacter.gameObject.name}");
+        }
+
+        private void CancelDrag()
+        {
+            if (draggedCharacter == null) return;
+
+            Debug.Log($"[DraggableUnit] Drag cancelled for {draggedCharacter.gameObject.name}. Returning to original position.");
+            transform.position = originalPosition;
+
+            // 드래그 종료 시 물리 설정 복원
+            if (unitRigidbody != null)
+            {
+                unitRigidbody.isKinematic = false;
+            }
+            if (unitCollider != null)
+            {
+                unitCollider.enabled = true;
+            }
+
+            GameManager.Instance.DraggedUnit = null;
+            GameManager.Instance.DroppedOnUnitTarget = null; // 플래그 초기화
+            isDragging = false;
         }
     }
 }
