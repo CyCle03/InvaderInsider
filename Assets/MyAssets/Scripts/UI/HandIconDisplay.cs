@@ -70,7 +70,7 @@ namespace InvaderInsider.UI
         {
             Debug.Log($"{LOG_TAG} OnHandDataChanged called with {handCardIds.Count} cards.");
             if (!isInitialized || cardManager == null) return;
-            
+
             foreach (var item in currentIconItems)
             {
                 Destroy(item);
@@ -91,33 +91,42 @@ namespace InvaderInsider.UI
             if (handCardIds.Count > 0)
             {
                 Show(); // 핸드에 카드가 있으면 활성화
+
+                // 1. Group cards by cardId
+                var cardCounts = new Dictionary<int, int>();
                 foreach (int cardId in handCardIds)
                 {
+                    if (cardCounts.ContainsKey(cardId))
+                    {
+                        cardCounts[cardId]++;
+                    }
+                    else
+                    {
+                        cardCounts[cardId] = 1;
+                    }
+                }
+
+                // 2. Create an icon for each group
+                foreach (var cardEntry in cardCounts)
+                {
+                    int cardId = cardEntry.Key;
+                    int count = cardEntry.Value;
                     var cardData = cardManager.GetCardById(cardId);
                     if (cardData == null) continue;
 
                     GameObject iconObj = Instantiate(cardIconPrefab, iconContainer);
-                    iconObj.name = $"CardIcon_{cardData.cardId}"; // Add name for easier debugging
-                    var iconRectTransform = iconObj.GetComponent<RectTransform>();
-                    if (iconRectTransform != null)
-                    {
-                        Debug.Log($"{LOG_TAG} Created icon {iconObj.name} at position {iconRectTransform.anchoredPosition} with size {iconRectTransform.sizeDelta}");
-                    }
+                    iconObj.name = $"CardIcon_{cardData.cardId}";
+
                     var iconImage = iconObj.GetComponent<Image>();
                     if (iconImage != null && cardData.artwork != null)
                     {
-                        iconImage.sprite = cardData.artwork; 
+                        iconImage.sprite = cardData.artwork;
                     }
 
-                    // 아이콘에 카드 데이터 설정 (CardDisplay와 CardInteractionHandler가 프리팹에 추가되었다고 가정)
                     var cardDisplay = iconObj.GetComponent<CardDisplay>();
                     if (cardDisplay != null)
                     {
                         cardDisplay.SetupCard(cardData);
-                    }
-                    else
-                    {
-                        LogManager.LogWarning($"{LOG_TAG} {iconObj.name}에서 CardDisplay 컴포넌트를 찾을 수 없습니다. 프리팹 설정을 확인하세요.");
                     }
 
                     var cardInteractionHandler = iconObj.GetComponent<CardInteractionHandler>();
@@ -125,6 +134,21 @@ namespace InvaderInsider.UI
                     {
                         cardInteractionHandler.Initialize(iconContainer);
                         cardInteractionHandler.OnCardClicked += () => ShowCardDetails(cardData);
+                    }
+
+                    // 3. Display the count
+                    var countText = iconObj.GetComponentInChildren<Text>(); // Or TextMeshProUGUI
+                    if (countText != null)
+                    {
+                        if (count > 1)
+                        {
+                            countText.text = $"x{count}";
+                            countText.gameObject.SetActive(true);
+                        }
+                        else
+                        {
+                            countText.gameObject.SetActive(false);
+                        }
                     }
 
                     currentIconItems.Add(iconObj);
