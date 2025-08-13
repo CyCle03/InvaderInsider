@@ -148,7 +148,9 @@ namespace InvaderInsider.Cards
                 }
             }
             
-            // 드래그 상태 초기화는 여기서 하지 않습니다. OnDrop에서 처리됩니다.
+            // 드래그 상태 초기화
+            GameManager.Instance.DraggedCardData = null;
+            GameManager.Instance.WasCardDroppedOnTower = false;
         }
     }
 }
