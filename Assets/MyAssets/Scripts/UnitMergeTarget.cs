@@ -8,17 +8,7 @@ namespace InvaderInsider
 {
     public class UnitMergeTarget : MonoBehaviour, IDropHandler
     {
-        private BaseCharacter targetCharacter;
-
-        private void Awake()
-        {
-            targetCharacter = GetComponent<BaseCharacter>();
-            if (targetCharacter == null)
-            {
-                Debug.LogError($"[UnitMergeTarget] {gameObject.name} requires a BaseCharacter component.");
-                enabled = false; // BaseCharacter가 없으면 이 스크립트 비활성화
-            }
-        }
+        
 
         public void OnDrop(PointerEventData eventData)
         {
@@ -27,7 +17,12 @@ namespace InvaderInsider
 
             Debug.Log($"[UnitMergeTarget] OnDrop - DraggedCardData: {(draggedCard != null ? draggedCard.cardName : "null")}, DraggedUnit: {(draggedUnit != null ? draggedUnit.gameObject.name : "null")}");
 
-            if (targetCharacter == null) return; // 타겟 캐릭터가 없으면 처리하지 않음
+            BaseCharacter targetCharacter = GetComponent<BaseCharacter>();
+            if (targetCharacter == null)
+            {
+                Debug.LogError($"[UnitMergeTarget] {gameObject.name} requires a BaseCharacter component. OnDrop cannot proceed.");
+                return; // 타겟 캐릭터가 없으면 처리하지 않음
+            }
 
             // 1. 카드 아이콘을 드래그한 경우
             if (draggedCard != null)
