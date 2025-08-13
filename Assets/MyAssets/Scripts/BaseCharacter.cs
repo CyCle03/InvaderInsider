@@ -24,7 +24,19 @@ namespace InvaderInsider
         
         [Header("Base Stats")]
         protected CardDBObject sourceCardData; // 이 캐릭터를 생성한 CardDBObject 참조
-        public int Level { get; protected set; } // CardDBObject에서 레벨 가져오기
+        private int _level; // CardDBObject에서 레벨 가져오기
+        public int Level
+        {
+            get { return _level; }
+            protected set
+            {
+                if (_level != value)
+                {
+                    _level = value;
+                    Debug.Log($"[BaseCharacter] {gameObject.name} Level set to: {_level}");
+                }
+            }
+        }
         public int CardId { get; protected set; } // CardDBObject에서 ID 가져오기
         [SerializeField] protected float maxHealth = GameConstants.DEFAULT_MAX_HEALTH;
         [SerializeField] protected float currentHealth;
@@ -180,7 +192,7 @@ namespace InvaderInsider
             if (cardData != null)
             {
                 this.sourceCardData = cardData; // CardDBObject 참조 저장
-                this.Level = cardData.level; // Level 프로퍼티에 직접 할당
+                this._level = cardData.level; // Level 프로퍼티에 직접 할당
                 this.CardId = cardData.cardId; // CardId 프로퍼티에 직접 할당
 
                 // CardDBObject의 power 값을 기반으로 스탯 설정
@@ -198,7 +210,7 @@ namespace InvaderInsider
                 this.maxHealth = GameConstants.DEFAULT_MAX_HEALTH;
                 this.attackDamage = GameConstants.DEFAULT_ATTACK_DAMAGE;
                 this.sourceCardData = null;
-                this.Level = 0; // 기본값 설정
+                this._level = 0; // 기본값 설정
                 this.CardId = -1; // 기본값 설정
             }
 
@@ -421,6 +433,7 @@ namespace InvaderInsider
             }
             
             // 기본 레벨업 로직 - 상속 클래스에서 오버라이드 가능
+            Level++; // 레벨 증가
             if (showDebugInfo)
             {
                 DebugUtils.Log(GameConstants.LOG_PREFIX_GAME, $"{gameObject.name}: 레벨업 완료");
