@@ -92,25 +92,8 @@ namespace InvaderInsider.UI
             {
                 Show(); // 핸드에 카드가 있으면 활성화
 
-                // 1. Group cards by cardId
-                var cardCounts = new Dictionary<int, int>();
                 foreach (int cardId in handCardIds)
                 {
-                    if (cardCounts.ContainsKey(cardId))
-                    {
-                        cardCounts[cardId]++;
-                    }
-                    else
-                    {
-                        cardCounts[cardId] = 1;
-                    }
-                }
-
-                // 2. Create an icon for each group
-                foreach (var cardEntry in cardCounts)
-                {
-                    int cardId = cardEntry.Key;
-                    int count = cardEntry.Value;
                     var cardData = cardManager.GetCardById(cardId);
                     if (cardData == null) continue;
 
@@ -134,21 +117,6 @@ namespace InvaderInsider.UI
                     {
                         cardInteractionHandler.Initialize(iconContainer);
                         cardInteractionHandler.OnCardClicked += () => ShowCardDetails(cardData);
-                    }
-
-                    // 3. Display the count
-                    var countText = iconObj.GetComponentInChildren<Text>(); // Or TextMeshProUGUI
-                    if (countText != null)
-                    {
-                        if (count > 1)
-                        {
-                            countText.text = $"x{count}";
-                            countText.gameObject.SetActive(true);
-                        }
-                        else
-                        {
-                            countText.gameObject.SetActive(false);
-                        }
                     }
 
                     currentIconItems.Add(iconObj);
