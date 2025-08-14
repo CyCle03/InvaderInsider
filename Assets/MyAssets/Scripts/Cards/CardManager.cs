@@ -176,6 +176,12 @@ namespace InvaderInsider.Cards
             return cardDatabase?.GetCardById(cardId);
         }
 
+        public CardDBObject GetUpgradedCard(CardDBObject card)
+        {
+            if (card == null) return null;
+            return cardDatabase?.AllCards.FirstOrDefault(c => c.cardId == card.cardId && c.level == card.level + 1);
+        }
+
         public List<CardDBObject> GetAllCards() => cardDatabase.AllCards;
         #endregion
 

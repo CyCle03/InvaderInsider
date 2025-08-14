@@ -1,0 +1,9 @@
+feat: Implement card merging in hand display
+
+Implements the ability for players to merge cards directly in their hand.
+
+- Implemented the `IDropHandler` interface on `CardInteractionHandler` to allow card icons to be dropped on each other.
+- Added `OnDrop` logic to `CardInteractionHandler` to check for merge conditions (same cardId and level).
+- When conditions are met, the two base cards are removed from the hand and the corresponding upgraded card is added.
+- Added `GetUpgradedCard` method to `CardManager` to find the next-level version of a card.
+- Updated `OnEndDrag` in `CardInteractionHandler` to properly cancel the placement preview when a drag ends on a UI element.
