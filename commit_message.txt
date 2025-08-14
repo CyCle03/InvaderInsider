@@ -1,6 +1,0 @@
-fix: Display individual card icons in hand
-
-Updates `HandIconDisplay` to instantiate a separate icon for each card in the player's hand, rather than grouping identical cards. This ensures that all cards are displayed individually before merging.
-
-- Removed the logic for grouping cards by `cardId` and displaying a count.
-- The UI now creates a distinct visual representation for every card instance in the hand.
