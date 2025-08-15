@@ -70,72 +70,50 @@ namespace InvaderInsider.Cards
                 canvasGroup.blocksRaycasts = true;
             }
 
-            bool droppedOnUnit = false;
             RaycastHit hit;
-            // 마우스 위치에서 3D 월드로 레이캐스트 수행
             Ray ray = Camera.main.ScreenPointToRay(eventData.position);
-            
-            Debug.Log($"[CardInteractionHandler] Performing raycast from {ray.origin} in direction {ray.direction}");
 
-            // We need to check what we hit. A single raycast is enough.
-            // The layers should be set up so that Units are prioritized over Tiles if they occupy the same space.
             if (Physics.Raycast(ray, out hit))
             {
-                Debug.Log($"[CardInteractionHandler] Raycast hit: {hit.collider.gameObject.name} on layer {LayerMask.LayerToName(hit.collider.gameObject.layer)}");
-                
+                // Case 1: Try to merge with a unit
                 UnitMergeTarget mergeTarget = hit.collider.GetComponent<UnitMergeTarget>();
-
-                // Case 1: We directly hit a unit that can be merged with.
                 if (mergeTarget != null)
                 {
-                    Debug.Log($"[CardInteractionHandler] UnitMergeTarget found directly on {hit.collider.gameObject.name}. Calling OnDrop.");
                     mergeTarget.OnDrop(eventData);
-                    droppedOnUnit = GameManager.Instance.WasCardDroppedOnTower;
+                    bool droppedOnUnit = GameManager.Instance.WasCardDroppedOnTower;
+
+                    if (droppedOnUnit)
+                    {
+                        // Merge was successful, destroy the card from hand
+                        if (eventData.pointerDrag != null)
+                        {
+                            Destroy(eventData.pointerDrag.gameObject);
+                        }
+                    }
+                    // If merge failed, do nothing and let placement be cancelled.
                 }
-                // Case 2: We hit something else (like a Tile). We don't check for nearby units.
+                // Case 2: Try to place on a tile
                 else
                 {
-                    Debug.Log($"[CardInteractionHandler] Raycast hit {hit.collider.gameObject.name}, which is not a UnitMergeTarget. Treating as placement attempt.");
-                    // droppedOnUnit remains false
-                }
-            }
-            else
-            {
-                Debug.Log("[CardInteractionHandler] Raycast hit nothing.");
-            }
-
-            if (droppedOnUnit)
-            {
-                // 유닛에 성공적으로 드롭(업그레이드)되었다면, UI 카드 아이콘을 파괴
-                if (eventData.pointerDrag != null)
-                {
-                    Destroy(eventData.pointerDrag.gameObject); 
-                }
-                GameManager.Instance.CancelPlacement(); // 배치 미리보기 제거
-            }
-            else
-            {
-                // 유닛에 드롭되지 않았다면, 일반적인 배치 로직 진행
-                Tile targetTile = hit.collider != null ? hit.collider.GetComponent<Tile>() : null;
-                bool placementSuccessful = GameManager.Instance.ConfirmPlacement(targetTile);
-                if (placementSuccessful)
-                {
-                    if (eventData.pointerDrag != null)
+                    Tile targetTile = hit.collider.GetComponent<Tile>();
+                    if (GameManager.Instance.ConfirmPlacement(targetTile))
                     {
-                        Destroy(eventData.pointerDrag.gameObject);
+                        // Placement was successful, destroy the card from hand
+                        if (eventData.pointerDrag != null)
+                        {
+                            Destroy(eventData.pointerDrag.gameObject);
+                        }
                     }
                 }
             }
-            
-            // 드래그 상태 초기화
+
+            // Always cancel the placement preview.
+            // ConfirmPlacement or a successful merge will have already created the real unit.
+            GameManager.Instance.CancelPlacement();
+
+            // Reset dragged card data
             GameManager.Instance.DraggedCardData = null;
             GameManager.Instance.WasCardDroppedOnTower = false;
-
-            // 드롭 대상이 UI가 아니었다면 미리보기 취소
-            if (!eventData.pointerEnter.GetComponentInParent<Canvas>())
-            {
-                GameManager.Instance.CancelPlacement();
-            }
         }
 
         public void OnDrop(PointerEventData eventData)
