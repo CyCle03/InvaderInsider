@@ -77,47 +77,26 @@ namespace InvaderInsider.Cards
             
             Debug.Log($"[CardInteractionHandler] Performing raycast from {ray.origin} in direction {ray.direction}");
 
+            // We need to check what we hit. A single raycast is enough.
+            // The layers should be set up so that Units are prioritized over Tiles if they occupy the same space.
             if (Physics.Raycast(ray, out hit))
             {
                 Debug.Log($"[CardInteractionHandler] Raycast hit: {hit.collider.gameObject.name} on layer {LayerMask.LayerToName(hit.collider.gameObject.layer)}");
                 
                 UnitMergeTarget mergeTarget = hit.collider.GetComponent<UnitMergeTarget>();
 
-                // 레이캐스트가 직접 UnitMergeTarget을 가진 오브젝트를 감지한 경우
+                // Case 1: We directly hit a unit that can be merged with.
                 if (mergeTarget != null)
                 {
                     Debug.Log($"[CardInteractionHandler] UnitMergeTarget found directly on {hit.collider.gameObject.name}. Calling OnDrop.");
                     mergeTarget.OnDrop(eventData);
-                    droppedOnUnit = GameManager.Instance.WasCardDroppedOnTower; // 플래그 이름은 그대로 사용
+                    droppedOnUnit = GameManager.Instance.WasCardDroppedOnTower;
                 }
-                // 레이캐스트가 타일을 감지했지만, 그 위에 유닛이 있을 수 있는 경우
-                else if (hit.collider.GetComponent<Tile>() != null)
-                {
-                    Debug.Log($"[CardInteractionHandler] Raycast hit a Tile. Checking for UnitMergeTarget on top of it.");
-                    // 타일 위치에서 OverlapSphere를 사용하여 주변 유닛을 찾음
-                    // 타워와 캐릭터의 크기를 고려하여 반경 조절 필요
-                    Collider[] collidersInArea = Physics.OverlapSphere(hit.point, 2.0f); 
-                    Debug.Log($"[CardInteractionHandler] OverlapSphere found {collidersInArea.Length} colliders.");
-                    foreach (Collider col in collidersInArea)
-                    {
-                        Debug.Log($"[CardInteractionHandler] OverlapSphere detected: {col.gameObject.name} on layer {LayerMask.LayerToName(col.gameObject.layer)}");
-                        mergeTarget = col.GetComponent<UnitMergeTarget>();
-                        if (mergeTarget != null)
-                        {
-                            Debug.Log($"[CardInteractionHandler] UnitMergeTarget found on {col.gameObject.name} near the tile. Calling OnDrop.");
-                            mergeTarget.OnDrop(eventData);
-                            droppedOnUnit = GameManager.Instance.WasCardDroppedOnTower;
-                            break; // 찾았으면 루프 종료
-                        }
-                    }
-                    if (mergeTarget == null)
-                    {
-                        Debug.Log($"[CardInteractionHandler] No UnitMergeTarget found on or near the hit tile.");
-                    }
-                }
+                // Case 2: We hit something else (like a Tile). We don't check for nearby units.
                 else
                 {
-                    Debug.Log($"[CardInteractionHandler] Raycast hit {hit.collider.gameObject.name}, but it's not a UnitMergeTarget or a Tile.");
+                    Debug.Log($"[CardInteractionHandler] Raycast hit {hit.collider.gameObject.name}, which is not a UnitMergeTarget. Treating as placement attempt.");
+                    // droppedOnUnit remains false
                 }
             }
             else
