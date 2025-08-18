@@ -3,7 +3,7 @@ using System;
 using InvaderInsider.Data;
 using UnityEngine.SceneManagement;
 using InvaderInsider.Cards;
-using InvaderInsider.UI; // UIManager 네임스페이스 추가
+using InvaderInsider.UI;
 
 namespace InvaderInsider.Managers
 {
@@ -43,11 +43,11 @@ namespace InvaderInsider.Managers
         public event Action<GameState> OnGameStateChanged;
 
         public GameObject SelectedTowerPrefab { get; set; }
-        public int SelectedCardId { get; set; } = -1; // -1 indicates no card is selected
+        public int SelectedCardId { get; set; } = -1;
         public CardDBObject DraggedCardData { get; set; }
         public bool WasCardDroppedOnTower { get; set; } = false;
 
-        private UIManager uiManager; // UIManager 참조 추가
+        private UIManager uiManager;
 
         private void Awake()
         {
@@ -59,22 +59,26 @@ namespace InvaderInsider.Managers
             _instance = this;
             DontDestroyOnLoad(gameObject);
 
-            SceneManager.sceneLoaded += OnSceneLoaded; // 씬 로드 이벤트 구독
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
         private void OnDestroy()
         {
-            SceneManager.sceneLoaded -= OnSceneLoaded; // 이벤트 구독 해제
+            SceneManager.sceneLoaded -= OnSceneLoaded;
         }
 
         private void Start()
         {
+            if (DebugSphere != null)
+            {
+                debugSphereInstance = Instantiate(DebugSphere);
+                debugSphereInstance.name = "Mouse Raycast Debug Sphere";
+            }
             SetGameState(GameState.MainMenu);
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            // UIManager 인스턴스를 직접 찾습니다.
             uiManager = FindObjectOfType<UIManager>();
             if (uiManager == null)
             {
@@ -82,7 +86,7 @@ namespace InvaderInsider.Managers
                 return;
             }
 
-            InitializeUIForScene(scene.name); // 씬에 맞는 UI 초기화
+            InitializeUIForScene(scene.name);
 
             if (scene.name == "Game")
             {
@@ -96,19 +100,14 @@ namespace InvaderInsider.Managers
 
         private void InitializeUIForScene(string sceneName)
         {
-            // 모든 BasePanel 컴포넌트를 찾습니다.
             BasePanel[] allPanels = FindObjectsOfType<BasePanel>(true);
-
-            // UIManager에 패널들을 등록하고 초기 상태를 설정합니다.
             foreach (BasePanel panel in allPanels)
             {
                 if (panel != null)
                 {
-                    uiManager.RegisterPanel(panel.name, panel); // 패널의 GameObject 이름을 키로 사용
+                    uiManager.RegisterPanel(panel.name, panel);
                 }
             }
-
-            // 모든 패널을 비활성화합니다.
             foreach (BasePanel panel in allPanels)
             {
                 if (panel != null)
@@ -117,7 +116,6 @@ namespace InvaderInsider.Managers
                 }
             }
 
-            // 씬에 따라 필요한 패널만 활성화합니다.
             if (sceneName == "Main")
             {
                 uiManager.ShowPanel("MainMenu");
@@ -158,7 +156,6 @@ namespace InvaderInsider.Managers
 
         public void StartGame(int startStageIndex)
         {
-            // 기존 Player의 OnDeath 이벤트 구독 해제 (새 게임 시작 시)
             Player existingPlayer = FindObjectOfType<Player>();
             if (existingPlayer != null) existingPlayer.OnDeath -= HandlePlayerDeath;
 
@@ -170,10 +167,7 @@ namespace InvaderInsider.Managers
                 {
                     stageManager.StartStageFrom(startStageIndex);
                     SetGameState(GameState.Playing);
-                    // 스테이지 시작 후 UI를 즉시 업데이트
                     UpdateStageWaveUI(stageManager.GetCurrentStageIndex() + 1, stageManager.GetSpawnedEnemyCount(), stageManager.GetStageWaveCount(stageManager.GetCurrentStageIndex()));
-
-                    // 새 Player 인스턴스의 OnDeath 이벤트 구독
                     Player newPlayer = FindObjectOfType<Player>();
                     if (newPlayer != null)
                     {
@@ -206,10 +200,9 @@ namespace InvaderInsider.Managers
         public void GameOver()
         {
             if (CurrentGameState == GameState.GameOver) return;
-
             SetGameState(GameState.GameOver);
             Debug.Log($"{LOG_PREFIX} 게임 오버");
-            uiManager?.ShowPanel("GameOver"); // UIManager를 통해 패널 표시
+            uiManager?.ShowPanel("GameOver");
         }
 
         private void HandlePlayerDeath()
@@ -237,8 +230,6 @@ namespace InvaderInsider.Managers
 
         public void UpdateStageWaveUI(int stage, int currentWave, int maxWave)
         {
-            // UIManager를 통해 TopBarPanel의 UI를 업데이트하는 예시
-            // TopBarPanel의 GameObject 이름이 "TopBarPanel"이라고 가정
             var topBarPanel = uiManager?.GetPanel("TopBar") as TopBarPanel;
             if (topBarPanel != null)
             {
@@ -260,21 +251,18 @@ namespace InvaderInsider.Managers
             }
         }
 
-        // DraggableUnit을 위한 필드 추가
         public BaseCharacter DraggedUnit { get; set; }
         public BaseCharacter DroppedOnUnitTarget { get; set; }
 
-        // Placement Settings를 public으로 변경
         [Header("Card Placement Settings")]
-        public LayerMask TileLayerMask; // 타일 오브젝트들이 속한 레이어를 설정합니다.
-        public Material ValidPlacementMaterial; // 배치 가능 시 프리뷰에 적용할 반투명 초록색 재질
-        public Material InvalidPlacementMaterial; // 배치 불가능 시 프리뷰에 적용할 반투명 빨간색 재질
-        public float PlacementYOffset = 0.0f; // 유닛 배치 시 Y축 오프셋
+        public LayerMask TileLayerMask;
+        public Material ValidPlacementMaterial;
+        public Material InvalidPlacementMaterial;
+        public float PlacementYOffset = 0.0f;
 
         private GameObject placementPreviewInstance;
         private CardDBObject cardDataForPlacement;
         private Tile currentTargetTile;
-
 
         private void Update()
         {
@@ -282,6 +270,7 @@ namespace InvaderInsider.Managers
             {
                 UpdatePlacementPreview();
             }
+            UpdateDebugSphere();
         }
 
         #region Card Placement Methods
@@ -289,18 +278,12 @@ namespace InvaderInsider.Managers
         public void StartPlacementPreview(CardDBObject cardData)
         {
             if (cardData == null || cardData.cardPrefab == null) return;
-
             if (placementPreviewInstance != null) Destroy(placementPreviewInstance);
-
             cardDataForPlacement = cardData;
             placementPreviewInstance = Instantiate(cardData.cardPrefab);
-
-            // 프리뷰가 게임 로직에 영향을 주지 않도록 주요 컴포넌트 비활성화
             if (placementPreviewInstance.TryGetComponent<UnityEngine.AI.NavMeshAgent>(out var agent)) agent.enabled = false;
             if (placementPreviewInstance.TryGetComponent<BaseCharacter>(out var character)) character.enabled = false;
             foreach (var col in placementPreviewInstance.GetComponentsInChildren<Collider>()) col.enabled = false;
-
-            // 프리뷰 모델의 렌더러를 활성화합니다.
             foreach (var renderer in placementPreviewInstance.GetComponentsInChildren<Renderer>())
             {
                 renderer.enabled = true;
@@ -313,13 +296,13 @@ namespace InvaderInsider.Managers
             RaycastHit hit;
             if (Physics.Raycast(ray, out hit, 200f, TileLayerMask))
             {
-                placementPreviewInstance.transform.position = hit.collider.transform.position + new Vector3(0, PlacementYOffset, 0); // 타일 중앙에 스냅 및 Y축 오프셋 적용
+                placementPreviewInstance.transform.position = hit.collider.transform.position + new Vector3(0, PlacementYOffset, 0);
                 currentTargetTile = hit.collider.GetComponent<Tile>();
             }
             else
             {
                 currentTargetTile = null;
-                placementPreviewInstance.transform.position = new Vector3(0, -1000, 0); // 타일이 아니면 화면 밖으로
+                placementPreviewInstance.transform.position = new Vector3(0, -1000, 0);
             }
             UpdatePreviewVisuals();
         }
@@ -328,7 +311,6 @@ namespace InvaderInsider.Managers
         {
             bool isValid = currentTargetTile != null && currentTargetTile.tileType == TileType.Spawn && !currentTargetTile.IsOccupied;
             Material materialToApply = isValid ? ValidPlacementMaterial : InvalidPlacementMaterial;
-
             if (materialToApply != null)
             {
                 foreach (var renderer in placementPreviewInstance.GetComponentsInChildren<Renderer>())
@@ -342,16 +324,12 @@ namespace InvaderInsider.Managers
         public bool ConfirmPlacement(Tile placementTile)
         {
             if (placementPreviewInstance == null) return false;
-
             bool isValidTile = placementTile != null && placementTile.tileType == TileType.Spawn && !placementTile.IsOccupied;
-
             if (isValidTile)
             {
                 GameObject spawnedObject = SpawnObject(cardDataForPlacement, placementTile);
-
                 if (spawnedObject != null)
                 {
-                    // 생성에 성공한 경우에만 카드를 제거하고 프리뷰를 정리합니다.
                     CardManager.Instance.RemoveCardFromHand(cardDataForPlacement.cardId);
                     Destroy(placementPreviewInstance);
                     ResetPlacementState();
@@ -359,7 +337,6 @@ namespace InvaderInsider.Managers
                 }
                 else
                 {
-                    // 생성에 실패하면 프리뷰만 취소하고 카드는 핸드에 남겨둡니다.
                     Debug.LogError($"{LOG_PREFIX}Placement confirmed, but SpawnObject failed. Card will not be removed from hand.");
                     CancelPlacement();
                     return false;
@@ -367,7 +344,6 @@ namespace InvaderInsider.Managers
             }
             else
             {
-                // 유효하지 않은 타일이므로 프리뷰를 취소합니다.
                 CancelPlacement();
                 return false;
             }
@@ -388,6 +364,10 @@ namespace InvaderInsider.Managers
 
         #endregion
 
+        [Header("Debug")]
+        public GameObject DebugSphere;
+        private GameObject debugSphereInstance;
+
         public GameObject SpawnObject(CardDBObject cardData, Tile tile)
         {
             if (cardData == null || cardData.cardPrefab == null)
@@ -395,47 +375,37 @@ namespace InvaderInsider.Managers
                 Debug.LogError($"{LOG_PREFIX}카드 데이터 또는 프리팹이 유효하지 않습니다.");
                 return null;
             }
-
             if (tile == null)
             {
                 Debug.LogWarning($"{LOG_PREFIX}타일이 유효하지 않습니다.");
                 return null;
             }
-
             if (tile.tileType != TileType.Spawn)
             {
                 Debug.LogWarning($"{LOG_PREFIX}배치할 수 없는 타일입니다. (타일 타입: {tile.tileType})");
                 return null;
             }
-
             if (tile.IsOccupied)
             {
                 Debug.LogWarning($"{LOG_PREFIX}이미 점유된 타일입니다.");
                 return null;
             }
-
             Debug.Log($"{LOG_PREFIX}Attempting to spawn '{cardData.cardName}' on tile '{tile.name}'.");
-
             Vector3 spawnPosition = tile.transform.position;
-            spawnPosition.y += PlacementYOffset; // Y축 오프셋 적용
-
+            spawnPosition.y += PlacementYOffset;
             GameObject spawnedObject = Instantiate(cardData.cardPrefab, spawnPosition, Quaternion.identity);
             if (spawnedObject == null)
             {
                 Debug.LogError($"{LOG_PREFIX}Failed to instantiate prefab for card '{cardData.cardName}'.");
                 return null;
             }
-
-            // 유닛을 드래그 가능하게 만들기 위해 DraggableUnit 컴포넌트를 확인하고, 없으면 추가하며, 항상 활성화시킵니다.
             DraggableUnit draggable = spawnedObject.GetComponent<DraggableUnit>();
             if (draggable == null)
             {
                 draggable = spawnedObject.AddComponent<DraggableUnit>();
             }
-            draggable.enabled = true; // 컴포넌트를 확실하게 활성화합니다.
-
+            draggable.enabled = true;
             Debug.Log($"{LOG_PREFIX}Successfully instantiated prefab '{spawnedObject.name}'. Now initializing...");
-
             switch (cardData.type)
             {
                 case CardType.Tower:
@@ -458,7 +428,7 @@ namespace InvaderInsider.Managers
                     if (characterComponent != null)
                     {
                         characterComponent.Initialize(cardData);
-                        tile.SetOccupied(true); // 캐릭터도 타일을 점유하도록 변경
+                        tile.SetOccupied(true);
                         Debug.Log($"{LOG_PREFIX}Initialized '{spawnedObject.name}' as Character.");
                     }
                     else
@@ -469,7 +439,6 @@ namespace InvaderInsider.Managers
                     }
                     break;
             }
-
             Debug.Log($"{LOG_PREFIX}{cardData.cardName} was successfully summoned on tile {tile.name}.");
             return spawnedObject;
         }
@@ -477,7 +446,6 @@ namespace InvaderInsider.Managers
         public void PlayCard(CardDBObject card)
         {
             if (card == null) return;
-
             switch (card.type)
             {
                 case CardType.Tower:
@@ -485,8 +453,20 @@ namespace InvaderInsider.Managers
                     StartPlacementPreview(card);
                     break;
                 case CardType.Equipment:
-                    // TODO: Implement equipment card logic
                     break;
+            }
+        }
+
+        private void UpdateDebugSphere()
+        {
+            if (debugSphereInstance == null) return;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+            float rayDistance;
+            if (groundPlane.Raycast(ray, out rayDistance))
+            {
+                Vector3 hitPoint = ray.GetPoint(rayDistance);
+                debugSphereInstance.transform.position = hitPoint;
             }
         }
     }
