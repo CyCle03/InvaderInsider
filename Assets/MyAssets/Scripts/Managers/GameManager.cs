@@ -48,6 +48,7 @@ namespace InvaderInsider.Managers
         public bool WasCardDroppedOnTower { get; set; } = false;
 
         private UIManager uiManager;
+        private GameObject debugSphereInstance;
 
         private void Awake()
         {
@@ -69,11 +70,23 @@ namespace InvaderInsider.Managers
 
         private void Start()
         {
-            if (DebugSphere != null)
+            // Programmatically create the debug sphere for raycast visualization
+            debugSphereInstance = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            debugSphereInstance.name = "Mouse Raycast Debug Sphere";
+            debugSphereInstance.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+            Collider sphereCollider = debugSphereInstance.GetComponent<Collider>();
+            if (sphereCollider != null)
             {
-                debugSphereInstance = Instantiate(DebugSphere);
-                debugSphereInstance.name = "Mouse Raycast Debug Sphere";
+                sphereCollider.enabled = false; // Prevent it from interfering with other raycasts
             }
+            Renderer sphereRenderer = debugSphereInstance.GetComponent<Renderer>();
+            if (sphereRenderer != null)
+            {
+                Material debugMaterial = new Material(Shader.Find("Unlit/Color"));
+                debugMaterial.color = Color.red;
+                sphereRenderer.material = debugMaterial;
+            }
+
             SetGameState(GameState.MainMenu);
         }
 
@@ -363,10 +376,6 @@ namespace InvaderInsider.Managers
         }
 
         #endregion
-
-        [Header("Debug")]
-        public GameObject DebugSphere;
-        private GameObject debugSphereInstance;
 
         public GameObject SpawnObject(CardDBObject cardData, Tile tile)
         {
