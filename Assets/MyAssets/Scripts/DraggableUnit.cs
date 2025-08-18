@@ -77,31 +77,17 @@ namespace InvaderInsider
                 unitCollider.enabled = true;
             }
 
-            // 드롭 성공 여부 확인 (UnitMergeTarget에서 처리)
-            BaseCharacter droppedOnTarget = GameManager.Instance.DroppedOnUnitTarget; // 드롭된 타겟 유닛
-            if (droppedOnTarget != null) // 유닛에 드롭 성공
+            // 드롭 성공 여부와 관계없이, 유닛이 파괴되지 않았다면 항상 원래 위치로 되돌아가도록 수정합니다.
+            // 이는 UnitMergeTarget에서 유닛 파괴가 실패하는 예외적인 경우에도 유닛이 공중에 떠다니는 버그를 방지합니다.
+            transform.position = originalPosition;
+
+            if (GameManager.Instance.DroppedOnUnitTarget != null)
             {
-                // UnitMergeTarget에서 이미 처리했으므로 여기서는 추가 로직 없음
-                // 이 오브젝트는 UnitMergeTarget에서 파괴될 것임
-                Debug.Log($"[DraggableUnit] Dropped on unit: {droppedOnTarget.gameObject.name}");
+                Debug.Log($"[DraggableUnit] Dropped on a valid target. Returned to original position as a fallback in case destruction fails.");
             }
-            else // 유닛에 드롭 실패 (빈 타일 또는 유효하지 않은 곳)
+            else
             {
-                // 마우스 위치에서 3D 월드로 레이캐스트 수행하여 드롭된 위치 확인
-                Ray ray = Camera.main.ScreenPointToRay(eventData.position);
-                RaycastHit hit;
-                if (Physics.Raycast(ray, out hit, Mathf.Infinity, GameManager.Instance.TileLayerMask))
-                {
-                    // 타일 위에 드롭되었지만 합쳐지지 않은 경우
-                    Debug.Log($"[DraggableUnit] Dropped on tile {hit.collider.gameObject.name}, but no merge occurred. Returning to original position.");
-                    transform.position = originalPosition; // 원래 위치로 되돌림
-                }
-                else
-                {
-                    // 타일이 아닌 다른 곳에 드롭된 경우
-                    Debug.Log($"[DraggableUnit] Dropped on empty space or invalid target. Returning to original position.");
-                    transform.position = originalPosition; // 원래 위치로 되돌림
-                }
+                Debug.Log($"[DraggableUnit] Dropped on an invalid target or merge failed. Returned to original position.");
             }
 
             GameManager.Instance.DraggedUnit = null;
