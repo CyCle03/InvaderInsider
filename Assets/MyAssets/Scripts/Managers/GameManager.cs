@@ -426,8 +426,13 @@ namespace InvaderInsider.Managers
                 return null;
             }
 
-            // 유닛을 드래그 가능하게 만들기 위해 DraggableUnit 컴포넌트 추가
-            spawnedObject.AddComponent<DraggableUnit>();
+            // 유닛을 드래그 가능하게 만들기 위해 DraggableUnit 컴포넌트를 확인하고, 없으면 추가하며, 항상 활성화시킵니다.
+            DraggableUnit draggable = spawnedObject.GetComponent<DraggableUnit>();
+            if (draggable == null)
+            {
+                draggable = spawnedObject.AddComponent<DraggableUnit>();
+            }
+            draggable.enabled = true; // 컴포넌트를 확실하게 활성화합니다.
 
             Debug.Log($"{LOG_PREFIX}Successfully instantiated prefab '{spawnedObject.name}'. Now initializing...");
 

@@ -26,12 +26,12 @@ namespace InvaderInsider.UI
         protected override void Initialize()
         {
             // To prevent the panel's background from blocking raycasts to the game world,
-            // disable the raycastTarget on the Image component of this panel itself.
+            // disable the raycastTarget on any Graphic component of this panel itself.
             // The child card icons will still be interactive.
-            Image backgroundImage = GetComponent<Image>();
-            if (backgroundImage != null)
+            Graphic backgroundGraphic = GetComponent<Graphic>();
+            if (backgroundGraphic != null)
             {
-                backgroundImage.raycastTarget = false;
+                backgroundGraphic.raycastTarget = false;
             }
 
             Debug.Log($"{LOG_TAG} Initialize called. HandIconDisplay active: {gameObject.activeSelf}, in hierarchy: {gameObject.activeInHierarchy}");
