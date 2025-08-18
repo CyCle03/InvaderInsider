@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using UnityEngine.EventSystems;
 using InvaderInsider.Managers;
@@ -10,13 +9,13 @@ namespace InvaderInsider
     {
         private BaseCharacter draggedCharacter;
         private Vector3 originalPosition;
-        private Collider unitCollider;
+        private Collider[] unitColliders; // 배열로 변경
         private Rigidbody unitRigidbody;
 
         private void Awake()
         {
             draggedCharacter = GetComponent<BaseCharacter>();
-            unitCollider = GetComponent<Collider>();
+            unitColliders = GetComponentsInChildren<Collider>(); // 모든 자식 콜라이더를 가져오도록 변경
             unitRigidbody = GetComponent<Rigidbody>();
         }
 
@@ -31,10 +30,11 @@ namespace InvaderInsider
             {
                 unitRigidbody.isKinematic = true;
             }
-            // 드래그 중에는 레이캐스트에 걸리지 않도록 설정 (드롭 존이 감지할 수 있도록)
-            if (unitCollider != null)
+            
+            // 드래그 중에는 레이캐스트에 걸리지 않도록 모든 콜라이더 비활성화
+            foreach (var col in unitColliders)
             {
-                unitCollider.enabled = false;
+                col.enabled = false;
             }
 
             // GameManager에 드래그 시작을 알림
@@ -59,7 +59,6 @@ namespace InvaderInsider
             else
             {
                 // 타일이 감지되지 않으면 현재 위치 유지 또는 다른 처리
-                // transform.position = originalPosition; // 또는 화면 밖으로 이동
             }
         }
 
@@ -72,9 +71,11 @@ namespace InvaderInsider
             {
                 unitRigidbody.isKinematic = false;
             }
-            if (unitCollider != null)
+
+            // 드래그 종료 시 모든 콜라이더 복원
+            foreach (var col in unitColliders)
             {
-                unitCollider.enabled = true;
+                col.enabled = true;
             }
 
             // 드롭 성공 여부와 관계없이, 유닛이 파괴되지 않았다면 항상 원래 위치로 되돌아가도록 수정합니다.

@@ -426,6 +426,9 @@ namespace InvaderInsider.Managers
                 return null;
             }
 
+            // 유닛을 드래그 가능하게 만들기 위해 DraggableUnit 컴포넌트 추가
+            spawnedObject.AddComponent<DraggableUnit>();
+
             Debug.Log($"{LOG_PREFIX}Successfully instantiated prefab '{spawnedObject.name}'. Now initializing...");
 
             switch (cardData.type)

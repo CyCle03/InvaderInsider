@@ -70,8 +70,15 @@ namespace InvaderInsider
                     return;
                 }
 
+                // [Gemini] Add detailed logging to debug merge condition
+                Debug.Log($"[UnitMergeTarget] Detailed Check: Dragged ID={draggedUnit.CardId} (Type: {draggedUnit.CardId.GetType()}), Level={draggedUnit.Level} (Type: {draggedUnit.Level.GetType()})");
+                Debug.Log($"[UnitMergeTarget] Detailed Check: Target ID={targetCharacter.CardId} (Type: {targetCharacter.CardId.GetType()}), Level={targetCharacter.Level} (Type: {targetCharacter.Level.GetType()})");
+                bool idsMatch = draggedUnit.CardId == targetCharacter.CardId;
+                bool levelsMatch = draggedUnit.Level == targetCharacter.Level;
+                Debug.Log($"[UnitMergeTarget] Detailed Check: IDs Match? {idsMatch}, Levels Match? {levelsMatch}");
+
                 // 합치기 조건 확인: ID와 레벨이 모두 같아야 함
-                if (draggedUnit.CardId == targetCharacter.CardId && draggedUnit.Level == targetCharacter.Level)
+                if (idsMatch && levelsMatch)
                 {
                     Debug.Log($"[UnitMergeTarget] Merge conditions met! Merging {draggedUnit.gameObject.name} into {targetCharacter.gameObject.name}.");
                     targetCharacter.LevelUp();
