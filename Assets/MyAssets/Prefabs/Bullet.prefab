@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3062230117889159605}
   - component: {fileID: 2996186645845645471}
   - component: {fileID: 4421272327011251973}
+  - component: {fileID: 6110727740920834737}
   m_Layer: 0
   m_Name: Bullet
   m_TagString: Untagged
@@ -119,8 +120,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bc673374967b2049b72a997355d18d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
-  damage: 1
+  defaultSpeed: 10
+  defaultLifeTime: 5
+  hitDistance: 0.5
+  hitEffect: {fileID: 0}
+  trail: {fileID: 0}
 --- !u!54 &4421272327011251973
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -148,3 +152,20 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &6110727740920834737
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2265586970664229171}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd3a62649998b2c40b1d22fb8cb3aa51, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoReturnTime: 5
+  autoReturnOnDisable: 1
+  autoReturnDelay: 0
+  showDebugInfo: 0
+  testReturnToPool: 0

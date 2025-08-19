@@ -316,32 +316,38 @@ namespace InvaderInsider.Core
         }
 
         /// <summary>
-        /// PooledObject 컴포넌트를 통한 반환
+        /// PooledObject 컴포넌트를 통한 반환 (개선된 버전)
         /// </summary>
         public void ReturnObject(PooledObject pooledObj)
         {
             if (pooledObj == null) return;
 
-            // PooledObject가 있는 오브젝트의 다른 컴포넌트들 확인
-            var components = pooledObj.GetComponents<Component>();
-            
-            foreach (var component in components)
+            // PooledObject가 스스로 감지한 컴포or넌트 타입을 직접 사용합니다.
+            Type componentType = pooledObj.ComponentType;
+
+            if (componentType != null && pools.TryGetValue(componentType, out object poolObj))
             {
-                if (component == pooledObj) continue; // PooledObject 자체는 제외
-                
-                Type componentType = component.GetType();
-                if (pools.TryGetValue(componentType, out object poolObj))
+                // 해당 타입의 컴포넌트를 가져옵니다.
+                var componentToReturn = pooledObj.GetComponent(componentType);
+                if (componentToReturn != null)
                 {
                     // 리플렉션으로 ReturnObject 메서드 호출
                     var method = poolObj.GetType().GetMethod("ReturnObject");
-                    method?.Invoke(poolObj, new object[] { component });
-                    return;
+                    method?.Invoke(poolObj, new object[] { componentToReturn });
+                }
+                else
+                {
+                    // DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                    //     $"PooledObject {pooledObj.name}에서 {componentType.Name} 컴포넌트를 찾을 수 없어 풀에 반환하지 못했습니다.");
+                    DestroyImmediate(pooledObj.gameObject);
                 }
             }
-
-            DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
-                "PooledObject를 적절한 풀로 반환할 수 없어 직접 제거합니다.");
-            DestroyImmediate(pooledObj.gameObject);
+            else
+            {
+                // DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                //     $"PooledObject {pooledObj.name}를 적절한 풀로 반환할 수 없어 직접 제거합니다. 감지된 타입: {(componentType?.Name ?? "null")}");
+                DestroyImmediate(pooledObj.gameObject);
+            }
         }
 
         /// <summary>

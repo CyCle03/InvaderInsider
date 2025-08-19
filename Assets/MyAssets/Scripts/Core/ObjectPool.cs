@@ -74,19 +74,13 @@ namespace InvaderInsider.Core
             // 풀이 가득 찬 경우 null 반환
             else
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
-                    $"ObjectPool<{typeof(T).Name}>: 풀이 가득 참 (최대: {maxPoolSize})");
                 return null;
             }
 
             // 가져온 오브젝트가 유효한지 확인
             if (obj == null || obj.gameObject == null)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
-                    $"ObjectPool<{typeof(T).Name}>: 풀에서 가져온 오브젝트가 유효하지 않습니다. 재시도합니다.");
-                // 유효하지 않은 오브젝트는 풀에서 제거 (필요하다면)
-                // DestroyImmediate(obj.gameObject); // 이미 null일 수 있으므로 주의
-                return GetObject(); // 재귀 호출하여 유효한 오브젝트를 다시 시도
+                return GetObject();
             }
 
             activeObjects.Add(obj);
@@ -101,22 +95,23 @@ namespace InvaderInsider.Core
         {
             if (obj == null) return;
 
+            Debug.Log($"[ObjectPool<{typeof(T).Name}>] ReturnObject called for {obj.name}. Attempting to deactivate and enqueue.");
+
             if (activeObjects.Remove(obj))
             {
                 obj.gameObject.SetActive(false);
                 
-                // 부모 위치로 이동 (정리)
                 if (parent != null)
                 {
                     obj.transform.SetParent(parent);
                 }
                 
                 availableObjects.Enqueue(obj);
+                Debug.Log($"[ObjectPool<{typeof(T).Name}>] {obj.name} successfully returned to pool.");
             }
             else
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
-                    $"ObjectPool<{typeof(T).Name}>: 풀에 속하지 않는 오브젝트를 반환하려고 했습니다.");
+                Debug.LogWarning($"[ObjectPool<{typeof(T).Name}>] Attempted to return {obj.name} which was not in the active objects set.");
             }
         }
 
@@ -158,297 +153,7 @@ namespace InvaderInsider.Core
         /// </summary>
         public void LogPoolStatus()
         {
-            DebugUtils.LogFormat(GameConstants.LOG_PREFIX_GAME, 
-                "ObjectPool<{0}> - 사용 가능: {1}, 활성: {2}, 총합: {3}/{4}", 
-                typeof(T).Name, AvailableCount, ActiveCount, TotalCount, maxPoolSize);
+            // Debug.LogFormat(...)
         }
     }
-
-    /// <summary>
-    /// 오브젝트 풀링 시스템용 컴포넌트 (개선된 버전)
-    /// 이 컴포넌트가 있는 오브젝트는 자동으로 풀에 반환됩니다
-    /// </summary>
-    public class PooledObject : MonoBehaviour
-    {
-        #region Inspector Fields
-        
-        [Header("Pool Settings")]
-        [SerializeField] private float autoReturnTime = GameConstants.OBJECT_AUTO_RETURN_TIME;
-        [SerializeField] private bool autoReturnOnDisable = true;
-        [SerializeField] private float autoReturnDelay = 0f;
-        
-        [Header("Debug Info")]
-        [SerializeField] private bool showDebugInfo = false;
-        
-        #endregion
-        
-        #region Private Fields
-        
-        private ObjectPoolManager poolManager;
-        private Coroutine autoReturnCoroutine;
-        private System.Type componentType;
-        private bool isInPool = true;
-        private float spawnTime;
-        
-        #endregion
-        
-        #region Properties
-        
-        /// <summary>현재 풀에 있는 상태인지 확인</summary>
-        public bool IsInPool => isInPool;
-        
-        /// <summary>스폰된 시간</summary>
-        public float SpawnTime => spawnTime;
-        
-        /// <summary>활성화된 시간</summary>
-        public float ActiveTime => isInPool ? 0f : Time.time - spawnTime;
-        
-        #endregion
-        
-        #region Unity Events
-        
-        private void Awake()
-        {
-            DetectComponentType();
-        }
-        
-        private void OnDisable()
-        {
-            // 자동 반환이 활성화된 경우에만
-            if (autoReturnOnDisable && !isInPool)
-            {
-                if (autoReturnDelay > 0f)
-                {
-                    Invoke(nameof(ReturnToPool), autoReturnDelay);
-                }
-                else
-                {
-                    ReturnToPool();
-                }
-            }
-            
-            // 기존 코루틴 정리
-            if (autoReturnCoroutine != null)
-            {
-                StopCoroutine(autoReturnCoroutine);
-                autoReturnCoroutine = null;
-            }
-        }
-        
-        #endregion
-        
-        #region Pool Management
-        
-        /// <summary>
-        /// 풀 매니저 초기화
-        /// </summary>
-        public void Initialize(ObjectPoolManager manager)
-        {
-            poolManager = manager;
-            
-            if (showDebugInfo)
-            {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
-                    $"PooledObject 초기화: {gameObject.name}");
-            }
-        }
-
-        /// <summary>
-        /// 오브젝트가 풀에서 스폰될 때 호출
-        /// </summary>
-        public void OnObjectSpawned()
-        {
-            isInPool = false;
-            spawnTime = Time.time;
-            
-            // 활성화 상태 확인
-            if (!gameObject.activeInHierarchy)
-            {
-                gameObject.SetActive(true);
-            }
-            
-            // 자동 반환 타이머 시작
-            if (autoReturnTime > 0)
-            {
-                autoReturnCoroutine = StartCoroutine(AutoReturnRoutine());
-            }
-            
-            if (showDebugInfo)
-            {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
-                    $"오브젝트 스폰: {gameObject.name} (타입: {componentType?.Name})");
-            }
-        }
-
-        /// <summary>
-        /// 오브젝트를 풀로 반환
-        /// </summary>
-        public void ReturnToPool()
-        {
-            if (isInPool)
-            {
-                if (showDebugInfo)
-                {
-                    DebugUtils.LogWarning(GameConstants.LOG_PREFIX_POOL, 
-                        $"이미 풀에 있는 오브젝트를 반환하려고 시도: {gameObject.name}");
-                }
-                return;
-            }
-            
-            // 코루틴 및 Invoke 정리
-            if (autoReturnCoroutine != null)
-            {
-                StopCoroutine(autoReturnCoroutine);
-                autoReturnCoroutine = null;
-            }
-            CancelInvoke(nameof(ReturnToPool));
-            
-            isInPool = true;
-            
-            if (showDebugInfo)
-            {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
-                    $"오브젝트 반환: {gameObject.name} (활성 시간: {ActiveTime:F2}초)");
-            }
-
-            // ObjectPoolManager를 통한 반환
-            if (poolManager != null)
-            {
-                poolManager.ReturnObject(this);
-            }
-            else if (ObjectPoolManager.Instance != null)
-            {
-                ObjectPoolManager.Instance.ReturnObject(this);
-            }
-            else
-            {
-                // 폴백: 직접 비활성화
-                gameObject.SetActive(false);
-                
-                if (showDebugInfo)
-                {
-                    DebugUtils.LogWarning(GameConstants.LOG_PREFIX_POOL, 
-                        "ObjectPoolManager가 없어 직접 비활성화합니다.");
-                }
-            }
-        }
-        
-        /// <summary>
-        /// 즉시 파괴 (풀링 시스템 우회)
-        /// </summary>
-        public void DestroyImmediately()
-        {
-            isInPool = true; // 반환 시도 방지
-            CancelInvoke();
-            
-            if (autoReturnCoroutine != null)
-            {
-                StopCoroutine(autoReturnCoroutine);
-                autoReturnCoroutine = null;
-            }
-            
-            if (showDebugInfo)
-            {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
-                    $"오브젝트 즉시 파괴: {gameObject.name}");
-            }
-            
-            Destroy(gameObject);
-        }
-        
-        #endregion
-        
-        #region Helper Methods
-        
-        /// <summary>
-        /// 자동 반환 코루틴
-        /// </summary>
-        private IEnumerator AutoReturnRoutine()
-        {
-            yield return new WaitForSeconds(autoReturnTime);
-            
-            if (showDebugInfo)
-            {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
-                    $"자동 반환 타이머 만료: {gameObject.name}");
-            }
-            
-            ReturnToPool();
-        }
-        
-        /// <summary>
-        /// 컴포넌트 타입 자동 감지
-        /// </summary>
-        private void DetectComponentType()
-        {
-            // Projectile 컴포넌트가 있는지 확인
-            if (GetComponent<Projectile>() != null)
-            {
-                componentType = typeof(Projectile);
-                return;
-            }
-            
-            // EnemyObject 컴포넌트가 있는지 확인
-            if (GetComponent<EnemyObject>() != null)
-            {
-                componentType = typeof(EnemyObject);
-                return;
-            }
-            
-            // 다른 주요 컴포넌트들 확인
-            var components = GetComponents<Component>();
-            foreach (var component in components)
-            {
-                var type = component.GetType();
-                if (type != typeof(Transform) && 
-                    type != typeof(PooledObject) && 
-                    type != typeof(GameObject))
-                {
-                    componentType = type;
-                    break;
-                }
-            }
-            
-            if (showDebugInfo && componentType != null)
-            {
-                DebugUtils.LogVerbose(GameConstants.LOG_PREFIX_POOL, 
-                    $"감지된 컴포넌트 타입: {componentType.Name}");
-            }
-        }
-        
-        /// <summary>
-        /// 디버그 정보 출력
-        /// </summary>
-        public void LogDebugInfo()
-        {
-            string status = isInPool ? "풀에 있음" : "활성 상태";
-            float activeTime = isInPool ? 0f : Time.time - spawnTime;
-            
-            DebugUtils.LogInfo(GameConstants.LOG_PREFIX_POOL, 
-                $"[{gameObject.name}] 상태: {status}, 활성 시간: {activeTime:F2}초, 타입: {componentType?.Name}");
-        }
-        
-        #endregion
-        
-        #region Editor Support
-        
-        #if UNITY_EDITOR
-        [Header("Editor Tools")]
-        [SerializeField] private bool testReturnToPool = false;
-        
-        private void OnValidate()
-        {
-            if (testReturnToPool)
-            {
-                testReturnToPool = false;
-                if (Application.isPlaying)
-                {
-                    ReturnToPool();
-                }
-            }
-        }
-        #endif
-        
-        #endregion
-    }
-} 
+}

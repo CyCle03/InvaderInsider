@@ -111,7 +111,16 @@ namespace InvaderInsider
             ApplyDamage(targetDamageable);
             OnTargetHit?.Invoke(this, targetDamageable, damage);
 
-            if (hitEffect != null) Instantiate(hitEffect, transform.position, Quaternion.identity);
+            // Use the object pool for the hit effect
+            if (hitEffect != null)
+            {
+                var effect = ObjectPoolManager.Instance.GetObject<PooledObject>(hitEffect.name);
+                if (effect != null)
+                {
+                    effect.transform.position = transform.position;
+                    effect.transform.rotation = Quaternion.identity;
+                }
+            }
             ReturnToPool();
         }
 
@@ -144,10 +153,12 @@ namespace InvaderInsider
         {
             if (pooledObject != null)
             {
+                Debug.Log("[Projectile] Found PooledObject component. Calling ReturnToPool on it.");
                 pooledObject.ReturnToPool();
             }
-            else if (gameObject != null) // pooledObject가 없지만 오브젝트가 아직 파괴되지 않았다면
+            else
             {
+                Debug.LogError("[Projectile] PooledObject component is MISSING! Cannot return to pool. Destroying instead.");
                 Destroy(gameObject);
             }
         }
