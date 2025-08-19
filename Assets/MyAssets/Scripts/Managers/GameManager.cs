@@ -87,6 +87,9 @@ namespace InvaderInsider.Managers
                 sphereRenderer.material = debugMaterial;
             }
 
+            // Set the GameManager as the parent to persist across scenes
+            debugSphereInstance.transform.SetParent(this.transform);
+
             SetGameState(GameState.MainMenu);
         }
 
