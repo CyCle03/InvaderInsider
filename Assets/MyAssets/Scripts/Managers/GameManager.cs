@@ -469,13 +469,20 @@ namespace InvaderInsider.Managers
         private void UpdateDebugSphere()
         {
             if (debugSphereInstance == null) return;
+
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-            float rayDistance;
-            if (groundPlane.Raycast(ray, out rayDistance))
+            RaycastHit hit;
+
+            // Use the same layer mask as the tile placement to ensure we hit the ground
+            if (Physics.Raycast(ray, out hit, Mathf.Infinity, TileLayerMask))
             {
-                Vector3 hitPoint = ray.GetPoint(rayDistance);
-                debugSphereInstance.transform.position = hitPoint;
+                // Position the sphere at the exact hit point on the tile
+                debugSphereInstance.transform.position = hit.point;
+            }
+            else
+            {
+                // If not hitting a tile, hide the sphere far away
+                debugSphereInstance.transform.position = new Vector3(0, -1000, 0);
             }
         }
     }
