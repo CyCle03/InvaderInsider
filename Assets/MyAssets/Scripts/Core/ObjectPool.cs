@@ -95,8 +95,6 @@ namespace InvaderInsider.Core
         {
             if (obj == null) return;
 
-            Debug.Log($"[ObjectPool<{typeof(T).Name}>] ReturnObject called for {obj.name}. Attempting to deactivate and enqueue.");
-
             if (activeObjects.Remove(obj))
             {
                 obj.gameObject.SetActive(false);
@@ -107,11 +105,10 @@ namespace InvaderInsider.Core
                 }
                 
                 availableObjects.Enqueue(obj);
-                Debug.Log($"[ObjectPool<{typeof(T).Name}>] {obj.name} successfully returned to pool.");
             }
             else
             {
-                Debug.LogWarning($"[ObjectPool<{typeof(T).Name}>] Attempted to return {obj.name} which was not in the active objects set.");
+                // This can happen if an object is returned to the pool twice.
             }
         }
 

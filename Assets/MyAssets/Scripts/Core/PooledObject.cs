@@ -91,8 +91,6 @@ namespace InvaderInsider.Core
         public void ReturnToPool()
         {
             if (isInPool) return;
-            
-            Debug.Log($"[PooledObject] ReturnToPool() called on {gameObject.name}. Detected ComponentType: {(ComponentType?.Name ?? "NULL")}");
 
             if (autoReturnCoroutine != null)
             {
@@ -105,12 +103,10 @@ namespace InvaderInsider.Core
             
             if (ObjectPoolManager.Instance != null)
             {
-                Debug.Log("[PooledObject] Calling ObjectPoolManager.Instance.ReturnObject.");
                 ObjectPoolManager.Instance.ReturnObject(this);
             }
             else
             {
-                Debug.LogError("[PooledObject] ObjectPoolManager.Instance is NULL. Deactivating object as a fallback.");
                 gameObject.SetActive(false);
             }
         }

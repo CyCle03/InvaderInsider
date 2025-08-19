@@ -8,26 +8,16 @@ namespace InvaderInsider
     [RequireComponent(typeof(Collider))]
     public class Projectile : MonoBehaviour
     {
-        private static readonly string[] LOG_MESSAGES = 
-        {
-            "투사체 {0}이(가) 타겟 {1}에게 {2} 데미지를 입혔습니다",
-            "투사체 {0}이(가) 타겟 손실로 인해 제거됩니다",
-            "투사체 {0} 초기화 완료 - 타겟: {1}, 데미지: {2}, 속도: {3}",
-            "투사체 {0}이(가) 생명주기 만료로 제거됩니다"
-        };
-
         public enum ProjectileState { Inactive, Tracking, Hit, Expired }
 
         [Header("Projectile Settings")]
-        [SerializeField] private float defaultSpeed = GameConstants.PROJECTILE_SPEED;
-        [SerializeField] private float defaultLifeTime = GameConstants.OBJECT_AUTO_RETURN_TIME;
+        [SerializeField] private float defaultSpeed = 10f;
+        [SerializeField] private float defaultLifeTime = 5f;
         [SerializeField] private float hitDistance = 0.5f;
 
         [Header("Visual Effects")]
         [SerializeField] private GameObject hitEffect;
         [SerializeField] private TrailRenderer trail;
-
-        // Removed: [SerializeField] private bool showDebugInfo = false;
 
         private ProjectileState currentState = ProjectileState.Inactive;
         private IDamageable targetDamageable;
@@ -37,7 +27,6 @@ namespace InvaderInsider
         private float lifeTime;
         private bool isInitialized = false;
         private Rigidbody rb;
-        private PooledObject pooledObject;
 
         public event Action<Projectile, IDamageable, float> OnTargetHit;
         public event Action<Projectile> OnProjectileExpired;
@@ -65,7 +54,6 @@ namespace InvaderInsider
         {
             if (isInitialized) return;
             rb = GetComponent<Rigidbody>();
-            pooledObject = GetComponent<PooledObject>();
             rb.isKinematic = true;
             rb.useGravity = false;
             GetComponent<Collider>().isTrigger = true;
@@ -111,7 +99,6 @@ namespace InvaderInsider
             ApplyDamage(targetDamageable);
             OnTargetHit?.Invoke(this, targetDamageable, damage);
 
-            // Use the object pool for the hit effect
             if (hitEffect != null)
             {
                 var effect = ObjectPoolManager.Instance.GetObject<PooledObject>(hitEffect.name);
@@ -151,14 +138,15 @@ namespace InvaderInsider
 
         private void ReturnToPool()
         {
+            // Ensure we have the component right before we use it.
+            var pooledObject = GetComponent<PooledObject>();
             if (pooledObject != null)
             {
-                Debug.Log("[Projectile] Found PooledObject component. Calling ReturnToPool on it.");
                 pooledObject.ReturnToPool();
             }
             else
             {
-                Debug.LogError("[Projectile] PooledObject component is MISSING! Cannot return to pool. Destroying instead.");
+                // This case should ideally not happen if prefabs are set up correctly.
                 Destroy(gameObject);
             }
         }
