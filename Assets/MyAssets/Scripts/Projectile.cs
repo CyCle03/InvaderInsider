@@ -12,7 +12,7 @@ namespace InvaderInsider
 
         [Header("Projectile Settings")]
         [SerializeField] private float defaultSpeed = 10f;
-        [SerializeField] private float hitDistance = 0.5f;
+        [SerializeField] private float hitDistance = 1.5f; // Increased for robustness
 
         [Header("Visual Effects")]
         [SerializeField] private GameObject hitEffect;
@@ -42,12 +42,29 @@ namespace InvaderInsider
 
         private void OnTriggerEnter(Collider other)
         {
+            Debug.Log($"[Projectile] OnTriggerEnter called with {other.name} (Layer: {LayerMask.LayerToName(other.gameObject.layer)}). CurrentState: {currentState}");
             if (currentState != ProjectileState.Tracking) return;
 
             var hitDamageable = other.GetComponent<IDamageable>();
-            if (hitDamageable != null && hitDamageable == targetDamageable)
+            if (hitDamageable == null) hitDamageable = other.GetComponentInParent<IDamageable>(); // Check parent
+            if (hitDamageable == null) hitDamageable = other.GetComponentInChildren<IDamageable>(); // Check children
+
+            if (hitDamageable != null)
             {
-                HitTarget();
+                Debug.Log($"[Projectile] IDamageable found on {other.name}. Is it target? {hitDamageable == targetDamageable}");
+                if (hitDamageable == targetDamageable)
+                {
+                    Debug.Log("[Projectile] Target matched in OnTriggerEnter. Calling HitTarget().");
+                    HitTarget();
+                }
+                else
+                {
+                    Debug.Log("[Projectile] Collided with IDamageable, but not the target. Ignoring.");
+                }
+            }
+            else
+            {
+                Debug.Log($"[Projectile] No IDamageable found on {other.name} or its parents/children.");
             }
         }
 
@@ -80,6 +97,7 @@ namespace InvaderInsider
         {
             if (targetTransform == null || !targetTransform.gameObject.activeInHierarchy)
             {
+                Debug.Log($"[Projectile] Target lost or inactive. Calling LoseTarget().");
                 LoseTarget();
                 return;
             }
@@ -88,11 +106,16 @@ namespace InvaderInsider
             transform.position += direction * speed * Time.deltaTime;
             transform.rotation = Quaternion.LookRotation(direction);
 
-            if (Vector3.Distance(transform.position, targetTransform.position) <= hitDistance) HitTarget();
+            if (Vector3.Distance(transform.position, targetTransform.position) <= hitDistance)
+            {
+                Debug.Log($"[Projectile] Distance to target ({Vector3.Distance(transform.position, targetTransform.position):F2}) <= hitDistance ({hitDistance}). Calling HitTarget().");
+                HitTarget();
+            }
         }
 
         private void HitTarget()
         {
+            Debug.Log($"[Projectile] HitTarget() called. CurrentState: {currentState}");
             if (currentState != ProjectileState.Tracking) return;
 
             try
@@ -113,7 +136,7 @@ namespace InvaderInsider
             }
             finally
             {
-                // try 블록에서 오류가 발생하더라도 이 부분은 반드시 실행됩니다.
+                Debug.Log($"[Projectile] Finally block in HitTarget(). Calling ReturnToPool().");
                 ReturnToPool();
             }
         }
@@ -132,6 +155,7 @@ namespace InvaderInsider
 
         private void LoseTarget()
         {
+            Debug.Log($"[Projectile] LoseTarget() called. CurrentState: {currentState}");
             currentState = ProjectileState.Expired;
             ReturnToPool();
         }
@@ -140,6 +164,7 @@ namespace InvaderInsider
 
         private void ReturnToPool()
         {
+            Debug.Log($"[Projectile] ReturnToPool() called on {gameObject.name}. PooledObject component: {(GetComponent<PooledObject>() != null ? "Found" : "Missing")}");
             // Ensure we have the component right before we use it.
             var pooledObject = GetComponent<PooledObject>();
             if (pooledObject != null)
