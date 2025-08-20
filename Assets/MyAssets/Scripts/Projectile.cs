@@ -169,6 +169,7 @@ namespace InvaderInsider
             var pooledObject = GetComponent<PooledObject>();
             if (pooledObject != null)
             {
+                Debug.Log($"[Projectile] About to call pooledObject.ReturnToPool() on {gameObject.name}.");
                 pooledObject.ReturnToPool();
             }
             else

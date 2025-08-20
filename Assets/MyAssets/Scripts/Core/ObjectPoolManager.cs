@@ -322,6 +322,8 @@ namespace InvaderInsider.Core
         {
             if (pooledObj == null) return;
 
+            Debug.Log($"[ObjectPoolManager] Attempting to return object: {pooledObj.name} (ComponentType: {pooledObj.ComponentType?.Name ?? "NULL"})");
+
             // PooledObject가 스스로 감지한 컴포or넌트 타입을 직접 사용합니다.
             Type componentType = pooledObj.ComponentType;
 
@@ -333,15 +335,26 @@ namespace InvaderInsider.Core
                 {
                     // 리플렉션으로 ReturnObject 메서드 호출
                     var method = poolObj.GetType().GetMethod("ReturnObject");
-                    method?.Invoke(poolObj, new object[] { componentToReturn });
+                    if (method != null)
+                    {
+                        Debug.Log($"[ObjectPoolManager] Found pool for {componentType.Name}. Calling ReturnObject via reflection.");
+                        method?.Invoke(poolObj, new object[] { componentToReturn });
+                    }
+                    else
+                    {
+                        Debug.LogError($"[ObjectPoolManager] ReturnObject method not found on pool for {componentType.Name}. Destroying object.");
+                        DestroyImmediate(pooledObj.gameObject);
+                    }
                 }
                 else
                 {
+                    Debug.LogError($"[ObjectPoolManager] Component {componentType.Name} not found on {pooledObj.name}. Destroying object.");
                     DestroyImmediate(pooledObj.gameObject);
                 }
             }
             else
             {
+                Debug.LogError($"[ObjectPoolManager] Pool not found for ComponentType: {componentType?.Name ?? "NULL"}. Destroying object.");
                 DestroyImmediate(pooledObj.gameObject);
             }
         }

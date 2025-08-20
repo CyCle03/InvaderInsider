@@ -15,11 +15,11 @@ namespace InvaderInsider.Core
         private static readonly object _lock = new object();
 
         // 로깅 활성화 제어 (개발 단계별 조정 가능)
-        private static bool EnableBasicLogs = false;     // 일반 로그
-        private static bool EnableInfoLogs = false;      // 정보 로그  
+        private static bool EnableBasicLogs = true;     // 일반 로그
+        private static bool EnableInfoLogs = true;      // 정보 로그  
         private static bool EnableWarningLogs = true;    // 경고 로그
         private static bool EnableErrorLogs = true;      // 에러 로그 (항상 활성화 권장)
-        private static bool EnableVerboseLogs = false;   // 상세 로그
+        private static bool EnableVerboseLogs = true;   // 상세 로그
 
         /// <summary>
         /// 일반 디버그 로그
