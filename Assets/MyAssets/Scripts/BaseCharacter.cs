@@ -180,7 +180,7 @@ namespace InvaderInsider
         /// <summary>
         /// 캐릭터를 초기화합니다. 자식 클래스에서 적절한 타이밍에 호출해야 합니다.
         /// </summary>
-                        public virtual void Initialize(CardDBObject cardData)
+                        public virtual void Initialize(CardDBObject cardData = null)
         {
             if (_isInitialized)
             {
@@ -205,7 +205,6 @@ namespace InvaderInsider
             }
             else
             {
-                Debug.LogWarning($"[BaseCharacter] {gameObject.name} initialized without CardData. Using default stats.");
                 // 기본 스탯 설정 (예: 적 캐릭터의 경우)
                 this.maxHealth = GameConstants.DEFAULT_MAX_HEALTH;
                 this.attackDamage = GameConstants.DEFAULT_ATTACK_DAMAGE;

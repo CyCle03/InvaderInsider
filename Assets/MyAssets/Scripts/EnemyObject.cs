@@ -184,7 +184,7 @@ namespace InvaderInsider
         {
             if (isInitialized) return;
 
-            base.Initialize(null); // 부모 클래스의 Initialize 호출 (적은 카드 데이터가 없음)
+            base.Initialize(); // 부모 클래스의 Initialize 호출 (적은 카드 데이터가 없음)
 
             // 컴포넌트 초기화
             InitializeComponents();
