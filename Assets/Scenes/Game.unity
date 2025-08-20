@@ -682,7 +682,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3648f6007abb0fc498042cc142547f21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  level: 1
   maxHealth: 100
   currentHealth: 0
   attackDamage: 10
@@ -2222,7 +2221,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   poolConfigs:
-  - poolName: Bullet
+  - poolName: TowerProjectiles
     prefab: {fileID: 2265586970664229171, guid: dd54440be1886dd4f932f338a5c3efad, type: 3}
     initialSize: 20
     maxSize: 100

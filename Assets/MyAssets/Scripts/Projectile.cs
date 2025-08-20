@@ -12,7 +12,6 @@ namespace InvaderInsider
 
         [Header("Projectile Settings")]
         [SerializeField] private float defaultSpeed = 10f;
-        [SerializeField] private float defaultLifeTime = 5f;
         [SerializeField] private float hitDistance = 0.5f;
 
         [Header("Visual Effects")]
@@ -24,7 +23,6 @@ namespace InvaderInsider
         private Transform targetTransform;
         private float speed;
         private float damage;
-        private float lifeTime;
         private bool isInitialized = false;
         private Rigidbody rb;
 
@@ -39,15 +37,18 @@ namespace InvaderInsider
         private void Update()
         {
             if (currentState != ProjectileState.Tracking) return;
-            lifeTime -= Time.deltaTime;
-            if (lifeTime <= 0f) ExpireProjectile();
-            else UpdateMovement();
+            UpdateMovement();
         }
 
         private void OnTriggerEnter(Collider other)
         {
             if (currentState != ProjectileState.Tracking) return;
-            if (other.transform == targetTransform) HitTarget();
+
+            var hitDamageable = other.GetComponent<IDamageable>();
+            if (hitDamageable != null && hitDamageable == targetDamageable)
+            {
+                HitTarget();
+            }
         }
 
         private void InitializeComponents()
@@ -70,7 +71,6 @@ namespace InvaderInsider
 
             damage = projectileDamage;
             speed = projectileSpeed > 0f ? projectileSpeed : defaultSpeed;
-            lifeTime = defaultLifeTime;
             currentState = ProjectileState.Tracking;
 
             if (trail != null) trail.Clear();
@@ -95,20 +95,27 @@ namespace InvaderInsider
         {
             if (currentState != ProjectileState.Tracking) return;
 
-            currentState = ProjectileState.Hit;
-            ApplyDamage(targetDamageable);
-            OnTargetHit?.Invoke(this, targetDamageable, damage);
-
-            if (hitEffect != null)
+            try
             {
-                var effect = ObjectPoolManager.Instance.GetObject<PooledObject>(hitEffect.name);
-                if (effect != null)
+                currentState = ProjectileState.Hit;
+                ApplyDamage(targetDamageable);
+                OnTargetHit?.Invoke(this, targetDamageable, damage);
+
+                if (hitEffect != null)
                 {
-                    effect.transform.position = transform.position;
-                    effect.transform.rotation = Quaternion.identity;
+                    var effect = ObjectPoolManager.Instance.GetObject<PooledObject>(hitEffect.name);
+                    if (effect != null)
+                    {
+                        effect.transform.position = transform.position;
+                        effect.transform.rotation = Quaternion.identity;
+                    }
                 }
             }
-            ReturnToPool();
+            finally
+            {
+                // try 블록에서 오류가 발생하더라도 이 부분은 반드시 실행됩니다.
+                ReturnToPool();
+            }
         }
 
         private void ApplyDamage(IDamageable target)
@@ -129,12 +136,7 @@ namespace InvaderInsider
             ReturnToPool();
         }
 
-        private void ExpireProjectile()
-        {
-            currentState = ProjectileState.Expired;
-            OnProjectileExpired?.Invoke(this);
-            ReturnToPool();
-        }
+        
 
         private void ReturnToPool()
         {

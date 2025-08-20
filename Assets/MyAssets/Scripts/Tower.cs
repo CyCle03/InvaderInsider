@@ -447,118 +447,53 @@ namespace InvaderInsider
             return null;
         }
 
+        [SerializeField] private string projectilePoolName = "TowerProjectiles"; // 투사체 풀 이름
+
         /// <summary>
         /// 오브젝트 풀을 사용한 투사체 생성 (안전성 강화)
         /// </summary>
         private Projectile CreateProjectileFromPool(Transform targetTransform)
         {
             Vector3 spawnPosition = firePoint != null ? firePoint.position : cachedPosition;
-            Projectile projectile = null;
             
-            // projectilePrefab 필수 체크
             if (projectilePrefab == null)
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
-                    $"{gameObject.name}: projectilePrefab이 설정되지 않았습니다!");
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, $"{gameObject.name}: projectilePrefab이 설정되지 않았습니다!");
                 return null;
             }
 
-            // 오브젝트 풀 매니저를 통한 투사체 가져오기 시도
             var poolManager = ObjectPoolManager.Instance;
-            if (poolManager != null)
+            if (poolManager == null)
             {
-                try
-                {
-                    projectile = poolManager.GetObject<Projectile>();
-                    // 풀에서 가져온 오브젝트가 유효한지 확인
-                    if (projectile == null || projectile.gameObject == null)
-                    {
-                        DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
-                            $"풀에서 가져온 투사체 오브젝트가 유효하지 않습니다.");
-                        projectile = null; // 유효하지 않으면 null로 설정하여 직접 생성 로직으로 폴백
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
-                        $"풀에서 투사체 가져오기 실패: {ex.Message}");
-                }
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, "ObjectPoolManager 인스턴스를 찾을 수 없습니다.");
+                return null;
             }
-            
-            // 풀에서 가져오지 못한 경우 기존 방식으로 폴백
+
+            Projectile projectile = poolManager.GetObject<Projectile>(projectilePoolName);
+
             if (projectile == null)
             {
-                DebugUtils.LogWarning(GameConstants.LOG_PREFIX_TOWER, 
-                    "풀에서 투사체를 가져오지 못했습니다. 직접 생성합니다.");
-                
-                try
-                {
-                    GameObject projectileObj = Instantiate(projectilePrefab, spawnPosition, Quaternion.identity);
-                    projectile = projectileObj?.GetComponent<Projectile>();
-                    
-                    if (projectile == null)
-                    {
-                        DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
-                            $"프리팹 '{projectilePrefab.name}'에서 Projectile 컴포넌트를 찾을 수 없습니다.");
-                        
-                        // 생성된 GameObject 정리
-                        if (projectileObj != null)
-                        {
-                            Destroy(projectileObj);
-                        }
-                        return null;
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
-                        $"투사체 직접 생성 실패: {ex.Message}");
-                    return null;
-                }
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, $"'{projectilePoolName}' 풀에서 투사체를 가져오지 못했습니다. ObjectPoolManager 설정을 확인하세요.");
+                return null;
             }
 
             // 투사체 설정
-            if (projectile != null)
+            try
             {
-                try
-                {
-                    // 위치 및 회전 설정
-                    projectile.transform.position = spawnPosition;
-                    projectile.transform.rotation = Quaternion.identity;
+                projectile.transform.position = spawnPosition;
+                projectile.transform.rotation = Quaternion.identity;
 
-                    // Launch 메서드로 초기화
-                    float projectileSpeed = towerConfig?.projectileSpeed ?? GameConstants.PROJECTILE_SPEED;
-                    projectile.Launch(currentTarget, AttackDamage, projectileSpeed);
-                    
-                    // PooledObject 컴포넌트 처리 (있는 경우에만)
-                    var pooledObject = projectile.GetComponent<PooledObject>();
-                    pooledObject?.OnObjectSpawned();
-                }
-                catch (System.Exception ex)
-                {
-                    DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
-                        $"투사체 초기화 실패: {ex.Message}");
-                    
-                    // 초기화 실패 시 오브젝트 정리
-                    if (projectile != null)
-                    {
-                        var pooledObject = projectile.GetComponent<PooledObject>();
-                        if (pooledObject != null)
-                        {
-                            pooledObject.ReturnToPool();
-                        }
-                        else
-                        {
-                            Destroy(projectile.gameObject);
-                        }
-                    }
-                    return null;
-                }
+                float projectileSpeed = towerConfig?.projectileSpeed ?? GameConstants.PROJECTILE_SPEED;
+                projectile.Launch(currentTarget, AttackDamage, projectileSpeed);
+
+                var pooledObject = projectile.GetComponent<PooledObject>();
+                pooledObject?.OnObjectSpawned();
             }
-            else
+            catch (System.Exception ex)
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, 
-                    $"{gameObject.name}: 투사체 생성에 완전히 실패했습니다. projectilePrefab을 확인하세요.");
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, $"투사체 초기화 실패: {ex.Message}");
+                projectile.GetComponent<PooledObject>()?.ReturnToPool();
+                return null;
             }
 
             return projectile;
