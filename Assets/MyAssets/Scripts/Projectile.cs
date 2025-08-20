@@ -12,7 +12,7 @@ namespace InvaderInsider
 
         [Header("Projectile Settings")]
         [SerializeField] private float defaultSpeed = 10f;
-        [SerializeField] private float hitDistance = 1.5f; // Increased for robustness
+        [SerializeField] private float hitDistance = 0.5f; // Reverted to original for robustness
 
         [Header("Visual Effects")]
         [SerializeField] private GameObject hitEffect;
@@ -106,11 +106,11 @@ namespace InvaderInsider
             transform.position += direction * speed * Time.deltaTime;
             transform.rotation = Quaternion.LookRotation(direction);
 
-            if (Vector3.Distance(transform.position, targetTransform.position) <= hitDistance)
-            {
-                Debug.Log($"[Projectile] Distance to target ({Vector3.Distance(transform.position, targetTransform.position):F2}) <= hitDistance ({hitDistance}). Calling HitTarget().");
-                HitTarget();
-            }
+            // if (Vector3.Distance(transform.position, targetTransform.position) <= hitDistance)
+            // {
+            //     Debug.Log($"[Projectile] Distance to target ({Vector3.Distance(transform.position, targetTransform.position):F2}) <= hitDistance ({hitDistance}). Calling HitTarget().");
+            //     HitTarget();
+            // }
         }
 
         private void HitTarget()
