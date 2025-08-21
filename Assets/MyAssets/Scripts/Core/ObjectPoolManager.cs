@@ -127,62 +127,55 @@ namespace InvaderInsider.Core
         private bool TryCreateDynamicPool<T>() where T : Component
         {
             Type targetType = typeof(T);
-            Debug.Log($"[ObjectPoolManager] Attempting to dynamically create pool for type {targetType.Name}");
-
+            
             // 1. 씬에서 활성 오브젝트 중 해당 타입 찾기
             var existingObject = FindObjectOfType<T>();
             if (existingObject != null)
             {
-                Debug.Log($"[ObjectPoolManager] Strategy 1: Found existing object in scene: {existingObject.name}. Creating pool from it.");
+                // DebugUtils.LogInfo(GameConstants.LOG_PREFIX_GAME, 
+                //     $"씬에서 {targetType.Name} 찾음: {existingObject.name}");
                 return CreateDynamicPool(existingObject);
             }
-            Debug.Log("[ObjectPoolManager] Strategy 1: No existing object of this type found in the scene.");
 
             // 2. Resources 폴더에서 프리팹 찾기 (Projectile의 경우)
             if (targetType == typeof(Projectile))
             {
-                Debug.Log("[ObjectPoolManager] Strategy 2: Searching for Projectile prefab in Resources/Prefabs...");
                 var projectilePrefabs = Resources.LoadAll<GameObject>("Prefabs");
-                if (projectilePrefabs.Length > 0)
+                foreach (var prefab in projectilePrefabs)
                 {
-                    foreach (var prefab in projectilePrefabs)
+                    var component = prefab.GetComponent<T>();
+                    if (component != null)
                     {
-                        var component = prefab.GetComponent<T>();
-                        if (component != null)
-                        {
-                            Debug.Log($"[ObjectPoolManager] Strategy 2: Found prefab '{prefab.name}' in Resources. Creating pool from it.");
-                            return CreateDynamicPool(component);
-                        }
+                        // DebugUtils.LogInfo(GameConstants.LOG_PREFIX_GAME, 
+                        //     $"Resources에서 {targetType.Name} 프리팹 찾음: {prefab.name}");
+                        return CreateDynamicPool(component);
                     }
                 }
-                Debug.Log("[ObjectPoolManager] Strategy 2: No suitable prefab found in Resources/Prefabs.");
             }
 
             // 3. 모든 Tower에서 projectilePrefab 참조 확인
             if (targetType == typeof(Projectile))
             {
-                Debug.Log("[ObjectPoolManager] Strategy 3: Searching for projectilePrefab reference in active Towers...");
                 var towers = FindObjectsOfType<Tower>();
-                if (towers.Length > 0)
+                foreach (var tower in towers)
                 {
-                    foreach (var tower in towers)
+                    // Tower의 projectilePrefab 필드에 접근
+                    var projectilePrefab = GetProjectilePrefabFromTower(tower);
+                    if (projectilePrefab != null)
                     {
-                        var projectilePrefab = GetProjectilePrefabFromTower(tower);
-                        if (projectilePrefab != null)
+                        var component = projectilePrefab.GetComponent<T>();
+                        if (component != null)
                         {
-                            var component = projectilePrefab.GetComponent<T>();
-                            if (component != null)
-                            {
-                                Debug.Log($"[ObjectPoolManager] Strategy 3: Found projectilePrefab in tower '{tower.name}'. Creating pool from it.");
-                                return CreateDynamicPool(component);
-                            }
+                            // DebugUtils.LogInfo(GameConstants.LOG_PREFIX_GAME, 
+                            //     $"Tower에서 {targetType.Name} 프리팹 찾음: {projectilePrefab.name}");
+                            return CreateDynamicPool(component);
                         }
                     }
                 }
-                Debug.Log("[ObjectPoolManager] Strategy 3: No active tower found with a valid projectilePrefab.");
             }
 
-            Debug.LogError($"[ObjectPoolManager] Dynamic pool creation FAILED for type '{targetType.Name}'. No template found.");
+            // DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+            //     $"타입 '{targetType.Name}'의 동적 풀 생성 실패: 어디서도 해당 타입을 찾을 수 없습니다.");
             return false;
         }
 
@@ -252,17 +245,21 @@ namespace InvaderInsider.Core
                 var pool = poolObj as ObjectPool<T>;
                 T obj = pool?.GetObject();
                 
+                // 풀에서 가져온 오브젝트가 유효한지 확인
                 if (obj != null && obj.gameObject != null)
                 {
                     return obj;
                 }
                 else
                 {
-                    Debug.LogWarning($"[ObjectPoolManager] Found a pool for type '{type.Name}', but failed to get a valid object from it. Will attempt to create a new pool as a fallback.");
+                    // DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+                    //     $"풀에서 가져온 타입 '{type.Name}'의 오브젝트가 유효하지 않습니다. 풀에서 제거합니다.");
+                    // 유효하지 않은 오브젝트는 풀에서 제거 (ObjectPool 클래스에 RemoveInvalidObject 메서드가 있다고 가정)
+                    // pool?.RemoveInvalidObject(obj); // 이 기능은 ObjectPool에 구현되어야 함
                 }
             }
 
-            // 풀이 없거나, 기존 풀에서 가져오기 실패한 경우 동적으로 생성 시도
+            // 풀이 없는 경우 동적으로 생성 시도
             if (TryCreateDynamicPool<T>())
             {
                 if (pools.TryGetValue(type, out poolObj))
@@ -276,7 +273,8 @@ namespace InvaderInsider.Core
                 }
             }
 
-            Debug.LogError($"[ObjectPoolManager] Failed to get an object of type '{type.Name}' from any pool.");
+            // DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
+            //     $"타입 '{type.Name}'에 대한 풀을 찾을 수 없습니다.");
             return null;
         }
 
@@ -324,8 +322,6 @@ namespace InvaderInsider.Core
         {
             if (pooledObj == null) return;
 
-            Debug.Log($"[ObjectPoolManager] Attempting to return object: {pooledObj.name} (ComponentType: {pooledObj.ComponentType?.Name ?? "NULL"})");
-
             // PooledObject가 스스로 감지한 컴포or넌트 타입을 직접 사용합니다.
             Type componentType = pooledObj.ComponentType;
 
@@ -339,24 +335,20 @@ namespace InvaderInsider.Core
                     var method = poolObj.GetType().GetMethod("ReturnObject");
                     if (method != null)
                     {
-                        Debug.Log($"[ObjectPoolManager] Found pool for {componentType.Name}. Calling ReturnObject via reflection.");
                         method?.Invoke(poolObj, new object[] { componentToReturn });
                     }
                     else
                     {
-                        Debug.LogError($"[ObjectPoolManager] ReturnObject method not found on pool for {componentType.Name}. Destroying object.");
                         DestroyImmediate(pooledObj.gameObject);
                     }
                 }
                 else
                 {
-                    Debug.LogError($"[ObjectPoolManager] Component {componentType.Name} not found on {pooledObj.name}. Destroying object.");
                     DestroyImmediate(pooledObj.gameObject);
                 }
             }
             else
             {
-                Debug.LogError($"[ObjectPoolManager] Pool not found for ComponentType: {componentType?.Name ?? "NULL"}. Destroying object.");
                 DestroyImmediate(pooledObj.gameObject);
             }
         }
