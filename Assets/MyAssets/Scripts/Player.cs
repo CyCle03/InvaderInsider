@@ -79,9 +79,8 @@ namespace InvaderInsider
         }
 
         /// <summary>
-        /// Unity Update - 디버그 키 처리 (에디터 전용)
+        /// Unity Update - 매 프레임 호출
         /// </summary>
-        #if UNITY_EDITOR
         private void Update()
         {
             FindAndAttackEnemies();
@@ -102,14 +101,14 @@ namespace InvaderInsider
                 }
             }
 
-            if (!enableTestKeys || !Application.isEditor)
+            // 디버그 키는 에디터에서만 작동하도록 처리
+            #if UNITY_EDITOR
+            if (enableTestKeys)
             {
-                return;
+                HandleDebugInput();
             }
-
-            HandleDebugInput();
+            #endif
         }
-        #endif
         
         #endregion
 
