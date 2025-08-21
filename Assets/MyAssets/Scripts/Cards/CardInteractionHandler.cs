@@ -46,6 +46,7 @@ namespace InvaderInsider.Cards
             canvasGroup.alpha = 0.6f;
             canvasGroup.blocksRaycasts = false;
 
+            GameManager.Instance.IsCardDragInProgress = true;
             GameManager.Instance.DraggedCardData = cardDisplay.GetCardData();
             Debug.Log($"[CardInteractionHandler] OnBeginDrag - DraggedCardData set to: {GameManager.Instance.DraggedCardData?.cardName}");
             GameManager.Instance.StartPlacementPreview(cardDisplay.GetCardData()); // 미리보기 시작
@@ -112,6 +113,7 @@ namespace InvaderInsider.Cards
             GameManager.Instance.CancelPlacement();
 
             // Reset dragged card data
+            GameManager.Instance.IsCardDragInProgress = false;
             GameManager.Instance.DraggedCardData = null;
             GameManager.Instance.WasCardDroppedOnTower = false;
         }

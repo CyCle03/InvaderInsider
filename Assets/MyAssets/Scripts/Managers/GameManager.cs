@@ -45,6 +45,7 @@ namespace InvaderInsider.Managers
         public GameObject SelectedTowerPrefab { get; set; }
         public int SelectedCardId { get; set; } = -1;
         public CardDBObject DraggedCardData { get; set; }
+        public bool IsCardDragInProgress { get; set; } = false;
         public bool WasCardDroppedOnTower { get; set; } = false;
 
         private UIManager uiManager;

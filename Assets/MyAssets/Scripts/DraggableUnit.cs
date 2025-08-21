@@ -31,6 +31,12 @@ namespace InvaderInsider
 
         public void OnBeginDrag(PointerEventData eventData)
         {
+            if (GameManager.Instance.IsCardDragInProgress) 
+            {
+                eventData.pointerDrag = null;
+                return;
+            }
+
             if (draggedCharacter == null) return;
 
             originalPosition = transform.position;

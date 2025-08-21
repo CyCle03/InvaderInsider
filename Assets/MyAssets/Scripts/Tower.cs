@@ -447,7 +447,7 @@ namespace InvaderInsider
             return null;
         }
 
-        [SerializeField] private string projectilePoolName = "TowerProjectiles"; // 투사체 풀 이름
+        //[SerializeField] private string projectilePoolName = "TowerProjectiles"; // 투사체 풀 이름
 
         /// <summary>
         /// 오브젝트 풀을 사용한 투사체 생성 (안전성 강화)
@@ -469,11 +469,11 @@ namespace InvaderInsider
                 return null;
             }
 
-            Projectile projectile = poolManager.GetObject<Projectile>(projectilePoolName);
+            Projectile projectile = poolManager.GetObject<Projectile>();
 
             if (projectile == null)
             {
-                DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, $"'{projectilePoolName}' 풀에서 투사체를 가져오지 못했습니다. ObjectPoolManager 설정을 확인하세요.");
+                DebugUtils.LogError(GameConstants.LOG_PREFIX_TOWER, $"오브젝트 풀에서 투사체를 가져오지 못했습니다. ObjectPoolManager 설정을 확인하세요.");
                 return null;
             }
 
