@@ -165,6 +165,8 @@ namespace InvaderInsider
 
         private void ReturnToPool()
         {
+            if (!gameObject.activeInHierarchy) return;
+
             Debug.Log($"[Projectile] ReturnToPool() called on {gameObject.name}. PooledObject component: {(GetComponent<PooledObject>() != null ? "Found" : "Missing")}");
             // Ensure we have the component right before we use it.
             var pooledObject = GetComponent<PooledObject>();
@@ -178,6 +180,8 @@ namespace InvaderInsider
                 // This case should ideally not happen if prefabs are set up correctly.
                 Destroy(gameObject);
             }
+
+            gameObject.SetActive(false);
         }
 
         private void OnDisable()
