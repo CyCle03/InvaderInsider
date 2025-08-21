@@ -43,8 +43,6 @@ namespace InvaderInsider
         private void OnTriggerEnter(Collider other)
         {
             if (other.GetComponent<Projectile>() != null) return;
-
-            Debug.Log($"[Projectile] OnTriggerEnter called with {other.name} (Layer: {LayerMask.LayerToName(other.gameObject.layer)}). CurrentState: {currentState}");
             if (currentState != ProjectileState.Tracking) return;
 
             var hitDamageable = other.GetComponent<IDamageable>();
@@ -55,17 +53,8 @@ namespace InvaderInsider
             {
                 if (other.gameObject.layer == LayerMask.NameToLayer("Enemy"))
                 {
-                    Debug.Log($"[Projectile] Collided with an enemy: {other.name}. Calling HitTarget().");
                     HitTarget(hitDamageable);
                 }
-                else
-                {
-                    Debug.Log($"[Projectile] Collided with IDamageable on a non-enemy layer: {other.name}. Ignoring.");
-                }
-            }
-            else
-            {
-                Debug.Log($"[Projectile] No IDamageable found on {other.name} or its parents/children.");
             }
         }
 
@@ -98,7 +87,6 @@ namespace InvaderInsider
         {
             if (targetTransform == null || !targetTransform.gameObject.activeInHierarchy)
             {
-                Debug.Log($"[Projectile] Target lost or inactive. Calling LoseTarget().");
                 LoseTarget();
                 return;
             }
@@ -106,17 +94,10 @@ namespace InvaderInsider
             Vector3 direction = (targetTransform.position - transform.position).normalized;
             transform.position += direction * speed * Time.deltaTime;
             transform.rotation = Quaternion.LookRotation(direction);
-
-            // if (Vector3.Distance(transform.position, targetTransform.position) <= hitDistance)
-            // {
-            //     Debug.Log($"[Projectile] Distance to target ({Vector3.Distance(transform.position, targetTransform.position):F2}) <= hitDistance ({hitDistance}). Calling HitTarget().");
-            //     HitTarget();
-            // }
         }
 
         private void HitTarget(IDamageable hitTarget)
         {
-            Debug.Log($"[Projectile] HitTarget() called. CurrentState: {currentState}");
             if (currentState != ProjectileState.Tracking) return;
 
             try
@@ -137,7 +118,6 @@ namespace InvaderInsider
             }
             finally
             {
-                Debug.Log($"[Projectile] Finally block in HitTarget(). Calling ReturnToPool().");
                 ReturnToPool();
             }
         }
@@ -156,28 +136,21 @@ namespace InvaderInsider
 
         private void LoseTarget()
         {
-            Debug.Log($"[Projectile] LoseTarget() called. CurrentState: {currentState}");
             currentState = ProjectileState.Expired;
             ReturnToPool();
         }
-
-        
 
         private void ReturnToPool()
         {
             if (!gameObject.activeInHierarchy) return;
 
-            Debug.Log($"[Projectile] ReturnToPool() called on {gameObject.name}. PooledObject component: {(GetComponent<PooledObject>() != null ? "Found" : "Missing")}");
-            // Ensure we have the component right before we use it.
             var pooledObject = GetComponent<PooledObject>();
             if (pooledObject != null)
             {
-                Debug.Log($"[Projectile] About to call pooledObject.ReturnToPool() on {gameObject.name}.");
                 pooledObject.ReturnToPool();
             }
             else
             {
-                // This case should ideally not happen if prefabs are set up correctly.
                 Destroy(gameObject);
             }
 
@@ -190,7 +163,7 @@ namespace InvaderInsider
             targetDamageable = null;
             targetTransform = null;
             OnTargetHit = null;
-                        //OnProjectileExpired = null;
+            //OnProjectileExpired = null;
         }
     }
 }
