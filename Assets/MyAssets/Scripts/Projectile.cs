@@ -42,24 +42,25 @@ namespace InvaderInsider
 
         private void OnTriggerEnter(Collider other)
         {
+            if (other.GetComponent<Projectile>() != null) return;
+
             Debug.Log($"[Projectile] OnTriggerEnter called with {other.name} (Layer: {LayerMask.LayerToName(other.gameObject.layer)}). CurrentState: {currentState}");
             if (currentState != ProjectileState.Tracking) return;
 
             var hitDamageable = other.GetComponent<IDamageable>();
-            if (hitDamageable == null) hitDamageable = other.GetComponentInParent<IDamageable>(); // Check parent
-            if (hitDamageable == null) hitDamageable = other.GetComponentInChildren<IDamageable>(); // Check children
+            if (hitDamageable == null) hitDamageable = other.GetComponentInParent<IDamageable>();
+            if (hitDamageable == null) hitDamageable = other.GetComponentInChildren<IDamageable>();
 
             if (hitDamageable != null)
             {
-                Debug.Log($"[Projectile] IDamageable found on {other.name}. Is it target? {hitDamageable == targetDamageable}");
-                if (hitDamageable == targetDamageable)
+                if (other.gameObject.layer == LayerMask.NameToLayer("Enemy"))
                 {
-                    Debug.Log("[Projectile] Target matched in OnTriggerEnter. Calling HitTarget().");
-                    HitTarget();
+                    Debug.Log($"[Projectile] Collided with an enemy: {other.name}. Calling HitTarget().");
+                    HitTarget(hitDamageable);
                 }
                 else
                 {
-                    Debug.Log("[Projectile] Collided with IDamageable, but not the target. Ignoring.");
+                    Debug.Log($"[Projectile] Collided with IDamageable on a non-enemy layer: {other.name}. Ignoring.");
                 }
             }
             else
@@ -113,7 +114,7 @@ namespace InvaderInsider
             // }
         }
 
-        private void HitTarget()
+        private void HitTarget(IDamageable hitTarget)
         {
             Debug.Log($"[Projectile] HitTarget() called. CurrentState: {currentState}");
             if (currentState != ProjectileState.Tracking) return;
@@ -121,8 +122,8 @@ namespace InvaderInsider
             try
             {
                 currentState = ProjectileState.Hit;
-                ApplyDamage(targetDamageable);
-                OnTargetHit?.Invoke(this, targetDamageable, damage);
+                ApplyDamage(hitTarget);
+                OnTargetHit?.Invoke(this, hitTarget, damage);
 
                 if (hitEffect != null)
                 {
@@ -185,7 +186,7 @@ namespace InvaderInsider
             targetDamageable = null;
             targetTransform = null;
             OnTargetHit = null;
-            OnProjectileExpired = null;
+                        //OnProjectileExpired = null;
         }
     }
 }

@@ -13,7 +13,7 @@ namespace InvaderInsider.Core
         [SerializeField] private float autoReturnDelay = 0f;
         
         [Header("Debug Info")]
-        [SerializeField] private bool showDebugInfo = false;
+                //[SerializeField] private bool showDebugInfo = false;
         
         #endregion
         

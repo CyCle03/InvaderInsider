@@ -191,7 +191,7 @@ namespace InvaderInsider.Core
                 // public 프로퍼티를 통해 접근
                 return tower.ProjectilePrefab;
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 // DebugUtils.LogWarning(GameConstants.LOG_PREFIX_GAME, 
                 //     $"Tower에서 ProjectilePrefab 접근 실패: {ex.Message}");
