@@ -12,7 +12,7 @@ namespace InvaderInsider
 
         [Header("Projectile Settings")]
         [SerializeField] private float defaultSpeed = 10f;
-        [SerializeField] private float hitDistance = 0.5f; // Reverted to original for robustness
+        //[SerializeField] private float hitDistance = 0.5f; // Reverted to original for robustness
 
         [Header("Visual Effects")]
         [SerializeField] private GameObject hitEffect;
@@ -27,7 +27,7 @@ namespace InvaderInsider
         private Rigidbody rb;
 
         public event Action<Projectile, IDamageable, float> OnTargetHit;
-        public event Action<Projectile> OnProjectileExpired;
+        //public event Action<Projectile> OnProjectileExpired;
 
         private void Awake()
         {
