@@ -412,12 +412,20 @@ namespace InvaderInsider.Managers
                 Debug.LogError($"{LOG_PREFIX}Failed to instantiate prefab for card '{cardData.cardName}'.");
                 return null;
             }
+            // DraggableUnit 컴포넌트 추가 (필드에서 드래그 가능하게 함)
             DraggableUnit draggable = spawnedObject.GetComponent<DraggableUnit>();
             if (draggable == null)
             {
                 draggable = spawnedObject.AddComponent<DraggableUnit>();
             }
             draggable.enabled = true;
+
+            // UnitMergeTarget 컴포넌트 추가 (다른 유닛과 합칠 수 있게 함)
+            UnitMergeTarget mergeTarget = spawnedObject.GetComponent<UnitMergeTarget>();
+            if (mergeTarget == null)
+            {
+                mergeTarget = spawnedObject.AddComponent<UnitMergeTarget>();
+            }
             Debug.Log($"{LOG_PREFIX}Successfully instantiated prefab '{spawnedObject.name}'. Now initializing...");
             switch (cardData.type)
             {
@@ -488,6 +496,40 @@ namespace InvaderInsider.Managers
                 // If not hitting a tile, hide the sphere far away
                 debugSphereInstance.transform.position = new Vector3(0, -1000, 0);
             }
+        }
+
+        /// <summary>
+        /// 씬에 있는 모든 BaseCharacter 객체에 드래그 및 머지 컴포넌트를 추가합니다.
+        /// 이미 필드에 있는 유닛들을 드래그 가능하게 만들 때 사용합니다.
+        /// </summary>
+        [ContextMenu("Enable Dragging for All Field Units")]
+        public void EnableDraggingForAllFieldUnits()
+        {
+            BaseCharacter[] allCharacters = FindObjectsOfType<BaseCharacter>();
+            int enabledCount = 0;
+
+            foreach (BaseCharacter character in allCharacters)
+            {
+                if (character == null) continue;
+
+                // DraggableUnit 컴포넌트 추가
+                DraggableUnit draggable = character.GetComponent<DraggableUnit>();
+                if (draggable == null)
+                {
+                    draggable = character.gameObject.AddComponent<DraggableUnit>();
+                    enabledCount++;
+                }
+                draggable.enabled = true;
+
+                // UnitMergeTarget 컴포넌트 추가
+                UnitMergeTarget mergeTarget = character.GetComponent<UnitMergeTarget>();
+                if (mergeTarget == null)
+                {
+                    mergeTarget = character.gameObject.AddComponent<UnitMergeTarget>();
+                }
+            }
+
+            Debug.Log($"{LOG_PREFIX}필드의 {enabledCount}개 유닛에 드래그 기능을 활성화했습니다.");
         }
     }
 }

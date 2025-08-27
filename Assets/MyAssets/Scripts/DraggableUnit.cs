@@ -18,6 +18,20 @@ namespace InvaderInsider
 
         private void Awake()
         {
+            InitializeDraggableUnit();
+        }
+
+        private void Start()
+        {
+            // Awake에서 컴포넌트를 찾지 못한 경우 Start에서 다시 시도
+            if (draggedCharacter == null)
+            {
+                InitializeDraggableUnit();
+            }
+        }
+
+        private void InitializeDraggableUnit()
+        {
             draggedCharacter = GetComponent<BaseCharacter>();
             unitRigidbody = GetComponent<Rigidbody>();
 
@@ -27,17 +41,36 @@ namespace InvaderInsider
             {
                 originalLayers[t.gameObject] = t.gameObject.layer;
             }
+
+            if (draggedCharacter == null)
+            {
+                Debug.LogWarning($"[DraggableUnit] {gameObject.name}에서 BaseCharacter 컴포넌트를 찾을 수 없습니다.");
+            }
         }
 
         public void OnBeginDrag(PointerEventData eventData)
         {
+            // 카드 드래그 중이면 유닛 드래그 차단
             if (GameManager.Instance.IsCardDragInProgress) 
             {
                 eventData.pointerDrag = null;
                 return;
             }
 
-            if (draggedCharacter == null) return;
+            // BaseCharacter 컴포넌트가 없거나 초기화되지 않았으면 드래그 불가
+            if (draggedCharacter == null)
+            {
+                Debug.LogWarning($"[DraggableUnit] {gameObject.name}: BaseCharacter 컴포넌트가 없어 드래그할 수 없습니다.");
+                eventData.pointerDrag = null;
+                return;
+            }
+
+            if (!draggedCharacter.IsInitialized)
+            {
+                Debug.LogWarning($"[DraggableUnit] {gameObject.name}: 초기화되지 않은 캐릭터는 드래그할 수 없습니다.");
+                eventData.pointerDrag = null;
+                return;
+            }
 
             originalPosition = transform.position;
 
@@ -53,7 +86,7 @@ namespace InvaderInsider
             }
 
             GameManager.Instance.DraggedUnit = draggedCharacter;
-            Debug.Log($"[DraggableUnit] Started dragging: {draggedCharacter.gameObject.name}");
+            Debug.Log($"[DraggableUnit] Started dragging: {draggedCharacter.gameObject.name} (ID: {draggedCharacter.CardId}, Level: {draggedCharacter.Level})");
         }
 
         public void OnDrag(PointerEventData eventData)
