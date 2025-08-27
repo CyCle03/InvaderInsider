@@ -39,6 +39,8 @@ namespace InvaderInsider
             // 통합 시스템을 통해 드롭 시도
             bool success = DragAndMergeSystem.Instance.TryDropUnit(eventData.position);
             
+            Debug.Log($"[SimpleDraggableUnit] {character.name} 드래그 종료 - 성공: {success}");
+            
             // 드래그 종료
             DragAndMergeSystem.Instance.EndUnitDrag();
         }

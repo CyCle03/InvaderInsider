@@ -18,6 +18,8 @@ namespace InvaderInsider
         [SerializeField] private bool fixDragSystem = true;
         [SerializeField] private bool fixUnits = true;
         [SerializeField] private bool fixGameManager = true;
+        [SerializeField] private bool fixLayerIssues = true;
+        [SerializeField] private bool fixTowerTargeting = true;
         [SerializeField] private bool runTests = true;
         
         private void Start()
@@ -62,9 +64,23 @@ namespace InvaderInsider
                 yield return new WaitForSeconds(0.5f);
             }
             
+            if (fixLayerIssues)
+            {
+                Debug.Log($"{LOG_PREFIX}4. 레이어/콜라이더 문제 수정 중...");
+                FixLayerAndColliderIssues();
+                yield return new WaitForSeconds(0.5f);
+            }
+            
+            if (fixTowerTargeting)
+            {
+                Debug.Log($"{LOG_PREFIX}5. 타워 타게팅 문제 수정 중...");
+                FixTowerTargeting();
+                yield return new WaitForSeconds(0.5f);
+            }
+            
             if (runTests)
             {
-                Debug.Log($"{LOG_PREFIX}4. 시스템 테스트 실행 중...");
+                Debug.Log($"{LOG_PREFIX}6. 시스템 테스트 실행 중...");
                 RunSystemTests();
                 yield return new WaitForSeconds(0.5f);
             }
@@ -218,12 +234,144 @@ namespace InvaderInsider
             Debug.Log($"{LOG_PREFIX}");
         }
         
+        /// <summary>
+        /// 레이어 및 콜라이더 문제 수정
+        /// </summary>
+        private void FixLayerAndColliderIssues()
+        {
+            BaseCharacter[] allUnits = FindObjectsOfType<BaseCharacter>();
+            int fixedCount = 0;
+            
+            Debug.Log($"{LOG_PREFIX}총 {allUnits.Length}개 유닛의 레이어/콜라이더 확인 중...");
+            
+            foreach (BaseCharacter unit in allUnits)
+            {
+                if (unit == null) continue;
+                
+                bool wasFixed = false;
+                Vector3 pos = unit.transform.position;
+                
+                // 경로 아래쪽 유닛들 (z > 0) 특별 처리
+                if (pos.z > 0)
+                {
+                    // 기존 트리거 콜라이더들 확인
+                    Collider[] colliders = unit.GetComponents<Collider>();
+                    bool hasProperDragCollider = false;
+                    
+                    foreach (Collider col in colliders)
+                    {
+                        if (col != null && col.isTrigger && col is BoxCollider boxCol)
+                        {
+                            // 콜라이더가 충분히 큰지 확인
+                            if (boxCol.size.magnitude < 3f) // 작으면 크게 조정
+                            {
+                                boxCol.size = new Vector3(2f, 3f, 2f);
+                                boxCol.center = new Vector3(0, 1.5f, 0);
+                                wasFixed = true;
+                            }
+                            hasProperDragCollider = true;
+                        }
+                    }
+                    
+                    // 적절한 드래그 콜라이더가 없으면 새로 추가
+                    if (!hasProperDragCollider)
+                    {
+                        BoxCollider dragCollider = unit.gameObject.AddComponent<BoxCollider>();
+                        dragCollider.isTrigger = true;
+                        dragCollider.size = new Vector3(2f, 3f, 2f);
+                        dragCollider.center = new Vector3(0, 1.5f, 0);
+                        wasFixed = true;
+                    }
+                    
+                    // 레이어를 Default로 설정
+                    if (unit.gameObject.layer != 0)
+                    {
+                        unit.gameObject.layer = 0;
+                        wasFixed = true;
+                    }
+                }
+                else
+                {
+                    // 경로 위쪽 유닛들은 기본 크기 유지
+                    Collider[] colliders = unit.GetComponents<Collider>();
+                    foreach (Collider col in colliders)
+                    {
+                        if (col != null && col.isTrigger && col is BoxCollider boxCol)
+                        {
+                            if (boxCol.size.magnitude > 4f) // 너무 크면 적당히 조정
+                            {
+                                boxCol.size = new Vector3(1.2f, 2f, 1.2f);
+                                boxCol.center = new Vector3(0, 1f, 0);
+                                wasFixed = true;
+                            }
+                        }
+                    }
+                }
+                
+                if (wasFixed)
+                {
+                    fixedCount++;
+                    Debug.Log($"{LOG_PREFIX}레이어/콜라이더 수정: {unit.name} (z: {pos.z:F1})");
+                }
+            }
+            
+            Debug.Log($"{LOG_PREFIX}✅ {fixedCount}개 유닛의 레이어/콜라이더 수정됨");
+        }
+        
+        /// <summary>
+        /// 레이어 문제만 수정 (Context Menu용)
+        /// </summary>
+        [ContextMenu("Fix Layer Issues Only")]
+        public void FixLayerIssuesOnly()
+        {
+            Debug.Log($"{LOG_PREFIX}레이어 문제 수정 시작");
+            FixLayerAndColliderIssues();
+        }
+        
+        /// <summary>
+        /// 타워 타게팅 문제 수정
+        /// </summary>
+        private void FixTowerTargeting()
+        {
+            Tower[] allTowers = FindObjectsOfType<Tower>();
+            int fixedCount = 0;
+            
+            Debug.Log($"{LOG_PREFIX}총 {allTowers.Length}개 타워의 타게팅 확인 중...");
+            
+            foreach (Tower tower in allTowers)
+            {
+                if (tower == null) continue;
+                
+                // 타워 강제 타겟 재검색
+                tower.ForceRetarget();
+                fixedCount++;
+            }
+            
+            Debug.Log($"{LOG_PREFIX}✅ {fixedCount}개 타워 타게팅 수정됨");
+        }
+        
+        /// <summary>
+        /// 타워 타게팅만 수정 (Context Menu용)
+        /// </summary>
+        [ContextMenu("Fix Tower Targeting Only")]
+        public void FixTowerTargetingOnly()
+        {
+            Debug.Log($"{LOG_PREFIX}타워 타게팅 문제 수정 시작");
+            FixTowerTargeting();
+        }
+        
         private void Update()
         {
             // Ctrl + Shift + F: 긴급 수정
             if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.F))
             {
                 FixEverythingNow();
+            }
+            
+            // Ctrl + L: 레이어 문제만 수정
+            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.L))
+            {
+                FixLayerAndColliderIssues();
             }
         }
     }

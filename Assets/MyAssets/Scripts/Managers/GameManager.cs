@@ -149,11 +149,12 @@ namespace InvaderInsider.Managers
         {
             yield return new WaitForSeconds(1f);
 
-            // 모든 유닛을 새로운 시스템으로 마이그레이션
-            GameObject migratorObj = new GameObject("TempDragSystemMigrator");
-            DragSystemMigrator migrator = migratorObj.AddComponent<DragSystemMigrator>();
-            migrator.MigrateAllUnits();
-            Destroy(migratorObj);
+            // 기존 유닛들에 드래그 컴포넌트 자동 추가
+            EnableDraggingForAllFieldUnits();
+            
+            // 추가로 2초 후에도 한 번 더 확인 (유닛이 늦게 생성되는 경우 대비)
+            yield return new WaitForSeconds(2f);
+            EnableDraggingForAllFieldUnits();
 
             Debug.Log($"{LOG_PREFIX}Game 씬 드래그 시스템 초기화 완료");
         }
@@ -405,19 +406,8 @@ namespace InvaderInsider.Managers
                 Debug.LogError($"{LOG_PREFIX}Failed to instantiate prefab for card '{cardData.cardName}'.");
                 return null;
             }
-            // 새로운 간단한 드래그 컴포넌트 추가
-            SimpleDraggableUnit draggable = spawnedObject.GetComponent<SimpleDraggableUnit>();
-            if (draggable == null)
-            {
-                draggable = spawnedObject.AddComponent<SimpleDraggableUnit>();
-            }
-
-            // 새로운 간단한 머지 타겟 컴포넌트 추가
-            SimpleMergeTarget mergeTarget = spawnedObject.GetComponent<SimpleMergeTarget>();
-            if (mergeTarget == null)
-            {
-                mergeTarget = spawnedObject.AddComponent<SimpleMergeTarget>();
-            }
+            // 드래그 시스템 컴포넌트 자동 추가
+            EnsureDragComponents(spawnedObject);
             Debug.Log($"{LOG_PREFIX}Successfully instantiated prefab '{spawnedObject.name}'. Now initializing...");
             switch (cardData.type)
             {
@@ -500,24 +490,14 @@ namespace InvaderInsider.Managers
             BaseCharacter[] allCharacters = FindObjectsOfType<BaseCharacter>();
             int enabledCount = 0;
 
+            Debug.Log($"{LOG_PREFIX}필드의 {allCharacters.Length}개 유닛에 드래그 기능 추가 시작");
+
             foreach (BaseCharacter character in allCharacters)
             {
                 if (character == null) continue;
 
-                // SimpleDraggableUnit 컴포넌트 추가
-                SimpleDraggableUnit draggable = character.GetComponent<SimpleDraggableUnit>();
-                if (draggable == null)
-                {
-                    draggable = character.gameObject.AddComponent<SimpleDraggableUnit>();
-                    enabledCount++;
-                }
-
-                // SimpleMergeTarget 컴포넌트 추가
-                SimpleMergeTarget mergeTarget = character.GetComponent<SimpleMergeTarget>();
-                if (mergeTarget == null)
-                {
-                    mergeTarget = character.gameObject.AddComponent<SimpleMergeTarget>();
-                }
+                EnsureDragComponents(character.gameObject);
+                enabledCount++;
             }
 
             Debug.Log($"{LOG_PREFIX}필드의 {enabledCount}개 유닛에 드래그 기능을 활성화했습니다.");
@@ -532,6 +512,53 @@ namespace InvaderInsider.Managers
         {
             Debug.Log($"{LOG_PREFIX}Forcing clear of all drag states - using new system");
             DragAndMergeSystem.Instance?.CancelAllDrags();
+        }
+        
+        /// <summary>
+        /// 유닛에 드래그 컴포넌트들을 자동으로 추가
+        /// </summary>
+        private void EnsureDragComponents(GameObject unitObject)
+        {
+            if (unitObject == null) return;
+            
+            // SimpleDraggableUnit 추가
+            SimpleDraggableUnit draggable = unitObject.GetComponent<SimpleDraggableUnit>();
+            if (draggable == null)
+            {
+                draggable = unitObject.AddComponent<SimpleDraggableUnit>();
+                Debug.Log($"{LOG_PREFIX}SimpleDraggableUnit 추가됨: {unitObject.name}");
+            }
+
+            // SimpleMergeTarget 추가
+            SimpleMergeTarget mergeTarget = unitObject.GetComponent<SimpleMergeTarget>();
+            if (mergeTarget == null)
+            {
+                mergeTarget = unitObject.AddComponent<SimpleMergeTarget>();
+                Debug.Log($"{LOG_PREFIX}SimpleMergeTarget 추가됨: {unitObject.name}");
+            }
+            
+            // 콜라이더 확인 및 추가
+            Collider col = unitObject.GetComponent<Collider>();
+            if (col == null)
+            {
+                BoxCollider boxCol = unitObject.AddComponent<BoxCollider>();
+                boxCol.isTrigger = true;
+                boxCol.size = new Vector3(1.5f, 2.5f, 1.5f);
+                boxCol.center = new Vector3(0, 1.25f, 0);
+                Debug.Log($"{LOG_PREFIX}BoxCollider 추가됨: {unitObject.name}");
+            }
+            else if (!col.isTrigger)
+            {
+                col.isTrigger = true;
+                Debug.Log($"{LOG_PREFIX}Collider를 트리거로 설정: {unitObject.name}");
+            }
+            
+            // 레이어를 Default로 설정
+            if (unitObject.layer != 0)
+            {
+                unitObject.layer = 0;
+                Debug.Log($"{LOG_PREFIX}레이어를 Default로 설정: {unitObject.name}");
+            }
         }
     }
 }

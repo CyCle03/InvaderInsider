@@ -549,18 +549,33 @@ namespace InvaderInsider
 
         public override void LevelUp()
         {
-            base.LevelUp();
-            Level++; // 레벨 증가
+            base.LevelUp(); // 이미 Level++가 포함되어 있음
+            
             // 타워 레벨업 시 추가 로직
             attackDamage *= 1.1f;
             maxHealth *= 1.1f;
             currentHealth = maxHealth;
-            Debug.Log($"{gameObject.name} has leveled up! New Level: {Level}, New Attack: {attackDamage}, New Max Health: {maxHealth}");
+            Debug.Log($"{gameObject.name} has leveled up! New Level: {Level}, New Attack: {attackDamage:F1}, New Max Health: {maxHealth:F1}");
 
             if (upgradeEffect != null)
             {
                 upgradeEffect.Play();
             }
+        }
+        
+        /// <summary>
+        /// 강제로 타겟을 다시 검색합니다 (디버깅/수정용)
+        /// </summary>
+        public void ForceRetarget()
+        {
+            currentTarget = null;
+            validTargets.Clear();
+            nearbyEnemies.Clear();
+            
+            // 즉시 새 타겟 검색
+            FindNewTarget();
+            
+            Debug.Log($"{LOG_PREFIX}{gameObject.name} 강제 타겟 재검색 완료 - 새 타겟: {(currentTarget != null ? currentTarget.name : "없음")}");
         }
         
         #endregion

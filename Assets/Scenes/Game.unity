@@ -6335,6 +6335,134 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &1114697813
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1114697818}
+  - component: {fileID: 1114697817}
+  - component: {fileID: 1114697816}
+  - component: {fileID: 1114697815}
+  - component: {fileID: 1114697814}
+  - component: {fileID: 1114697819}
+  - component: {fileID: 1114697820}
+  m_Layer: 0
+  m_Name: DragSystemManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1114697814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1114697813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 821e03d833b83504c9d14872672a69df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  statusPanel: {fileID: 0}
+  statusText: {fileID: 0}
+  fixButton: {fileID: 0}
+  testButton: {fileID: 0}
+  toggleButton: {fileID: 0}
+  showOnStart: 0
+  updateInterval: 2
+--- !u!114 &1114697815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1114697813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdd26129a6809fa4a88b82e57a1d52d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1114697816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1114697813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 007a34e35ebbe994dadddacf0deb3a5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoInitializeOnStart: 1
+  autoFixProblems: 1
+  healthCheckInterval: 30
+  enableDebugLogs: 1
+  showDetailedStatus: 1
+--- !u!114 &1114697817
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1114697813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad8d8771cad03544e9846fac60c7c951, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoSetupOnStart: 1
+  showUI: 1
+  enableDebugLogs: 1
+  createMasterController: 1
+  createAllInOneFixer: 1
+  createSystemTester: 1
+  createSystemUI: 1
+--- !u!4 &1114697818
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1114697813}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 960, y: 540, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1114697819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1114697813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 913523c3cdefbe14ebdbec38454ce6af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1114697820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1114697813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccfb7aebb069ff24ebbcacce4cf29719, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1121623123
 GameObject:
   m_ObjectHideFlags: 0
@@ -13471,6 +13599,7 @@ SceneRoots:
   - {fileID: 688643432}
   - {fileID: 1541426034}
   - {fileID: 472603244}
+  - {fileID: 1114697818}
   - {fileID: 2000479535}
   - {fileID: 1667510110}
   - {fileID: 1528028024}

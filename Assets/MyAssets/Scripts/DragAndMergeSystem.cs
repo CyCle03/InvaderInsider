@@ -132,21 +132,65 @@ namespace InvaderInsider
         /// </summary>
         private void SetupPreviewObject(GameObject previewObj)
         {
-            // AI 비활성화
-            if (previewObj.TryGetComponent<UnityEngine.AI.NavMeshAgent>(out var agent))
-                agent.enabled = false;
-            
-            // 캐릭터 컴포넌트 비활성화
-            if (previewObj.TryGetComponent<BaseCharacter>(out var character))
-                character.enabled = false;
-            
-            // 모든 콜라이더 비활성화
-            foreach (var col in previewObj.GetComponentsInChildren<Collider>())
-                col.enabled = false;
-            
-            // 렌더러는 활성화 유지
-            foreach (var renderer in previewObj.GetComponentsInChildren<Renderer>())
-                renderer.enabled = true;
+            try
+            {
+                // AI 비활성화
+                if (previewObj.TryGetComponent<UnityEngine.AI.NavMeshAgent>(out var agent))
+                    agent.enabled = false;
+                
+                // 캐릭터 컴포넌트 비활성화
+                if (previewObj.TryGetComponent<BaseCharacter>(out var character))
+                    character.enabled = false;
+                
+                // 모든 콜라이더 비활성화
+                Collider[] colliders = previewObj.GetComponentsInChildren<Collider>();
+                foreach (var col in colliders)
+                {
+                    if (col != null)
+                        col.enabled = false;
+                }
+                
+                // 렌더러는 활성화 유지
+                Renderer[] renderers = previewObj.GetComponentsInChildren<Renderer>();
+                foreach (var renderer in renderers)
+                {
+                    if (renderer != null)
+                        renderer.enabled = true;
+                }
+                
+                // 누락된 스크립트 컴포넌트 제거 시도
+                RemoveMissingScripts(previewObj);
+                
+                LogDebug($"프리뷰 오브젝트 설정 완료: {previewObj.name}");
+            }
+            catch (System.Exception e)
+            {
+                LogDebug($"프리뷰 오브젝트 설정 중 오류: {e.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// 누락된 스크립트 컴포넌트 제거
+        /// </summary>
+        private void RemoveMissingScripts(GameObject obj)
+        {
+            try
+            {
+                Component[] components = obj.GetComponents<Component>();
+                for (int i = components.Length - 1; i >= 0; i--)
+                {
+                    if (components[i] == null)
+                    {
+                        // 누락된 컴포넌트 발견
+                        LogDebug($"누락된 컴포넌트 발견: {obj.name}");
+                        // 런타임에서는 직접 제거할 수 없으므로 로그만 출력
+                    }
+                }
+            }
+            catch (System.Exception e)
+            {
+                LogDebug($"누락된 스크립트 확인 중 오류: {e.Message}");
+            }
         }
         
         /// <summary>
@@ -305,6 +349,10 @@ namespace InvaderInsider
                 return false;
             }
             
+            // 드래그 결과 리셋
+            WasDropSuccessful = false;
+            MergeTargetUnit = null;
+            
             CurrentDragType = DragType.Unit;
             DraggedUnit = unit;
             DraggedUnitOriginalPosition = unit.transform.position;
@@ -315,7 +363,7 @@ namespace InvaderInsider
                 rb.isKinematic = true;
             }
             
-            LogDebug($"유닛 드래그 시작: {unit.name}");
+            LogDebug($"유닛 드래그 시작: {unit.name} (ID: {unit.CardId}, Level: {unit.Level}) 원래 위치: {DraggedUnitOriginalPosition}");
             return true;
         }
         
@@ -345,18 +393,34 @@ namespace InvaderInsider
                 return false;
             
             Ray ray = Camera.main.ScreenPointToRay(screenPosition);
-            RaycastHit hit;
+            RaycastHit[] hits = Physics.RaycastAll(ray, Mathf.Infinity);
             
-            if (Physics.Raycast(ray, out hit))
+            // 모든 히트된 오브젝트를 확인하여 BaseCharacter 찾기
+            BaseCharacter targetUnit = null;
+            foreach (RaycastHit hit in hits)
             {
-                BaseCharacter targetUnit = hit.collider.GetComponent<BaseCharacter>();
-                if (targetUnit != null)
+                BaseCharacter character = hit.collider.GetComponent<BaseCharacter>();
+                if (character != null && character != DraggedUnit)
                 {
-                    return TryMergeUnits(targetUnit);
+                    targetUnit = character;
+                    LogDebug($"드롭 타겟 발견: {targetUnit.name} (ID: {targetUnit.CardId}, Level: {targetUnit.Level})");
+                    break;
                 }
             }
             
-            // 머지 실패 시 원래 위치로 복귀
+            if (targetUnit != null)
+            {
+                bool mergeSuccess = TryMergeUnits(targetUnit);
+                if (!mergeSuccess)
+                {
+                    // 머지 실패 시 원래 위치로 복귀
+                    StartCoroutine(ReturnUnitToOriginalPosition());
+                }
+                return mergeSuccess;
+            }
+            
+            // 타겟이 없으면 원래 위치로 복귀
+            LogDebug("드롭 타겟을 찾을 수 없습니다. 원래 위치로 복귀합니다.");
             StartCoroutine(ReturnUnitToOriginalPosition());
             return false;
         }
@@ -366,17 +430,30 @@ namespace InvaderInsider
         /// </summary>
         private bool TryMergeUnits(BaseCharacter targetUnit)
         {
-            
-            if (targetUnit == null || !targetUnit.IsInitialized || targetUnit == DraggedUnit)
+            if (targetUnit == null)
             {
-                LogDebug("유효하지 않은 머지 대상입니다.");
+                LogDebug("타겟 유닛이 null입니다.");
                 return false;
             }
+            
+            if (!targetUnit.IsInitialized)
+            {
+                LogDebug($"타겟 유닛 {targetUnit.name}이 초기화되지 않았습니다.");
+                return false;
+            }
+            
+            if (targetUnit == DraggedUnit)
+            {
+                LogDebug("자기 자신에게는 머지할 수 없습니다.");
+                return false;
+            }
+            
+            LogDebug($"머지 시도 - 드래그 유닛: {DraggedUnit.name} (ID: {DraggedUnit.CardId}, Level: {DraggedUnit.Level}) -> 타겟: {targetUnit.name} (ID: {targetUnit.CardId}, Level: {targetUnit.Level})");
             
             // 머지 조건 확인 (같은 ID, 같은 레벨)
             if (DraggedUnit.CardId == targetUnit.CardId && DraggedUnit.Level == targetUnit.Level)
             {
-                LogDebug($"유닛 머지 성공: {DraggedUnit.name} -> {targetUnit.name}");
+                LogDebug($"✅ 유닛 머지 성공: {DraggedUnit.name} -> {targetUnit.name}");
                 
                 // 대상 유닛 레벨업
                 targetUnit.LevelUp();
@@ -390,7 +467,7 @@ namespace InvaderInsider
             }
             else
             {
-                LogDebug($"머지 조건 불일치 - 드래그 유닛: ID={DraggedUnit.CardId}, Level={DraggedUnit.Level} / 대상 유닛: ID={targetUnit.CardId}, Level={targetUnit.Level}");
+                LogDebug($"❌ 머지 조건 불일치 - 드래그 유닛: ID={DraggedUnit.CardId}, Level={DraggedUnit.Level} / 대상 유닛: ID={targetUnit.CardId}, Level={targetUnit.Level}");
                 return false;
             }
         }
@@ -404,8 +481,22 @@ namespace InvaderInsider
             
             if (DraggedUnit != null && !WasDropSuccessful)
             {
+                LogDebug($"유닛을 원래 위치로 복귀: {DraggedUnit.name} ({DraggedUnitOriginalPosition})");
                 DraggedUnit.transform.position = DraggedUnitOriginalPosition;
-                LogDebug($"유닛을 원래 위치로 복귀: {DraggedUnit.name}");
+                
+                // 물리 설정 복원
+                if (DraggedUnit.TryGetComponent<Rigidbody>(out var rb))
+                {
+                    rb.isKinematic = false;
+                }
+            }
+            else if (DraggedUnit == null)
+            {
+                LogDebug("드래그된 유닛이 null입니다 (이미 제거됨).");
+            }
+            else if (WasDropSuccessful)
+            {
+                LogDebug("드롭이 성공했으므로 원래 위치로 복귀하지 않습니다.");
             }
         }
         
@@ -441,7 +532,9 @@ namespace InvaderInsider
         {
             if (CurrentDragType != DragType.Unit) return;
             
-            // 물리 복원
+            LogDebug($"유닛 드래그 종료 - 성공: {WasDropSuccessful}, 유닛: {(DraggedUnit != null ? DraggedUnit.name : "null")}");
+            
+            // 물리 복원 (유닛이 아직 존재하는 경우에만)
             if (DraggedUnit != null && DraggedUnit.TryGetComponent<Rigidbody>(out var rb))
             {
                 rb.isKinematic = false;
@@ -452,7 +545,7 @@ namespace InvaderInsider
             DraggedUnit = null;
             DraggedUnitOriginalPosition = Vector3.zero;
             
-            LogDebug("유닛 드래그 종료");
+            LogDebug("유닛 드래그 상태 리셋 완료");
         }
         
         /// <summary>

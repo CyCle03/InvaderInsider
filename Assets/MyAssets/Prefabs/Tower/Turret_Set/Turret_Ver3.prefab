@@ -326,8 +326,6 @@ GameObject:
   - component: {fileID: 1681245930882299022}
   - component: {fileID: 5467542239390267597}
   - component: {fileID: 9072998449207642339}
-  - component: {fileID: 3939747077227669325}
-  - component: {fileID: 7575951327712826272}
   m_Layer: 0
   m_Name: Turret_Ver3
   m_TagString: Untagged
@@ -401,30 +399,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 2, z: 1}
   m_Center: {x: 0, y: 0.75, z: 0}
---- !u!114 &3939747077227669325
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5860327998956267332}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe75d2415c06fff49ab9339450387ee5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &7575951327712826272
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5860327998956267332}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f7b09c3bd6b4db54f9a536504c531377, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &8121701465639561001
 GameObject:
   m_ObjectHideFlags: 0

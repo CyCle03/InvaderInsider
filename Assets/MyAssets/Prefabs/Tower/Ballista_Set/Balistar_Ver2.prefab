@@ -11,8 +11,6 @@ GameObject:
   - component: {fileID: 3413060530732312886}
   - component: {fileID: 7380578570053825115}
   - component: {fileID: -3136363002463833446}
-  - component: {fileID: 7499037527344757803}
-  - component: {fileID: -4803325568860781506}
   m_Layer: 0
   m_Name: Balistar_Ver2
   m_TagString: Untagged
@@ -86,30 +84,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 2, z: 1}
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &7499037527344757803
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1151618573416463174}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe75d2415c06fff49ab9339450387ee5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &-4803325568860781506
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1151618573416463174}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f7b09c3bd6b4db54f9a536504c531377, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &2872279839947918315
 GameObject:
   m_ObjectHideFlags: 0
