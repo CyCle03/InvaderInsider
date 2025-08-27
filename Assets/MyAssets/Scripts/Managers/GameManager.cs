@@ -44,9 +44,10 @@ namespace InvaderInsider.Managers
 
         public GameObject SelectedTowerPrefab { get; set; }
         public int SelectedCardId { get; set; } = -1;
-        public CardDBObject DraggedCardData { get; set; }
-        public bool IsCardDragInProgress { get; set; } = false;
-        public bool WasCardDroppedOnTower { get; set; } = false;
+        // 기존 드래그 관련 프로퍼티들은 새로운 시스템으로 대체됨
+        public CardDBObject DraggedCardData => DragAndMergeSystem.Instance?.DraggedCardData;
+        public bool IsCardDragInProgress => DragAndMergeSystem.Instance?.IsCardDragging ?? false;
+        public bool WasCardDroppedOnTower => DragAndMergeSystem.Instance?.WasDropSuccessful ?? false;
 
         private UIManager uiManager;
         private GameObject debugSphereInstance;
@@ -60,6 +61,12 @@ namespace InvaderInsider.Managers
             }
             _instance = this;
             DontDestroyOnLoad(gameObject);
+
+            // DragAndMergeSystem 자동 초기화
+            if (DragAndMergeSystem.Instance == null)
+            {
+                Debug.Log($"{LOG_PREFIX}DragAndMergeSystem 자동 생성 중...");
+            }
 
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
@@ -112,7 +119,43 @@ namespace InvaderInsider.Managers
                 {
                     player.OnDeath += HandlePlayerDeath;
                 }
+
+                // Game 씬 로드 시 드래그 시스템 초기화
+                InitializeDragSystemForGameScene();
             }
+        }
+
+        /// <summary>
+        /// Game 씬에서 드래그 시스템 초기화
+        /// </summary>
+        private void InitializeDragSystemForGameScene()
+        {
+            Debug.Log($"{LOG_PREFIX}Game 씬에서 드래그 시스템 초기화 시작");
+
+            // DragSystemInitializer가 없으면 자동 생성
+            DragSystemInitializer initializer = FindObjectOfType<DragSystemInitializer>();
+            if (initializer == null)
+            {
+                GameObject initializerObj = new GameObject("DragSystemInitializer");
+                initializer = initializerObj.AddComponent<DragSystemInitializer>();
+                Debug.Log($"{LOG_PREFIX}DragSystemInitializer 자동 생성됨");
+            }
+
+            // 1초 후 초기화 실행 (다른 오브젝트들이 준비될 시간 확보)
+            StartCoroutine(DelayedDragSystemInitialization());
+        }
+
+        private System.Collections.IEnumerator DelayedDragSystemInitialization()
+        {
+            yield return new WaitForSeconds(1f);
+
+            // 모든 유닛을 새로운 시스템으로 마이그레이션
+            GameObject migratorObj = new GameObject("TempDragSystemMigrator");
+            DragSystemMigrator migrator = migratorObj.AddComponent<DragSystemMigrator>();
+            migrator.MigrateAllUnits();
+            Destroy(migratorObj);
+
+            Debug.Log($"{LOG_PREFIX}Game 씬 드래그 시스템 초기화 완료");
         }
 
         private void InitializeUIForScene(string sceneName)
@@ -268,8 +311,9 @@ namespace InvaderInsider.Managers
             }
         }
 
-        public BaseCharacter DraggedUnit { get; set; }
-        public BaseCharacter DroppedOnUnitTarget { get; set; }
+        // 기존 유닛 드래그 관련 프로퍼티들도 새로운 시스템으로 대체됨
+        public BaseCharacter DraggedUnit => DragAndMergeSystem.Instance?.DraggedUnit;
+        public BaseCharacter DroppedOnUnitTarget => DragAndMergeSystem.Instance?.MergeTargetUnit;
 
         [Header("Card Placement Settings")]
         public LayerMask TileLayerMask;
@@ -277,106 +321,55 @@ namespace InvaderInsider.Managers
         public Material InvalidPlacementMaterial;
         public float PlacementYOffset = 0.0f;
 
-        private GameObject placementPreviewInstance;
-        private CardDBObject cardDataForPlacement;
-        private Tile currentTargetTile;
+        // 기존 배치 관련 변수들은 새로운 시스템에서 관리됨
 
         private void Update()
         {
-            if (placementPreviewInstance != null)
-            {
-                UpdatePlacementPreview();
-            }
             UpdateDebugSphere();
+            
+            // ESC 키로 드래그 상태 강제 정리 (새로운 시스템 사용)
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                DragAndMergeSystem.Instance?.CancelAllDrags();
+            }
         }
 
-        #region Card Placement Methods
+        #region Card Placement Methods (Legacy - 새로운 시스템으로 대체됨)
 
+        // 기존 배치 관련 메서드들은 호환성을 위해 유지하되, 새로운 시스템으로 리다이렉트
         public void StartPlacementPreview(CardDBObject cardData)
         {
-            if (cardData == null || cardData.cardPrefab == null) return;
-            if (placementPreviewInstance != null) Destroy(placementPreviewInstance);
-            cardDataForPlacement = cardData;
-            placementPreviewInstance = Instantiate(cardData.cardPrefab);
-            if (placementPreviewInstance.TryGetComponent<UnityEngine.AI.NavMeshAgent>(out var agent)) agent.enabled = false;
-            if (placementPreviewInstance.TryGetComponent<BaseCharacter>(out var character)) character.enabled = false;
-            foreach (var col in placementPreviewInstance.GetComponentsInChildren<Collider>()) col.enabled = false;
-            foreach (var renderer in placementPreviewInstance.GetComponentsInChildren<Renderer>())
-            {
-                renderer.enabled = true;
-            }
+            // 새로운 시스템에서는 자동으로 처리됨
+            Debug.Log($"{LOG_PREFIX}StartPlacementPreview called - handled by DragAndMergeSystem");
         }
 
         private void UpdatePlacementPreview()
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-            if (Physics.Raycast(ray, out hit, 200f, TileLayerMask))
-            {
-                placementPreviewInstance.transform.position = hit.collider.transform.position + new Vector3(0, PlacementYOffset, 0);
-                currentTargetTile = hit.collider.GetComponent<Tile>();
-            }
-            else
-            {
-                currentTargetTile = null;
-                placementPreviewInstance.transform.position = new Vector3(0, -1000, 0);
-            }
-            UpdatePreviewVisuals();
-        }
-
-        private void UpdatePreviewVisuals()
-        {
-            bool isValid = currentTargetTile != null && currentTargetTile.tileType == TileType.Spawn && !currentTargetTile.IsOccupied;
-            Material materialToApply = isValid ? ValidPlacementMaterial : InvalidPlacementMaterial;
-            if (materialToApply != null)
-            {
-                foreach (var renderer in placementPreviewInstance.GetComponentsInChildren<Renderer>())
-                {
-                    renderer.material = materialToApply;
-                    Debug.Log($"{LOG_PREFIX}Applying material {materialToApply.name} to renderer on {renderer.gameObject.name}");
-                }
-            }
+            // 새로운 시스템에서 자동으로 처리됨
         }
 
         public bool ConfirmPlacement(Tile placementTile)
         {
-            if (placementPreviewInstance == null) return false;
-            bool isValidTile = placementTile != null && placementTile.tileType == TileType.Spawn && !placementTile.IsOccupied;
-            if (isValidTile)
-            {
-                GameObject spawnedObject = SpawnObject(cardDataForPlacement, placementTile);
-                if (spawnedObject != null)
-                {
-                    CardManager.Instance.RemoveCardFromHand(cardDataForPlacement.cardId);
-                    Destroy(placementPreviewInstance);
-                    ResetPlacementState();
-                    return true;
-                }
-                else
-                {
-                    Debug.LogError($"{LOG_PREFIX}Placement confirmed, but SpawnObject failed. Card will not be removed from hand.");
-                    CancelPlacement();
-                    return false;
-                }
-            }
-            else
-            {
-                CancelPlacement();
+            // 호환성을 위해 유지 - 새로운 시스템에서 직접 호출됨
+            if (placementTile == null || placementTile.tileType != TileType.Spawn || placementTile.IsOccupied)
                 return false;
-            }
+
+            CardDBObject cardData = DragAndMergeSystem.Instance?.DraggedCardData;
+            if (cardData == null) return false;
+
+            GameObject spawnedObject = SpawnObject(cardData, placementTile);
+            return spawnedObject != null;
         }
 
         public void CancelPlacement()
         {
-            if (placementPreviewInstance != null) Destroy(placementPreviewInstance);
-            ResetPlacementState();
+            // 새로운 시스템에서 자동으로 처리됨
+            Debug.Log($"{LOG_PREFIX}CancelPlacement called - handled by DragAndMergeSystem");
         }
 
         private void ResetPlacementState()
         {
-            placementPreviewInstance = null;
-            cardDataForPlacement = null;
-            currentTargetTile = null;
+            // 새로운 시스템에서 자동으로 처리됨
         }
 
         #endregion
@@ -412,19 +405,18 @@ namespace InvaderInsider.Managers
                 Debug.LogError($"{LOG_PREFIX}Failed to instantiate prefab for card '{cardData.cardName}'.");
                 return null;
             }
-            // DraggableUnit 컴포넌트 추가 (필드에서 드래그 가능하게 함)
-            DraggableUnit draggable = spawnedObject.GetComponent<DraggableUnit>();
+            // 새로운 간단한 드래그 컴포넌트 추가
+            SimpleDraggableUnit draggable = spawnedObject.GetComponent<SimpleDraggableUnit>();
             if (draggable == null)
             {
-                draggable = spawnedObject.AddComponent<DraggableUnit>();
+                draggable = spawnedObject.AddComponent<SimpleDraggableUnit>();
             }
-            draggable.enabled = true;
 
-            // UnitMergeTarget 컴포넌트 추가 (다른 유닛과 합칠 수 있게 함)
-            UnitMergeTarget mergeTarget = spawnedObject.GetComponent<UnitMergeTarget>();
+            // 새로운 간단한 머지 타겟 컴포넌트 추가
+            SimpleMergeTarget mergeTarget = spawnedObject.GetComponent<SimpleMergeTarget>();
             if (mergeTarget == null)
             {
-                mergeTarget = spawnedObject.AddComponent<UnitMergeTarget>();
+                mergeTarget = spawnedObject.AddComponent<SimpleMergeTarget>();
             }
             Debug.Log($"{LOG_PREFIX}Successfully instantiated prefab '{spawnedObject.name}'. Now initializing...");
             switch (cardData.type)
@@ -512,24 +504,34 @@ namespace InvaderInsider.Managers
             {
                 if (character == null) continue;
 
-                // DraggableUnit 컴포넌트 추가
-                DraggableUnit draggable = character.GetComponent<DraggableUnit>();
+                // SimpleDraggableUnit 컴포넌트 추가
+                SimpleDraggableUnit draggable = character.GetComponent<SimpleDraggableUnit>();
                 if (draggable == null)
                 {
-                    draggable = character.gameObject.AddComponent<DraggableUnit>();
+                    draggable = character.gameObject.AddComponent<SimpleDraggableUnit>();
                     enabledCount++;
                 }
-                draggable.enabled = true;
 
-                // UnitMergeTarget 컴포넌트 추가
-                UnitMergeTarget mergeTarget = character.GetComponent<UnitMergeTarget>();
+                // SimpleMergeTarget 컴포넌트 추가
+                SimpleMergeTarget mergeTarget = character.GetComponent<SimpleMergeTarget>();
                 if (mergeTarget == null)
                 {
-                    mergeTarget = character.gameObject.AddComponent<UnitMergeTarget>();
+                    mergeTarget = character.gameObject.AddComponent<SimpleMergeTarget>();
                 }
             }
 
             Debug.Log($"{LOG_PREFIX}필드의 {enabledCount}개 유닛에 드래그 기능을 활성화했습니다.");
+        }
+
+        /// <summary>
+        /// 모든 드래그 관련 상태와 프리뷰를 강제로 정리합니다.
+        /// 드래그가 제대로 끝나지 않았을 때 사용합니다.
+        /// </summary>
+        [ContextMenu("Force Clear All Drag States")]
+        public void ForceClearAllDragStates()
+        {
+            Debug.Log($"{LOG_PREFIX}Forcing clear of all drag states - using new system");
+            DragAndMergeSystem.Instance?.CancelAllDrags();
         }
     }
 }
