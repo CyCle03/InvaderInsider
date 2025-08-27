@@ -79,11 +79,15 @@ namespace InvaderInsider
                 unitRigidbody.isKinematic = true;
             }
             
-            // Set layer to "Ignore Raycast" for the object and all children
-            foreach (Transform t in GetComponentsInChildren<Transform>(true))
+            // 드래그 중에는 레이어 변경하지 않음 - EventSystem 드롭 감지를 위해
+            // 대신 CanvasGroup을 사용하여 레이캐스트 차단 (있는 경우에만)
+            CanvasGroup canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
             {
-                t.gameObject.layer = IGNORE_RAYCAST_LAYER;
+                canvasGroup.blocksRaycasts = false;
             }
+            
+            Debug.Log($"[DraggableUnit] 드래그 시작 - 레이어 변경 없이 진행 (EventSystem 호환성 유지)");
 
             GameManager.Instance.DraggedUnit = draggedCharacter;
             Debug.Log($"[DraggableUnit] Started dragging: {draggedCharacter.gameObject.name} (ID: {draggedCharacter.CardId}, Level: {draggedCharacter.Level})");
@@ -105,19 +109,35 @@ namespace InvaderInsider
         {
             if (draggedCharacter == null) return;
 
+            // 드롭 위치 정보 로그
+            Ray ray = Camera.main.ScreenPointToRay(eventData.position);
+            RaycastHit hit;
+            if (Physics.Raycast(ray, out hit))
+            {
+                Debug.Log($"[DraggableUnit] Dropped at position: {hit.point}, Hit object: {hit.collider.name}");
+                
+                // 드롭된 오브젝트에 UnitMergeTarget이 있는지 확인
+                UnitMergeTarget mergeTarget = hit.collider.GetComponent<UnitMergeTarget>();
+                Debug.Log($"[DraggableUnit] Hit object has UnitMergeTarget: {mergeTarget != null}");
+            }
+            else
+            {
+                Debug.Log($"[DraggableUnit] Dropped but no raycast hit detected");
+            }
+
             if (unitRigidbody != null)
             {
                 unitRigidbody.isKinematic = false;
             }
 
-            // Restore the original layers
-            foreach (Transform t in GetComponentsInChildren<Transform>(true))
+            // CanvasGroup 레이캐스트 차단 해제
+            CanvasGroup canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
             {
-                if (originalLayers.ContainsKey(t.gameObject))
-                {
-                    t.gameObject.layer = originalLayers[t.gameObject];
-                }
+                canvasGroup.blocksRaycasts = true;
             }
+            
+            Debug.Log($"[DraggableUnit] 드래그 종료 - 레이캐스트 차단 해제");
 
             transform.position = originalPosition;
 

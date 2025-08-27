@@ -79,6 +79,22 @@ namespace InvaderInsider
                 }
             }
 
+            // Collider 확인
+            Collider col = character.GetComponent<Collider>();
+            if (col == null)
+            {
+                Debug.LogWarning($"{LOG_PREFIX}{character.name}에 Collider가 없습니다. 드롭 이벤트가 작동하지 않을 수 있습니다.");
+            }
+            else if (!col.isTrigger)
+            {
+                Debug.LogWarning($"{LOG_PREFIX}{character.name}의 Collider가 Trigger가 아닙니다. 드롭 이벤트가 작동하지 않을 수 있습니다.");
+            }
+
+            if (showDebugInfo)
+            {
+                Debug.Log($"{LOG_PREFIX}{character.name} 드래그 설정 완료 - Draggable: {draggable.enabled}, MergeTarget: {mergeTarget != null}, Collider: {col != null}, IsTrigger: {col?.isTrigger}");
+            }
+
             return wasNewlyEnabled;
         }
 

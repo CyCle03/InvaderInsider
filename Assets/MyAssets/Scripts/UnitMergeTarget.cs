@@ -6,12 +6,48 @@ using InvaderInsider.Cards;
 
 namespace InvaderInsider
 {
-    public class UnitMergeTarget : MonoBehaviour, IDropHandler
+    public class UnitMergeTarget : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointerExitHandler
     {
-        
+        private void Awake()
+        {
+            Debug.Log($"[UnitMergeTarget] Awake called on {gameObject.name}");
+            
+            // Collider가 있는지 확인하고 없으면 추가
+            Collider col = GetComponent<Collider>();
+            if (col == null)
+            {
+                // BoxCollider 추가
+                BoxCollider boxCol = gameObject.AddComponent<BoxCollider>();
+                boxCol.isTrigger = true;
+                Debug.Log($"[UnitMergeTarget] {gameObject.name}에 BoxCollider를 추가했습니다.");
+            }
+            else
+            {
+                // 기존 Collider가 있으면 isTrigger 설정
+                col.isTrigger = true;
+                Debug.Log($"[UnitMergeTarget] {gameObject.name}의 기존 Collider를 isTrigger=true로 설정했습니다.");
+            }
+        }
+
+        private void Start()
+        {
+            Debug.Log($"[UnitMergeTarget] Start called on {gameObject.name}");
+            
+            // 컴포넌트 상태 확인
+            Collider col = GetComponent<Collider>();
+            BaseCharacter character = GetComponent<BaseCharacter>();
+            
+            Debug.Log($"[UnitMergeTarget] {gameObject.name} 상태 - " +
+                     $"Collider: {col != null}, " +
+                     $"IsTrigger: {col?.isTrigger}, " +
+                     $"BaseCharacter: {character != null}, " +
+                     $"Layer: {gameObject.layer}");
+        }
 
         public void OnDrop(PointerEventData eventData)
         {
+            Debug.Log($"[UnitMergeTarget] *** OnDrop called on {gameObject.name}! ***");
+            
             CardDBObject draggedCard = GameManager.Instance.DraggedCardData;
             BaseCharacter draggedUnit = GameManager.Instance.DraggedUnit;
 
@@ -90,6 +126,49 @@ namespace InvaderInsider
                 GameManager.Instance.WasCardDroppedOnTower = false; // 카드 드롭 실패
                 GameManager.Instance.DroppedOnUnitTarget = null; // 유닛 드롭 실패
             }
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            Debug.Log($"[UnitMergeTarget] OnPointerEnter called on {gameObject.name}");
+            
+            // 드래그 중인 유닛이 있으면 잠재적 드롭 타겟으로 설정
+            if (GameManager.Instance.DraggedUnit != null)
+            {
+                Debug.Log($"[UnitMergeTarget] Potential drop target: {gameObject.name}");
+            }
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            Debug.Log($"[UnitMergeTarget] OnPointerExit called on {gameObject.name}");
+        }
+
+        // OnTriggerEnter를 사용한 대체 드롭 감지
+        private void OnTriggerEnter(Collider other)
+        {
+            Debug.Log($"[UnitMergeTarget] OnTriggerEnter with {other.name}");
+            
+            // 드래그 중인 유닛이 트리거에 들어왔는지 확인
+            BaseCharacter draggedUnit = GameManager.Instance.DraggedUnit;
+            if (draggedUnit != null && other.gameObject == draggedUnit.gameObject)
+            {
+                Debug.Log($"[UnitMergeTarget] Dragged unit entered trigger area of {gameObject.name}");
+                
+                // 수동으로 드롭 처리 시뮬레이션
+                SimulateDropEvent();
+            }
+        }
+
+        private void SimulateDropEvent()
+        {
+            Debug.Log($"[UnitMergeTarget] Simulating drop event on {gameObject.name}");
+            
+            // 가짜 PointerEventData 생성
+            PointerEventData fakeEventData = new PointerEventData(EventSystem.current);
+            
+            // OnDrop 직접 호출
+            OnDrop(fakeEventData);
         }
     }
 }
