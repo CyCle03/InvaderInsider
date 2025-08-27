@@ -56,5 +56,6 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "InvaderInsider.sln"
+    "dotnet.defaultSolution": "InvaderInsider.sln",
+    "kiroAgent.configureMCP": "Enabled"
 }
