@@ -155,7 +155,7 @@ namespace InvaderInsider
                             BoxCollider solidCollider = enemy.gameObject.AddComponent<BoxCollider>();
                             solidCollider.isTrigger = false;
                             solidCollider.size = col.bounds.size;
-                            solidCollider.center = col.center;
+                            solidCollider.center = enemy.transform.InverseTransformPoint(col.bounds.center);
                             wasFixed = true;
                             break;
                         }
