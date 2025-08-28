@@ -21,6 +21,7 @@ namespace InvaderInsider
         [SerializeField] private bool fixGameManager = true;
         [SerializeField] private bool fixLayerIssues = true;
         [SerializeField] private bool fixPlayerTargeting = true;
+        [SerializeField] private bool fixEnemyDamage = true;
         [SerializeField] private bool runTests = true;
         
         private void Start()
@@ -85,6 +86,13 @@ namespace InvaderInsider
             {
                 DebugUtils.LogVerbose(LOG_PREFIX, "플레이어 타게팅 최적화 중");
                 FixPlayerTargeting();
+                yield return new WaitForSeconds(0.2f);
+            }
+            
+            if (fixEnemyDamage)
+            {
+                DebugUtils.LogVerbose(LOG_PREFIX, "적 데미지 시스템 수정 중");
+                FixEnemyDamageSystem();
                 yield return new WaitForSeconds(0.2f);
             }
             
@@ -231,7 +239,7 @@ namespace InvaderInsider
         private void ShowFinalReport()
         {
             DebugUtils.LogInfo(LOG_PREFIX, "🎉 모든 시스템이 최적화되어 정상 작동합니다!");
-            DebugUtils.LogVerbose(LOG_PREFIX, "사용 가능한 키: Ctrl+Shift+F (전체수정), Ctrl+P (플레이어), Ctrl+O (최적화)");
+            DebugUtils.LogVerbose(LOG_PREFIX, "사용 가능한 키: Ctrl+Shift+F (전체수정), Ctrl+P (플레이어), Ctrl+O (최적화), F8 (적데미지), F9 (긴급공격)");
         }
         
         /// <summary>
@@ -398,6 +406,35 @@ namespace InvaderInsider
         }
         
         /// <summary>
+        /// 적 데미지 시스템 수정
+        /// </summary>
+        private void FixEnemyDamageSystem()
+        {
+            // EnemyDamageFixer 자동 추가
+            EnemyDamageFixer damageFixer = FindObjectOfType<EnemyDamageFixer>();
+            if (damageFixer == null)
+            {
+                GameObject fixerObj = new GameObject("EnemyDamageFixer");
+                damageFixer = fixerObj.AddComponent<EnemyDamageFixer>();
+                DebugUtils.LogVerbose(LOG_PREFIX, "EnemyDamageFixer 생성됨");
+            }
+            
+            // 즉시 적 데미지 문제 수정 실행
+            damageFixer.FixEnemyDamageIssues();
+            DebugUtils.LogInfo(LOG_PREFIX, "적 데미지 시스템 수정 완료");
+        }
+        
+        /// <summary>
+        /// 적 데미지 문제만 수정 (Context Menu용)
+        /// </summary>
+        [ContextMenu("Fix Enemy Damage Only")]
+        public void FixEnemyDamageOnly()
+        {
+            DebugUtils.LogInfo(LOG_PREFIX, "적 데미지 문제 수정 시작");
+            FixEnemyDamageSystem();
+        }
+        
+        /// <summary>
         /// 긴급 플레이어 공격 수정
         /// </summary>
         [ContextMenu("Emergency Player Attack Fix")]
@@ -441,6 +478,12 @@ namespace InvaderInsider
             if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.O))
             {
                 ApplyProjectOptimizationOnly();
+            }
+            
+            // F8: 적 데미지 문제 수정
+            if (Input.GetKeyDown(KeyCode.F8))
+            {
+                FixEnemyDamageOnly();
             }
             
             // F9: 긴급 플레이어 공격 수정
