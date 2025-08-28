@@ -22,6 +22,7 @@ namespace InvaderInsider
         [SerializeField] private bool fixLayerIssues = true;
         [SerializeField] private bool fixPlayerTargeting = true;
         [SerializeField] private bool fixEnemyDamage = true;
+        [SerializeField] private bool delayStageStart = true;
         [SerializeField] private bool runTests = true;
         
         private void Start()
@@ -94,6 +95,13 @@ namespace InvaderInsider
                 DebugUtils.LogVerbose(LOG_PREFIX, "적 데미지 시스템 수정 중");
                 FixEnemyDamageSystem();
                 yield return new WaitForSeconds(0.2f);
+            }
+            
+            if (delayStageStart)
+            {
+                DebugUtils.LogVerbose(LOG_PREFIX, "스테이지 시작 지연 시스템 설정 중");
+                SetupStageStartDelayer();
+                yield return new WaitForSeconds(0.1f);
             }
             
             if (runTests)
@@ -239,7 +247,7 @@ namespace InvaderInsider
         private void ShowFinalReport()
         {
             DebugUtils.LogInfo(LOG_PREFIX, "🎉 모든 시스템이 최적화되어 정상 작동합니다!");
-            DebugUtils.LogVerbose(LOG_PREFIX, "사용 가능한 키: Ctrl+Shift+F (전체수정), Ctrl+P (플레이어), Ctrl+O (최적화), F8 (적데미지), F9 (긴급공격)");
+            DebugUtils.LogVerbose(LOG_PREFIX, "사용 가능한 키: Ctrl+Shift+F (전체수정), Ctrl+P (플레이어), Ctrl+O (최적화), F7 (스테이지지연), F8 (적데미지), F9 (긴급공격)");
         }
         
         /// <summary>
@@ -388,11 +396,15 @@ namespace InvaderInsider
                 GameObject optimizerObj = new GameObject("ProjectOptimizer");
                 optimizer = optimizerObj.AddComponent<ProjectOptimizer>();
                 DebugUtils.LogVerbose(LOG_PREFIX, "ProjectOptimizer 생성됨");
+                
+                // 새로 생성된 경우에만 최적화 실행
+                optimizer.OptimizeProjectNow();
+                DebugUtils.LogVerbose(LOG_PREFIX, "프로젝트 최적화 적용 완료");
             }
-            
-            // 최적화 실행
-            optimizer.OptimizeProjectNow();
-            DebugUtils.LogVerbose(LOG_PREFIX, "프로젝트 최적화 적용 완료");
+            else
+            {
+                DebugUtils.LogVerbose(LOG_PREFIX, "ProjectOptimizer 이미 존재함 - 중복 실행 방지");
+            }
         }
         
         /// <summary>
@@ -422,6 +434,23 @@ namespace InvaderInsider
             // 즉시 적 데미지 문제 수정 실행
             damageFixer.FixEnemyDamageIssues();
             DebugUtils.LogInfo(LOG_PREFIX, "적 데미지 시스템 수정 완료");
+        }
+        
+        /// <summary>
+        /// 스테이지 시작 지연 시스템 설정
+        /// </summary>
+        private void SetupStageStartDelayer()
+        {
+            // StageStartDelayer 자동 추가
+            StageStartDelayer delayer = FindObjectOfType<StageStartDelayer>();
+            if (delayer == null)
+            {
+                GameObject delayerObj = new GameObject("StageStartDelayer");
+                delayer = delayerObj.AddComponent<StageStartDelayer>();
+                DebugUtils.LogVerbose(LOG_PREFIX, "StageStartDelayer 생성됨");
+            }
+            
+            DebugUtils.LogInfo(LOG_PREFIX, "스테이지 시작 지연 시스템 설정 완료");
         }
         
         /// <summary>
@@ -479,6 +508,8 @@ namespace InvaderInsider
             {
                 ApplyProjectOptimizationOnly();
             }
+            
+            // F7: 스테이지 시작 지연 시스템 (StageStartDelayer에서 처리)
             
             // F8: 적 데미지 문제 수정
             if (Input.GetKeyDown(KeyCode.F8))

@@ -29,6 +29,7 @@ namespace InvaderInsider
         
         // 최적화 상태
         private bool isOptimized = false;
+        private bool isOptimizing = false;
         
         private void Start()
         {
@@ -49,9 +50,15 @@ namespace InvaderInsider
         [ContextMenu("Optimize Project")]
         public void OptimizeProjectNow()
         {
+            if (isOptimizing)
+            {
+                DebugUtils.LogVerbose(LOG_PREFIX, "이미 최적화가 진행 중입니다. 중복 실행 방지");
+                return;
+            }
+            
             if (isOptimized)
             {
-                Debug.Log($"{LOG_PREFIX}이미 최적화가 완료되었습니다. 재최적화를 실행합니다.");
+                DebugUtils.LogVerbose(LOG_PREFIX, "이미 최적화가 완료되었습니다. 재최적화를 실행합니다.");
                 isOptimized = false;
             }
             StartCoroutine(OptimizeProject());
@@ -59,7 +66,8 @@ namespace InvaderInsider
         
         private IEnumerator OptimizeProject()
         {
-            Debug.Log($"{LOG_PREFIX}=== 프로젝트 최적화 시작 ===");
+            isOptimizing = true;
+            DebugUtils.LogVerbose(LOG_PREFIX, "프로젝트 최적화 시작");
             
             // 1. 디버그 스크립트 최적화
             OptimizeDebugScripts();
@@ -86,7 +94,8 @@ namespace InvaderInsider
             yield return new WaitForSeconds(0.2f);
             
             isOptimized = true;
-            Debug.Log($"{LOG_PREFIX}=== 프로젝트 최적화 완료 ===");
+            isOptimizing = false;
+            DebugUtils.LogInfo(LOG_PREFIX, "프로젝트 최적화 완료");
             ShowOptimizationReport();
         }
         
