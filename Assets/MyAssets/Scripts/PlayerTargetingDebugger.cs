@@ -8,11 +8,11 @@ namespace InvaderInsider
     /// </summary>
     public class PlayerTargetingDebugger : MonoBehaviour
     {
-        private const string LOG_PREFIX = "[PlayerDebug] ";
+        private const string LOG_PREFIX = "PlayerDebug";
         
         [Header("Debug Settings")]
-        [SerializeField] private bool enableDebug = true;
-        [SerializeField] private float debugInterval = 2f;
+        [SerializeField] private bool enableDebug = false; // 기본값 false로 변경
+        [SerializeField] private float debugInterval = 5f; // 간격 늘림
         
         private Player player;
         private float lastDebugTime;

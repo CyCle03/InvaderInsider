@@ -10,12 +10,12 @@ namespace InvaderInsider
     /// </summary>
     public class ProjectOptimizer : MonoBehaviour
     {
-        private const string LOG_PREFIX = "[ProjectOptimizer] ";
+        private const string LOG_PREFIX = "ProjectOptimizer";
         
         [Header("Optimization Settings")]
         [SerializeField] private bool autoOptimizeOnStart = true;
-        [SerializeField] private bool enablePerformanceMonitoring = true;
-        [SerializeField] private float monitoringInterval = 5f;
+        [SerializeField] private bool enablePerformanceMonitoring = false; // 기본값 false
+        [SerializeField] private float monitoringInterval = 10f; // 간격 늘림
         
         [Header("Performance Thresholds")]
         [SerializeField] private float targetFrameRate = 60f;

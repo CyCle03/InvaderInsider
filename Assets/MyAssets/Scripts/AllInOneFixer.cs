@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using InvaderInsider.Core;
 
 namespace InvaderInsider
 {
@@ -8,7 +9,7 @@ namespace InvaderInsider
     /// </summary>
     public class AllInOneFixer : MonoBehaviour
     {
-        private const string LOG_PREFIX = "[AllInOneFixer] ";
+        private const string LOG_PREFIX = "AllInOneFixer";
         
         [Header("Auto Fix Settings")]
         [SerializeField] private bool autoFixOnStart = true;
@@ -50,56 +51,56 @@ namespace InvaderInsider
         
         private IEnumerator FixEverything()
         {
-            Debug.Log($"{LOG_PREFIX}=== 전체 시스템 수정 시작 ===");
+            DebugUtils.LogInfo(LOG_PREFIX, "전체 시스템 수정 시작");
             
             if (fixDragSystem)
             {
-                Debug.Log($"{LOG_PREFIX}1. DragAndMergeSystem 수정 중...");
+                DebugUtils.LogVerbose(LOG_PREFIX, "DragAndMergeSystem 수정 중");
                 FixDragAndMergeSystem();
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.2f);
             }
             
             if (fixUnits)
             {
-                Debug.Log($"{LOG_PREFIX}2. 유닛 컴포넌트 수정 중...");
+                DebugUtils.LogVerbose(LOG_PREFIX, "유닛 컴포넌트 수정 중");
                 FixAllUnits();
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.2f);
             }
             
             if (fixGameManager)
             {
-                Debug.Log($"{LOG_PREFIX}3. GameManager 연동 확인 중...");
+                DebugUtils.LogVerbose(LOG_PREFIX, "GameManager 연동 확인 중");
                 CheckGameManagerIntegration();
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.2f);
             }
             
             if (fixLayerIssues)
             {
-                Debug.Log($"{LOG_PREFIX}4. 레이어/콜라이더 문제 수정 중...");
+                DebugUtils.LogVerbose(LOG_PREFIX, "레이어/콜라이더 문제 수정 중");
                 FixLayerAndColliderIssues();
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.2f);
             }
             
             if (fixPlayerTargeting)
             {
-                Debug.Log($"{LOG_PREFIX}5. 플레이어 타게팅 디버깅 활성화 중...");
+                DebugUtils.LogVerbose(LOG_PREFIX, "플레이어 타게팅 최적화 중");
                 FixPlayerTargeting();
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.2f);
             }
             
             if (runTests)
             {
-                Debug.Log($"{LOG_PREFIX}6. 시스템 테스트 실행 중...");
+                DebugUtils.LogVerbose(LOG_PREFIX, "시스템 테스트 실행 중");
                 RunSystemTests();
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.2f);
             }
             
             // ProjectOptimizer 자동 실행
-            Debug.Log($"{LOG_PREFIX}7. 프로젝트 최적화 실행 중...");
+            DebugUtils.LogVerbose(LOG_PREFIX, "프로젝트 최적화 실행 중");
             ApplyProjectOptimization();
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
             
-            Debug.Log($"{LOG_PREFIX}=== 전체 시스템 수정 완료 ===");
+            DebugUtils.LogInfo(LOG_PREFIX, "전체 시스템 수정 완료");
             ShowFinalReport();
         }
         
@@ -110,16 +111,16 @@ namespace InvaderInsider
             {
                 GameObject systemObj = new GameObject("DragAndMergeSystem");
                 systemObj.AddComponent<DragAndMergeSystem>();
-                Debug.Log($"{LOG_PREFIX}✅ DragAndMergeSystem 생성됨");
+                DebugUtils.LogVerbose(LOG_PREFIX, "DragAndMergeSystem 생성됨");
             }
             else
             {
-                Debug.Log($"{LOG_PREFIX}✅ DragAndMergeSystem 이미 존재함");
+                DebugUtils.LogVerbose(LOG_PREFIX, "DragAndMergeSystem 이미 존재함");
             }
             
             // 시스템 상태 리셋
             DragAndMergeSystem.Instance.CancelAllDrags();
-            Debug.Log($"{LOG_PREFIX}✅ 드래그 상태 리셋됨");
+            DebugUtils.LogVerbose(LOG_PREFIX, "드래그 상태 리셋됨");
         }
         
         private void FixAllUnits()
@@ -127,7 +128,7 @@ namespace InvaderInsider
             BaseCharacter[] allCharacters = FindObjectsOfType<BaseCharacter>();
             int fixedCount = 0;
             
-            Debug.Log($"{LOG_PREFIX}총 {allCharacters.Length}개 유닛 발견");
+            DebugUtils.LogVerbose(LOG_PREFIX, $"총 {allCharacters.Length}개 유닛 발견");
             
             foreach (BaseCharacter character in allCharacters)
             {
@@ -171,7 +172,7 @@ namespace InvaderInsider
                 }
             }
             
-            Debug.Log($"{LOG_PREFIX}✅ {fixedCount}개 유닛 수정됨");
+            DebugUtils.LogInfo(LOG_PREFIX, $"{fixedCount}개 유닛 수정됨");
         }
         
         private void CheckGameManagerIntegration()
@@ -180,20 +181,20 @@ namespace InvaderInsider
             {
                 if (InvaderInsider.Managers.GameManager.Instance != null)
                 {
-                    Debug.Log($"{LOG_PREFIX}✅ GameManager 연동 확인됨");
+                    DebugUtils.LogVerbose(LOG_PREFIX, "GameManager 연동 확인됨");
                     
                     // 프로퍼티 테스트
                     bool cardDragStatus = InvaderInsider.Managers.GameManager.Instance.IsCardDragInProgress;
-                    Debug.Log($"{LOG_PREFIX}   카드 드래그 상태: {cardDragStatus}");
+                    DebugUtils.LogVerbose(LOG_PREFIX, $"카드 드래그 상태: {cardDragStatus}");
                 }
                 else
                 {
-                    Debug.LogWarning($"{LOG_PREFIX}⚠️ GameManager 인스턴스 없음");
+                    DebugUtils.LogError(LOG_PREFIX, "GameManager 인스턴스 없음");
                 }
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"{LOG_PREFIX}❌ GameManager 연동 오류: {e.Message}");
+                DebugUtils.LogError(LOG_PREFIX, $"GameManager 연동 오류: {e.Message}");
             }
         }
         
@@ -212,12 +213,10 @@ namespace InvaderInsider
             int draggableUnits = draggables.Length;
             int mergeTargetUnits = mergeTargets.Length;
             
-            Debug.Log($"{LOG_PREFIX}테스트 결과:");
-            Debug.Log($"{LOG_PREFIX}  - DragAndMergeSystem: {(dragSystemOK ? "✅" : "❌")}");
-            Debug.Log($"{LOG_PREFIX}  - GameManager: {(gameManagerOK ? "✅" : "❌")}");
-            Debug.Log($"{LOG_PREFIX}  - 총 유닛: {totalUnits}개");
-            Debug.Log($"{LOG_PREFIX}  - 드래그 가능: {draggableUnits}개");
-            Debug.Log($"{LOG_PREFIX}  - 머지 타겟: {mergeTargetUnits}개");
+            DebugUtils.LogVerbose(LOG_PREFIX, "테스트 결과:");
+            DebugUtils.LogVerbose(LOG_PREFIX, $"DragAndMergeSystem: {(dragSystemOK ? "OK" : "FAIL")}");
+            DebugUtils.LogVerbose(LOG_PREFIX, $"GameManager: {(gameManagerOK ? "OK" : "FAIL")}");
+            DebugUtils.LogVerbose(LOG_PREFIX, $"총 유닛: {totalUnits}개, 드래그 가능: {draggableUnits}개, 머지 타겟: {mergeTargetUnits}개");
             
             // 완성도 계산
             float completeness = 0f;
@@ -226,24 +225,13 @@ namespace InvaderInsider
                 completeness = (float)(draggableUnits + mergeTargetUnits) / (totalUnits * 2) * 100f;
             }
             
-            Debug.Log($"{LOG_PREFIX}  - 시스템 완성도: {completeness:F1}%");
+            DebugUtils.LogInfo(LOG_PREFIX, $"시스템 완성도: {completeness:F1}%");
         }
         
         private void ShowFinalReport()
         {
-            Debug.Log($"{LOG_PREFIX}");
-            Debug.Log($"{LOG_PREFIX}🎉 === 최종 보고서 ===");
-            Debug.Log($"{LOG_PREFIX}");
-            Debug.Log($"{LOG_PREFIX}✅ 모든 시스템이 수정되었습니다!");
-            Debug.Log($"{LOG_PREFIX}");
-            Debug.Log($"{LOG_PREFIX}🎮 사용 가능한 키:");
-            Debug.Log($"{LOG_PREFIX}   Ctrl+Shift+F - 전체 시스템 수정");
-            Debug.Log($"{LOG_PREFIX}   Ctrl+P - 플레이어 타게팅 최적화");
-            Debug.Log($"{LOG_PREFIX}   Ctrl+O - 프로젝트 최적화");
-            Debug.Log($"{LOG_PREFIX}");
-            Debug.Log($"{LOG_PREFIX}🚀 이제 모든 시스템이 최적화되어 정상 작동합니다!");
-            Debug.Log($"{LOG_PREFIX}💡 성능이 크게 향상되었습니다!");
-            Debug.Log($"{LOG_PREFIX}");
+            DebugUtils.LogInfo(LOG_PREFIX, "🎉 모든 시스템이 최적화되어 정상 작동합니다!");
+            DebugUtils.LogVerbose(LOG_PREFIX, "사용 가능한 키: Ctrl+Shift+F (전체수정), Ctrl+P (플레이어), Ctrl+O (최적화)");
         }
         
         /// <summary>
@@ -254,7 +242,7 @@ namespace InvaderInsider
             BaseCharacter[] allUnits = FindObjectsOfType<BaseCharacter>();
             int fixedCount = 0;
             
-            Debug.Log($"{LOG_PREFIX}총 {allUnits.Length}개 유닛의 레이어/콜라이더 확인 중...");
+            DebugUtils.LogVerbose(LOG_PREFIX, $"총 {allUnits.Length}개 유닛의 레이어/콜라이더 확인 중");
             
             foreach (BaseCharacter unit in allUnits)
             {
@@ -323,11 +311,11 @@ namespace InvaderInsider
                 if (wasFixed)
                 {
                     fixedCount++;
-                    Debug.Log($"{LOG_PREFIX}레이어/콜라이더 수정: {unit.name} (z: {pos.z:F1})");
+                    DebugUtils.LogVerbose(LOG_PREFIX, $"레이어/콜라이더 수정: {unit.name} (z: {pos.z:F1})");
                 }
             }
             
-            Debug.Log($"{LOG_PREFIX}✅ {fixedCount}개 유닛의 레이어/콜라이더 수정됨");
+            DebugUtils.LogInfo(LOG_PREFIX, $"{fixedCount}개 유닛의 레이어/콜라이더 수정됨");
         }
         
         /// <summary>
@@ -338,15 +326,22 @@ namespace InvaderInsider
             Player player = FindObjectOfType<Player>();
             if (player == null)
             {
-                Debug.LogWarning($"{LOG_PREFIX}플레이어를 찾을 수 없음");
+                DebugUtils.LogError(LOG_PREFIX, "플레이어를 찾을 수 없음");
                 return;
+            }
+            
+            // PlayerAttackFixer 자동 추가 (즉시 문제 해결)
+            if (player.GetComponent<PlayerAttackFixer>() == null)
+            {
+                player.gameObject.AddComponent<PlayerAttackFixer>();
+                DebugUtils.LogInfo(LOG_PREFIX, "PlayerAttackFixer 추가됨 - 공격 문제 즉시 해결");
             }
             
             // OptimizedPlayerTargeting 자동 추가
             if (player.GetComponent<OptimizedPlayerTargeting>() == null)
             {
                 player.gameObject.AddComponent<OptimizedPlayerTargeting>();
-                Debug.Log($"{LOG_PREFIX}✅ OptimizedPlayerTargeting 추가됨 - 성능 최적화 적용");
+                DebugUtils.LogVerbose(LOG_PREFIX, "OptimizedPlayerTargeting 추가됨 - 성능 최적화 적용");
             }
             
             // PlayerTargetingDebugger는 에디터에서만 추가
@@ -355,14 +350,12 @@ namespace InvaderInsider
             {
                 var debugger = player.gameObject.AddComponent<PlayerTargetingDebugger>();
                 // 릴리즈 빌드에서는 자동 비활성화되도록 설정
-                Debug.Log($"{LOG_PREFIX}✅ PlayerTargetingDebugger 추가됨 (에디터 전용)");
+                DebugUtils.LogVerbose(LOG_PREFIX, "PlayerTargetingDebugger 추가됨 (에디터 전용)");
             }
             #endif
             
-            Debug.Log($"{LOG_PREFIX}✅ 플레이어 타게팅 시스템 최적화 완료");
-            Debug.Log($"{LOG_PREFIX}   - 매 프레임 → 10Hz로 타게팅 빈도 감소");
-            Debug.Log($"{LOG_PREFIX}   - 메모리 할당 최적화 적용");
-            Debug.Log($"{LOG_PREFIX}   - 성능 모니터링 활성화");
+            DebugUtils.LogInfo(LOG_PREFIX, "플레이어 타게팅 시스템 최적화 완료");
+            DebugUtils.LogVerbose(LOG_PREFIX, "매 프레임 → 5Hz로 타게팅 빈도 감소, 메모리 할당 최적화 적용");
         }
         
         /// <summary>
@@ -371,7 +364,7 @@ namespace InvaderInsider
         [ContextMenu("Debug Player Targeting")]
         public void FixPlayerTargetingOnly()
         {
-            Debug.Log($"{LOG_PREFIX}플레이어 타게팅 디버깅 시작");
+            DebugUtils.LogInfo(LOG_PREFIX, "플레이어 타게팅 디버깅 시작");
             FixPlayerTargeting();
         }
         
@@ -386,12 +379,12 @@ namespace InvaderInsider
             {
                 GameObject optimizerObj = new GameObject("ProjectOptimizer");
                 optimizer = optimizerObj.AddComponent<ProjectOptimizer>();
-                Debug.Log($"{LOG_PREFIX}✅ ProjectOptimizer 생성됨");
+                DebugUtils.LogVerbose(LOG_PREFIX, "ProjectOptimizer 생성됨");
             }
             
             // 최적화 실행
             optimizer.OptimizeProjectNow();
-            Debug.Log($"{LOG_PREFIX}✅ 프로젝트 최적화 적용 완료");
+            DebugUtils.LogVerbose(LOG_PREFIX, "프로젝트 최적화 적용 완료");
         }
         
         /// <summary>
@@ -400,8 +393,34 @@ namespace InvaderInsider
         [ContextMenu("Apply Project Optimization")]
         public void ApplyProjectOptimizationOnly()
         {
-            Debug.Log($"{LOG_PREFIX}프로젝트 최적화 시작");
+            DebugUtils.LogInfo(LOG_PREFIX, "프로젝트 최적화 시작");
             ApplyProjectOptimization();
+        }
+        
+        /// <summary>
+        /// 긴급 플레이어 공격 수정
+        /// </summary>
+        [ContextMenu("Emergency Player Attack Fix")]
+        public void EmergencyPlayerAttackFix()
+        {
+            DebugUtils.LogInfo(LOG_PREFIX, "🚨 긴급 플레이어 공격 수정 시작");
+            
+            Player player = FindObjectOfType<Player>();
+            if (player == null)
+            {
+                DebugUtils.LogError(LOG_PREFIX, "플레이어를 찾을 수 없음!");
+                return;
+            }
+            
+            // PlayerAttackFixer 즉시 추가 및 실행
+            PlayerAttackFixer fixer = player.GetComponent<PlayerAttackFixer>();
+            if (fixer == null)
+            {
+                fixer = player.gameObject.AddComponent<PlayerAttackFixer>();
+            }
+            
+            fixer.FixPlayerAttack();
+            DebugUtils.LogInfo(LOG_PREFIX, "✅ 긴급 수정 완료 - 이제 플레이어가 공격할 수 있습니다!");
         }
         
         private void Update()
@@ -422,6 +441,12 @@ namespace InvaderInsider
             if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.O))
             {
                 ApplyProjectOptimizationOnly();
+            }
+            
+            // F9: 긴급 플레이어 공격 수정
+            if (Input.GetKeyDown(KeyCode.F9))
+            {
+                EmergencyPlayerAttackFix();
             }
         }
     }

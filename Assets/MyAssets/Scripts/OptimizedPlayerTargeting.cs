@@ -10,7 +10,7 @@ namespace InvaderInsider
     /// </summary>
     public class OptimizedPlayerTargeting : MonoBehaviour
     {
-        private const string LOG_PREFIX = "[OptimizedTargeting] ";
+        private const string LOG_PREFIX = "OptimizedTargeting";
         
         [Header("Optimization Settings")]
         [SerializeField] private float targetingInterval = 0.1f; // 10Hz로 타게팅 업데이트
@@ -45,7 +45,7 @@ namespace InvaderInsider
             player = GetComponent<Player>();
             if (player == null)
             {
-                Debug.LogError($"{LOG_PREFIX}Player 컴포넌트를 찾을 수 없습니다!");
+                DebugUtils.LogError(LOG_PREFIX, "Player 컴포넌트를 찾을 수 없습니다!");
                 enabled = false;
                 return;
             }
@@ -55,7 +55,7 @@ namespace InvaderInsider
             if (enemyLayerMask == 0)
             {
                 enemyLayerMask = 1 << 6; // 기본값
-                Debug.LogWarning($"{LOG_PREFIX}Enemy 레이어를 찾을 수 없어 기본값 사용");
+                DebugUtils.LogError(LOG_PREFIX, "Enemy 레이어를 찾을 수 없어 기본값 사용");
             }
             
             // 버퍼 초기화 (메모리 할당 최소화)
@@ -69,10 +69,8 @@ namespace InvaderInsider
             // 기존 타게팅 시스템 비활성화 시도
             DisableOriginalTargeting();
             
-            Debug.Log($"{LOG_PREFIX}최적화된 플레이어 타게팅 시스템 초기화 완료");
-            Debug.Log($"{LOG_PREFIX}   - 타게팅 간격: {targetingInterval}초");
-            Debug.Log($"{LOG_PREFIX}   - 최대 타게팅 범위: {maxTargetingRange}");
-            Debug.Log($"{LOG_PREFIX}   - 최대 체크 타겟 수: {maxTargetsToCheck}");
+            DebugUtils.LogInfo(LOG_PREFIX, "최적화된 플레이어 타게팅 시스템 초기화 완료");
+            DebugUtils.LogVerbose(LOG_PREFIX, $"타게팅 간격: {targetingInterval}초, 최대 범위: {maxTargetingRange}, 최대 타겟: {maxTargetsToCheck}");
         }
         
         /// <summary>
@@ -228,7 +226,7 @@ namespace InvaderInsider
             // 성능 경고 (1ms 이상 걸리면 경고)
             if (targetingTime > 0.001f)
             {
-                Debug.LogWarning($"{LOG_PREFIX}타게팅 시간 과다: {targetingTime * 1000f:F2}ms");
+                DebugUtils.LogError(LOG_PREFIX, $"타게팅 시간 과다: {targetingTime * 1000f:F2}ms");
             }
         }
         
@@ -248,11 +246,11 @@ namespace InvaderInsider
                 if (field != null)
                 {
                     field.SetValue(player, true);
-                    Debug.Log($"{LOG_PREFIX}✅ 원본 타게팅 시스템 비활성화됨");
+                    DebugUtils.LogVerbose(LOG_PREFIX, "원본 타게팅 시스템 비활성화됨");
                 }
                 else
                 {
-                    Debug.Log($"{LOG_PREFIX}⚠️ Player 스크립트에 최적화 플래그 추가 권장");
+                    DebugUtils.LogVerbose(LOG_PREFIX, "Player 스크립트에 최적화 플래그 추가 권장");
                 }
             }
         }
@@ -263,11 +261,11 @@ namespace InvaderInsider
         [ContextMenu("Show Performance Info")]
         public void ShowPerformanceInfo()
         {
-            Debug.Log($"{LOG_PREFIX}=== 성능 정보 ===");
-            Debug.Log($"{LOG_PREFIX}타게팅 간격: {targetingInterval}초");
-            Debug.Log($"{LOG_PREFIX}평균 타게팅 시간: {averageTargetingTime * 1000f:F2}ms");
-            Debug.Log($"{LOG_PREFIX}현재 타겟: {(currentTarget != null ? "있음" : "없음")}");
-            Debug.Log($"{LOG_PREFIX}프레임 절약: {framesSinceLastTargeting}프레임마다 1회 실행");
+            DebugUtils.LogInfo(LOG_PREFIX, "=== 성능 정보 ===");
+            DebugUtils.LogInfo(LOG_PREFIX, $"타게팅 간격: {targetingInterval}초");
+            DebugUtils.LogInfo(LOG_PREFIX, $"평균 타게팅 시간: {averageTargetingTime * 1000f:F2}ms");
+            DebugUtils.LogInfo(LOG_PREFIX, $"현재 타겟: {(currentTarget != null ? "있음" : "없음")}");
+            DebugUtils.LogInfo(LOG_PREFIX, $"프레임 절약: {framesSinceLastTargeting}프레임마다 1회 실행");
         }
         
         private void OnDisable()
