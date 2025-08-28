@@ -14,7 +14,14 @@ namespace InvaderInsider
         
         private void Start()
         {
-            Debug.Log($"{LOG_PREFIX}유닛 드래그 테스터 시작");
+            if (enableDetailedLogs)
+            {
+                Debug.Log($"{LOG_PREFIX}유닛 드래그 테스터 시작 (상세 로그 활성화)");
+            }
+            else
+            {
+                Debug.Log($"{LOG_PREFIX}유닛 드래그 테스터 시작");
+            }
         }
         
         private void Update()

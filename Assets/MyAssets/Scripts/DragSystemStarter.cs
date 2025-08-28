@@ -32,7 +32,14 @@ namespace InvaderInsider
         
         private IEnumerator SetupEverything()
         {
-            Debug.Log($"{LOG_PREFIX}🚀 드래그 시스템 자동 설정 시작");
+            if (enableDebugLogs)
+            {
+                Debug.Log($"{LOG_PREFIX}🚀 드래그 시스템 자동 설정 시작 (디버그 로그 활성화)");
+            }
+            else
+            {
+                Debug.Log($"{LOG_PREFIX}🚀 드래그 시스템 자동 설정 시작");
+            }
             
             yield return new WaitForSeconds(0.5f);
             

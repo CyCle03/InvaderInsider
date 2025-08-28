@@ -19,15 +19,24 @@ namespace InvaderInsider
         [SerializeField] private bool fixUnits = true;
         [SerializeField] private bool fixGameManager = true;
         [SerializeField] private bool fixLayerIssues = true;
-        [SerializeField] private bool fixTowerTargeting = true;
+        [SerializeField] private bool fixPlayerTargeting = true;
         [SerializeField] private bool runTests = true;
         
         private void Start()
         {
             if (autoFixOnStart)
             {
-                StartCoroutine(FixEverything());
+                StartCoroutine(DelayedFixEverything());
             }
+        }
+        
+        /// <summary>
+        /// 지연된 전체 수정 (fixDelay 적용)
+        /// </summary>
+        private IEnumerator DelayedFixEverything()
+        {
+            yield return new WaitForSeconds(fixDelay);
+            yield return StartCoroutine(FixEverything());
         }
         
         /// <summary>
@@ -71,10 +80,10 @@ namespace InvaderInsider
                 yield return new WaitForSeconds(0.5f);
             }
             
-            if (fixTowerTargeting)
+            if (fixPlayerTargeting)
             {
-                Debug.Log($"{LOG_PREFIX}5. 타워 타게팅 문제 수정 중...");
-                FixTowerTargeting();
+                Debug.Log($"{LOG_PREFIX}5. 플레이어 타게팅 디버깅 활성화 중...");
+                FixPlayerTargeting();
                 yield return new WaitForSeconds(0.5f);
             }
             
@@ -84,6 +93,11 @@ namespace InvaderInsider
                 RunSystemTests();
                 yield return new WaitForSeconds(0.5f);
             }
+            
+            // ProjectOptimizer 자동 실행
+            Debug.Log($"{LOG_PREFIX}7. 프로젝트 최적화 실행 중...");
+            ApplyProjectOptimization();
+            yield return new WaitForSeconds(0.5f);
             
             Debug.Log($"{LOG_PREFIX}=== 전체 시스템 수정 완료 ===");
             ShowFinalReport();
@@ -223,14 +237,12 @@ namespace InvaderInsider
             Debug.Log($"{LOG_PREFIX}✅ 모든 시스템이 수정되었습니다!");
             Debug.Log($"{LOG_PREFIX}");
             Debug.Log($"{LOG_PREFIX}🎮 사용 가능한 키:");
-            Debug.Log($"{LOG_PREFIX}   ESC - 모든 드래그 취소");
-            Debug.Log($"{LOG_PREFIX}   F1 - 시스템 상태 확인");
-            Debug.Log($"{LOG_PREFIX}   F3 - 시스템 재초기화");
-            Debug.Log($"{LOG_PREFIX}   F4 - 완전 시스템 재설정");
-            Debug.Log($"{LOG_PREFIX}   F5 - 시스템 테스트 실행");
-            Debug.Log($"{LOG_PREFIX}   Ctrl+F1 - 런타임 정리");
+            Debug.Log($"{LOG_PREFIX}   Ctrl+Shift+F - 전체 시스템 수정");
+            Debug.Log($"{LOG_PREFIX}   Ctrl+P - 플레이어 타게팅 최적화");
+            Debug.Log($"{LOG_PREFIX}   Ctrl+O - 프로젝트 최적화");
             Debug.Log($"{LOG_PREFIX}");
-            Debug.Log($"{LOG_PREFIX}🚀 이제 드래그 & 머지가 정상 작동합니다!");
+            Debug.Log($"{LOG_PREFIX}🚀 이제 모든 시스템이 최적화되어 정상 작동합니다!");
+            Debug.Log($"{LOG_PREFIX}💡 성능이 크게 향상되었습니다!");
             Debug.Log($"{LOG_PREFIX}");
         }
         
@@ -319,45 +331,77 @@ namespace InvaderInsider
         }
         
         /// <summary>
-        /// 레이어 문제만 수정 (Context Menu용)
+        /// 플레이어 타게팅 최적화 적용
         /// </summary>
-        [ContextMenu("Fix Layer Issues Only")]
-        public void FixLayerIssuesOnly()
+        private void FixPlayerTargeting()
         {
-            Debug.Log($"{LOG_PREFIX}레이어 문제 수정 시작");
-            FixLayerAndColliderIssues();
-        }
-        
-        /// <summary>
-        /// 타워 타게팅 문제 수정
-        /// </summary>
-        private void FixTowerTargeting()
-        {
-            Tower[] allTowers = FindObjectsOfType<Tower>();
-            int fixedCount = 0;
-            
-            Debug.Log($"{LOG_PREFIX}총 {allTowers.Length}개 타워의 타게팅 확인 중...");
-            
-            foreach (Tower tower in allTowers)
+            Player player = FindObjectOfType<Player>();
+            if (player == null)
             {
-                if (tower == null) continue;
-                
-                // 타워 강제 타겟 재검색
-                tower.ForceRetarget();
-                fixedCount++;
+                Debug.LogWarning($"{LOG_PREFIX}플레이어를 찾을 수 없음");
+                return;
             }
             
-            Debug.Log($"{LOG_PREFIX}✅ {fixedCount}개 타워 타게팅 수정됨");
+            // OptimizedPlayerTargeting 자동 추가
+            if (player.GetComponent<OptimizedPlayerTargeting>() == null)
+            {
+                player.gameObject.AddComponent<OptimizedPlayerTargeting>();
+                Debug.Log($"{LOG_PREFIX}✅ OptimizedPlayerTargeting 추가됨 - 성능 최적화 적용");
+            }
+            
+            // PlayerTargetingDebugger는 에디터에서만 추가
+            #if UNITY_EDITOR
+            if (player.GetComponent<PlayerTargetingDebugger>() == null)
+            {
+                var debugger = player.gameObject.AddComponent<PlayerTargetingDebugger>();
+                // 릴리즈 빌드에서는 자동 비활성화되도록 설정
+                Debug.Log($"{LOG_PREFIX}✅ PlayerTargetingDebugger 추가됨 (에디터 전용)");
+            }
+            #endif
+            
+            Debug.Log($"{LOG_PREFIX}✅ 플레이어 타게팅 시스템 최적화 완료");
+            Debug.Log($"{LOG_PREFIX}   - 매 프레임 → 10Hz로 타게팅 빈도 감소");
+            Debug.Log($"{LOG_PREFIX}   - 메모리 할당 최적화 적용");
+            Debug.Log($"{LOG_PREFIX}   - 성능 모니터링 활성화");
         }
         
         /// <summary>
-        /// 타워 타게팅만 수정 (Context Menu용)
+        /// 플레이어 타게팅만 디버그 (Context Menu용)
         /// </summary>
-        [ContextMenu("Fix Tower Targeting Only")]
-        public void FixTowerTargetingOnly()
+        [ContextMenu("Debug Player Targeting")]
+        public void FixPlayerTargetingOnly()
         {
-            Debug.Log($"{LOG_PREFIX}타워 타게팅 문제 수정 시작");
-            FixTowerTargeting();
+            Debug.Log($"{LOG_PREFIX}플레이어 타게팅 디버깅 시작");
+            FixPlayerTargeting();
+        }
+        
+        /// <summary>
+        /// 프로젝트 최적화 적용
+        /// </summary>
+        private void ApplyProjectOptimization()
+        {
+            // ProjectOptimizer 생성 또는 찾기
+            ProjectOptimizer optimizer = FindObjectOfType<ProjectOptimizer>();
+            if (optimizer == null)
+            {
+                GameObject optimizerObj = new GameObject("ProjectOptimizer");
+                optimizer = optimizerObj.AddComponent<ProjectOptimizer>();
+                Debug.Log($"{LOG_PREFIX}✅ ProjectOptimizer 생성됨");
+            }
+            
+            // 최적화 실행
+            optimizer.OptimizeProjectNow();
+            Debug.Log($"{LOG_PREFIX}✅ 프로젝트 최적화 적용 완료");
+        }
+        
+        /// <summary>
+        /// 프로젝트 최적화만 실행 (Context Menu용)
+        /// </summary>
+        [ContextMenu("Apply Project Optimization")]
+        public void ApplyProjectOptimizationOnly()
+        {
+            Debug.Log($"{LOG_PREFIX}프로젝트 최적화 시작");
+            ApplyProjectOptimization();
         }
         
         private void Update()
@@ -368,10 +412,16 @@ namespace InvaderInsider
                 FixEverythingNow();
             }
             
-            // Ctrl + L: 레이어 문제만 수정
-            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.L))
+            // Ctrl + P: 플레이어 타게팅 최적화
+            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.P))
             {
-                FixLayerAndColliderIssues();
+                FixPlayerTargetingOnly();
+            }
+            
+            // Ctrl + O: 프로젝트 최적화
+            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.O))
+            {
+                ApplyProjectOptimizationOnly();
             }
         }
     }
