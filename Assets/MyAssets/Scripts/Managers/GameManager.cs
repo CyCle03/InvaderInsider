@@ -226,7 +226,7 @@ namespace InvaderInsider.Managers
                 var stageManager = FindObjectOfType<StageManager>();
                 if (stageManager != null)
                 {
-                    stageManager.StartStageFrom(startStageIndex);
+                    // stageManager.StartStageFrom(startStageIndex);
                     SetGameState(GameState.Playing);
                     UpdateStageWaveUI(stageManager.GetCurrentStageIndex() + 1, stageManager.GetSpawnedEnemyCount(), stageManager.GetStageWaveCount(stageManager.GetCurrentStageIndex()));
                     Player newPlayer = FindObjectOfType<Player>();

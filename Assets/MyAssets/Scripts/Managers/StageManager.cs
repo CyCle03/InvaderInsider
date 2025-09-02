@@ -739,6 +739,7 @@ namespace InvaderInsider.Managers
         /// </summary>
         public void SpawnEnemy()
         {
+            Debug.LogWarning("!!! SPAWNING ENEMY NOW !!!");
             if (!isInitialized || currentState != StageState.Run) return;
 
             // GameManager 참조 확인 및 재참조

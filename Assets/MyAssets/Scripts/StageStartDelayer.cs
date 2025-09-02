@@ -204,46 +204,18 @@ namespace InvaderInsider
         }
         
         /// <summary>
-        /// 적 스폰 재개
+        /// 적 스폰 재개 및 스테이지 시작
         /// </summary>
         private void ResumeEnemySpawning()
         {
-            if (stageManager == null) return;
-            
-            // StageManager의 적 스폰 재개
-            try
+            if (stageManager == null) 
             {
-                var stageStateField = stageManager.GetType().GetField("currentStageState", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                
-                if (stageStateField != null)
-                {
-                    // StageState.Run 값으로 설정 (enum 값 추정)
-                    stageStateField.SetValue(stageManager, 2); // Run = 2로 추정
-                    DebugUtils.LogInfo(LOG_PREFIX, "StageManager 재개됨");
-                }
+                DebugUtils.LogError(LOG_PREFIX, "StageManager가 없어 스테이지를 시작할 수 없습니다.");
+                return;
             }
-            catch (System.Exception e)
-            {
-                DebugUtils.LogError(LOG_PREFIX, $"StageManager 재개 실패: {e.Message}");
-            }
-            
-            // 스테이지 강제 시작 시도
-            try
-            {
-                var startStageMethod = stageManager.GetType().GetMethod("StartStage", 
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                
-                if (startStageMethod != null)
-                {
-                    startStageMethod.Invoke(stageManager, null);
-                    DebugUtils.LogInfo(LOG_PREFIX, "스테이지 강제 시작됨");
-                }
-            }
-            catch (System.Exception e)
-            {
-                DebugUtils.LogVerbose(LOG_PREFIX, $"스테이지 강제 시작 시도: {e.Message}");
-            }
+
+            DebugUtils.LogInfo(LOG_PREFIX, "모든 시스템 준비 완료. 스테이지를 시작합니다.");
+            stageManager.StartStageFrom(0);
         }
         
         /// <summary>
