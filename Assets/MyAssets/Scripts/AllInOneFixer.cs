@@ -24,6 +24,8 @@ namespace InvaderInsider
         [SerializeField] private bool fixEnemyDamage = true;
         [SerializeField] private bool delayStageStart = true;
         [SerializeField] private bool runTests = true;
+
+        public bool IsFinished { get; private set; } = false;
         
         private void Start()
         {
@@ -118,6 +120,7 @@ namespace InvaderInsider
             
             DebugUtils.LogInfo(LOG_PREFIX, "전체 시스템 수정 완료");
             ShowFinalReport();
+            IsFinished = true;
         }
         
         private void FixDragAndMergeSystem()
@@ -346,13 +349,6 @@ namespace InvaderInsider
                 return;
             }
             
-            // PlayerAttackFixer 자동 추가 (즉시 문제 해결)
-            if (player.GetComponent<PlayerAttackFixer>() == null)
-            {
-                player.gameObject.AddComponent<PlayerAttackFixer>();
-                DebugUtils.LogInfo(LOG_PREFIX, "PlayerAttackFixer 추가됨 - 공격 문제 즉시 해결");
-            }
-            
             // OptimizedPlayerTargeting 자동 추가
             if (player.GetComponent<OptimizedPlayerTargeting>() == null)
             {
@@ -463,31 +459,7 @@ namespace InvaderInsider
             FixEnemyDamageSystem();
         }
         
-        /// <summary>
-        /// 긴급 플레이어 공격 수정
-        /// </summary>
-        [ContextMenu("Emergency Player Attack Fix")]
-        public void EmergencyPlayerAttackFix()
-        {
-            DebugUtils.LogInfo(LOG_PREFIX, "🚨 긴급 플레이어 공격 수정 시작");
-            
-            Player player = FindObjectOfType<Player>();
-            if (player == null)
-            {
-                DebugUtils.LogError(LOG_PREFIX, "플레이어를 찾을 수 없음!");
-                return;
-            }
-            
-            // PlayerAttackFixer 즉시 추가 및 실행
-            PlayerAttackFixer fixer = player.GetComponent<PlayerAttackFixer>();
-            if (fixer == null)
-            {
-                fixer = player.gameObject.AddComponent<PlayerAttackFixer>();
-            }
-            
-            fixer.FixPlayerAttack();
-            DebugUtils.LogInfo(LOG_PREFIX, "✅ 긴급 수정 완료 - 이제 플레이어가 공격할 수 있습니다!");
-        }
+        
         
         private void Update()
         {
@@ -515,12 +487,6 @@ namespace InvaderInsider
             if (Input.GetKeyDown(KeyCode.F8))
             {
                 FixEnemyDamageOnly();
-            }
-            
-            // F9: 긴급 플레이어 공격 수정
-            if (Input.GetKeyDown(KeyCode.F9))
-            {
-                EmergencyPlayerAttackFix();
             }
         }
     }

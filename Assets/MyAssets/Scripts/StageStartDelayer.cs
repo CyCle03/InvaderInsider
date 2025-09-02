@@ -93,7 +93,7 @@ namespace InvaderInsider
                 if (waitForAllInOneFixer)
                 {
                     AllInOneFixer fixer = FindObjectOfType<AllInOneFixer>();
-                    if (fixer == null)
+                    if (fixer == null || !fixer.IsFinished)
                     {
                         allSystemsReady = false;
                         if (enableDebugLogs)
@@ -118,10 +118,9 @@ namespace InvaderInsider
                     else
                     {
                         // PlayerAttackFixer 확인
-                        PlayerAttackFixer attackFixer = player.GetComponent<PlayerAttackFixer>();
                         OptimizedPlayerTargeting targeting = player.GetComponent<OptimizedPlayerTargeting>();
                         
-                        if (attackFixer == null || targeting == null)
+                        if (targeting == null)
                         {
                             allSystemsReady = false;
                             if (enableDebugLogs)
@@ -301,9 +300,7 @@ namespace InvaderInsider
             
             if (player != null)
             {
-                PlayerAttackFixer attackFixer = player.GetComponent<PlayerAttackFixer>();
                 OptimizedPlayerTargeting targeting = player.GetComponent<OptimizedPlayerTargeting>();
-                DebugUtils.LogInfo(LOG_PREFIX, $"PlayerAttackFixer: {(attackFixer != null ? "있음" : "없음")}");
                 DebugUtils.LogInfo(LOG_PREFIX, $"OptimizedPlayerTargeting: {(targeting != null ? "있음" : "없음")}");
             }
             
