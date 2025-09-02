@@ -84,10 +84,13 @@ namespace InvaderInsider
             {
                 float startTime = Time.realtimeSinceStartup;
                 
-                // 타겟 검색 및 공격
-                if (player.CanAttack())
+                // 타겟 업데이트
+                UpdateTarget();
+                
+                // 타겟이 있고 공격 가능할 때 공격
+                if (currentTarget != null && player.CanAttack())
                 {
-                    FindAndAttackOptimized();
+                    player.Attack(currentTarget);
                 }
                 
                 // 성능 통계 업데이트
@@ -99,24 +102,13 @@ namespace InvaderInsider
         }
         
         /// <summary>
-        /// 최적화된 타겟 검색 및 공격
+        /// 타겟을 업데이트합니다.
         /// </summary>
-        private void FindAndAttackOptimized()
+        private void UpdateTarget()
         {
-            // 1단계: 현재 타겟 유효성 검사 (빠른 체크)
-            if (IsValidTarget(currentTarget))
+            if (!IsValidTarget(currentTarget))
             {
-                player.Attack(currentTarget);
-                return;
-            }
-            
-            // 2단계: 새로운 타겟 검색
-            currentTarget = FindNearestEnemyOptimized();
-            
-            // 3단계: 공격 실행
-            if (currentTarget != null)
-            {
-                player.Attack(currentTarget);
+                currentTarget = FindNearestEnemyOptimized();
             }
         }
         

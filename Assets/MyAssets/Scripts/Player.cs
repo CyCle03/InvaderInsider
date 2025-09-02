@@ -38,6 +38,7 @@ namespace InvaderInsider
         #region Runtime State
         
         private UIManager uiManager;
+        private bool isOptimizedTargetingEnabled = false;
         
         #endregion
 
@@ -151,6 +152,7 @@ namespace InvaderInsider
         /// </summary>
         private void FindAndAttackEnemies()
         {
+            if (isOptimizedTargetingEnabled) return;
             if (!CanAttack()) return; // BaseCharacter의 공격 속도 체크
 
             int hitCount = Physics.OverlapSphereNonAlloc(transform.position, AttackRange, detectionBuffer, enemyLayerMask);
