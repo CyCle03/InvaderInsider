@@ -49,6 +49,7 @@ namespace InvaderInsider
         // 유닛 드래그 관련
         public BaseCharacter DraggedUnit { get; private set; }
         public Vector3 DraggedUnitOriginalPosition { get; private set; }
+        private Tile draggedUnitOriginalTile;
         
         // 머지 결과
         public bool WasDropSuccessful { get; private set; }
@@ -344,7 +345,7 @@ namespace InvaderInsider
                 LogDebug("이미 다른 드래그가 진행 중입니다. CurrentDragType: " + CurrentDragType);
                 return false;
             }
-            
+
             if (unit == null)
             {
                 LogDebug("유닛이 null입니다. 드래그를 시작할 수 없습니다.");
@@ -356,21 +357,37 @@ namespace InvaderInsider
                 LogDebug($"유닛 '{unit.name}'이 초기화되지 않았습니다 (IsInitialized = false). 드래그를 시작할 수 없습니다.");
                 return false;
             }
-            
+
             // 드래그 결과 리셋
             WasDropSuccessful = false;
             MergeTargetUnit = null;
-            
+
             CurrentDragType = DragType.Unit;
             DraggedUnit = unit;
             DraggedUnitOriginalPosition = unit.transform.position;
-            
+            draggedUnitOriginalTile = null; // Reset it first
+
+            // Find the tile the unit is on
+            RaycastHit hit;
+            if (Physics.Raycast(unit.transform.position + Vector3.up * 0.1f, Vector3.down, out hit, 5f, GameManager.Instance.TileLayerMask))
+            {
+                draggedUnitOriginalTile = hit.collider.GetComponent<Tile>();
+                if (draggedUnitOriginalTile != null)
+                {
+                    LogDebug($"Dragged unit '{unit.name}' is on tile '{draggedUnitOriginalTile.name}'.");
+                }
+            }
+            else
+            {
+                LogDebug($"Could not find the tile under the dragged unit '{unit.name}'.");
+            }
+
             // 물리 설정
             if (unit.TryGetComponent<Rigidbody>(out var rb))
             {
                 rb.isKinematic = true;
             }
-            
+
             LogDebug($"유닛 드래그 시작: {unit.name} (ID: {unit.CardId}, Level: {unit.Level}) 원래 위치: {DraggedUnitOriginalPosition}");
             return true;
         }
@@ -445,32 +462,39 @@ namespace InvaderInsider
                 LogDebug("타겟 유닛이 null입니다.");
                 return false;
             }
-            
+
             if (!targetUnit.IsInitialized)
             {
                 LogDebug($"타겟 유닛 {targetUnit.name}이 초기화되지 않았습니다.");
                 return false;
             }
-            
+
             if (targetUnit == DraggedUnit)
             {
                 LogDebug("자기 자신에게는 머지할 수 없습니다.");
                 return false;
             }
-            
+
             LogDebug($"머지 시도 - 드래그 유닛: {DraggedUnit.name} (ID: {DraggedUnit.CardId}, Level: {DraggedUnit.Level}) -> 타겟: {targetUnit.name} (ID: {targetUnit.CardId}, Level: {targetUnit.Level})");
-            
+
             // 머지 조건 확인 (같은 ID, 같은 레벨)
             if (DraggedUnit.CardId == targetUnit.CardId && DraggedUnit.Level == targetUnit.Level)
             {
                 LogDebug($"✅ 유닛 머지 성공: {DraggedUnit.name} -> {targetUnit.name}");
-                
+
+                // Free the original tile
+                if (draggedUnitOriginalTile != null)
+                {
+                    LogDebug($"Freeing original tile: {draggedUnitOriginalTile.name}");
+                    draggedUnitOriginalTile.SetOccupied(false);
+                }
+
                 // 대상 유닛 레벨업
                 targetUnit.LevelUp();
-                
+
                 // 드래그된 유닛 제거
                 Destroy(DraggedUnit.gameObject);
-                
+
                 WasDropSuccessful = true;
                 MergeTargetUnit = targetUnit;
                 return true;
