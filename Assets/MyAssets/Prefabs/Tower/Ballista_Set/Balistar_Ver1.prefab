@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8784620537939319192}
   - component: {fileID: 465870541678999754}
   - component: {fileID: 2607566673469429910}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -93,7 +93,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1345659475301023979}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -127,7 +127,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8921543680177001316}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: PartToRotate
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -161,7 +161,7 @@ GameObject:
   - component: {fileID: 4284895076329611866}
   - component: {fileID: 3538074095905565991}
   - component: {fileID: 578959830688412431}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Under
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -245,7 +245,7 @@ GameObject:
   - component: {fileID: 5091335795793785029}
   - component: {fileID: 530879535649433513}
   - component: {fileID: 8840875736642407663}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Top_Cr
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -326,7 +326,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 413088514550511164}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FirePoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -359,8 +359,7 @@ GameObject:
   - component: {fileID: 8809075111015849645}
   - component: {fileID: 7490590849168381205}
   - component: {fileID: -2758029818070501364}
-  - component: {fileID: -7539368689944313955}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Balistar_Ver1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -433,15 +432,3 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 2, z: 1}
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &-7539368689944313955
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6171248987287306769}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe75d2415c06fff49ab9339450387ee5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

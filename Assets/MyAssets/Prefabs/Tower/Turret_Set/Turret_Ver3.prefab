@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1564848415768759073}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: PartToRotate
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -43,7 +43,7 @@ GameObject:
   - component: {fileID: 8459088346236315964}
   - component: {fileID: 1563870464056276429}
   - component: {fileID: 7798262739186527254}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: TurretBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -124,7 +124,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1055237331164616181}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Turret
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -160,7 +160,7 @@ GameObject:
   - component: {fileID: 1865282080916000031}
   - component: {fileID: 8765403064972882268}
   - component: {fileID: 1132878394459611320}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: T_Crystal
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -243,7 +243,7 @@ GameObject:
   - component: {fileID: 8109714912726661968}
   - component: {fileID: 6944291925791537048}
   - component: {fileID: 7367640522389201321}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BuildingBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -326,8 +326,7 @@ GameObject:
   - component: {fileID: 1681245930882299022}
   - component: {fileID: 5467542239390267597}
   - component: {fileID: 9072998449207642339}
-  - component: {fileID: 3939747077227669325}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Turret_Ver3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -400,18 +399,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 2, z: 1}
   m_Center: {x: 0, y: 0.75, z: 0}
---- !u!114 &3939747077227669325
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5860327998956267332}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe75d2415c06fff49ab9339450387ee5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &8121701465639561001
 GameObject:
   m_ObjectHideFlags: 0
@@ -423,7 +410,7 @@ GameObject:
   - component: {fileID: 8039548480472806977}
   - component: {fileID: 2686787630304134898}
   - component: {fileID: 3272117903935451383}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: B_Crystal
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -504,7 +491,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 746368468788232043}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FirePoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -535,7 +522,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8334586201353384405}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Building
   m_TagString: Untagged
   m_Icon: {fileID: 0}

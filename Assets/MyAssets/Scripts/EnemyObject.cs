@@ -419,21 +419,15 @@ namespace InvaderInsider
                 Debug.LogError($"{LOG_PREFIX}{gameObject.name}: Player 참조가 null입니다.");
             }
             
-            base.Die();
-            
-            if (stageManager != null)
-            {
-                stageManager.DecreaseActiveEnemyCount();
-            }
-            else
-            {
-                Debug.LogError($"{LOG_PREFIX}{gameObject.name}: StageManager 참조가 null입니다.");
-            }
+            Die();
         }
+
+        private bool isDying = false;
 
         protected override void Die()
         {
-            if (!IsInitialized) return;
+            if (isDying || !IsInitialized) return;
+            isDying = true;
 
             base.Die();
             

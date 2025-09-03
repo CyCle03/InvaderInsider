@@ -46,23 +46,22 @@ namespace InvaderInsider.Cards
             canvasGroup.alpha = 0.6f;
             canvasGroup.blocksRaycasts = false;
 
-            GameManager.Instance.IsCardDragInProgress = true;
-            GameManager.Instance.DraggedCardData = cardDisplay.GetCardData();
-            Debug.Log($"[CardInteractionHandler] OnBeginDrag - DraggedCardData set to: {GameManager.Instance.DraggedCardData?.cardName}");
-            GameManager.Instance.StartPlacementPreview(cardDisplay.GetCardData()); // 미리보기 시작
+            // 새로운 통합 시스템 사용
+            DragAndMergeSystem.Instance.StartCardDrag(cardDisplay.GetCardData());
+            Debug.Log($"[CardInteractionHandler] OnBeginDrag - 통합 시스템으로 카드 드래그 시작: {cardDisplay.GetCardData()?.cardName}");
 
             transform.SetParent(GetComponentInParent<Canvas>().transform, true);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (GameManager.Instance.DraggedCardData == null) return;
+            if (!DragAndMergeSystem.Instance.IsCardDragging) return;
             transform.position = eventData.position;
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            // UI 상태를 마지막에 원래대로 되돌립니다。
+            // UI 상태를 원래대로 되돌립니다
             if (gameObject != null)
             {
                 transform.position = originalPosition;
@@ -71,51 +70,22 @@ namespace InvaderInsider.Cards
                 canvasGroup.blocksRaycasts = true;
             }
 
-            RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(eventData.position);
-
-            if (Physics.Raycast(ray, out hit))
+            // 통합 시스템을 통해 카드 배치/머지 시도
+            bool success = DragAndMergeSystem.Instance.TryPlaceCard(eventData.position);
+            
+            if (success)
             {
-                // Case 1: Try to merge with a unit
-                UnitMergeTarget mergeTarget = hit.collider.GetComponent<UnitMergeTarget>();
-                if (mergeTarget != null)
+                // 배치/머지 성공 시 카드 UI 제거
+                if (eventData.pointerDrag != null)
                 {
-                    mergeTarget.OnDrop(eventData);
-                    bool droppedOnUnit = GameManager.Instance.WasCardDroppedOnTower;
-
-                    if (droppedOnUnit)
-                    {
-                        // Merge was successful, destroy the card from hand
-                        if (eventData.pointerDrag != null)
-                        {
-                            Destroy(eventData.pointerDrag.gameObject);
-                        }
-                    }
-                    // If merge failed, do nothing and let placement be cancelled.
-                }
-                // Case 2: Try to place on a tile
-                else
-                {
-                    Tile targetTile = hit.collider.GetComponent<Tile>();
-                    if (GameManager.Instance.ConfirmPlacement(targetTile))
-                    {
-                        // Placement was successful, destroy the card from hand
-                        if (eventData.pointerDrag != null)
-                        {
-                            Destroy(eventData.pointerDrag.gameObject);
-                        }
-                    }
+                    Destroy(eventData.pointerDrag.gameObject);
                 }
             }
 
-            // Always cancel the placement preview.
-            // ConfirmPlacement or a successful merge will have already created the real unit.
-            GameManager.Instance.CancelPlacement();
-
-            // Reset dragged card data
-            GameManager.Instance.IsCardDragInProgress = false;
-            GameManager.Instance.DraggedCardData = null;
-            GameManager.Instance.WasCardDroppedOnTower = false;
+            // 카드 드래그 종료
+            DragAndMergeSystem.Instance.EndCardDrag();
+            
+            Debug.Log($"[CardInteractionHandler] OnEndDrag completed - success: {success}");
         }
 
         public void OnDrop(PointerEventData eventData)
