@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6830325756573255305}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FirePoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -42,7 +42,7 @@ GameObject:
   - component: {fileID: 4250603977106108080}
   - component: {fileID: 2756456764867879061}
   - component: {fileID: 1687968869368058573}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BuildingBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -126,7 +126,7 @@ GameObject:
   - component: {fileID: 7794190278614578308}
   - component: {fileID: 7249492047539252826}
   - component: {fileID: -8205347774286955399}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Turret_Ver2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -210,7 +210,7 @@ GameObject:
   - component: {fileID: 757744189916326877}
   - component: {fileID: 6870579041404060394}
   - component: {fileID: 6264084497725357162}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: TurretBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -293,7 +293,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2858478541685189268}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: PartToRotate
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -18,13 +18,20 @@ namespace InvaderInsider
         
         public void OnBeginDrag(PointerEventData eventData)
         {
+            Debug.Log($"[SimpleDraggableUnit] OnBeginDrag triggered for {gameObject.name}");
+            
             // 통합 시스템을 통해 드래그 시작
             bool success = DragAndMergeSystem.Instance.StartUnitDrag(character);
             
             if (!success)
             {
+                Debug.LogWarning($"[SimpleDraggableUnit] StartUnitDrag failed for {gameObject.name}. Cancelling drag.");
                 // 드래그 시작 실패 시 이벤트 취소
                 eventData.pointerDrag = null;
+            }
+            else
+            {
+                Debug.Log($"[SimpleDraggableUnit] StartUnitDrag successful for {gameObject.name}.");
             }
         }
         

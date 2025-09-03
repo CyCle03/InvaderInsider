@@ -537,27 +537,32 @@ namespace InvaderInsider.Managers
                 Debug.Log($"{LOG_PREFIX}SimpleMergeTarget 추가됨: {unitObject.name}");
             }
             
-            // 콜라이더 확인 및 추가
+            // 콜라이더 확인 및 추가/수정
             Collider col = unitObject.GetComponent<Collider>();
             if (col == null)
             {
                 BoxCollider boxCol = unitObject.AddComponent<BoxCollider>();
-                boxCol.isTrigger = true;
-                boxCol.size = new Vector3(1.5f, 2.5f, 1.5f);
-                boxCol.center = new Vector3(0, 1.25f, 0);
                 Debug.Log($"{LOG_PREFIX}BoxCollider 추가됨: {unitObject.name}");
-            }
-            else if (!col.isTrigger)
-            {
-                col.isTrigger = true;
-                Debug.Log($"{LOG_PREFIX}Collider를 트리거로 설정: {unitObject.name}");
+                col = boxCol;
             }
             
-            // 레이어를 Default로 설정
-            if (unitObject.layer != 0)
+            // 콜라이더가 항상 활성화되고, 트리거이며, 위치/크기가 적절한지 확인
+            col.enabled = true;
+            col.isTrigger = true;
+
+            if (col is BoxCollider box)
             {
-                unitObject.layer = 0;
-                Debug.Log($"{LOG_PREFIX}레이어를 Default로 설정: {unitObject.name}");
+                box.size = new Vector3(1.5f, 3.0f, 1.5f); // 높이를 약간 늘려 겹침 방지
+                box.center = new Vector3(0, 1.5f, 0);   // 중심을 약간 위로
+            }
+            Debug.Log($"{LOG_PREFIX}Collider 설정 업데이트됨: {unitObject.name}");
+            
+            // 레이어를 "Unit"으로 설정
+            int unitLayer = LayerMask.NameToLayer("Unit");
+            if (unitObject.layer != unitLayer)
+            {
+                unitObject.layer = unitLayer;
+                Debug.Log($"{LOG_PREFIX}레이어를 'Unit'으로 설정: {unitObject.name}");
             }
         }
     }

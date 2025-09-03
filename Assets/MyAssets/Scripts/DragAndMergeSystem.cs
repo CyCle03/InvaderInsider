@@ -337,15 +337,23 @@ namespace InvaderInsider
         /// </summary>
         public bool StartUnitDrag(BaseCharacter unit)
         {
+            LogDebug($"StartUnitDrag called for {(unit != null ? unit.name : "a null unit")}");
+
             if (CurrentDragType != DragType.None)
             {
-                LogDebug("이미 다른 드래그가 진행 중입니다.");
+                LogDebug("이미 다른 드래그가 진행 중입니다. CurrentDragType: " + CurrentDragType);
                 return false;
             }
             
-            if (unit == null || !unit.IsInitialized)
+            if (unit == null)
             {
-                LogDebug("유효하지 않은 유닛입니다.");
+                LogDebug("유닛이 null입니다. 드래그를 시작할 수 없습니다.");
+                return false;
+            }
+
+            if (!unit.IsInitialized)
+            {
+                LogDebug($"유닛 '{unit.name}'이 초기화되지 않았습니다 (IsInitialized = false). 드래그를 시작할 수 없습니다.");
                 return false;
             }
             
@@ -392,8 +400,10 @@ namespace InvaderInsider
             if (CurrentDragType != DragType.Unit || DraggedUnit == null)
                 return false;
             
+            // "Unit" 레이어만 대상으로 레이캐스트
+            int unitLayerMask = 1 << LayerMask.NameToLayer("Unit");
             Ray ray = Camera.main.ScreenPointToRay(screenPosition);
-            RaycastHit[] hits = Physics.RaycastAll(ray, Mathf.Infinity);
+            RaycastHit[] hits = Physics.RaycastAll(ray, Mathf.Infinity, unitLayerMask);
             
             // 모든 히트된 오브젝트를 확인하여 BaseCharacter 찾기
             BaseCharacter targetUnit = null;
@@ -477,7 +487,8 @@ namespace InvaderInsider
         /// </summary>
         private IEnumerator ReturnUnitToOriginalPosition()
         {
-            yield return new WaitForSeconds(0.1f);
+            // 프레임이 끝날 때까지 기다려 다른 로직이 먼저 처리되도록 함
+            yield return new WaitForEndOfFrame();
             
             if (DraggedUnit != null && !WasDropSuccessful)
             {
@@ -490,14 +501,12 @@ namespace InvaderInsider
                     rb.isKinematic = false;
                 }
             }
-            else if (DraggedUnit == null)
-            {
-                LogDebug("드래그된 유닛이 null입니다 (이미 제거됨).");
-            }
-            else if (WasDropSuccessful)
-            {
-                LogDebug("드롭이 성공했으므로 원래 위치로 복귀하지 않습니다.");
-            }
+            
+            // 코루틴이 끝난 후 드래그 상태를 완전히 리셋
+            CurrentDragType = DragType.None;
+            DraggedUnit = null;
+            DraggedUnitOriginalPosition = Vector3.zero;
+            LogDebug("ReturnUnitToOriginalPosition 코루틴 후 상태 리셋 완료.");
         }
         
         #endregion
@@ -532,20 +541,21 @@ namespace InvaderInsider
         {
             if (CurrentDragType != DragType.Unit) return;
             
-            LogDebug($"유닛 드래그 종료 - 성공: {WasDropSuccessful}, 유닛: {(DraggedUnit != null ? DraggedUnit.name : "null")}");
-            
-            // 물리 복원 (유닛이 아직 존재하는 경우에만)
-            if (DraggedUnit != null && DraggedUnit.TryGetComponent<Rigidbody>(out var rb))
+            LogDebug($"유닛 드래그 종료 로직 시작 - 성공: {WasDropSuccessful}, 유닛: {(DraggedUnit != null ? DraggedUnit.name : "null")}");
+
+            // 드롭이 성공했거나, 유닛이 이미 null(머지 성공으로 파괴됨)이면 즉시 상태 리셋
+            if (WasDropSuccessful || DraggedUnit == null)
             {
-                rb.isKinematic = false;
+                CurrentDragType = DragType.None;
+                DraggedUnit = null;
+                DraggedUnitOriginalPosition = Vector3.zero;
+                LogDebug("유닛 드래그 상태 즉시 리셋 완료 (성공 또는 파괴됨).");
             }
-            
-            // 상태 리셋
-            CurrentDragType = DragType.None;
-            DraggedUnit = null;
-            DraggedUnitOriginalPosition = Vector3.zero;
-            
-            LogDebug("유닛 드래그 상태 리셋 완료");
+            // 드롭이 실패한 경우, ReturnUnitToOriginalPosition 코루틴이 상태를 리셋할 것임
+            else
+            {
+                LogDebug("드롭 실패. ReturnUnitToOriginalPosition 코루틴이 후처리를 담당합니다.");
+            }
         }
         
         /// <summary>

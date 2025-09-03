@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1564848415768759073}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: PartToRotate
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -43,7 +43,7 @@ GameObject:
   - component: {fileID: 8459088346236315964}
   - component: {fileID: 1563870464056276429}
   - component: {fileID: 7798262739186527254}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: TurretBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -124,7 +124,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1055237331164616181}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Turret
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -160,7 +160,7 @@ GameObject:
   - component: {fileID: 1865282080916000031}
   - component: {fileID: 8765403064972882268}
   - component: {fileID: 1132878394459611320}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: T_Crystal
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -243,7 +243,7 @@ GameObject:
   - component: {fileID: 8109714912726661968}
   - component: {fileID: 6944291925791537048}
   - component: {fileID: 7367640522389201321}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BuildingBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -326,7 +326,7 @@ GameObject:
   - component: {fileID: 1681245930882299022}
   - component: {fileID: 5467542239390267597}
   - component: {fileID: 9072998449207642339}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Turret_Ver3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -410,7 +410,7 @@ GameObject:
   - component: {fileID: 8039548480472806977}
   - component: {fileID: 2686787630304134898}
   - component: {fileID: 3272117903935451383}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: B_Crystal
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -491,7 +491,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 746368468788232043}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FirePoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -522,7 +522,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8334586201353384405}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Building
   m_TagString: Untagged
   m_Icon: {fileID: 0}
