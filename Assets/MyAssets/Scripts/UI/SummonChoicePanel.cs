@@ -85,6 +85,9 @@ namespace InvaderInsider.UI
         private void HandleCardSelect(CardDBObject selectedCard)
         {
             cardManager?.OnCardChoiceSelected(selectedCard);
+
+            // 카드를 선택한 후 패널을 닫습니다.
+            Hide();
         }
 
         private void HandleCloseClick()
