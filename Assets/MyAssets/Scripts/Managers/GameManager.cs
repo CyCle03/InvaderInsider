@@ -50,7 +50,6 @@ namespace InvaderInsider.Managers
         public bool WasCardDroppedOnTower => DragAndMergeSystem.Instance?.WasDropSuccessful ?? false;
 
         private UIManager uiManager;
-        private GameObject debugSphereInstance;
 
         private void Awake()
         {
@@ -78,26 +77,6 @@ namespace InvaderInsider.Managers
 
         private void Start()
         {
-            // Programmatically create the debug sphere for raycast visualization
-            debugSphereInstance = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            debugSphereInstance.name = "Mouse Raycast Debug Sphere";
-            debugSphereInstance.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
-            Collider sphereCollider = debugSphereInstance.GetComponent<Collider>();
-            if (sphereCollider != null)
-            {
-                sphereCollider.enabled = false; // Prevent it from interfering with other raycasts
-            }
-            Renderer sphereRenderer = debugSphereInstance.GetComponent<Renderer>();
-            if (sphereRenderer != null)
-            {
-                Material debugMaterial = new Material(Shader.Find("Unlit/Color"));
-                debugMaterial.color = Color.red;
-                sphereRenderer.material = debugMaterial;
-            }
-
-            // Set the GameManager as the parent to persist across scenes
-            debugSphereInstance.transform.SetParent(this.transform);
-
             SetGameState(GameState.MainMenu);
         }
 
@@ -326,8 +305,6 @@ namespace InvaderInsider.Managers
 
         private void Update()
         {
-            UpdateDebugSphere();
-            
             // ESC 키로 드래그 상태 강제 정리 (새로운 시스템 사용)
             if (Input.GetKeyDown(KeyCode.Escape))
             {
@@ -460,26 +437,6 @@ namespace InvaderInsider.Managers
             }
         }
 
-        private void UpdateDebugSphere()
-        {
-            if (debugSphereInstance == null) return;
-
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-
-            // Use the same layer mask as the tile placement to ensure we hit the ground
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, TileLayerMask))
-            {
-                // Position the sphere at the exact hit point on the tile
-                debugSphereInstance.transform.position = hit.point;
-            }
-            else
-            {
-                // If not hitting a tile, hide the sphere far away
-                debugSphereInstance.transform.position = new Vector3(0, -1000, 0);
-            }
-        }
-
         /// <summary>
         /// 씬에 있는 모든 BaseCharacter 객체에 드래그 및 머지 컴포넌트를 추가합니다.
         /// 이미 필드에 있는 유닛들을 드래그 가능하게 만들 때 사용합니다.
@@ -519,7 +476,7 @@ namespace InvaderInsider.Managers
         /// </summary>
         private void EnsureDragComponents(GameObject unitObject)
         {
-            if (unitObject == null) return;
+            if (unitObject == null) return; 
             
             // SimpleDraggableUnit 추가
             SimpleDraggableUnit draggable = unitObject.GetComponent<SimpleDraggableUnit>();
@@ -562,7 +519,7 @@ namespace InvaderInsider.Managers
             if (unitObject.layer != unitLayer)
             {
                 unitObject.layer = unitLayer;
-                Debug.Log($"{LOG_PREFIX}레이어를 'Unit'으로 설정: {unitObject.name}");
+                Debug.Log($"{LOG_PREFIX}레이어를 \'Unit\'으로 설정: {unitObject.name}");
             }
         }
     }
