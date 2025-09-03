@@ -346,10 +346,10 @@ namespace InvaderInsider.Managers
                 Debug.Log(LOG_PREFIX + $"Waypoint 태그로 {waypoints.Length}개 찾음");
                 #endif
             }
-            catch (UnityException ex)
+                    catch (Exception)
             {
                 #if UNITY_EDITOR
-                Debug.LogWarning(LOG_PREFIX + $"Waypoint 태그가 정의되지 않았습니다: {ex.Message}");
+                Debug.LogWarning(LOG_PREFIX + $"Waypoint 태그가 정의되지 않았습니다.");
                 #endif
             }
             

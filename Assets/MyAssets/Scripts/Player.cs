@@ -31,7 +31,10 @@ namespace InvaderInsider
         [Header("Player Settings")]
         [SerializeField] private GameObject projectilePrefab;
         [SerializeField] private Transform projectileSpawnPoint;
-        [SerializeField] private bool enableTestKeys = true;
+        
+        #if UNITY_EDITOR
+        [SerializeField] private bool enableTestKeys = false;
+        #endif
         
         #endregion
 

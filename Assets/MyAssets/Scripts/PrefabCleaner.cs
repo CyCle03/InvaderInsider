@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace InvaderInsider
 {
@@ -15,10 +18,12 @@ namespace InvaderInsider
         
         private void Start()
         {
+#if UNITY_EDITOR
             if (autoCleanOnStart)
             {
                 Invoke(nameof(CleanAllPrefabReferences), cleanDelay);
             }
+#endif
         }
         
         /// <summary>
@@ -27,6 +32,7 @@ namespace InvaderInsider
         [ContextMenu("Clean All Prefab References")]
         public void CleanAllPrefabReferences()
         {
+#if UNITY_EDITOR
             Debug.Log($"{LOG_PREFIX}프리팹 참조 정리 시작");
             
             // 모든 GameObject 찾기
@@ -46,6 +52,7 @@ namespace InvaderInsider
             }
             
             Debug.Log($"{LOG_PREFIX}프리팹 참조 정리 완료: {cleanedCount}개 오브젝트 정리됨");
+#endif
         }
         
         /// <summary>
@@ -53,6 +60,7 @@ namespace InvaderInsider
         /// </summary>
         private bool RemoveMissingComponents(GameObject obj)
         {
+#if UNITY_EDITOR
             Component[] components = obj.GetComponents<Component>();
             bool wasCleaned = false;
             
@@ -63,7 +71,7 @@ namespace InvaderInsider
                     Debug.Log($"{LOG_PREFIX}누락된 컴포넌트 제거: {obj.name}");
                     
                     // Unity에서 누락된 컴포넌트를 제거하는 방법
-                    var serializedObject = new UnityEditor.SerializedObject(obj);
+                    var serializedObject = new SerializedObject(obj);
                     var prop = serializedObject.FindProperty("m_Component");
                     
                     for (int j = prop.arraySize - 1; j >= 0; j--)
@@ -84,15 +92,20 @@ namespace InvaderInsider
             }
             
             return wasCleaned;
+#else
+            return false;
+#endif
         }
         
         private void Update()
         {
+#if UNITY_EDITOR
             // Ctrl + Alt + C: 프리팹 정리
             if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.C))
             {
                 CleanAllPrefabReferences();
             }
+#endif
         }
     }
 }
