@@ -56,6 +56,8 @@ namespace InvaderInsider
         private GameConfigSO towerConfig;
 
         public override float AttackRange => towerAttackRange;
+
+        public override EquipmentTargetType EquipmentTargetability => EquipmentTargetType.Tower;
         
         /// <summary>
         /// 투사체 프리팹 (ObjectPoolManager가 접근할 수 있도록 public 프로퍼티 제공)
@@ -514,21 +516,7 @@ namespace InvaderInsider
             }
         }
 
-        public override void ApplyEquipment(CardDBObject cardData)
-        {
-            if (cardData == null)
-            {
-                Debug.LogError($"{LOG_PREFIX}{gameObject.name}: 장비 카드 데이터가 null입니다.");
-                return;
-            }
-
-            base.ApplyEquipment(cardData);
-            
-            if (cardData.type == CardType.Equipment && cardData.equipmentTarget == EquipmentTargetType.Tower)
-            {
-                attackDamage += cardData.equipmentBonusAttack;
-            }
-        }
+        
         
         // 디버깅을 위한 Gizmo 그리기
         private void OnDrawGizmosSelected()

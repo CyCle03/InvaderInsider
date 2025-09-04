@@ -86,6 +86,9 @@ namespace InvaderInsider
         
         /// <summary>공격 사거리 (가상 메서드로 자식 클래스에서 오버라이드 가능)</summary>
         public virtual float AttackRange => baseAttackRange;
+
+        /// <summary>어떤 종류의 장비를 장착할 수 있는지 나타냅니다.</summary>
+        public abstract EquipmentTargetType EquipmentTargetability { get; }
         
                 /// <summary>초기화 여부</summary>
         public bool IsInitialized => _isInitialized;
@@ -496,6 +499,18 @@ namespace InvaderInsider
             {
                 DebugUtils.LogWarningFormat(GameConstants.LOG_PREFIX_GAME, 
                     "비장비 카드 {0}을(를) {1}에게 적용하려고 했습니다", equipmentCard.cardName, gameObject.name);
+                return false;
+            }
+
+            // 장비의 타겟 타입과 이 캐릭터의 타입이 맞는지 확인
+            var requiredTarget = equipmentCard.equipmentTarget;
+            var myType = this.EquipmentTargetability;
+
+            if (requiredTarget != EquipmentTargetType.Any && requiredTarget != myType)
+            {
+                DebugUtils.LogWarningFormat(GameConstants.LOG_PREFIX_GAME,
+                   "장비 '{0}'({1} 전용)을(를) '{2}'({3} 타입)에 장착할 수 없습니다.",
+                   equipmentCard.cardName, requiredTarget, this.gameObject.name, myType);
                 return false;
             }
 

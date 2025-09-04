@@ -256,7 +256,16 @@ namespace InvaderInsider
                 BaseCharacter targetUnit = hit.collider.GetComponent<BaseCharacter>();
                 if (targetUnit != null)
                 {
-                    return TryMergeCardWithUnit(targetUnit);
+                    // 드래그된 카드가 장비 카드인지 확인
+                    if (DraggedCardData.type == CardType.Equipment)
+                    {
+                        return TryApplyEquipment(targetUnit);
+                    }
+                    else
+                    {
+                        // 기존의 카드 합치기 로직
+                        return TryMergeCardWithUnit(targetUnit);
+                    }
                 }
                 
                 // 타일에 배치 시도
@@ -268,6 +277,29 @@ namespace InvaderInsider
             }
             
             return false;
+        }
+
+        /// <summary>
+        /// 장비 카드를 유닛에 적용 시도
+        /// </summary>
+        private bool TryApplyEquipment(BaseCharacter targetCharacter)
+        {
+            if (targetCharacter == null)
+            {
+                LogDebug("장비를 적용할 대상 유닛이 유효하지 않습니다.");
+                return false;
+            }
+
+            // BaseCharacter의 ApplyEquipment 메서드 호출 (내부적으로 유효성 검사 수행)
+            targetCharacter.ApplyEquipment(DraggedCardData);
+
+            // 카드 소모
+            CardManager.Instance.RemoveCardFromHand(DraggedCardData.cardId);
+
+            WasDropSuccessful = true;
+            LogDebug($"장비 적용 성공: {DraggedCardData.cardName} -> {targetCharacter.name}");
+
+            return true;
         }
         
         /// <summary>

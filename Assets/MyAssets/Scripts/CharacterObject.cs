@@ -32,6 +32,8 @@ namespace InvaderInsider
         public event Action<int> OnLevelUp;
         public bool IsDestinationPoint => isDestinationPoint;
 
+        public override EquipmentTargetType EquipmentTargetability => EquipmentTargetType.Character;
+
         protected override void Awake()
         {
             base.Awake();
