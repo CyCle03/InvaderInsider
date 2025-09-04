@@ -11,6 +11,7 @@ using InvaderInsider;
 using InvaderInsider.Core;
 using System.Linq;
 using System.Text;
+using InvaderInsider.Cards; // EquipmentTargetType을 위해 추가
 
 namespace InvaderInsider
 {
@@ -94,6 +95,8 @@ namespace InvaderInsider
 
         // 설정 참조
         private GameConfigSO enemyConfig;
+
+        public override EquipmentTargetType EquipmentTargetability => EquipmentTargetType.Character; // 적은 캐릭터 타입으로 간주
 
         protected override void Awake()
         {

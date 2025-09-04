@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using InvaderInsider.Core;
 using InvaderInsider.Data;
+using InvaderInsider.Cards; // EquipmentTargetType을 위해 추가
 
 namespace InvaderInsider
 {

@@ -215,6 +215,8 @@ namespace InvaderInsider
             }
         }
 
+        public override EquipmentTargetType EquipmentTargetability => EquipmentTargetType.Character;
+
         #endregion
 
         #region Event Handlers

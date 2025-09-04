@@ -21,6 +21,7 @@ namespace InvaderInsider.Cards
     public enum EquipmentTargetType // 장비 아이템 대상 타입 열거형
     {
         None, // 장비가 아님
+        Any, // 모든 대상에 적용 가능
         Character, // 캐릭터에 적용 가능
         Tower // 타워에 적용 가능
     }
