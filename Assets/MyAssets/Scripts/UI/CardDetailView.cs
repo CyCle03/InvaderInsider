@@ -24,6 +24,8 @@ namespace InvaderInsider.UI
         protected override void Initialize()
         {
             base.Initialize();
+            UIManager.Instance?.RegisterPanel("CardDetailView", this);
+
             cardManager = CardManager.Instance;
             if (cardManager == null)
             {
