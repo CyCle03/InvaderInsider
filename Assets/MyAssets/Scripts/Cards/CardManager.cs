@@ -4,7 +4,8 @@ using System.Linq;
 using UnityEngine.Events;
 using InvaderInsider.Data;
 using InvaderInsider.UI;
-using System; 
+using System;
+using System.Collections; // Required for coroutine
 using InvaderInsider.Managers;
 
 namespace InvaderInsider.Cards
@@ -42,11 +43,11 @@ namespace InvaderInsider.Cards
         [Header("Card Database")]
         [SerializeField] private CardDatabase cardDatabase;
 
-        // 메모리 내에서 관리되는 플레이어 소유 카드 목록
-        private List<int> ownedCardIds = new List<int>();
+        // Hand is now represented by a list of composite keys "{cardId}_{level}"
+        private List<string> ownedCardKeys = new List<string>();
 
-        // 핸드(소유 카드) 변경 시 발생하는 이벤트
-        public event Action<List<int>> OnHandCardsChanged;
+        // Event now passes the list of keys
+        public event Action<List<string>> OnHandCardsChanged;
 
         private void Awake()
         {
@@ -76,29 +77,39 @@ namespace InvaderInsider.Cards
             LoadCards();
         }
 
-        // 게임 시작 시 SaveDataManager로부터 카드 데이터를 로드
+        // LoadCards now migrates old data format
         public void LoadCards()
         {
             if (SaveDataManager.Instance != null && SaveDataManager.Instance.CurrentSaveData != null)
             {
-                ownedCardIds = new List<int>(SaveDataManager.Instance.CurrentSaveData.deckData.cardIds);
-                LogManager.Log($"{LOG_TAG} SaveDataManager로부터 카드 로드 완료: {ownedCardIds.Count}장");
-                OnHandCardsChanged?.Invoke(ownedCardIds);
+                // For backward compatibility, assume loaded IDs are for level 1 cards.
+                // This will convert the List<int> from save data to the new List<string> format.
+                ownedCardKeys = SaveDataManager.Instance.CurrentSaveData.deckData.cardIds
+                                .Select(id => $"{id}_1")
+                                .ToList();
+                LogManager.Log($"{LOG_TAG} Cards loaded and migrated: {ownedCardKeys.Count} cards.");
+                OnHandCardsChanged?.Invoke(ownedCardKeys);
             }
             else
             {
-                LogManager.LogWarning($"{LOG_TAG} SaveDataManager 인스턴스 또는 CurrentSaveData가 null입니다. 카드 로드 건너뜀.");
+                LogManager.LogWarning($"{LOG_TAG} SaveDataManager instance or CurrentSaveData is null. Skipping card load.");
             }
         }
 
-        // 스테이지 클리어 등 특정 시점에 SaveDataManager에 카드 데이터를 저장
+        // SaveCards now converts back to the old format, losing level info.
+        // TODO: Update SaveDataManager to handle List<string> to properly save levels.
         public void SaveCards()
-        {
+        { 
             if (SaveDataManager.Instance != null)
             {
-                SaveDataManager.Instance.SetOwnedCards(ownedCardIds);
-                SaveDataManager.Instance.SaveGameData(); // 즉시 파일에 저장
-                LogManager.Log($"{LOG_TAG} 카드 저장 완료: {ownedCardIds.Count}장");
+                var idsToSave = ownedCardKeys.Select(key => {
+                    var parts = key.Split('_');
+                    return int.Parse(parts[0]);
+                }).ToList();
+
+                SaveDataManager.Instance.SetOwnedCards(idsToSave);
+                SaveDataManager.Instance.SaveGameData();
+                LogManager.Log($"{LOG_TAG} Card levels saved (NOTE: Level info is lost in current save format).");
             }
         }
 
@@ -174,7 +185,7 @@ namespace InvaderInsider.Cards
                     LogManager.LogError($"{LOG_TAG} SaveDataManager 인스턴스를 찾을 수 없어 eData를 차감할 수 없습니다.");
                 }
 
-                AddCardToHand(selectedCard.cardId);
+                AddCardToHand(selectedCard);
             }
         }
 
@@ -182,6 +193,11 @@ namespace InvaderInsider.Cards
         public CardDBObject GetCardById(int cardId)
         {
             return cardDatabase?.GetCardById(cardId);
+        }
+
+        public CardDBObject GetCard(int cardId, int level)
+        {
+            return cardDatabase?.GetCard(cardId, level);
         }
 
         public CardDBObject GetUpgradedCard(CardDBObject card)
@@ -194,72 +210,89 @@ namespace InvaderInsider.Cards
         #endregion
 
         #region Hand Management (In-Memory)
-        public List<int> GetHandCardIds()
+
+        public List<string> GetHandCardKeys()
         {
-            return new List<int>(ownedCardIds);
+            return new List<string>(ownedCardKeys);
         }
 
         public List<CardDBObject> GetHandCards()
         {
             var handCards = new List<CardDBObject>();
-            foreach (int cardId in ownedCardIds)
+            foreach (string key in ownedCardKeys)
             {
-                var cardData = GetCardById(cardId);
-                if (cardData != null)
+                var parts = key.Split('_');
+                if (parts.Length == 2 && int.TryParse(parts[0], out int cardId) && int.TryParse(parts[1], out int level))
                 {
-                    handCards.Add(cardData);
+                    var cardData = GetCard(cardId, level);
+                    if (cardData != null)
+                    {
+                        handCards.Add(cardData);
+                    }
                 }
             }
             return handCards;
         }
 
-        public void PerformMerge(int oldCardId, int newCardId)
+        public void PerformMerge(CardDBObject card1, CardDBObject card2)
         {
-            // Remove two instances of the old card
-            ownedCardIds.Remove(oldCardId);
-            ownedCardIds.Remove(oldCardId);
-
-            // Add one instance of the new card
-            ownedCardIds.Add(newCardId);
-
-            LogManager.Log($"Merge successful: 2x ID {oldCardId} -> 1x ID {newCardId}");
-
-            // Notify listeners that the hand has changed
-            OnHandCardsChanged?.Invoke(ownedCardIds);
+            StartCoroutine(PerformMergeEndOfFrame(card1, card2));
         }
 
-        public void AddCardToHand(int cardId)
+        private IEnumerator PerformMergeEndOfFrame(CardDBObject card1, CardDBObject card2)
         {
-            ownedCardIds.Add(cardId);
-            LogManager.Log($"{LOG_TAG} 카드가 핸드에 추가되었습니다: ID {cardId}");
-            LogManager.Log($"{LOG_TAG} Firing OnHandCardsChanged event.");
-            OnHandCardsChanged?.Invoke(ownedCardIds);
-        }
+            // Wait until all input events of the current frame are processed
+            yield return new WaitForEndOfFrame();
 
-        public void RemoveCardFromHand(int cardId)
-        {
-            if (ownedCardIds.Remove(cardId))
+            var upgradedCard = GetUpgradedCard(card1);
+            if (upgradedCard == null)
             {
-                LogManager.Log($"{LOG_TAG} 카드가 핸드에서 제거되었습니다: ID {cardId}");
-                OnHandCardsChanged?.Invoke(ownedCardIds);
+                LogManager.LogWarning($"{LOG_TAG} No upgrade path found for {card1.cardName}.");
+                yield break;
             }
+
+            string key1 = $"{card1.cardId}_{card1.level}";
+            string key2 = $"{card2.cardId}_{card2.level}";
+            string newKey = $"{upgradedCard.cardId}_{upgradedCard.level}";
+
+            ownedCardKeys.Remove(key1);
+            ownedCardKeys.Remove(key2);
+            ownedCardKeys.Add(newKey);
+
+            LogManager.Log($"Merge successful: {key1} + {key2} -> {newKey}");
+            OnHandCardsChanged?.Invoke(ownedCardKeys);
         }
 
-        public bool IsCardInHand(int cardId)
+        public void AddCardToHand(CardDBObject card)
         {
-            return ownedCardIds.Contains(cardId);
+            if (card == null) return;
+            string key = $"{card.cardId}_{card.level}";
+            ownedCardKeys.Add(key);
+            LogManager.Log($"{LOG_TAG} Card added to hand: {key}");
+            OnHandCardsChanged?.Invoke(ownedCardKeys);
+        }
+
+        public void RemoveCardFromHand(CardDBObject card)
+        {
+            if (card == null) return;
+            string key = $"{card.cardId}_{card.level}";
+            if (ownedCardKeys.Remove(key))
+            {
+                LogManager.Log($"{LOG_TAG} Card removed from hand: {key}");
+                OnHandCardsChanged?.Invoke(ownedCardKeys);
+            }
         }
 
         public int GetHandCardCount()
         {
-            return ownedCardIds.Count;
+            return ownedCardKeys.Count;
         }
 
         public void ClearHand()
         {
-            ownedCardIds.Clear();
-            OnHandCardsChanged?.Invoke(ownedCardIds);
-            LogManager.Log($"{LOG_TAG} 핸드의 모든 카드를 제거했습니다. 현재 카드 수: {ownedCardIds.Count}");
+            ownedCardKeys.Clear();
+            OnHandCardsChanged?.Invoke(ownedCardKeys);
+            LogManager.Log($"{LOG_TAG} Hand cleared.");
         }
         #endregion
     }

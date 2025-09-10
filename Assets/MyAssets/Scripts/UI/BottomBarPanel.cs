@@ -288,16 +288,19 @@ namespace InvaderInsider.UI
 
         
 
-        private void UpdateCardHandUI(System.Collections.Generic.List<int> cardIds)
+        private void UpdateCardHandUI(System.Collections.Generic.List<string> cardKeys)
         {
             foreach (Transform child in cardHandContainer)
             {
                 Destroy(child.gameObject);
             }
 
-            foreach (int cardId in cardIds)
+            foreach (string key in cardKeys)
             {
-                CardDBObject cardData = CardManager.Instance.GetCardById(cardId);
+                var parts = key.Split('_');
+                if (parts.Length != 2 || !int.TryParse(parts[0], out int cardId) || !int.TryParse(parts[1], out int level)) continue;
+
+                CardDBObject cardData = CardManager.Instance.GetCard(cardId, level);
                 if (cardData != null)
                 {
                     GameObject cardButtonObj = Instantiate(cardButtonPrefab, cardHandContainer);

@@ -31,6 +31,7 @@ namespace InvaderInsider.Data
 
         // 성능을 위한 캐싱된 딕셔너리
         private Dictionary<int, CardDBObject> cardLookup;
+        private Dictionary<int, List<CardDBObject>> cardsByCharacterId;
         private Dictionary<CardType, List<CardDBObject>> cardsByType;
         private bool isValidated = false;
         private bool isLookupTableBuilt = false; // 룩업 테이블 구축 상태 추가
@@ -86,8 +87,9 @@ namespace InvaderInsider.Data
 
             if (isValid)
             {
-                // 개별 카드 유효성 검사
-                var cardIds = new HashSet<int>();
+                // ID/레벨 중복 검사는 아래의 그룹화된 검사에서 처리
+
+                // 이름 중복 검사
                 var cardNames = new HashSet<string>();
 
                 for (int i = 0; i < allCards.Count; i++)
@@ -98,17 +100,6 @@ namespace InvaderInsider.Data
                         validationErrors.Add($"인덱스 {i}의 카드가 null입니다.");
                         isValid = false;
                         continue;
-                    }
-
-                    // ID 중복 검사
-                    if (cardIds.Contains(card.cardId))
-                    {
-                        validationErrors.Add($"카드 ID {card.cardId}가 중복됩니다. (카드: {card.cardName})");
-                        isValid = false;
-                    }
-                    else
-                    {
-                        cardIds.Add(card.cardId);
                     }
 
                     // 이름 중복 검사
@@ -130,6 +121,25 @@ namespace InvaderInsider.Data
                     {
                         validationErrors.Add($"카드 '{card.cardName}' 검증 실패: {cardError}");
                         isValid = false;
+                    }
+                }
+
+                // ID별 그룹화하여 레벨 중복 검사
+                var cardsGroupedById = allCards.Where(c => c != null).GroupBy(c => c.cardId);
+                foreach (var group in cardsGroupedById)
+                {
+                    var levelSet = new HashSet<int>();
+                    foreach (var cardInGroup in group)
+                    {
+                        if (levelSet.Contains(cardInGroup.level))
+                        {
+                            validationErrors.Add($"카드 ID {cardInGroup.cardId}에 대해 레벨 {cardInGroup.level}이 중복됩니다. (카드: {cardInGroup.cardName})");
+                            isValid = false;
+                        }
+                        else
+                        {
+                            levelSet.Add(cardInGroup.level);
+                        }
                     }
                 }
 
@@ -213,17 +223,25 @@ namespace InvaderInsider.Data
 
             // ID 기반 빠른 검색을 위한 딕셔너리 구축
             cardLookup = new Dictionary<int, CardDBObject>(allCards.Count);
+            cardsByCharacterId = new Dictionary<int, List<CardDBObject>>();
             cardsByType = new Dictionary<CardType, List<CardDBObject>>();
 
             foreach (var card in allCards)
             {
                 if (card == null) continue;
 
-                // ID 기반 룩업
+                // ID 기반 룩업 (레거시 - 첫 번째 카드만 등록됨)
                 if (!cardLookup.ContainsKey(card.cardId))
                 {
                     cardLookup[card.cardId] = card;
                 }
+
+                // 캐릭터 ID 기반 룩업 (신규 - 모든 레벨 등록)
+                if (!cardsByCharacterId.ContainsKey(card.cardId))
+                {
+                    cardsByCharacterId[card.cardId] = new List<CardDBObject>();
+                }
+                cardsByCharacterId[card.cardId].Add(card);
 
                 // 타입 기반 룩업
                 if (!cardsByType.ContainsKey(card.type))
@@ -250,6 +268,16 @@ namespace InvaderInsider.Data
         {
             if (cardLookup == null) BuildLookupTables();
             return cardLookup?.GetValueOrDefault(cardId);
+        }
+
+        public CardDBObject GetCard(int characterId, int level)
+        {
+            if (cardsByCharacterId == null) BuildLookupTables();
+            if (cardsByCharacterId.TryGetValue(characterId, out var cardLevels))
+            {
+                return cardLevels.FirstOrDefault(c => c.level == level);
+            }
+            return null;
         }
 
         public List<CardDBObject> GetCardsByType(CardType cardType)

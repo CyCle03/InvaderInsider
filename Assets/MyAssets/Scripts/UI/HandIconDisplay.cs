@@ -18,6 +18,7 @@ namespace InvaderInsider.UI
 
         [Header("Panel References")]
         [SerializeField] private HandDisplayPanel handDisplayPanel;
+        private CardDetailView cardDetailView;
 
         private CardManager cardManager;
         private readonly List<GameObject> currentIconItems = new List<GameObject>();
@@ -55,12 +56,21 @@ namespace InvaderInsider.UI
                  }
             }
 
+            if (cardDetailView == null)
+            {
+                cardDetailView = FindObjectOfType<CardDetailView>(true);
+                if (cardDetailView == null)
+                {
+                    LogManager.LogError($"{LOG_TAG} CardDetailView를 찾을 수 없습니다.");
+                }
+            }
+
             openHandPanelButton?.onClick.AddListener(OpenHandDisplayPanel);
             Debug.Log($"{LOG_TAG} Subscribing to OnHandCardsChanged. IconContainer active: {iconContainer?.gameObject.activeSelf}, in hierarchy: {iconContainer?.gameObject.activeInHierarchy}");
             cardManager.OnHandCardsChanged += OnHandDataChanged;
 
             // Initial population
-            OnHandDataChanged(cardManager.GetHandCardIds());
+            OnHandDataChanged(cardManager.GetHandCardKeys());
 
             isInitialized = true;
             Debug.Log($"{LOG_TAG} Initialization complete.");
@@ -75,9 +85,9 @@ namespace InvaderInsider.UI
             openHandPanelButton?.onClick.RemoveListener(OpenHandDisplayPanel);
         }
 
-        private void OnHandDataChanged(List<int> handCardIds)
+        private void OnHandDataChanged(List<string> handCardKeys)
         {
-            Debug.Log($"{LOG_TAG} OnHandDataChanged called with {handCardIds.Count} cards.");
+            Debug.Log($"{LOG_TAG} OnHandDataChanged called with {handCardKeys.Count} cards.");
             if (!isInitialized || cardManager == null) return;
 
             foreach (var item in currentIconItems)
@@ -97,17 +107,20 @@ namespace InvaderInsider.UI
                 return;
             }
 
-            if (handCardIds.Count > 0)
+            if (handCardKeys.Count > 0)
             {
                 Show(); // 핸드에 카드가 있으면 활성화
 
-                foreach (int cardId in handCardIds)
+                foreach (string key in handCardKeys)
                 {
-                    var cardData = cardManager.GetCardById(cardId);
+                    var parts = key.Split('_');
+                    if (parts.Length != 2 || !int.TryParse(parts[0], out int cardId) || !int.TryParse(parts[1], out int level)) continue;
+
+                    var cardData = cardManager.GetCard(cardId, level);
                     if (cardData == null) continue;
 
                     GameObject iconObj = Instantiate(cardIconPrefab, iconContainer);
-                    iconObj.name = $"CardIcon_{cardData.cardId}";
+                    iconObj.name = $"CardIcon_{key}";
 
                     var iconImage = iconObj.GetComponent<Image>();
                     if (iconImage != null && cardData.artwork != null)
@@ -141,7 +154,7 @@ namespace InvaderInsider.UI
         private void ShowCardDetails(CardDBObject cardData)
         {
             Debug.Log($"Card icon clicked: {cardData.cardName}");
-            // 상세 정보 패널을 열거나 다른 동작을 수행할 수 있습니다.
+            cardDetailView?.ShowCard(cardData);
         }
 
         private void OpenHandDisplayPanel()

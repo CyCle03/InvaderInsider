@@ -98,7 +98,7 @@ namespace InvaderInsider
                     CardDBObject cardData = CardManager.Instance.GetCardById(GameManager.Instance.SelectedCardId);
                     if (cardData != null && StageManager.Instance.CreateTower(cardData, hit.point))
                     {
-                        CardManager.Instance.RemoveCardFromHand(GameManager.Instance.SelectedCardId);
+                        CardManager.Instance.RemoveCardFromHand(cardData);
                         GameManager.Instance.SelectedTowerPrefab = null; // 타워를 생성한 후 선택 해제
                         GameManager.Instance.SelectedCardId = -1; // 선택 카드 ID 초기화
                     }

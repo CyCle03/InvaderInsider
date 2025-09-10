@@ -130,6 +130,12 @@ namespace InvaderInsider
             foreach (BaseCharacter unit in allUnits)
             {
                 if (unit == null) continue;
+
+                // UI에 속한 컴포넌트는 건너뛰기
+                if (unit.GetComponent<RectTransform>() != null)
+                {
+                    continue;
+                }
                 
                 bool wasModified = false;
                 

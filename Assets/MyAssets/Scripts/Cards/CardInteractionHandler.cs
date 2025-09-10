@@ -16,6 +16,9 @@ namespace InvaderInsider.Cards
 
         public event System.Action OnCardClicked;
 
+        private float lastClickTime = -1f;
+        private const float CLICK_DRAG_THRESHOLD = 0.1f; // Time in seconds
+
         private void Awake()
         {
             cardDisplay = GetComponent<CardDisplay>();
@@ -27,17 +30,29 @@ namespace InvaderInsider.Cards
             originalParent = parent;
         }
 
+        public void ClearClickListeners()
+        {
+            OnCardClicked = null;
+        }
+
         public void OnPointerClick(PointerEventData eventData)
         {
             if (!eventData.dragging)
             {
-                Debug.Log($"Card Clicked: {cardDisplay?.GetCardData()?.cardName}");
+                lastClickTime = Time.time;
                 OnCardClicked?.Invoke();
             }
         }
 
         public void OnBeginDrag(PointerEventData eventData)
         {
+            // If a click happened very recently, cancel this drag event.
+            if (Time.time - lastClickTime < CLICK_DRAG_THRESHOLD)
+            {
+                eventData.pointerDrag = null;
+                return;
+            }
+
             if (cardDisplay?.GetCardData() == null) return;
 
             originalPosition = transform.position;
@@ -140,7 +155,7 @@ namespace InvaderInsider.Cards
                     Debug.Log($"[CardInteractionHandler] Found upgraded card: {upgradedCard.cardName} (ID: {upgradedCard.cardId}, Level: {upgradedCard.level})");
 
                     // Perform atomic merge operation
-                    CardManager.Instance.PerformMerge(draggedCardData.cardId, upgradedCard.cardId);
+                    CardManager.Instance.PerformMerge(draggedCardData, targetCardData);
 
                     // The OnHandDataChanged event will handle the UI update, so we don't need to do anything else here.
                     // The dragged card icon will be destroyed automatically.

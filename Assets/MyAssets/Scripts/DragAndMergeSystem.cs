@@ -294,7 +294,7 @@ namespace InvaderInsider
             targetCharacter.ApplyEquipment(DraggedCardData);
 
             // 카드 소모
-            CardManager.Instance.RemoveCardFromHand(DraggedCardData.cardId);
+            CardManager.Instance.RemoveCardFromHand(DraggedCardData);
 
             WasDropSuccessful = true;
             LogDebug($"장비 적용 성공: {DraggedCardData.cardName} -> {targetCharacter.name}");
@@ -322,7 +322,7 @@ namespace InvaderInsider
                 targetCharacter.LevelUp();
                 
                 // 카드 소모
-                CardManager.Instance.RemoveCardFromHand(DraggedCardData.cardId);
+                CardManager.Instance.RemoveCardFromHand(DraggedCardData);
                 
                 WasDropSuccessful = true;
                 MergeTargetUnit = targetCharacter;
@@ -352,7 +352,7 @@ namespace InvaderInsider
                 LogDebug($"카드 배치 성공: {DraggedCardData.cardName}");
                 
                 // 카드 소모
-                CardManager.Instance.RemoveCardFromHand(DraggedCardData.cardId);
+                CardManager.Instance.RemoveCardFromHand(DraggedCardData);
                 
                 WasDropSuccessful = true;
                 return true;

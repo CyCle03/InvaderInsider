@@ -36,7 +36,7 @@ namespace InvaderInsider.UI
             SetupButtons();
 
             cardManager.OnHandCardsChanged += UpdateHandCardCount;
-            UpdateHandCardCount(cardManager.GetHandCardIds()); // 초기값 설정
+            UpdateHandCardCount(cardManager.GetHandCardKeys()); // 초기값 설정
 
             isInitialized = true;
         }
@@ -72,11 +72,11 @@ namespace InvaderInsider.UI
             // 예: UIManager.Instance.ShowPanel("HandDisplay");
         }
 
-        private void UpdateHandCardCount(List<int> handCardIds)
+        private void UpdateHandCardCount(List<string> handCardKeys)
         {
             if (handCardCountText != null)
             {
-                handCardCountText.text = $"핸드: {handCardIds.Count}";
+                handCardCountText.text = $"핸드: {handCardKeys.Count}";
             }
         }
     }

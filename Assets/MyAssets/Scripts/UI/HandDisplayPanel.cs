@@ -48,7 +48,7 @@ namespace InvaderInsider.UI
 
             Show(); // BasePanel의 Show() 호출
             isPopupOpen = true;
-            UpdatePopupContent(cardManager.GetHandCardIds());
+            UpdatePopupContent(cardManager.GetHandCardKeys());
             LogManager.Log($"{LOG_TAG} Popup opened. CloseButton interactable: {closeButton?.interactable}, PopupOverlay active: {popupOverlay?.activeSelf}");
             CanvasGroup popupCanvasGroup = popupOverlay?.GetComponent<CanvasGroup>();
             if (popupCanvasGroup == null && popupOverlay != null)
@@ -137,28 +137,31 @@ namespace InvaderInsider.UI
             sortByNameButton?.onClick.AddListener(() => SortHand(HandSortType.ByName));
         }
 
-        private void OnHandDataChanged(List<int> handCardIds)
+        private void OnHandDataChanged(List<string> handCardKeys)
         {
             if (isPopupOpen)
             {
-                UpdatePopupContent(handCardIds);
+                UpdatePopupContent(handCardKeys);
             }
         }
 
-        private void UpdatePopupContent(List<int> handCardIds)
+        private void UpdatePopupContent(List<string> handCardKeys)
         {
             if (!isInitialized) return;
 
             ClearHandItems();
-            UpdateTitle(handCardIds.Count);
+            UpdateTitle(handCardKeys.Count);
 
             if (handContainer == null || cardPrefab == null) return;
 
-            var sortedCardIds = SortCardIds(handCardIds, currentSortType);
+            var sortedCardKeys = SortCardKeys(handCardKeys, currentSortType);
 
-            foreach (int cardId in sortedCardIds)
+            foreach (string key in sortedCardKeys)
             {
-                var cardData = cardDatabase.GetCardById(cardId);
+                var parts = key.Split('_');
+                if (parts.Length != 2 || !int.TryParse(parts[0], out int cardId) || !int.TryParse(parts[1], out int level)) continue;
+
+                var cardData = cardManager.GetCard(cardId, level);
                 if (cardData == null) continue;
 
                 var cardObj = GetPooledCard();
@@ -202,19 +205,22 @@ namespace InvaderInsider.UI
             currentSortType = sortType;
             if (isPopupOpen)
             {
-                UpdatePopupContent(cardManager.GetHandCardIds());
+                UpdatePopupContent(cardManager.GetHandCardKeys());
             }
         }
 
-        private List<int> SortCardIds(List<int> cardIds, HandSortType sortType)
+        private List<string> SortCardKeys(List<string> cardKeys, HandSortType sortType)
         {
-            var sortedIds = new List<int>(cardIds);
-            if (sortType == HandSortType.None) return sortedIds;
+            var sortedKeys = new List<string>(cardKeys);
+            if (sortType == HandSortType.None) return sortedKeys;
 
-            Comparison<int> comparison = (id1, id2) =>
-            {
-                var card1 = cardDatabase.GetCardById(id1);
-                var card2 = cardDatabase.GetCardById(id2);
+            sortedKeys.Sort((key1, key2) => {
+                var parts1 = key1.Split('_');
+                var parts2 = key2.Split('_');
+                if (parts1.Length != 2 || parts2.Length != 2) return 0;
+
+                var card1 = cardManager.GetCard(int.Parse(parts1[0]), int.Parse(parts1[1]));
+                var card2 = cardManager.GetCard(int.Parse(parts2[0]), int.Parse(parts2[1]));
                 if (card1 == null || card2 == null) return 0;
 
                 switch (sortType)
@@ -225,10 +231,9 @@ namespace InvaderInsider.UI
                     case HandSortType.ByName: return string.Compare(card1.cardName, card2.cardName, StringComparison.Ordinal);
                     default: return 0;
                 }
-            };
+            });
 
-            sortedIds.Sort(comparison);
-            return sortedIds;
+            return sortedKeys;
         }
 
         private void ClearHandItems()
@@ -237,6 +242,12 @@ namespace InvaderInsider.UI
             {
                 if (item != null)
                 {
+                    var cardInteractionHandler = item.GetComponent<CardInteractionHandler>();
+                    if (cardInteractionHandler != null)
+                    {
+                        cardInteractionHandler.ClearClickListeners();
+                    }
+
                     var button = item.GetComponent<Button>();
                     if (button != null)
                     {
