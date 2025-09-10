@@ -61,7 +61,8 @@ namespace InvaderInsider.Cards
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            // UI 상태를 원래대로 되돌립니다
+            // Reset the visual state of the dragged card first.
+            // This makes it snap back to the hand if no valid drop occurs.
             if (gameObject != null)
             {
                 transform.position = originalPosition;
@@ -70,22 +71,39 @@ namespace InvaderInsider.Cards
                 canvasGroup.blocksRaycasts = true;
             }
 
-            // 통합 시스템을 통해 카드 배치/머지 시도
+            // Check if the drop occurred on a UI element.
+            // The EventSystem calls OnDrop on the target before OnEndDrag on the source.
+            // If we dropped on a UI element, we assume it was handled (or intentionally ignored) by the UI system.
+            // We should not proceed with trying to place the card in the 3D world.
+            if (eventData.pointerEnter != null && eventData.pointerEnter.layer == LayerMask.NameToLayer("UI"))
+            {
+                DragAndMergeSystem.Instance.EndCardDrag(); // Clean up the 3D preview
+                Debug.Log($"[CardInteractionHandler] OnEndDrag: Drop was on UI layer. World placement aborted.");
+                // If the drop was on a valid card target, OnDrop would have been called,
+                // triggering a merge and a UI refresh that will destroy this card object.
+                // If the drop was on another UI element, nothing happens, and the card has snapped back.
+                return;
+            }
+
+            // If we reach here, the drop was not on a UI element.
+            // Proceed with attempting to place the card in the 3D world.
             bool success = DragAndMergeSystem.Instance.TryPlaceCard(eventData.position);
             
             if (success)
             {
-                // 배치/머지 성공 시 카드 UI 제거
+                // If placement in the world was successful, the card is consumed.
+                // The CardManager will be notified and the UI will update.
+                // We destroy the icon that was being dragged.
                 if (eventData.pointerDrag != null)
                 {
                     Destroy(eventData.pointerDrag.gameObject);
                 }
             }
 
-            // 카드 드래그 종료
+            // End the drag operation in the central system.
             DragAndMergeSystem.Instance.EndCardDrag();
             
-            Debug.Log($"[CardInteractionHandler] OnEndDrag completed - success: {success}");
+            Debug.Log($"[CardInteractionHandler] OnEndDrag completed - world placement success: {success}");
         }
 
         public void OnDrop(PointerEventData eventData)

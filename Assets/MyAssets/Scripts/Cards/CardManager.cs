@@ -119,7 +119,15 @@ namespace InvaderInsider.Cards
             List<CardDBObject> result = new List<CardDBObject>();
             if (cardDatabase == null || cardDatabase.AllCards.Count == 0) return result;
 
-            List<CardDBObject> availableCards = new List<CardDBObject>(cardDatabase.AllCards);
+            // Filter for level 1 cards only
+            List<CardDBObject> availableCards = cardDatabase.AllCards.Where(card => card.level == 1).ToList();
+
+            if (availableCards.Count == 0)
+            {
+                LogManager.LogWarning($"{LOG_TAG} No level 1 cards found in the database for summoning.");
+                return result;
+            }
+
             System.Random rng = new System.Random();
 
             for (int i = 0; i < count && availableCards.Count > 0; i++)
