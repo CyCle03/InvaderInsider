@@ -205,6 +205,21 @@ namespace InvaderInsider.Cards
             return handCards;
         }
 
+        public void PerformMerge(int oldCardId, int newCardId)
+        {
+            // Remove two instances of the old card
+            ownedCardIds.Remove(oldCardId);
+            ownedCardIds.Remove(oldCardId);
+
+            // Add one instance of the new card
+            ownedCardIds.Add(newCardId);
+
+            LogManager.Log($"Merge successful: 2x ID {oldCardId} -> 1x ID {newCardId}");
+
+            // Notify listeners that the hand has changed
+            OnHandCardsChanged?.Invoke(ownedCardIds);
+        }
+
         public void AddCardToHand(int cardId)
         {
             ownedCardIds.Add(cardId);

@@ -121,12 +121,8 @@ namespace InvaderInsider.Cards
                 {
                     Debug.Log($"[CardInteractionHandler] Found upgraded card: {upgradedCard.cardName} (ID: {upgradedCard.cardId}, Level: {upgradedCard.level})");
 
-                    // 2. Remove the two old cards from hand
-                    CardManager.Instance.RemoveCardFromHand(draggedCardData.cardId);
-                    CardManager.Instance.RemoveCardFromHand(targetCardData.cardId);
-
-                    // 3. Add the new upgraded card to hand
-                    CardManager.Instance.AddCardToHand(upgradedCard.cardId);
+                    // Perform atomic merge operation
+                    CardManager.Instance.PerformMerge(draggedCardData.cardId, upgradedCard.cardId);
 
                     // The OnHandDataChanged event will handle the UI update, so we don't need to do anything else here.
                     // The dragged card icon will be destroyed automatically.
