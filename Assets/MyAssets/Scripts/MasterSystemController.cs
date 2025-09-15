@@ -131,6 +131,11 @@ namespace InvaderInsider
             {
                 if (unit == null) continue;
 
+                if (unit.GetComponentInParent<InvaderInsider.UI.CardDetailView>() != null)
+                {
+                    continue;
+                }
+
                 // UI에 속한 컴포넌트는 건너뛰기
                 if (unit.GetComponent<RectTransform>() != null)
                 {

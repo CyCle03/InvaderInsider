@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using InvaderInsider.Data;
 using InvaderInsider.Managers;
+using InvaderInsider.UI;
+using System.Collections;
 
 namespace InvaderInsider.Cards
 {
@@ -19,8 +21,18 @@ namespace InvaderInsider.Cards
         private float lastClickTime = -1f;
         private const float CLICK_DRAG_THRESHOLD = 0.1f; // Time in seconds
 
+        private bool wasDragged = false;
+
         private void Awake()
         {
+            // If this card is inside a CardDetailView, it should not be interactive.
+            // Destroy this interaction component immediately.
+            if (GetComponentInParent<CardDetailView>() != null)
+            {
+                Destroy(this);
+                return;
+            }
+
             cardDisplay = GetComponent<CardDisplay>();
             canvasGroup = GetComponent<CanvasGroup>();
         }
@@ -37,6 +49,17 @@ namespace InvaderInsider.Cards
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (wasDragged) return;
+
+            // If the pointer moved significantly between press and release, it's a drag, not a click.
+            // We use the system's pixelDragThreshold to be consistent, with a fallback value.
+            float dragThreshold = EventSystem.current != null ? EventSystem.current.pixelDragThreshold : 5f;
+            float pressReleaseDistance = Vector2.Distance(eventData.pressPosition, eventData.position);
+            if (pressReleaseDistance > dragThreshold)
+            {
+                return;
+            }
+
             if (!eventData.dragging)
             {
                 lastClickTime = Time.time;
@@ -46,6 +69,8 @@ namespace InvaderInsider.Cards
 
         public void OnBeginDrag(PointerEventData eventData)
         {
+            wasDragged = true;
+
             // If a click happened very recently, cancel this drag event.
             if (Time.time - lastClickTime < CLICK_DRAG_THRESHOLD)
             {
@@ -97,6 +122,7 @@ namespace InvaderInsider.Cards
                 // If the drop was on a valid card target, OnDrop would have been called,
                 // triggering a merge and a UI refresh that will destroy this card object.
                 // If the drop was on another UI element, nothing happens, and the card has snapped back.
+                StartCoroutine(ResetDragFlag());
                 return;
             }
 
@@ -119,6 +145,7 @@ namespace InvaderInsider.Cards
             DragAndMergeSystem.Instance.EndCardDrag();
             
             Debug.Log($"[CardInteractionHandler] OnEndDrag completed - world placement success: {success}");
+            StartCoroutine(ResetDragFlag());
         }
 
         public void OnDrop(PointerEventData eventData)
@@ -169,6 +196,12 @@ namespace InvaderInsider.Cards
             {
                 Debug.Log("[CardInteractionHandler] Merge condition not met.");
             }
+        }
+
+        private IEnumerator ResetDragFlag()
+        {
+            yield return new WaitForEndOfFrame();
+            wasDragged = false;
         }
     }
 }
